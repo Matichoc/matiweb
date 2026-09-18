@@ -1,10 +1,49 @@
 /* Estilos base para MatiChoc */
 
+@font-face {
+  font-family: 'Baby Chipmunk';
+  src: url('../assets/fonts/baby-chipmunk.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Adorable Mother Script';
+  src: url('../assets/fonts/adorable-mother-script.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Adorable Mother';
+  src: url('../assets/fonts/adorable-mother.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --color-brown: #64321b;
+  --color-brown-dark: #4b2e2e;
+  --color-green: #cfd767;
+  --color-pink: #d4216c;
+  --color-pink-dark: #a01a58;
+  --color-yellow: #ffc800;
+  --color-cream: #fff8f0;
+  --font-display: 'Baby Chipmunk', 'Segoe UI', sans-serif;
+  --font-script: 'Adorable Mother Script', cursive;
+}
+
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #fff8f0;
+  background-color: var(--color-cream);
+  background-image: url('../assets/brand/pattern-cacao-subtle.png');
+  background-repeat: repeat;
+  background-size: 260px;
   color: #4b2e2e;
   line-height: 1.8;
   font-size: 16px;
@@ -56,11 +95,19 @@ section {
 }
 
 h1, h2, h3 {
+  font-family: var(--font-display);
   color: #64321b;
   margin-top: 0;
   margin-bottom: 20px;
   font-weight: 700;
   line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
+blockquote {
+  font-family: var(--font-script);
+  font-size: 1.6rem;
+  color: var(--color-pink);
 }
 
 p {
@@ -833,6 +880,8 @@ section {
 .carousel-item {
   min-width: 200px;
   margin-right: 20px;
+}
+
 #bienvenida {
   background-color: rgba(0, 0, 0, 0.7); /* fondo oscuro semitransparente para mejor contraste */
   padding: 40px 20px;
@@ -848,22 +897,6 @@ section {
 .banner-content {
   color: #ffffff; /* texto blanco para mejor contraste */
   text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
-}
-
-#bienvenida h2 {
-  font-family: 'Adorable Mother Script', cursive; /* tipografía decorativa del mockup */
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-  font-weight: 700;
-  color: #ff6699; /* rosa fuerte claro para mejor legibilidad */
-}
-
-#bienvenida p {
-  font-size: 1.2rem;
-  line-height: 1.6;
-  margin: 0 auto;
-  max-width: 600px;
-  color: #4a2a0f; /* marrón oscuro para texto */
 }
 
 #bienvenida h2 {
@@ -892,7 +925,6 @@ section {
   #bienvenida p {
     font-size: 1rem;
   }
-}
 }
 
 .carousel-buttons button {
