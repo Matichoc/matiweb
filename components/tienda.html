@@ -1,0 +1,94 @@
+<form id="pedidoMatichoc" onsubmit="return enviarWhatsApp()" class="pedido-form">
+  <h2 class="pedido-title">🍫 Pide tus Chocolates Matichoc 🍫</h2>
+  
+  <h3 class="pedido-subtitle">Paso 1: Tus datos</h3>
+  <label for="nombre" class="pedido-label">Nombre completo*</label>
+  <input type="text" id="nombre" name="nombre" required class="pedido-input" />
+  <label for="contacto" class="pedido-label">Celular / WhatsApp*</label>
+  <input type="tel" id="contacto" name="contacto" required class="pedido-input" />
+
+  <h3 class="pedido-subtitle">Paso 2: Selecciona tus productos</h3>
+  <fieldset class="pedido-fieldset">
+    <legend class="pedido-legend">Productos</legend>
+    <div class="product-grid" id="productosContainer"></div>
+  </fieldset>
+
+  <div class="precio-total">
+    Total estimado: $<span id="total">0</span>
+  </div>
+
+  <h3 class="pedido-subtitle">Paso 3: Realiza tu pago</h3>
+  <button type="button" onclick="window.open('https://www.tuu.cl/matichoc_pago', '_blank')" class="btn btn-pink btn-fullwidth">
+    💳 Paga aquí y guarda tu comprobante
+  </button>
+
+  <h3 class="pedido-subtitle">Paso 4: Envía tu pedido</h3>
+  <button type="submit" class="btn btn-pink btn-fullwidth">
+    📲 Enviar pedido por WhatsApp
+  </button>
+</form>
+
+<script>
+  const productos = [
+    { id: "alfajor", nombre: "Alfajor", precio: 1000, img: "https://i.imgur.com/C01CAjn.jpg" },
+    { id: "alfajor_personalizado", nombre: "Alfajor Personalizado", precio: 1500, img: "https://i.imgur.com/WSv71hy.jpg" },
+    { id: "cuchufli", nombre: "Cuchufli", precio: 1000, img: "https://i.imgur.com/KvjlYTA.jpg" },
+    { id: "conos", nombre: "Conos", precio: 1000, img: "https://i.imgur.com/6tqiYy2.jpg" },
+    { id: "wonka", nombre: "Tableta Wonka", precio: 4000, img: "https://i.imgur.com/5RCFRg3.jpg" },
+    { id: "colores", nombre: "Tableta Colores", precio: 4000, img: "https://i.imgur.com/eO1gzDB.jpg" },
+    { id: "rellena", nombre: "Tableta Rellena", precio: 4000, img: "https://i.imgur.com/0L0iFSV.jpg" },
+    { id: "matidubai", nombre: "Matidubai", precio: 12000, img: "https://i.imgur.com/FcrTH9K.jpg" },
+    { id: "capri", nombre: "Barra Capri", precio: 1500, img: "https://i.imgur.com/0IzB6cW.jpg" },
+    { id: "bombas", nombre: "Bombas de Chocolate", precio: 1500, img: "https://i.imgur.com/dkkIZCU.jpg" },
+    { id: "paletas", nombre: "Paletas", precio: 500, img: "https://i.imgur.com/wDYCiyP.jpg" },
+    { id: "popit", nombre: "Pop It", precio: 2500, img: "https://i.imgur.com/zncQbMZ.jpg" }
+  ];
+
+  const container = document.getElementById("productosContainer");
+
+  productos.forEach(p => {
+    container.innerHTML += `
+      <div class="product-card" style="border: 1px solid #D4216C; border-radius: 12px; padding: 10px; text-align: center; background-color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between;">
+        <img src="${p.img}" alt="${p.nombre}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;" />
+        <label>${p.nombre} ($${p.precio.toLocaleString("es-CL")})</label>
+        <input type="number" id="${p.id}" name="${p.id}" min="0" value="0" onchange="calcularTotal()" style="margin-top: 10px;" />
+      </div>
+    `;
+  });
+
+  function calcularTotal() {
+    let total = 0;
+    productos.forEach(p => {
+      const cantidad = parseInt(document.getElementById(p.id)?.value || 0);
+      total += cantidad * p.precio;
+    });
+    document.getElementById("total").innerText = total.toLocaleString("es-CL");
+  }
+
+  function enviarWhatsApp() {
+    const nombre = document.getElementById("nombre").value;
+    const contacto = document.getElementById("contacto").value;
+    let mensaje = `🍫 Pedido Matichoc 🍫%0A👤 Nombre: ${nombre}%0A📱 Contacto: ${contacto}%0A🛍️ Productos:%0A`;
+
+    let hayProductos = false;
+    productos.forEach(p => {
+      const cantidad = parseInt(document.getElementById(p.id)?.value || 0);
+      if (cantidad > 0) {
+        mensaje += `- ${cantidad} x ${p.nombre} ($${(cantidad * p.precio).toLocaleString("es-CL")})%0A`;
+        hayProductos = true;
+      }
+    });
+
+    const total = document.getElementById("total").innerText;
+    mensaje += `%0A💵 Total: $${total}%0A📸 Recuerda enviar tu comprobante de pago.`;
+
+    if (!hayProductos) {
+      alert("Por favor selecciona al menos un producto.");
+      return false;
+    }
+
+    const wspURL = `https://wa.me/56996432234?text=${mensaje}`;
+    window.open(wspURL, "_blank");
+    return false;
+  }
+</script>

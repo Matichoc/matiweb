@@ -1,20 +1,26 @@
----
-layout: default
-title: Inicio
----
-<section class="banner-section" role="banner" aria-label="Banner principal de Matichoc">
-  <div class="banner-background" style="background-image: url('{{ '/assets/images/Familia en el mercado de MatiChoc.png' | relative_url }}'); background-size: cover; background-position: center; padding: 60px 20px; color: #fff; text-align: center;">
-    <div class="banner-content" style="max-width: 800px; margin: 0 auto; background-color: rgba(75, 46, 46, 0.7); padding: 30px; border-radius: 10px;">
-      <h1 class="banner-title" style="font-size: 3rem; font-weight: bold; margin-bottom: 20px;">Matichoc, pasión por el cacao</h1>
-      <p class="banner-text" style="font-size: 1.25rem; line-height: 1.5; margin-bottom: 30px;">
-        Participando de tus momentos especiales desde el 2011.<br>
-        Chocolates artesanales con historia, emoción y ese toque único que sólo la maestra puede entregar.
-      </p>
-      <div class="banner-buttons" style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-        <a href="{{ '/pages/productos.html' | relative_url }}" class="btn btn-pink" style="background-color: #d6336c; color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: 600;">🍫 Ver productos</a>
-        <a href="https://wa.me/56975645591" target="_blank" class="btn btn-green" style="background-color: #28a745; color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: 600;">💬 Escríbenos</a>
-        <a href="{{ '/pages/tienda.html' | relative_url }}" class="btn btn-yellow" style="background-color: #ffc107; color: #4b2e2e; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: 600;">🛍️ Compra aquí</a>
-      </div>
-    </div>
-  </div>
-</section>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Matichoc - Pasión por el Cacao</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script defer src="js/base.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header id="header" role="banner" aria-label="Encabezado principal"></header>
+
+  <!-- Banner -->
+  <section id="banner" role="region" aria-label="Banner principal"></section>
+
+  <!-- Bienvenida -->
+  <section id="bienvenida" role="region" aria-label="Palabras de bienvenida y descripción del sitio" style="max-width: 800px; margin: 40px auto; padding: 0 20px; text-align: center;">
+    <h2>Bienvenidos a Matichoc, pasión por el cacao</h2> 
+    <p>En este sitio encontrarás chocolates artesanales con historia, emoción y ese toque único que sólo la maestra puede entregar. Descubre nuestros productos, conoce nuestra historia y compra en nuestra tienda online.</p>
+  </section>
+
+  <!-- Footer -->
+  <footer id="footer" role="contentinfo" aria-label="Pie de página con redes sociales y política"></footer>
+</body>
+</html>

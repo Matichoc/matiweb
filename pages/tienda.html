@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedido Matichoc</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fff8f0;
+      color: #4b2e2e;
+      padding: 20px;
+    }
+    form {
+      max-width: 1100px;
+      margin: auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.15);
+    }
+    h2, h3 {
+      text-align: center;
+      color: #64321B;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      color: #64321B;
+      margin: 10px 0 5px;
+    }
+    input[type="number"], input[type="text"], input[type="tel"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 4px;
+      border: 1px solid #D4216C;
+      border-radius: 8px;
+      background-color: #fff;
+    }
+    button {
+      background-color: #D4216C;
+      color: white;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      width: 100%;
+      font-size: 17px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #b01859;
+    }
+    fieldset {
+      border: 2px solid #FFC800;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      background-color: #CFD76722;
+    }
+    .precio-total {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: right;
+      margin-top: 20px;
+      color: #64321B;
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .product-card {
+      border: 1px solid #D4216C;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      background-color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .product-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .product-card input {
+      margin-top: 10px;
+    }
+
+    /* Responsive: tablet y móvil */
+    @media (max-width: 50px) {
+      .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+      button {
+        font-size: 16px;
+        padding: 12px;
+      }
+    }
+
+    @media (max-width: 40px) {
+      .product-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<header style="background-color: #4B2E2E; color: white; padding: 15px 20px; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+  <a href="index.html" style="color: white; text-decoration: none; font-size: 24px; font-weight: bold; flex: 1 1 auto;">Matichoc</a>
+  <nav style="flex: 2 1 auto; text-align: right;">
+    <a href="index.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">Inicio</a>
+    <a href="pages/productos.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">Productos</a>
+    <a href="pages/tienda.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">Tienda</a>
+    <a href="pages/la_maestra.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">La Maestra</a>
+    <a href="pages/contacto.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">Contacto</a>
+    <!-- Nueva aparición para la página Historia -->
+    <a href="pages/historia.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">Historia</a>
+  </nav>
+</header>
+  <form id="pedidoMatichoc" onsubmit="return enviarWhatsApp()">
+    <h2>🍫 Pide tus Chocolates Matichoc 🍫</h2>
+    
+    <h3>Paso 1: Tus datos</h3>
+    <label for="nombre">Nombre completo*</label>
+    <input type="text" id="nombre" name="nombre" required>
+    <label for="contacto">Celular / WhatsApp*</label>
+    <input type="tel" id="contacto" name="contacto" required>
+
+    <h3>Paso 2: Selecciona tus productos</h3>
+    <fieldset>
+      <legend>Productos</legend>
+      <div class="product-grid" id="productosContainer"></div>
+    </fieldset>
+
+    <h3>Paso 3: Tu Carrito</h3>
+    <div class="cart-layout">
+      <div class="cart-section">
+        <h4>Mi carrito</h4>
+        <div id="cartItems" class="cart-items">
+          <!-- Los productos del carrito se renderizarán aquí -->
+          <p id="emptyCartMessage">Tu carrito está vacío.</p>
+        </div>
+      </div>
+      <div class="order-summary">
+        <h4>Resumen del pedido</h4>
+        <div class="summary-item">
+          <span>Subtotal</span>
+          <span>$<span id="cartSubtotal">0</span></span>
+        </div>
+        <div class="summary-item">
+          <span>Envío</span>
+          <span>A calcular</span>
+        </div>
+        <div class="summary-total">
+          <span>Total</span>
+          <span>$<span id="cartTotal">0</span></span>
+        </div>
+        <button type="button" class="btn-finalizar-compra" onclick="window.open('https://www.tuu.cl/matichoc_pago', '_blank')">Finalizar compra</button>
+        <p class="pago-seguro">🔒 Pago seguro</p>
+      </div>
+    </div>
+
+    <h3>Paso 4: Envía tu pedido</h3>
+    <button type="submit">📲 Enviar pedido por WhatsApp</button>
+  </form>
+
+  <script>
+    const productos = [
+      { id: "alfajor", nombre: "Alfajor", precio: 1000, img: "https://i.imgur.com/C01CAjn.jpg" },
+      { id: "alfajor_personalizado", nombre: "Alfajor Personalizado", precio: 1500, img: "https://i.imgur.com/WSv71hy.jpg" },
+      { id: "cuchufli", nombre: "Cuchufli", precio: 1000, img: "https://i.imgur.com/KvjlYTA.jpg" },
+      { id: "conos", nombre: "Conos", precio: 1000, img: "https://i.imgur.com/6tqiYy2.jpg" },
+      { id: "wonka", nombre: "Tableta Wonka", precio: 4000, img: "https://i.imgur.com/5RCFRg3.jpg" },
+      { id: "colores", nombre: "Tableta Colores", precio: 4000, img: "https://i.imgur.com/eO1gzDB.jpg" },
+      { id: "rellena", nombre: "Tableta Rellena", precio: 4000, img: "https://i.imgur.com/0L0iFSV.jpg" },
+      { id: "matidubai", nombre: "Matidubai", precio: 13000, img: "https://i.imgur.com/FcrTH9K.jpg" },
+      { id: "capri", nombre: "Barra Capri", precio: 1500, img: "https://i.imgur.com/0IzB6cW.jpg" },
+      { id: "bombas", nombre: "Bombas de Chocolate", precio: 1500, img: "https://i.imgur.com/dkkIZCU.jpg" },
+      { id: "paletas", nombre: "Paletas", precio: 500, img: "https://i.imgur.com/wDYCiyP.jpg" },
+      { id: "popit", nombre: "Pop It", precio: 2500, img: "https://i.imgur.com/zncQbMZ.jpg" }
+    ];
+
+    let cart = []; // Array para almacenar los productos en el carrito
+
+    const productosContainer = document.getElementById("productosContainer");
+    const cartItemsContainer = document.getElementById("cartItems");
+    const cartSubtotalSpan = document.getElementById("cartSubtotal");
+    const cartTotalSpan = document.getElementById("cartTotal");
+    const emptyCartMessage = document.getElementById("emptyCartMessage");
+
+    // Renderizar productos disponibles
+    productos.forEach(p => {
+      productosContainer.innerHTML += `
+        <div class="product-card">
+          <img src="${p.img}" alt="${p.nombre}">
+          <label>${p.nombre} ($${p.precio.toLocaleString("es-CL")})</label>
+          <button type="button" onclick="addToCart('${p.id}')">Añadir al carrito</button>
+        </div>
+      `;
+    });
+
+    function addToCart(productId) {
+      const product = productos.find(p => p.id === productId);
+      if (product) {
+        const existingCartItem = cart.find(item => item.id === productId);
+        if (existingCartItem) {
+          existingCartItem.quantity++;
+        } else {
+          cart.push({ ...product, quantity: 1 });
+        }
+        renderCart();
+      }
+    }
+
+    function updateCartQuantity(productId, newQuantity) {
+      const cartItem = cart.find(item => item.id === productId);
+      if (cartItem) {
+        cartItem.quantity = parseInt(newQuantity);
+        if (cartItem.quantity <= 0) {
+          removeFromCart(productId);
+        } else {
+          renderCart();
+        }
+      }
+    }
+
+    function removeFromCart(productId) {
+      cart = cart.filter(item => item.id !== productId);
+      renderCart();
+    }
+
+    function renderCart() {
+      cartItemsContainer.innerHTML = ''; // Limpiar el contenedor antes de renderizar
+      let subtotal = 0;
+
+      if (cart.length === 0) {
+        emptyCartMessage.style.display = 'block';
+      } else {
+        emptyCartMessage.style.display = 'none';
+        cart.forEach(item => {
+          const itemTotal = item.quantity * item.precio;
+          subtotal += itemTotal;
+
+          const cartItemDiv = document.createElement('div');
+          cartItemDiv.classList.add('cart-item');
+
+          cartItemDiv.innerHTML = `
+            <div class="cart-item-details">
+              <span>${item.nombre}</span>
+              <div class="cart-item-controls">
+                <input type="number" min="1" value="${item.quantity}" data-product-id="${item.id}" class="cart-quantity-input">
+                <span>x $${item.precio.toLocaleString("es-CL")}</span>
+                <span class="cart-item-total">$${itemTotal.toLocaleString("es-CL")}</span>
+                <button type="button" data-product-id="${item.id}" class="remove-item-btn">X</button>
+              </div>
+            </div>
+          `;
+          cartItemsContainer.appendChild(cartItemDiv);
+        });
+      }
+      cartSubtotalSpan.innerText = subtotal.toLocaleString("es-CL");
+      cartTotalSpan.innerText = subtotal.toLocaleString("es-CL"); // Por ahora, total es igual al subtotal
+
+      // Añadir event listeners a los nuevos elementos
+      document.querySelectorAll('.cart-quantity-input').forEach(input => {
+        input.onchange = (event) => {
+          const productId = event.target.dataset.productId;
+          updateCartQuantity(productId, event.target.value);
+        };
+      });
+
+      document.querySelectorAll('.remove-item-btn').forEach(button => {
+        button.onclick = (event) => {
+          const productId = event.target.dataset.productId;
+          removeFromCart(productId);
+        };
+      });
+    }
+
+    function enviarWhatsApp() {
+      const nombre = document.getElementById("nombre").value;
+      const contacto = document.getElementById("contacto").value;
+      let mensaje = `🍫 Pedido Matichoc 🍫%0A👤 Nombre: ${nombre}%0A📱 Contacto: ${contacto}%0A🛍️ Productos:%0A`;
+
+      if (cart.length === 0) {
+        alert("Por favor añade al menos un producto al carrito.");
+        return false;
+      }
+
+      cart.forEach(item => {
+        const itemTotal = item.quantity * item.precio;
+        mensaje += `- ${item.quantity} x ${item.nombre} ($${itemTotal.toLocaleString("es-CL")})%0A`;
+      });
+
+      const total = document.getElementById("cartTotal").innerText;
+      mensaje += `%0A💵 Total: $${total}%0A📸 Recuerda enviar tu comprobante de pago.`;
+
+      const wspURL = `https://wa.me/56975645591?text=${mensaje}`;
+      window.open(wspURL, "_blank");
+      return false;
+    }
+
+    // Inicializar el carrito al cargar la página
+    document.addEventListener('DOMContentLoaded', renderCart);
+  </script>
+<footer style="background-color: #4B2E2E; color: white; padding: 20px; font-family: 'Segoe UI', sans-serif; text-align: center;">
+  <nav style="margin-bottom: 10px;">
+    <a href="index.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Inicio</a>
+    <a href="pages/productos.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Productos</a>
+    <a href="pages/tienda.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Tienda</a>
+    <a href="pages/la_maestra.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">La Maestra</a>
+    <a href="pages/contacto.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Contacto</a>
+    <!-- Nueva aparición para la página Historia -->
+    <a href="pages/historia.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Historia</a>
+  </nav>
+  <p>© 2025 Matichoc - Pasión por el Cacao. Todos los derechos reservados.</p>
+  <p>
+    <a href="https://www.facebook.com/matichoc2011" target="_blank" style="color: #FFC800; text-decoration: none; margin-right: 10px;">Facebook</a>
+    <a href="https://www.instagram.com/matichoc.pasion.por.el.cacao" target="_blank" style="color: #FFC800; text-decoration: none;">Instagram</a>
+  </p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Opiniones de Clientes</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+        .carousel-container {
+            position: relative;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .carousel-track {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            padding: 20px 0;
+        }
+        .opinion-card {
+            flex: 0 0 calc(100% / 3 - 20px); /* Mostrar 3 tarjetas con espacio */
+            margin: 0 10px; /* Espacio entre tarjetas */
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box; /* Incluir padding y border en el ancho */
+        }
+        @media (max-width: 900px) {
+            .opinion-card {
+                flex: 0 0 calc(100% / 2 - 20px); /* Mostrar 2 tarjetas en pantallas medianas */
+            }
+        }
+        @media (max-width: 600px) {
+            .opinion-card {
+                flex: 0 0 calc(100% - 20px); /* Mostrar 1 tarjeta en pantallas pequeñas */
+            }
+        }
+        .opinion-card p {
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+        .opinion-card strong {
+            display: block;
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+        .opinion-card small {
+            color: #666;
+        }
+        .rating {
+            color: #FFC800;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        .carousel-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(75, 46, 46, 0.7);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 1.5em;
+            border-radius: 50%;
+            z-index: 100;
+        }
+        .carousel-button.prev {
+            left: 10px;
+        }
+        .carousel-button.next {
+            right: 10px;
+        }
+        .form-section {
+            padding: 20px;
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-section form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .form-section label {
+            font-weight: bold;
+        }
+        .form-section input, .form-section textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-section button {
+            background-color: #4B2E2E;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <header id="header"></header>
+    <main>
+        <section style="text-align: center; margin-top: 20px;">
+            <h2>¿Qué dicen nuestras clientas y clientes?</h2>
+            <div class="rating">★★★★★</div>
+            <p>5.0 de 108 opiniones</p>
+        </section>
+
+        <div class="carousel-container">
+            <div class="carousel-track">
+                <div class="opinion-card">
+                    <p>"Los elegimos porque sabemos que siempre superan nuestras expectativas... ¡Son lo máximo!"</p>
+                    <strong>Camila Zamora</strong>
+                    <small>Coach de Bienestar - Instagram: @CamilaZamora</small>
+                </div>
+                <div class="opinion-card">
+                    <p>"Hola, primero que todo mi preferencia por sus productos es por la dedicación, amor y creatividad... No se arrepentirán."</p>
+                    <strong>Paulett Vilchez</strong>
+                    <small>Emprendedora y Dulcera de La Ligua - Instagram: @PaulettVilchez</small>
+                </div>
+                <div class="opinion-card">
+                    <p>"Son Chocolates de muy buena calidad y siempre están innovando... 100% recomendables."</p>
+                    <strong>Alejandra Romero</strong>
+                    <small>Emprendedora de La Ligua - Facebook: @AlejandraRomero</small>
+                </div>
+                <div class="opinion-card">
+                    <p>"Matichoc se ha vuelto mi tienda favorita desde el 2022... siempre decido volver a elegirlos."</p>
+                    <strong>Valeria Gonzalez</strong>
+                    <small>Trabajadora Social en Sendas La Ligua - Instagram: @ValeriaGonzalez</small>
+                </div>
+                <div class="opinion-card">
+                    <p>"Recomiendo tus productos por la calidad, presentación y calidez humana... siempre con una sonrisa afectiva."</p>
+                    <strong>Manuel Ballesteros</strong>
+                    <small>Profesor Gabriel Mistral La Ligua - Instagram: @ManuelBallesteros</small>
+                </div>
+                <div class="opinion-card">
+                    <p>"Recomiendo a Matichoc porque sus productos son sabrosos y bien detallados. ¡Muy cálida la atención."</p>
+                    <strong>David Astudillo</strong>
+                    <small>Kinesiólogo Hospital de La Ligua - Facebook: @DavidAstudillo</small>
+                </div>
+                <div class="opinion-card">
+                    <p>"Conocer y probar Matichoc ha sido una experiencia dulce muy recomendable. Prefiero Matichoc."</p>
+                    <strong>Natalia Arancibia</strong>
+                    <small>Emprendedora de Cabildo - Instagram: @NataliaArancibia</small>
+                </div>
+                <div class="opinion-card">
+                    <p>"Chocolates de bellos diseños y muy coloridos. ¡100% recomendado! Atención excelente."</p>
+                    <strong>Julia Garay</strong>
+                    <small>Emprendedora de Cabildo - Facebook: @JuliaGaray</small>
+                </div>
+                <div class="opinion-card">
+                    <p>"Cada bocado es una explosión de sabor. ¡Matichoc nunca decepciona!"</p>
+                    <strong>Sofía Pérez</strong>
+                    <small>Amante del chocolate - Twitter: @SofiChoc</small>
+                </div>
+                <div class="opinion-card">
+                    <p>"La calidad de los ingredientes es insuperable. Mis favoritos son los bombones rellenos."</p>
+                    <strong>Ricardo Soto</strong>
+                    <small>Chef Pastelero - Blog: ricardosoto.cl</small>
+                </div>
+                <div class="opinion-card">
+                    <p>"Un regalo perfecto para cualquier ocasión. La presentación es tan buena como el sabor."</p>
+                    <strong>Andrea Rojas</strong>
+                    <small>Diseñadora Gráfica - LinkedIn: AndreaRojasDesign</small>
+                </div>
+                <div class="opinion-card">
+                    <p>"Desde que probé Matichoc, no puedo volver a otros chocolates. ¡Son adictivos!"</p>
+                    <strong>Carlos Mena</strong>
+                    <small>Ingeniero de Software - Instagram: @CarlosMenaDev</small>
+                </div>
+            </div>
+            <button class="carousel-button prev" onclick="moveCarousel(-1)">&#10094;</button>
+            <button class="carousel-button next" onclick="moveCarousel(1)">&#10095;</button>
+        </div>
+
+        <section class="form-section">
+            <h3>Deja tu Opinión</h3>
+            <form>
+                <label for="opinion-name">Nombre:</label>
+                <input type="text" id="opinion-name" name="name" required>
+
+                <label for="opinion-email">Email:</label>
+                <input type="email" id="opinion-email" name="email" required>
+
+                <label for="opinion-message">Tu Opinión:</label>
+                <textarea id="opinion-message" name="message" rows="5" required></textarea>
+
+                <button type="submit">Enviar Opinión</button>
+            </form>
+        </section>
+    </main>
+    <footer id="footer" role="contentinfo" aria-label="Pie de página con redes sociales y política"></footer>
+    <script src="../js/base.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadComponent('header', '/components/header.html');
+            loadComponent('footer', '/components/footer.html');
+        });
+
+        let currentIndex = 0;
+        const track = document.querySelector('.carousel-track');
+        const cards = document.querySelectorAll('.opinion-card');
+        const cardsPerPage = 3; // Mostrar 3 tarjetas a la vez
+        const totalCards = cards.length;
+
+        function updateCarousel() {
+            const carouselWidth = track.offsetWidth;
+            const cardWidth = carouselWidth / cardsPerPage; // Ancho de cada tarjeta
+            track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+        }
+
+        function moveCarousel(direction) {
+            currentIndex += direction;
+            if (currentIndex < 0) {
+                currentIndex = totalCards - cardsPerPage;
+            } else if (currentIndex > totalCards - cardsPerPage) {
+                currentIndex = 0;
+            }
+            updateCarousel();
+        }
+
+        // Ajustar el carrusel al cargar y redimensionar la ventana
+        window.addEventListener('resize', updateCarousel);
+        updateCarousel(); // Llamar al inicio para posicionar correctamente
+    </script>
+</body>
+</html>

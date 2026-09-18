@@ -1,0 +1,923 @@
+/* Estilos base para MatiChoc */
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #fff8f0;
+  color: #4b2e2e;
+  line-height: 1.8;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a {
+  color: #d4216c;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover, a:focus {
+  color: #a01a58;
+  outline: none;
+}
+
+button, a.button {
+  background-color: #d4216c;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  text-align: center;
+  display: inline-block;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  user-select: none;
+}
+
+button:hover, a.button:hover,
+button:focus, a.button:focus {
+  background-color: #a01a58;
+  transform: scale(1.05);
+  outline: none;
+}
+
+button:active, a.button:active {
+  transform: scale(0.95);
+}
+
+section {
+  padding: 50px 20px;
+  max-width: 1200px;
+  margin: 0 auto 60px auto;
+}
+
+h1, h2, h3 {
+  color: #64321b;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+p {
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  color: #5a3a2a;
+}
+
+header, footer {
+  background-color: #4b2e2e;
+  color: white;
+  padding: 20px 30px;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+header a, footer a {
+  color: #ffc800;
+  text-decoration: none;
+  margin: 0 12px;
+  font-weight: 600;
+}
+
+/* Estilos responsivos para enlaces en header y footer */
+header a, footer a {
+  display: block; /* Los enlaces ocupan todo el ancho */
+  text-align: center; /* Centrar el texto */
+  margin: 10px 0; /* Añadir margen arriba y abajo */
+}
+
+@media (min-width: 768px) { /* Pantallas más grandes */
+  header a, footer a {
+    display: inline; /* Volver a la disposición original */
+    text-align: initial; /* Restablecer la alineación del texto */
+    margin: 0 10px; /* Restablecer el margen */
+  }
+}
+
+header a:hover, footer a:hover,
+header a:focus, footer a:focus {
+  color: #ccaa00;
+  outline: none;
+}
+
+header nav a {
+  margin-right: 20px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.banner-section {
+  position: relative;
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.banner-background {
+  background-size: cover;
+  background-position: center;
+  height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 40px;
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+  position: relative;
+}
+
+.banner-content {
+  max-width: 600px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 25px;
+  border-radius: 16px;
+}
+
+.banner-title {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  font-weight: 700;
+  color: #d4216c
+}
+
+.banner-text {
+  font-size: 1.25rem;
+  margin-bottom: 30px;
+  line-height: 1.5;
+  color: white
+}
+
+.banner-buttons {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.banner-buttons a, .banner-buttons button {
+  padding: 14px 28px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  cursor: pointer;
+  text-align: center;
+  user-select: none;
+}
+
+.banner-buttons a:hover, .banner-buttons button:hover,
+.banner-buttons a:focus, .banner-buttons button:focus {
+  transform: scale(1.05);
+  outline: none;
+}
+
+@media (max-width: 768px) {
+  .banner-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .banner-buttons a, .banner-buttons button {
+    width: 100%;
+    padding: 14px 0;
+    font-size: 1.2rem;
+  }
+}
+
+.btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  color: white;
+  display: inline-block;
+  transition: background-color 0.3s ease;
+}
+
+.btn-pink {
+  background-color: #d4216c;
+}
+
+.btn-pink:hover {
+  background-color: #a01a58;
+}
+
+.btn-green {
+  background-color: #25d366;
+}
+
+.btn-green:hover {
+  background-color: #1a9a4a;
+}
+
+.btn-yellow {
+  background-color: #ffc800;
+  color: white; /* texto blanco para mejor contraste */
+}
+
+.btn-yellow:hover {
+  background-color: #ccaa00;
+}
+
+.product-card {
+  border: 1px solid #d4216c;
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.product-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transition: transform 0.3s ease;
+}
+
+.product-card img:hover {
+  transform: scale(1.05);
+}
+
+.carousel-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.3s ease;
+}
+
+.carousel-item {
+  min-width: 200px;
+  margin-right: 20px;
+}
+
+.carousel-buttons {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.carousel-buttons button {
+  background-color: #d4216c;
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  margin: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.carousel-buttons button:hover {
+  background-color: #a01a58;
+}
+
+.whatsapp-btn {
+  display: inline-block;
+  margin-bottom: 10px;
+  background-color: #25d366;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.whatsapp-btn:hover {
+  background-color: #1a9a4a;
+}
+
+@media (max-width: 768px) {
+  header, footer {
+    text-align: center;
+    padding: 15px 10px;
+  }
+  header nav a {
+    display: block;
+    margin: 10px 0;
+    font-size: 1.1rem;
+  }
+  nav {
+    padding: 10px 0;
+  }
+  nav a {
+    display: inline-block;
+    margin: 0 10px;
+    font-size: 1rem;
+  }
+  .product-card {
+    height: auto;
+  }
+  .banner-title {
+    font-size: 2rem;
+    text-align: center;
+  }
+  .banner-text {
+    font-size: 1rem;
+    text-align: center;
+  }
+  .banner-background {
+    height: 60vh;
+    padding: 20px;
+    justify-content: center;
+  }
+  .banner-content {
+    max-width: 100%;
+    padding: 15px;
+  }
+  .banner-buttons {
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .banner-buttons a {
+    width: 100%;
+    text-align: center;
+    padding: 12px 0;
+    font-size: 1.1rem;
+  }
+}
+
+header, footer {
+  background-color: #4B2E2E;
+  color: white;
+  padding: 15px 20px;
+  text-align: center;
+}
+
+header a, footer a {
+  color: #FFC800;
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+header nav a {
+  margin-right: 15px;
+  font-weight: 600;
+}
+
+h1, h2, h3 {
+  color: #64321B;
+}
+
+a.button, button {
+  background-color: #D4216C;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  text-decoration: none;
+  display: inline-block;
+  transition: background-color 0.3s ease;
+}
+
+a.button:hover, button:hover {
+  background-color: #a01a58;
+}
+
+section {
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.product-card {
+  border: 1px solid #D4216C;
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+/* Estilos para banner */
+.banner-section {
+  position: relative;
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.banner-background {
+  background-image: url('https://imgur.com/vH7ilNA.jpg');
+  background-size: cover;
+  background-position: center;
+  height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 40px;
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+  position: relative;
+}
+
+.banner-content {
+  max-width: 600px;
+  background-color: rgba(0, 0, 0, 0.8); /* fondo negro más oscuro para mejor contraste */
+  padding: 25px;
+  border-radius: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.banner-title {
+  font-size: 38px;
+  margin-bottom: 15px;
+  color: #ffffff !important; /* título blanco para mejor contraste */
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+}
+
+.banner-text {
+  font-size: 18px;
+  margin-bottom: 30px;
+  color: #ffffff !important; /* texto blanco para mejor contraste */
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+}
+
+.banner-buttons {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  color: white;
+  display: inline-block;
+  transition: background-color 0.3s ease;
+}
+
+.btn-pink {
+  background-color: #D4216C;
+}
+
+.btn-pink:hover {
+  background-color: #a01a58;
+}
+
+.btn-green {
+  background-color: #25D366;
+}
+
+/* Estilos para productos */
+.productos-frecuentes {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #fff8f0;
+  color: #4b2e2e;
+  padding: 20px;
+}
+
+.productos-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+  gap: 15px;
+}
+
+.productos-logo {
+  height: 50px;
+}
+
+.productos-title {
+  color: #64321B;
+  font-size: 32px;
+  margin: 0;
+}
+
+.section {
+  margin-bottom: 40px;
+}
+
+.carousel-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.3s ease;
+}
+
+.carousel-item {
+  min-width: 200px;
+  margin-right: 20px;
+}
+
+.carousel-buttons {
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Estilos para tienda */
+.pedido-form {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #fff8f0;
+  color: #4b2e2e;
+  padding: 20px;
+  max-width: 100px;
+  margin: auto;
+  border-radius: 16px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.15);
+}
+
+.pedido-title {
+  text-align: center;
+  color: #64321B;
+}
+
+.pedido-subtitle {
+  text-align: center;
+  color: #64321B;
+}
+
+.pedido-label {
+  font-weight: bold;
+  color: #64321B;
+  display: block;
+  margin-top: 10px;
+}
+
+.pedido-input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 4px;
+  border: 1px solid #D4216C;
+  border-radius: 8px;
+  background-color: #fff;
+}
+
+.pedido-fieldset {
+  border: 2px solid #FFC800;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #CFD76722;
+  margin-top: 20px;
+}
+
+.pedido-legend {
+  font-weight: bold;
+  color: #64321B;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.precio-total {
+  font-size: 18px;
+  font-weight: bold;
+  text-align: right;
+  margin-top: 20px;
+  color: #64321B;
+}
+
+.btn-fullwidth {
+  width: 100%;
+  margin-top: 20px;
+  cursor: pointer;
+}
+.carousel-buttons button {
+  background-color: #D4216C;
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  margin: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.carousel-buttons button:hover {
+  background-color: #a01a58;
+}
+
+.whatsapp-btn {
+  display: inline-block;
+  margin-bottom: 10px;
+  background-color: #25D366;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.whatsapp-btn:hover {
+  background-color: #1a9a4a;
+}
+.btn-green:hover {
+  background-color: #1a9a4a;
+}
+
+.btn-yellow {
+  background-color: #FFC800;
+  color: #4B2E2E;
+}
+
+.btn-yellow:hover {
+  background-color: #ccaa00;
+}
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.product-card img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.cart-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr; /* Dos columnas: carrito y resumen */
+  gap: 30px;
+  margin-top: 30px;
+}
+
+@media (max-width: 76px) {
+  .cart-layout {
+    grid-template-columns: 1fr; /* Una columna en móviles */
+  }
+}
+
+.cart-section, .order-summary {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.cart-section h4, .order-summary h4 {
+  color: #64321B;
+  font-size: 1.4em;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 10px;
+}
+
+.cart-items {
+  margin-top: 15px;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #f5f5f5;
+  border-radius: 8px;
+  background-color: #fdfdfd;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.03);
+}
+
+.cart-item-img {
+  width: 10px; /* Tamaño aún más pequeño */
+  height: 10px; /* Tamaño aún más pequeño */
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.cart-item-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: row; /* Cambiado a fila para alinear horizontalmente */
+  align-items: center; /* Centrar verticalmente los elementos */
+  justify-content: space-between; /* Espacio entre el nombre y los controles */
+}
+
+.cart-item-details span {
+  font-weight: bold;
+  color: #4b2e2e;
+  margin-bottom: 0; /* Eliminar margen inferior */
+  margin-right: 10px; /* Añadir margen a la derecha del nombre */
+}
+
+.cart-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px; /* Espacio entre los controles */
+}
+
+.cart-item-controls input[type="number"] {
+  width: 100px;
+  padding: 5px;
+  border: 1px solid #FFC800;
+  border-radius: 4px;
+  text-align: center;
+  margin-right: 8px;
+  font-size: 0.9em;
+}
+
+.cart-item-controls span {
+  font-weight: normal;
+  color: #888;
+  font-size: 0.9em;
+}
+
+.cart-item-total {
+  font-weight: bold;
+  color: #D4216C;
+  margin-left: 15px;
+  min-width: 80px;
+  text-align: right;
+}
+
+.remove-item-btn {
+  background-color: #D4216C;
+  color: white;
+  padding: 5px 9px;
+  border: none;
+  border-radius: 50%; /* Botón redondo */
+  cursor: pointer;
+  font-size: 0.8em;
+  margin-left: 10px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.remove-item-btn:hover {
+  background-color: #b01859;
+  transform: scale(1.1);
+}
+
+#emptyCartMessage {
+  text-align: center;
+  color: #a0a0a0;
+  font-style: italic;
+  margin-top: 20px;
+  font-size: 1em;
+}
+
+.order-summary {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 1.05em;
+  color: #4b2e2e;
+}
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #f0f0f0;
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #64321B;
+}
+
+.btn-finalizar-compra {
+  background-color: #D4216C;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  width: 100%;
+  font-size: 1.1em;
+  margin-top: 25px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-finalizar-compra:hover {
+  background-color: #b01859;
+}
+
+.pago-seguro {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 0.9em;
+  color: #888;
+}
+
+.carousel-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.3s ease;
+}
+
+.carousel-item {
+  min-width: 200px;
+  margin-right: 20px;
+#bienvenida {
+  background-color: rgba(0, 0, 0, 0.7); /* fondo oscuro semitransparente para mejor contraste */
+  padding: 40px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #f0f0f0; /* texto claro para mejor legibilidad */
+  max-width: 800px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+.banner-content {
+  color: #ffffff; /* texto blanco para mejor contraste */
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+}
+
+#bienvenida h2 {
+  font-family: 'Adorable Mother Script', cursive; /* tipografía decorativa del mockup */
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  font-weight: 700;
+  color: #ff6699; /* rosa fuerte claro para mejor legibilidad */
+}
+
+#bienvenida p {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin: 0 auto;
+  max-width: 600px;
+  color: #4a2a0f; /* marrón oscuro para texto */
+}
+
+#bienvenida h2 {
+  font-family: 'Adorable Mother Script', cursive; /* tipografía decorativa del mockup */
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  font-weight: 700;
+  color: #D4216C; /* rosa fuerte */
+}
+
+#bienvenida p {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin: 0 auto;
+  max-width: 600px;
+  color: #e0e0e0; /* texto claro para mejor legibilidad */
+}
+
+@media (max-width: 768px) {
+  #bienvenida {
+    padding: 30px 15px;
+  }
+  #bienvenida h2 {
+    font-size: 2rem;
+  }
+  #bienvenida p {
+    font-size: 1rem;
+  }
+}
+}
+
+.carousel-buttons button {
+  background-color: #D4216C;
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  margin: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.carousel-buttons button:hover {
+  background-color: #a01a58;
+}
+
+@media (max-width: 768px) {
+  header, footer {
+    text-align: center;
+  }
+  header nav a {
+    display: block;
+    margin: 10px 0;
+  }
+  .product-card {
+    height: auto;
+  }
+}
