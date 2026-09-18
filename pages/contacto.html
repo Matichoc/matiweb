@@ -38,22 +38,13 @@
     </main>
     <!-- Footer -->
   <footer id="footer" role="contentinfo" aria-label="Pie de página con redes sociales y política"></footer>
-  
-    <footer style="background-color: #4B2E2E; color: white; padding: 20px; font-family: 'Segoe UI', sans-serif; text-align: center;">
-      <nav style="flex: 2 1 auto; text-align: center;">
-        <a href="index.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Inicio</a>
-        <a href="pages/la_maestra.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">La Maestra</a>
-        <a href="pages/historia.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Historia</a>
-        <a href="pages/productos.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Productos</a>
-        <a href="pages/tienda.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Tienda</a>
-        <a href="pages/opiniones.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Opiniones</a>
-        <a href="pages/contacto.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Contacto</a>
-      </nav>
-      <p>© 2025 Matichoc - Pasión por el Cacao. Todos los derechos reservados.</p>
-      <p>
-        <a href="https://www.facebook.com/matichoc2011" target="_blank" style="color: #FFC800; text-decoration: none; margin-right: 10px;">Facebook</a>
-        <a href="https://www.instagram.com/matichoc.pasion.por.el.cacao" target="_blank" style="color: #FFC800; text-decoration: none;">Instagram</a>
-      </p>
-    </footer>
+
+  <script src="../js/base.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      loadComponent('header', '../components/header.html', { base: '../' });
+      loadComponent('footer', '../components/footer.html', { base: '../' });
+    });
+  </script>
 </body>
 </html>
