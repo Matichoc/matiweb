@@ -206,8 +206,8 @@
     <script src="../js/base.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            loadComponent('header', '/components/header.html');
-            loadComponent('footer', '/components/footer.html');
+            loadComponent('header', '../components/header.html', { base: '../' });
+            loadComponent('footer', '../components/footer.html', { base: '../' });
         });
 
         let currentIndex = 0;

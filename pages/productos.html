@@ -2,14 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Productos Destacados - Matichoc</title>
+<link rel="stylesheet" href="../css/styles.css" />
 <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #fff8f0;
-      color: #4b2e2e;
-      padding: 20px;
-    }
     .header {
       display: flex;
       align-items: center;
@@ -19,11 +15,6 @@
     }
     .header img {
       height: 50px;
-    }
-    h2 {
-      color: #64321B;
-      font-size: 32px;
-      margin: 0;
     }
     .section {
       background-color: #ffffff;
@@ -103,22 +94,11 @@
   </style>
 </head>
 <body>
-<header style="background-color: #4B2E2E; color: white; padding: 15px 20px; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-  <a href="../index.html" style="color: white; text-decoration: none; font-size: 24px; font-weight: bold; flex: 1 1 auto;">Matichoc</a>
-  <nav style="flex: 2 1 auto; text-align: right;">
-    <a href="../index.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">Inicio</a>
-    <a href="productos.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">Productos</a>
-    <a href="tienda.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">Tienda</a>
-    <a href="la_maestra.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">La Maestra</a>
-    <a href="contacto.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">Contacto</a>
-    <!-- Nueva aparición para la página Historia -->
-    <a href="historia.html" style="color: #FFC800; margin-left: 15px; text-decoration: none; font-weight: 700;">Historia</a>
-  </nav>
-</header>
+<header id="header"></header>
 
 <main>
   <div class="header">
-    <img src="https://imgur.com/So3zZ6u.png" alt="Logo Matichoc">
+    <img src="https://i.imgur.com/So3zZ6u.png" alt="Logo Matichoc">
     <h2>Productos Frecuentes</h2>
   </div>
 
@@ -212,7 +192,7 @@
           <div class="carousel-track">
             ${item.imagenes.map(code => `
               <div class="carousel-item">
-                <img src="https://imgur.com/${code}.jpg">
+                <img src="https://i.imgur.com/${code}.jpg">
               </div>`).join('')}
           </div>
           <div class="carousel-buttons">
@@ -241,20 +221,14 @@
   </script>
 </main>
 
-<footer style="background-color: #4B2E2E; color: white; padding: 20px; font-family: 'Segoe UI', sans-serif; text-align: center;">
-  <nav style="margin-bottom: 10px;">
-    <a href="../index.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Inicio</a>
-    <a href="productos.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Productos</a>
-    <a href="tienda.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Tienda</a>
-    <a href="la_maestra.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">La Maestra</a>
-    <a href="contacto.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Contacto</a>
-    <!-- Nueva aparición para la página Historia -->
-    <a href="historia.html" style="color: #FFC800; margin: 0 10px; text-decoration: none; font-weight: 700;">Historia</a>
-  </nav>
-  <p>© 2025 Matichoc - Pasión por el Cacao. Todos los derechos reservados.</p>
-  <p>
-    <a href="https://www.facebook.com/matichoc2011" target="_blank" style="color: #FFC800; text-decoration: none; margin-right: 10px;">Facebook</a>
-    <a href="https://www.instagram.com/matichoc.pasion.por.el.cacao" target="_blank" style="color: #FFC800; text-decoration: none;">Instagram</a>
-  </p>
-</footer>
+<footer id="footer"></footer>
+
+<script src="../js/base.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    loadComponent('header', '../components/header.html', { base: '../' });
+    loadComponent('footer', '../components/footer.html', { base: '../' });
+  });
+</script>
+</body>
 </html>

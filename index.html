@@ -22,5 +22,14 @@
 
   <!-- Footer -->
   <footer id="footer" role="contentinfo" aria-label="Pie de página con redes sociales y política"></footer>
+
+  <script src="js/base.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      loadComponent('header', 'components/header.html', { base: '' });
+      loadComponent('banner', 'components/banner.html');
+      loadComponent('footer', 'components/footer.html', { base: '' });
+    });
+  </script>
 </body>
 </html>
