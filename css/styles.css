@@ -126,6 +126,10 @@ header, footer {
   user-select: none;
 }
 
+header p, footer p {
+  color: #ffffff;
+}
+
 header a, footer a {
   color: #ffc800;
   text-decoration: none;
@@ -704,7 +708,7 @@ section {
   margin-top: 30px;
 }
 
-@media (max-width: 76px) {
+@media (max-width: 768px) {
   .cart-layout {
     grid-template-columns: 1fr; /* Una columna en móviles */
   }
@@ -951,5 +955,45 @@ section {
   }
   .product-card {
     height: auto;
+  }
+}
+
+.whatsapp-float {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background-color: #25d366;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  transition: transform 0.2s ease;
+}
+
+.whatsapp-float:hover {
+  transform: scale(1.08);
+  background-color: #1a9a4a;
+}
+
+.whatsapp-float svg {
+  width: 32px;
+  height: 32px;
+  fill: white;
+}
+
+@media (max-width: 480px) {
+  .whatsapp-float {
+    width: 52px;
+    height: 52px;
+    bottom: 14px;
+    right: 14px;
+  }
+  .whatsapp-float svg {
+    width: 28px;
+    height: 28px;
   }
 }
