@@ -111,105 +111,61 @@
 
   <div id="carruseles-container"></div>
 
+  <script src="../js/catalogo.js"></script>
   <script>
-    const carouseles = [
-      {
-        id: 'alfajores',
-        titulo: 'Alfajores',
-        texto: 'Alfajores deliciosos rellenos con manjar y esencias de sabores (menta, frutilla, plátano, pie de limón, frambuesa, tres leches, café moka, capuchino y muchos más), bañados en chocolate semi amargo de 52% de cacao.',
-        precios: '$1.000 Tradicional o sabor<br>$1.500 Personalizado',
-        imagenes: ['C01CAjn', 'WSv71hy', 'ncBRyei', 'JpG4dmt', 'jfguSAZ', '2Nz9EtP', 'kXgKT3d']
-      },
-      {
-        id: 'cuchufli',
-        titulo: 'Cuchuflí',
-        texto: 'Deliciosos cuchuflí rellenos con manjar y bañados en chocolate semi amargo de 52% de cacao.',
-        precios: '$1.000 Bolsa 3 cuchuflí Tradicional<br>$1.500 Bolsa 3 Personalizado<br>$14.000 Torta de cuchuflí',
-        imagenes: ['KvjlYTA', '4CAvQAT', 'Mgd5CIN', '2Nxg7t5', 'lPyRjcm', 'zPEQu39', '0POqiWR']
-      },
-      {
-        id: 'prestigios',
-        titulo: 'Prestigios',
-        texto: 'Deliciosas bolitas de coco y leche condensada, bañadas en chocolate semi amargo de 52% de cacao.',
-        precios: '$1.000 bolsita 2 unidades',
-        imagenes: ['VvGQWV1', 'o5ofqlW', 'SL8HW1X']
-      },
-      {
-        id: 'matidubai',
-        titulo: 'Matidubai',
-        texto: 'Barra viral rellena de crema natural de pistachos y fideo kataifi, cubierta de chocolate de leche.',
-        precios: '$12.000 versión grande<br>$1.500 Mini Dubai',
-        imagenes: ['FcrTH9K']
-      },
-      {
-        id: 'bombas',
-        titulo: 'Bombas de Chocolate',
-        texto: 'Bombas ideales para la leche, pueden ser de Café o Milo. Incluyen marshmallow.',
-        precios: '$1.500',
-        imagenes: ['dkkIZCU', 'GKzR4KT', 'RMWgvz1']
-      },
-      {
-        id: 'bombones',
-        titulo: 'Bombones',
-        texto: 'Encanta a los tuyos con distintos formatos de bombones.',
-        precios: '$9.000 Caja corazón 15 bombones<br>$4.000 Caja corazón 7 bombones',
-        imagenes: ['KBdJtkS', '2qYRxW8', 'RVKxtSj', 've2ogNX', 'uSVbja3', 'imUqF5N']
-      },
-      {
-        id: 'barras',
-        titulo: 'Barras de Chocolate',
-        texto: 'Tabletas deliciosas de distintos chocolates y rellenos.',
-        precios: '$1.500 Capri<br>$4.000 tabletas de colores o rellenas',
-        imagenes: ['0IzB6cW', 'eO1gzDB', '5RCFRg3', '0L0iFSV', 'GboR5zb', 'HFT67A3', '0Yy84kg']
-      },
-      {
-        id: 'cajas',
-        titulo: 'Cajas Mix',
-        texto: 'Sorprende y arma tu momento a tu gusto. Mezcla los productos que quieras.',
-        precios: 'Consulta según tu mezcla preferida',
-        imagenes: ['x7xTgWJ', 'VrVpwh8', 'avEGMQW', 'TKXUyyn', 'HPzNLRk', 'khK4UNu', 'jzRXe20']
-      },
-      {
-        id: 'frutillas',
-        titulo: 'Frutillas con Chocolate',
-        texto: 'Frutillas bañadas en chocolate: brillantes o muy chocolatosas.',
-        precios: 'Consulta precios según presentación',
-        imagenes: ['RJWddAV', 'HwaPrtU', 'PP8M3UP', 'sUUX76m']
-      },
-      {
-        id: 'varios',
-        titulo: 'Otros Productos',
-        texto: 'Sorpresas, figuras y delicias varias.',
-        precios: 'Consulta aquí',
-        imagenes: ['zncQbMZ', 'wDYCiyP', '6tqiYy2', 'C3omkO3', 'Us0zdUP']
+    // Agrupa el catálogo compartido (js/catalogo.js) por categoría para mostrarlo aquí.
+    const categorias = [];
+    CATALOGO.forEach(item => {
+      let cat = categorias.find(c => c.nombre === item.categoria);
+      if (!cat) {
+        cat = { nombre: item.categoria, items: [], imagenes: [] };
+        categorias.push(cat);
       }
-    ];
+      cat.items.push(item);
+      if (!cat.imagenes.includes(item.img)) cat.imagenes.push(item.img);
+    });
 
     const contenedor = document.getElementById('carruseles-container');
 
-    carouseles.forEach(item => {
+    categorias.forEach(cat => {
+      const id = cat.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const mensaje = encodeURIComponent(`Hola, me interesa consultar por: ${cat.nombre}`);
       const section = document.createElement('div');
       section.className = 'section';
       section.innerHTML = `
-        <h3>${item.titulo}</h3>
-        <p>${item.texto}</p>
-        <p><strong>Precios:</strong><br>${item.precios}</p>
-        <a class="whatsapp-btn" href="https://wa.me/56975645591">📲 Consulta aquí</a>
-        <div class="carousel-container" id="carousel-${item.id}">
+        <h3>${cat.nombre}</h3>
+        <ul>
+          ${cat.items.map(p => `
+            <li><strong>${p.nombre}</strong>${p.descripcion ? ' — ' + p.descripcion : ''} — $${p.precio.toLocaleString('es-CL')}</li>
+          `).join('')}
+        </ul>
+        <a class="whatsapp-btn" href="https://wa.me/56975645591?text=${mensaje}" target="_blank">📲 Consulta aquí</a>
+        <div class="carousel-container" id="carousel-${id}">
           <div class="carousel-track">
-            ${item.imagenes.map(code => `
+            ${cat.imagenes.map(url => `
               <div class="carousel-item">
-                <img src="https://i.imgur.com/${code}.jpg">
+                <img src="${url}">
               </div>`).join('')}
           </div>
           <div class="carousel-buttons">
-            <button onclick="moveCarousel('carousel-${item.id}', -1)">❮</button>
-            <button onclick="moveCarousel('carousel-${item.id}', 1)">❯</button>
+            <button onclick="moveCarousel('carousel-${id}', -1)">❮</button>
+            <button onclick="moveCarousel('carousel-${id}', 1)">❯</button>
           </div>
         </div>
       `;
       contenedor.appendChild(section);
     });
+
+    // Producto de temporada / personalizado: sin precio fijo, solo consulta.
+    const consultaMensaje = encodeURIComponent(`Hola, me interesa consultar por: ${CATALOGO_CONSULTAR.categoria}`);
+    const seccionConsulta = document.createElement('div');
+    seccionConsulta.className = 'section';
+    seccionConsulta.innerHTML = `
+      <h3>${CATALOGO_CONSULTAR.categoria}</h3>
+      <p>${CATALOGO_CONSULTAR.descripcion}</p>
+      <a class="whatsapp-btn" href="https://wa.me/56975645591?text=${consultaMensaje}" target="_blank">📲 Consulta aquí</a>
+    `;
+    contenedor.appendChild(seccionConsulta);
 
     const carousels = {};
     function moveCarousel(id, direction) {

@@ -99,6 +99,16 @@
     .product-card input {
       margin-top: 10px;
     }
+    .product-card p {
+      font-size: 13px;
+      color: #4b2e2e;
+      margin: 4px 0;
+    }
+    .product-grid-heading {
+      grid-column: 1 / -1;
+      color: #D4216C;
+      margin: 20px 0 0;
+    }
 
     /* Responsive: tablet y móvil */
     @media (max-width: 768px) {
@@ -168,21 +178,10 @@
     <button type="submit">📲 Enviar pedido por WhatsApp</button>
   </form>
 
+  <script src="../js/catalogo.js"></script>
   <script>
-    const productos = [
-      { id: "alfajor", nombre: "Alfajor", precio: 1000, img: "https://i.imgur.com/C01CAjn.jpg" },
-      { id: "alfajor_personalizado", nombre: "Alfajor Personalizado", precio: 1500, img: "https://i.imgur.com/WSv71hy.jpg" },
-      { id: "cuchufli", nombre: "Cuchufli", precio: 1000, img: "https://i.imgur.com/KvjlYTA.jpg" },
-      { id: "conos", nombre: "Conos", precio: 1000, img: "https://i.imgur.com/6tqiYy2.jpg" },
-      { id: "wonka", nombre: "Tableta Wonka", precio: 4000, img: "https://i.imgur.com/5RCFRg3.jpg" },
-      { id: "colores", nombre: "Tableta Colores", precio: 4000, img: "https://i.imgur.com/eO1gzDB.jpg" },
-      { id: "rellena", nombre: "Tableta Rellena", precio: 4000, img: "https://i.imgur.com/0L0iFSV.jpg" },
-      { id: "matidubai", nombre: "Matidubai", precio: 13000, img: "https://i.imgur.com/FcrTH9K.jpg" },
-      { id: "capri", nombre: "Barra Capri", precio: 1500, img: "https://i.imgur.com/0IzB6cW.jpg" },
-      { id: "bombas", nombre: "Bombas de Chocolate", precio: 1500, img: "https://i.imgur.com/dkkIZCU.jpg" },
-      { id: "paletas", nombre: "Paletas", precio: 500, img: "https://i.imgur.com/wDYCiyP.jpg" },
-      { id: "popit", nombre: "Pop It", precio: 2500, img: "https://i.imgur.com/zncQbMZ.jpg" }
-    ];
+    // Catálogo compartido (js/catalogo.js) — misma fuente que productos.html.
+    const productos = CATALOGO;
 
     let cart = []; // Array para almacenar los productos en el carrito
 
@@ -192,12 +191,18 @@
     const cartTotalSpan = document.getElementById("cartTotal");
     const emptyCartMessage = document.getElementById("emptyCartMessage");
 
-    // Renderizar productos disponibles
+    // Renderizar productos disponibles, agrupados por categoría
+    let categoriaActual = null;
     productos.forEach(p => {
+      if (p.categoria !== categoriaActual) {
+        categoriaActual = p.categoria;
+        productosContainer.innerHTML += `<h4 class="product-grid-heading">${categoriaActual}</h4>`;
+      }
       productosContainer.innerHTML += `
         <div class="product-card">
           <img src="${p.img}" alt="${p.nombre}">
           <label>${p.nombre} ($${p.precio.toLocaleString("es-CL")})</label>
+          ${p.descripcion ? `<p>${p.descripcion}</p>` : ''}
           <button type="button" onclick="addToCart('${p.id}')">Añadir al carrito</button>
         </div>
       `;
