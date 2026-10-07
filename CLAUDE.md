@@ -28,6 +28,13 @@ Deploy directo a GitHub Pages (`.nojekyll`).
   La barra café con gotas (`.choco-drip`) se quitó de los banners por pedido del dueño: no volver a ponerla.
 - Matijuego vive en otro repo (`Matichoc/MAtigame_v0`), fuera de este.
 
+## Datos legales (entregados por el dueño)
+
+Chocolatería Matichoc Inés Saavedra EIRL · RUT 77.877.372-4 · Guayacán 1409, La Ligua · i.saavedra.nu@gmail.com ·
+resolución sanitaria N° 2505129791. Aparecen en `pages/terminos.html`, `pages/privacidad.html` y el pie de página
+(`components/footer.html`, sin domicilio). Entregas: martes y jueves en el stand de la plaza de La Ligua, otro día a
+coordinar en el domicilio, o envío por pagar (a regiones, Blue Express). No cambiar estos textos sin confirmar con el dueño.
+
 ## Convenciones
 
 - Español en todo el contenido visible y en mensajes de commit/PR.

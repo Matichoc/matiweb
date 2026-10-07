@@ -10,9 +10,9 @@
     '#bienvenida', '.pv-seccion', '.pv-cta', '#racha-widget .racha-card',
     '.parada-card', '.hist-stats li',
     '.m-panel', '.m-datos li', '.m-cita', '.m-medio',
-    '.t-card', '.t-pasos li',
+    '.t-card', '.t-pasos li', '.t-aviso',
     '.opinion-card', '.resena-cta',
-    '.privacidad-bloque', '.choco-fondo-auto'
+    '.privacidad-bloque', '.terminos-bloque', '.choco-fondo-auto'
   ].join(',');
 
   // Tres brillitos por recuadro, con posición y ritmo distintos según el orden.
