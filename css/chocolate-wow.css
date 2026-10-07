@@ -433,7 +433,7 @@
   max-width: 720px;
   margin: 0 auto;
 }
-.page-banner .page-banner__emoji { margin: 0; font-size: 2rem; line-height: 1; }
+
 .page-banner .page-banner__titulo {
   margin: 6px 0 6px;
   font-size: 2.6rem;
@@ -490,4 +490,35 @@
   12%  { opacity: 0.6; }
   88%  { opacity: 0.6; }
   100% { transform: translateY(-100%) translateX(14px) rotate(25deg); opacity: 0; }
+}
+
+/*
+ * Logo oficial vertical siempre a la vista: en el Hero, en el banner de cada página,
+ * en el pie y en la racha. Va sobre una placa blanca (el logo tiene letras rosadas y
+ * cafés que no se leen sobre el fondo oscuro) y solo se fija el alto: el ancho es
+ * automático para no deformar el logo.
+ */
+.logo-placa {
+  display: inline-block;
+  background: #fff;
+  border-radius: 16px;
+  padding: 8px 14px;
+  line-height: 0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+.logo-placa img { display: block; height: 112px; width: auto; max-width: 100%; }
+.page-banner .page-banner__logo { margin: 0 0 8px; }
+.page-banner .page-banner__logo img { height: 96px; }
+#banner .banner-logo { margin: 0 0 14px; }
+#banner .banner-logo img { height: 120px; }
+@media (max-width: 480px) {
+  .page-banner .page-banner__logo img { height: 80px; }
+  #banner .banner-logo img { height: 96px; }
+}
+#racha-widget .racha-avatar {
+  width: auto;
+  height: 72px;
+  border-radius: 12px;
+  object-fit: contain;
+  padding: 4px 8px;
 }

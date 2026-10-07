@@ -83,7 +83,7 @@ function renderRacha() {
   );
   el.innerHTML = `
     <div class="racha-card${completa ? ' racha-card--completa' : ''}">
-      <img src="assets/brand/logo-badge.png" alt="Matichico" class="racha-avatar">
+      <img src="assets/brand/logo-vertical.png" alt="Matichoc" class="racha-avatar" width="700" height="909">
       <div class="racha-texto">
         <strong>Racha de ${racha} día${racha === 1 ? '' : 's'} 🔥</strong>
         ${completa
