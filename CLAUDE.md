@@ -18,8 +18,9 @@ Deploy directo a GitHub Pages (`.nojekyll`).
 - `css/styles.css`: hoja global única; hay bloques duplicados/muertos de
   trabajo anterior, no asumir que todo lo que hay ahí está en uso.
 - Checkout: carrito 100% client-side en `tienda.html` (sin `localStorage`).
-  "Finalizar compra" abre un link fijo a Tuu (sin monto/detalle); el pedido
-  real se manda por WhatsApp. Son dos flujos **sin vínculo** — no asumir que
+  "Pagar online con Tuu" abre un link fijo a Tuu (sin monto/detalle: Tuu
+  ignora `?monto=`, verificado por el dueño) y deja el total copiado al
+  portapapeles para pegarlo; el pedido real se manda por WhatsApp. Son dos flujos **sin vínculo** — no asumir que
   están conectados ni afirmar un pago como confirmado.
 - Matijuego vive en otro repo (`Matichoc/MAtigame_v0`), fuera de este.
 
