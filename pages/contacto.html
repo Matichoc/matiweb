@@ -30,18 +30,24 @@
                 <li><strong>Zona:</strong> La Ligua, sector Guayacán, Chile — coordinamos la dirección exacta de retiro por WhatsApp una vez confirmado tu pedido.</li>
 
             </ul>
-            <h3>Formulario de Contacto</h3>
-            <form style="display: flex; flex-direction: column; gap: 15px;">
-                <label for="name" style="font-weight: bold;">Nombre:</label>
-                <input type="text" id="name" name="name" required style="padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            <h3>Escríbenos por WhatsApp</h3>
+            <p style="font-size: 0.95rem;">Completa esto y se abre WhatsApp con tu mensaje listo para enviar. Te respondemos por ahí.</p>
+            <form id="contacto-form" style="display: flex; flex-direction: column; gap: 15px;">
+                <label for="contacto-nombre" style="font-weight: bold;">Tu nombre</label>
+                <input type="text" id="contacto-nombre" name="nombre" required maxlength="60" autocomplete="name" style="padding: 12px; border: 1px solid #c9b8a8; border-radius: 8px; font-size: 16px; font-family: inherit;">
 
-                <label for="email" style="font-weight: bold;">Email:</label>
-                <input type="email" id="email" name="email" required style="padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                <label for="contacto-motivo" style="font-weight: bold;">¿Sobre qué nos escribes?</label>
+                <select id="contacto-motivo" name="motivo" style="padding: 12px; border: 1px solid #c9b8a8; border-radius: 8px; font-size: 16px; font-family: inherit; background: #fff;">
+                    <option>Pedido personalizado</option>
+                    <option>Consulta por un producto</option>
+                    <option>Regalo para evento o empresa</option>
+                    <option>Otro</option>
+                </select>
 
-                <label for="message" style="font-weight: bold;">Mensaje:</label>
-                <textarea id="message" name="message" rows="5" required style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+                <label for="contacto-mensaje" style="font-weight: bold;">Tu mensaje</label>
+                <textarea id="contacto-mensaje" name="mensaje" rows="5" required maxlength="800" style="padding: 12px; border: 1px solid #c9b8a8; border-radius: 8px; resize: vertical; font-size: 16px; font-family: inherit;"></textarea>
 
-                <button type="submit" style="background-color: #4B2E2E; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">Enviar Mensaje</button>
+                <button type="submit" style="background-color: #157a37; color: white; padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 700;">📲 Enviar por WhatsApp</button>
             </form>
         </section>
     </main>
@@ -57,6 +63,15 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadComponent('header', '../components/header.html', { base: '../' });
       loadComponent('footer', '../components/footer.html', { base: '../' });
+    });
+
+    document.getElementById('contacto-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const nombre = document.getElementById('contacto-nombre').value.trim();
+      const motivo = document.getElementById('contacto-motivo').value;
+      const mensaje = document.getElementById('contacto-mensaje').value.trim();
+      const texto = `¡Hola Matichoc! Soy ${nombre}.\nMotivo: ${motivo}\n\n${mensaje}`;
+      window.open(`https://wa.me/56975645591?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
     });
   </script>
 </body>
