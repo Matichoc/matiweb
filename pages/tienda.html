@@ -63,6 +63,7 @@
       background-color: #b01859;
     }
     fieldset {
+      min-width: 0; /* fieldset crece por defecto al ancho de su contenido; sin esto la fila de chips lo estiraba a 1.274px */
       border: 2px solid #FFC800;
       padding: 20px;
       border-radius: 10px;
@@ -111,7 +112,92 @@
       grid-column: 1 / -1;
       color: #D4216C;
       margin: 20px 0 0;
+      scroll-margin-top: 70px; /* que el título no quede tapado por los chips fijos */
     }
+
+    /* Atajos por categoría: fijos arriba mientras se recorre el catálogo. */
+    .cat-chips {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 2px;
+      margin: 0 -2px;
+      background: #fbfaf0;
+      scrollbar-width: none;
+    }
+    .cat-chips::-webkit-scrollbar { display: none; }
+    .cat-chips a {
+      flex: 0 0 auto;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1.5px solid #D4216C;
+      color: #a01a58;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .cat-chips a:hover, .cat-chips a:focus-visible {
+      background: #D4216C;
+      color: #fff;
+    }
+
+    .product-card label {
+      margin: 8px 0 4px;
+      font-size: 0.95rem;
+      line-height: 1.3;
+    }
+    .product-card button {
+      margin-top: auto;
+      transition: background-color 0.2s ease;
+    }
+    .product-card button.added {
+      background-color: #157a37;
+    }
+
+    /* Barra del carrito: siempre a mano mientras se elige, en vez de tener
+       que bajar ~9 pantallas para ver lo que se agregó. */
+    .cart-bar {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 10px 10px 18px;
+      max-width: 640px;
+      margin: 0 auto;
+      background: #4b2e2e;
+      color: #fff8f0;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    .cart-bar[hidden] { display: none; }
+    .cart-bar__info { font-size: 0.95rem; }
+    .cart-bar__info strong { color: #ffc800; }
+    .cart-bar__btn {
+      flex: 0 0 auto;
+      background: #D4216C;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .cart-bar { animation: cart-bar-in 0.25s ease-out; }
+      @keyframes cart-bar-in { from { transform: translateY(120%); } to { transform: none; } }
+    }
+    /* Que el botón flotante de WhatsApp no quede debajo de la barra. */
+    body.has-cart-bar .whatsapp-float { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+    body.has-cart-bar { padding-bottom: 90px; }
 
     /* Responsive: tablet y móvil */
     @media (max-width: 768px) {
@@ -124,9 +210,29 @@
       }
     }
 
+    /* Mobile: 2 columnas compactas en vez de un producto por fila
+       (la tienda medía 9.077px de alto en un celular). */
     @media (max-width: 480px) {
+      body { padding: 10px; }
+      form { padding: 16px 12px; }
+      fieldset { padding: 10px 8px; }
       .product-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .product-card { padding: 8px; }
+      .product-card img { height: 110px; }
+      .product-card label { font-size: 0.85rem; }
+      .product-card p {
+        font-size: 12px;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .product-card button {
+        font-size: 14px;
+        padding: 10px 6px;
       }
     }
   </style>
@@ -137,20 +243,15 @@
   <form id="pedidoMatichoc" onsubmit="return enviarWhatsApp()">
     <h2>🍫 Pide tus Chocolates Matichoc 🍫</h2>
     
-    <h3>Paso 1: Tus datos</h3>
-    <label for="nombre">Nombre completo*</label>
-    <input type="text" id="nombre" name="nombre" required>
-    <label for="contacto">Celular / WhatsApp*</label>
-    <input type="tel" id="contacto" name="contacto" required>
-
-    <h3>Paso 2: Selecciona tus productos</h3>
+    <h3>Paso 1: Elige tus productos</h3>
     <fieldset>
       <legend>Productos</legend>
+      <nav class="cat-chips" id="catChips" aria-label="Ir a una categoría"></nav>
       <div class="product-grid" id="productosContainer"></div>
     </fieldset>
 
-    <h3>Paso 3: Tu Carrito</h3>
-    <div class="cart-layout">
+    <h3 id="paso-carrito">Paso 2: Tu carrito</h3>
+    <div class="cart-layout" id="cartLayout">
       <div class="cart-section">
         <h4>Mi carrito</h4>
         <div id="cartItems" class="cart-items">
@@ -177,11 +278,22 @@
       </div>
     </div>
 
+    <h3>Paso 3: Tus datos</h3>
+    <label for="nombre">Nombre completo*</label>
+    <input type="text" id="nombre" name="nombre" required autocomplete="name">
+    <label for="contacto">Celular / WhatsApp*</label>
+    <input type="tel" id="contacto" name="contacto" required autocomplete="tel">
+
     <h3>Paso 4: Envía tu pedido</h3>
     <p class="checkout-help">Este paso es obligatorio para confirmar tu pedido, hayas pagado online o no: te escribimos para coordinar el pago (efectivo, transferencia, o avisarnos si ya pagaste con Tuu) y la entrega.</p>
     <p id="pedidos-widget" class="pedidos-widget"></p>
     <button type="submit">📲 Enviar pedido por WhatsApp</button>
   </form>
+
+  <div class="cart-bar" id="cartBar" hidden aria-live="polite">
+    <span class="cart-bar__info">🛒 <strong id="cartBarCount">0</strong> <span id="cartBarLabel">productos</span> · <strong>$<span id="cartBarTotal">0</span></strong></span>
+    <a class="cart-bar__btn" href="#paso-carrito">Ver pedido →</a>
+  </div>
 
   <script src="../js/catalogo.js"></script>
   <script src="../js/racha.js"></script>
@@ -197,24 +309,29 @@
     const cartTotalSpan = document.getElementById("cartTotal");
     const emptyCartMessage = document.getElementById("emptyCartMessage");
 
-    // Renderizar productos disponibles, agrupados por categoría
+    const slugCategoria = (nombre) => 'cat-' + nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-');
+
+    // Renderizar productos disponibles, agrupados por categoría, con atajos arriba.
+    const catChips = document.getElementById("catChips");
     let categoriaActual = null;
     productos.forEach(p => {
       if (p.categoria !== categoriaActual) {
         categoriaActual = p.categoria;
-        productosContainer.innerHTML += `<h4 class="product-grid-heading">${categoriaActual}</h4>`;
+        const slug = slugCategoria(categoriaActual);
+        productosContainer.innerHTML += `<h4 class="product-grid-heading" id="${slug}">${categoriaActual}</h4>`;
+        catChips.innerHTML += `<a href="#${slug}">${categoriaActual}</a>`;
       }
       productosContainer.innerHTML += `
         <div class="product-card">
-          <img src="${p.img}" alt="${p.nombre}">
+          <img src="${p.img}" alt="${p.nombre}" loading="lazy">
           <label>${p.nombre} ($${p.precio.toLocaleString("es-CL")})</label>
           ${p.descripcion ? `<p>${p.descripcion}</p>` : ''}
-          <button type="button" onclick="addToCart('${p.id}')">Añadir al carrito</button>
+          <button type="button" data-product-id="${p.id}" onclick="addToCart('${p.id}', this)">Añadir al carrito</button>
         </div>
       `;
     });
 
-    function addToCart(productId) {
+    function addToCart(productId, boton) {
       const product = productos.find(p => p.id === productId);
       if (product) {
         const existingCartItem = cart.find(item => item.id === productId);
@@ -224,7 +341,38 @@
           cart.push({ ...product, quantity: 1 });
         }
         renderCart();
+        if (boton) {
+          const enCarrito = cart.find(item => item.id === productId).quantity;
+          boton.textContent = `✓ Agregado (${enCarrito})`;
+          boton.classList.add('added');
+          clearTimeout(boton._timer);
+          boton._timer = setTimeout(() => {
+            boton.textContent = 'Añadir al carrito';
+            boton.classList.remove('added');
+          }, 1400);
+        }
       }
+    }
+
+    // Barra flotante del carrito: visible cuando hay productos, salvo cuando
+    // el resumen del carrito ya está en pantalla (ahí sobra).
+    const cartBar = document.getElementById("cartBar");
+    let carritoEnPantalla = false;
+    function actualizarCartBar() {
+      const unidades = cart.reduce((n, item) => n + item.quantity, 0);
+      const total = cart.reduce((n, item) => n + item.quantity * item.precio, 0);
+      document.getElementById("cartBarCount").textContent = unidades;
+      document.getElementById("cartBarLabel").textContent = unidades === 1 ? 'producto' : 'productos';
+      document.getElementById("cartBarTotal").textContent = total.toLocaleString("es-CL");
+      const mostrar = unidades > 0 && !carritoEnPantalla;
+      cartBar.hidden = !mostrar;
+      document.body.classList.toggle('has-cart-bar', mostrar);
+    }
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver((entries) => {
+        carritoEnPantalla = entries[0].isIntersecting;
+        actualizarCartBar();
+      }).observe(document.getElementById("cartLayout"));
     }
 
     function updateCartQuantity(productId, newQuantity) {
@@ -275,6 +423,7 @@
       }
       cartSubtotalSpan.innerText = subtotal.toLocaleString("es-CL");
       cartTotalSpan.innerText = subtotal.toLocaleString("es-CL"); // Por ahora, total es igual al subtotal
+      actualizarCartBar();
 
       // Añadir event listeners a los nuevos elementos
       document.querySelectorAll('.cart-quantity-input').forEach(input => {
@@ -293,24 +442,27 @@
     }
 
     function enviarWhatsApp() {
-      const nombre = document.getElementById("nombre").value;
-      const contacto = document.getElementById("contacto").value;
-      let mensaje = `🍫 Pedido Matichoc 🍫%0A👤 Nombre: ${nombre}%0A📱 Contacto: ${contacto}%0A🛍️ Productos:%0A`;
+      const nombre = document.getElementById("nombre").value.trim();
+      const contacto = document.getElementById("contacto").value.trim();
 
       if (cart.length === 0) {
         alert("Por favor añade al menos un producto al carrito.");
+        document.getElementById("catChips").scrollIntoView({ behavior: 'smooth' });
         return false;
       }
 
+      // Texto plano + encodeURIComponent al final: antes el nombre iba sin
+      // codificar, y un "&" o "#" (ej. "María & José") cortaba el pedido.
+      let mensaje = `🍫 Pedido Matichoc 🍫\n👤 Nombre: ${nombre}\n📱 Contacto: ${contacto}\n🛍️ Productos:\n`;
       cart.forEach(item => {
         const itemTotal = item.quantity * item.precio;
-        mensaje += `- ${item.quantity} x ${item.nombre} ($${itemTotal.toLocaleString("es-CL")})%0A`;
+        mensaje += `- ${item.quantity} x ${item.nombre} ($${itemTotal.toLocaleString("es-CL")})\n`;
       });
 
       const total = document.getElementById("cartTotal").innerText;
-      mensaje += `%0A💵 Total: $${total}%0A📸 Recuerda enviar tu comprobante de pago.`;
+      mensaje += `\n💵 Total: $${total}\n📸 Recuerda enviar tu comprobante de pago.`;
 
-      const wspURL = `https://wa.me/56975645591?text=${mensaje}`;
+      const wspURL = `https://wa.me/56975645591?text=${encodeURIComponent(mensaje)}`;
       window.open(wspURL, "_blank");
       sumarPedido();
       renderPedidosWidget();
