@@ -871,6 +871,14 @@ section {
   color: #888;
 }
 
+.checkout-help {
+  text-align: center;
+  font-size: 0.9em;
+  color: #6b4a3a;
+  max-width: 600px;
+  margin: 0 auto 15px;
+}
+
 .carousel-container {
   position: relative;
   overflow: hidden;
