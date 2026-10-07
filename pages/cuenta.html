@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://lfgfmequzmlajlvkjxlv.supabase.co; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self' https://wa.me;">
+    <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <title>Matilover | Matichoc</title>
+    <link rel="icon" type="image/x-icon" href="../assets/brand/favicon.ico">
+    <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
+    <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../css/chocolate-wow.css" />
+    <link rel="stylesheet" href="../css/cuenta.css" />
+</head>
+<body>
+    <header id="header"></header>
+<div id="page-banner"></div>
+
+    <main class="cuenta">
+        <section id="estado-cargando" class="cuenta-caja" aria-live="polite">
+            <p>Cargando…</p>
+        </section>
+
+        <section id="estado-apagada" class="cuenta-caja" hidden>
+            <h2>Muy pronto: Matilovers 💛</h2>
+            <p>Estamos preparando las cuentas para guardar tu racha, tus premios y el progreso de los juegos. Mientras tanto, el sitio sigue abierto para todos: puedes navegar y comprar normalmente.</p>
+            <a class="btn btn--cafe" href="tienda.html">🍫 Ir a la tienda</a>
+        </section>
+
+        <section id="estado-entrar" class="cuenta-caja" hidden>
+            <h2>Hazte Matilover 💛</h2>
+            <p>Es <strong>gratis y opcional</strong>: el sitio es de todos y puedes navegar, comprar y jugar sin cuenta. Con tu cuenta Matilover:</p>
+            <ul>
+                <li>guardas tu <strong>racha</strong> y juntas <strong>descuentos</strong> y <strong>premios</strong>,</li>
+                <li>guardas tu <strong>progreso en los juegos</strong>,</li>
+                <li>y lo retomas desde cualquier celular o computador.</li>
+            </ul>
+            <div id="botones-proveedor"></div>
+            <p id="separador-correo" class="separador" hidden>o entra con tu correo</p>
+            <form id="form-correo" novalidate>
+                <label for="correo">Tu correo</label>
+                <input type="email" id="correo" name="correo" autocomplete="email" inputmode="email" required maxlength="120" placeholder="nombre@correo.com">
+                <button type="submit" class="btn btn--cafe" id="btn-correo">✉️ Enviarme un enlace para entrar</button>
+            </form>
+            <p class="ayuda">Te mandamos un enlace al correo: lo abres y listo, sin contraseña.</p>
+            <div id="mensaje-entrar" class="aviso" role="status" hidden></div>
+            <form id="form-codigo" hidden novalidate>
+                <label for="codigo-correo">¿El enlace no abre? Escribe el código del correo</label>
+                <input type="text" id="codigo-correo" inputmode="numeric" autocomplete="one-time-code" maxlength="10" pattern="[0-9]{6,10}">
+                <button type="submit" class="btn">Entrar con el código</button>
+            </form>
+        </section>
+
+        <section id="estado-perfil" class="cuenta-caja" hidden>
+            <h2>Un último paso 💛</h2>
+            <p>Para guardar tu progreso necesitamos estos datos.</p>
+            <form id="form-perfil" novalidate>
+                <label for="apodo">¿Cómo te llamamos? (apodo, hasta 24 letras)</label>
+                <input type="text" id="apodo" maxlength="24" autocomplete="nickname" required>
+                <fieldset style="border:0;padding:0;margin:14px 0 0;">
+                    <legend style="font-weight:700;padding:0;">Tu edad</legend>
+                    <label class="opcion"><input type="radio" name="edad" value="14_o_mas" required> Tengo 14 años o más</label>
+                    <label class="opcion"><input type="radio" name="edad" value="menor_con_permiso"> Soy menor de 14 y tengo permiso de un adulto</label>
+                </fieldset>
+                <label class="opcion"><input type="checkbox" id="terminos" required> <span>Acepto los <a href="terminos.html" target="_blank" rel="noopener noreferrer">Términos y condiciones</a> y la <a href="privacidad.html" target="_blank" rel="noopener noreferrer">Política de privacidad</a>.</span></label>
+                <label class="opcion"><input type="checkbox" id="novedades"> <span>Quiero recibir novedades y promociones de Matichoc por correo (opcional; puedes cambiarlo cuando quieras).</span></label>
+                <button type="submit" class="btn" id="btn-perfil">Guardar y empezar</button>
+            </form>
+            <div id="mensaje-perfil" class="aviso" role="status" hidden></div>
+        </section>
+
+        <div id="estado-cuenta" hidden>
+            <section class="cuenta-caja">
+                <h2 id="saludo">Hola 💛</h2>
+                <p class="ayuda">Esta es tu cuenta Matilover. Aquí se guarda tu racha, tus premios y el progreso de tus juegos.</p>
+                <a class="btn btn--verde" href="../matijuego/">🎮 Ir al Matijuego (se guarda tu progreso)</a>
+            </section>
+
+            <section class="cuenta-caja" aria-labelledby="t-racha">
+                <h2 id="t-racha">Tu racha 🔥</h2>
+                <div id="racha-puntos" class="racha-puntos"></div>
+                <p id="racha-texto"></p>
+                <button type="button" class="btn" id="btn-reclamar-racha" hidden></button>
+            </section>
+
+            <section class="cuenta-caja" aria-labelledby="t-pedidos">
+                <h2 id="t-pedidos">Tus pedidos 🍫</h2>
+                <div class="barra" aria-hidden="true"><span id="barra-pedidos" style="width:0%"></span></div>
+                <p id="pedidos-texto"></p>
+                <button type="button" class="btn" id="btn-reclamar-pedidos" hidden></button>
+                <p class="ayuda">Un pedido cuenta cuando Matichoc lo marca como entregado.</p>
+            </section>
+
+            <section class="cuenta-caja" aria-labelledby="t-cupones">
+                <h2 id="t-cupones">Tus cupones 🎁</h2>
+                <div id="lista-cupones"></div>
+                <p class="ayuda">Muéstrale el código a Matichoc por WhatsApp o al retirar tu pedido, y lo canjeamos.</p>
+            </section>
+
+            <section class="cuenta-caja" aria-labelledby="t-historial">
+                <h2 id="t-historial">Pedidos recientes</h2>
+                <ul id="lista-pedidos" class="lista-simple"></ul>
+            </section>
+
+            <section class="cuenta-caja" aria-labelledby="t-novedades">
+                <h2 id="t-novedades">Novedades por correo ✉️</h2>
+                <label class="opcion"><input type="checkbox" id="novedades-cuenta"> <span>Quiero recibir novedades y promociones de Matichoc.</span></label>
+                <div id="mensaje-novedades" class="aviso" role="status" hidden></div>
+            </section>
+
+            <section class="cuenta-caja">
+                <button type="button" class="btn btn--suave" id="btn-salir">Cerrar sesión</button>
+            </section>
+
+            <section class="cuenta-caja zona-peligro">
+                <h2>Borrar mi cuenta</h2>
+                <p>Se borran tu cuenta, tu racha, tus cupones, tus pedidos y tu progreso de juegos. No se puede deshacer.</p>
+                <button type="button" class="btn" id="btn-borrar" style="background-color:#b3261e">Borrar mi cuenta</button>
+            </section>
+        </div>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <a href="https://wa.me/56975645591" target="_blank" rel="noopener noreferrer" class="whatsapp-float" aria-label="Escríbenos por WhatsApp">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39a9.9 9.9 0 0 0 4.75 1.21h.01c5.46 0 9.9-4.45 9.9-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m0 1.67c2.2 0 4.26.86 5.82 2.42a8.2 8.2 0 0 1 2.41 5.82c0 4.53-3.7 8.23-8.24 8.23a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.14.82.84-3.06-.2-.32a8.18 8.18 0 0 1-1.26-4.37c0-4.53 3.7-8.23 8.24-8.23m-4.65 4.29c-.15 0-.4.06-.61.3s-.8.78-.8 1.9.82 2.2.94 2.36c.11.15 1.6 2.5 3.95 3.4 1.95.75 2.35.6 2.77.56.42-.04 1.36-.55 1.55-1.09.19-.53.19-.98.13-1.08-.06-.1-.22-.16-.46-.28-.24-.12-1.4-.69-1.62-.77-.22-.08-.37-.12-.53.12-.15.24-.6.77-.74.92-.14.15-.27.17-.51.06-.24-.12-1.01-.37-1.93-1.19-.71-.63-1.19-1.42-1.33-1.66-.14-.24-.01-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.53-1.29-.74-1.76-.19-.46-.39-.4-.53-.4z"/></svg>
+    </a>
+
+    <script src="../js/base.js"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/cuenta.js"></script>
+    <script src="../js/page-cuenta.js"></script>
+</body>
+</html>

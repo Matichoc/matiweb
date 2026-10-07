@@ -1,0 +1,72 @@
+/* Páginas de cuenta Matilover y panel del dueño. Todo bajo .cuenta para no chocar con styles.css. */
+.cuenta { max-width: 760px; margin: 0 auto; padding: 24px 16px 70px; color: #4b2e2e; }
+.cuenta-caja {
+  background: #fff;
+  border: 2px solid #ffc800;
+  border-radius: 18px;
+  padding: 20px 22px;
+  margin: 0 0 20px;
+  box-shadow: 0 6px 18px rgba(75, 46, 46, 0.12);
+}
+.cuenta-caja h2 { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 1.35rem; margin: 0 0 8px; color: #4b2e2e; text-align: left; }
+.cuenta-caja h3 { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 1.05rem; margin: 18px 0 8px; color: #a01a58; text-align: left; }
+.cuenta-caja p { margin: 0 0 10px; line-height: 1.55; font-size: 1rem; }
+.cuenta [hidden] { display: none !important; }
+
+.cuenta label { display: block; font-weight: 700; margin: 12px 0 4px; }
+.cuenta input[type="email"], .cuenta input[type="text"] {
+  display: block; width: 100%; box-sizing: border-box; padding: 12px;
+  border: 2px solid #d4216c; border-radius: 10px; background: #fff; color: #4b2e2e; font: inherit; font-size: 1rem;
+}
+.cuenta input:focus-visible, .cuenta button:focus-visible, .cuenta a:focus-visible { outline: 3px solid #4b2e2e; outline-offset: 2px; }
+.cuenta .opcion { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; margin: 8px 0; }
+.cuenta .opcion input { margin-top: 5px; width: 20px; height: 20px; flex: 0 0 auto; }
+
+.cuenta .btn, .cuenta .btn:hover, .cuenta .btn:focus {
+  display: block; width: 100%; min-height: 48px; margin: 10px 0 0; padding: 12px; box-sizing: border-box;
+  border: 0; border-radius: 12px; font: inherit; font-size: 1.02rem; font-weight: 700; text-align: center;
+  text-decoration: none; cursor: pointer; transform: none; color: #fff; background-color: #d4216c;
+}
+.cuenta .btn:hover { filter: brightness(0.92); }
+.cuenta .btn--google, .cuenta .btn--google:hover, .cuenta .btn--google:focus { background-color: #fff; color: #3c4043; border: 2px solid #dadce0; }
+.cuenta .btn--facebook, .cuenta .btn--facebook:hover, .cuenta .btn--facebook:focus { background-color: #1877f2; }
+.cuenta .btn--verde, .cuenta .btn--verde:hover, .cuenta .btn--verde:focus { background-color: #157a37; }
+.cuenta .btn--cafe, .cuenta .btn--cafe:hover, .cuenta .btn--cafe:focus { background-color: #4b2e2e; }
+.cuenta .btn--suave, .cuenta .btn--suave:hover, .cuenta .btn--suave:focus { background-color: #fff; color: #a01a58; border: 2px solid #a01a58; }
+.cuenta .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+.cuenta .separador { text-align: center; margin: 16px 0 4px; color: #5a3a2a; font-weight: 600; }
+.cuenta .aviso { padding: 10px 14px; border-radius: 10px; background: #fff0f6; border: 1px solid #d4216c; margin-top: 12px; }
+.cuenta .aviso--ok { background: #eaf7ee; border-color: #157a37; }
+.cuenta .ayuda { font-size: 0.9rem; color: #5a3a2a; }
+
+/* Racha: un círculo por día de la meta */
+.racha-puntos { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.racha-punto {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid #d9c3a8; background: #fff8f0; font-weight: 800; color: #5a3a2a;
+}
+.racha-punto--on { background: #d4216c; border-color: #d4216c; color: #fff; }
+.barra { height: 14px; border-radius: 999px; background: #f0e4d4; overflow: hidden; margin: 8px 0 10px; }
+.barra > span { display: block; height: 100%; background: linear-gradient(90deg, #8a5a33, #4b2e2e); }
+
+/* Cupones */
+.cupon { border: 2px dashed #d4216c; border-radius: 14px; padding: 14px; margin: 10px 0; background: #fff8f0; }
+.cupon .codigo { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.7rem; font-weight: 800; letter-spacing: 0.12em; color: #4b2e2e; margin: 4px 0; }
+.etiqueta { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 800; }
+.etiqueta--vigente { background: #157a37; color: #fff; }
+.etiqueta--canjeado, .etiqueta--vencido, .etiqueta--cancelado { background: #8a7a70; color: #fff; }
+.etiqueta--solicitado { background: #ffc800; color: #4b2e2e; }
+.etiqueta--entregado { background: #157a37; color: #fff; }
+
+.lista-simple { list-style: none; padding: 0; margin: 0; }
+.lista-simple li { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid #f0e4d4; }
+.zona-peligro { border-color: #b3261e; }
+.zona-peligro h2 { color: #b3261e; }
+
+/* Panel del dueño */
+.fila-pedido { display: grid; gap: 6px; padding: 12px 0; border-bottom: 1px solid #f0e4d4; }
+.fila-pedido .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+.fila-pedido .acciones .btn { width: auto; flex: 1 1 140px; margin: 0; }
+.qr { display: block; margin: 10px auto; width: 200px; height: 200px; background: #fff; }
+.secreto { font-family: ui-monospace, Menlo, Consolas, monospace; word-break: break-all; background: #f5ede2; padding: 8px; border-radius: 8px; font-size: 0.9rem; }
+.lista-matilovers { max-height: 420px; overflow: auto; margin-top: 8px; }
