@@ -895,12 +895,14 @@ section {
 }
 
 #bienvenida {
-  background-color: rgba(0, 0, 0, 0.7); /* fondo oscuro semitransparente para mejor contraste */
-  padding: 40px 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  /* Chocolate de la marca (mismo café del header/footer) en vez del negro
+     semitransparente anterior, que se veía gris y fuera de la paleta. */
+  background-color: #4b2e2e;
+  padding: 40px 24px;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(75, 46, 46, 0.25);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #f0f0f0; /* texto claro para mejor legibilidad */
+  color: #fff8f0;
   max-width: 800px;
   margin: 40px auto;
   text-align: center;
@@ -912,27 +914,31 @@ section {
 }
 
 #bienvenida h2 {
-  font-family: 'Adorable Mother Script', cursive; /* tipografía decorativa del mockup */
-  font-size: 2.5rem;
-  margin-bottom: 20px;
+  /* Tipografía display de la marca: la script se reserva para acentos cortos,
+     en una frase completa costaba leerla. Amarillo de marca sobre chocolate
+     (el rosa sobre este café no llega al contraste mínimo). */
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  margin-bottom: 16px;
   font-weight: 700;
-  color: #D4216C; /* rosa fuerte */
+  color: #ffc800;
 }
 
 #bienvenida p {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   line-height: 1.6;
   margin: 0 auto;
   max-width: 600px;
-  color: #e0e0e0; /* texto claro para mejor legibilidad */
+  color: #fff8f0;
 }
 
 @media (max-width: 768px) {
   #bienvenida {
-    padding: 30px 15px;
+    padding: 28px 16px;
+    margin: 24px 12px;
   }
   #bienvenida h2 {
-    font-size: 2rem;
+    font-size: 1.6rem;
   }
   #bienvenida p {
     font-size: 1rem;

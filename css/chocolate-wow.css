@@ -71,6 +71,139 @@
 }
 
 /*
+ * Layout del Hero. Antes vivía en estilos inline en components/banner.html,
+ * que pisaban las reglas mobile de styles.css (por eso el título seguía en
+ * 3rem en el celular y los botones se salían de la tarjeta). Va con #banner
+ * para ganarle a las reglas duplicadas de .banner-* que quedan en styles.css.
+ */
+#banner .banner-background {
+  padding: 60px 20px;
+  color: #fff;
+  text-align: center;
+  justify-content: center;
+}
+
+#banner .banner-content {
+  position: relative;
+  z-index: 3;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px;
+  border-radius: 16px;
+  background-color: rgba(75, 46, 46, 0.82);
+}
+
+#banner .banner-title {
+  font-size: 3rem;
+  margin-bottom: 18px;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.55), 0 0 24px rgba(255, 255, 255, 0.35), 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#banner .banner-text {
+  font-size: 1.2rem;
+  line-height: 1.5;
+  margin-bottom: 26px;
+}
+
+#banner .banner-buttons {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+#banner .banner-buttons .hero-cta {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  width: auto;
+}
+
+#banner .banner-buttons .hero-cta--primary {
+  background-color: #d6336c;
+  color: #fff;
+  padding: 16px 34px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* .banner-content (styles.css) le pone sombra oscura a todo su texto; en los
+   botones eso hacía que las etiquetas se vieran borrosas. */
+#banner .banner-buttons .hero-cta {
+  text-shadow: none;
+}
+
+#banner .banner-buttons .btn-melt:hover,
+#banner .banner-buttons .btn-melt:focus-visible {
+  border-radius: 46% 54% 63% 37% / 45% 48% 52% 55%;
+}
+
+#banner .hero-cta--green { background-color: #157a37; color: #fff; }
+#banner .hero-cta--yellow { background-color: #ffc107; color: #4b2e2e; }
+#banner .hero-cta--game { background-color: #cfd767; color: #4b2e2e; }
+
+@media (max-width: 600px) {
+  /* index.html envuelve el componente en <section id="banner"> y el componente
+     trae otra <section>: el padding global de section se sumaba dos veces. */
+  #banner,
+  #banner .banner-section {
+    padding: 0;
+    margin: 0;
+    max-width: none;
+  }
+
+  #banner .banner-background {
+    min-height: 0;
+    padding: 24px 12px 72px;
+  }
+
+  #banner .banner-content {
+    padding: 22px 16px;
+  }
+
+  #banner .banner-title {
+    font-size: 2.1rem;
+    margin-bottom: 12px;
+  }
+
+  #banner .banner-text {
+    font-size: 1.02rem;
+    margin-bottom: 18px;
+  }
+
+  #banner .banner-text-extra {
+    display: none;
+  }
+
+  #banner .banner-buttons {
+    gap: 8px;
+  }
+
+  /* Principal a lo ancho; las tres secundarias en una fila compacta. */
+  #banner .banner-buttons .hero-cta--primary {
+    flex: 1 1 100%;
+    padding: 14px 16px;
+  }
+
+  #banner .banner-buttons .hero-cta:not(.hero-cta--primary) {
+    flex: 1 1 0;
+    padding: 10px 6px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+}
+
+/*
  * Partículas flotantes del Hero ("ingredientes vivos" liviano): un puñado
  * de emoji con drift vertical lento, decorativo, sin canvas ni dependencias.
  * pointer-events: none para que nunca interfieran con los botones de abajo.
