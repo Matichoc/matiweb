@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-6p13ug9Y/2TWPZMF0aIT0xv2TqxNkp62hhuZFDN2uAM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self' https://wa.me;">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<meta name="description" content="Matichoc Arcade: los juegos de Matichoc, chocolatería artesanal de La Ligua. Juega en el celular o en el computador.">
+<link rel="canonical" href="https://matichoc.cl/matijuego/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Matichoc Arcade</title>
+<meta name="theme-color" content="#4B2E2E">
+<link rel="icon" href="assets/brand/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+<link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="toast" class="toast hidden"></div>
+<div id="app">
+
+  <!-- SELECCIÓN DE PERFIL: "¿Quién juega?" -->
+  <section id="screen-profiles" class="screen">
+    <div class="menu-card">
+      <div class="brand-row">
+        <a class="brand-badge" href="https://matichoc.cl/" title="Ir a matichoc.cl">
+          <img src="assets/brand/logo-horizontal.png" alt="Matichoc, pasión por el cacao">
+        </a>
+        <h1 class="logo">Matijuego<span>el arcade de Matichoc</span></h1>
+      </div>
+      <nav class="site-links" aria-label="Enlaces a matichoc.cl">
+        <a href="https://matichoc.cl/">← Volver a matichoc.cl</a>
+        <a href="https://matichoc.cl/pages/tienda.html">🍫 Tienda</a>
+        <a href="https://matichoc.cl/pages/la_maestra.html">La Maestra</a>
+      </nav>
+      <p class="tagline">¿Quién juega? Cada perfil guarda su propio progreso.</p>
+      <div id="profile-grid" class="profile-grid"></div>
+
+      <div id="new-profile-form" class="new-profile-form hidden">
+        <input id="new-profile-name" class="text-input" type="text" maxlength="16" placeholder="Nombre del jugador">
+        <div class="menu-secondary-row">
+          <button id="btn-create-profile" class="btn-primary">Crear perfil</button>
+          <button id="btn-cancel-profile" class="btn-secondary">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HUB PRINCIPAL (lobby): tu Matichico en 3D, juegos con imagen, monedas y accesos -->
+  <section id="screen-hub" class="screen hidden">
+    <div class="lobby">
+      <header class="lb-top">
+        <a class="brand-badge" href="https://matichoc.cl/" title="Ir a matichoc.cl">
+          <img src="assets/brand/logo-horizontal.png" alt="Matichoc, pasión por el cacao">
+        </a>
+        <h1 class="logo lb-logo">Matijuego<span>el arcade de Matichoc</span></h1>
+        <div class="lb-actions">
+          <div class="stat-chip lb-coins" title="Monedas Chocolate Dubai">🍫✨ <span id="hub-total-coins">0</span></div>
+          <button id="btn-daily-reward" class="stat-chip stat-chip-btn">🎁 Recompensa diaria</button>
+          <button id="btn-open-achievements" class="stat-chip stat-chip-btn">🏅 Logros</button>
+          <button id="btn-open-leaderboard" class="stat-chip stat-chip-btn">🏆 Puntajes</button>
+        </div>
+        <div class="profile-chip lb-profile">
+          <img id="hub-profile-avatar" class="hub-profile-avatar" alt="">
+          <span id="hub-profile-name">Jugador</span>
+          <button id="btn-switch-profile" class="btn-tiny">Cambiar</button>
+        </div>
+      </header>
+
+      <div class="lb-body">
+        <aside class="lb-stage">
+          <div class="lb-stage-view">
+            <canvas id="lobby-canvas"></canvas>
+            <canvas id="lobby-fallback" class="hidden" width="256" height="256"></canvas>
+            <div class="lb-nameplate"><span id="lb-char-name">Elige tu Matichico</span></div>
+            <span class="lb-drag-hint">arrastra para girarlo · toca para saludar</span>
+          </div>
+          <div id="character-grid" class="character-grid lb-chars"></div>
+          <div class="lb-stage-actions">
+            <button id="btn-open-shop" class="btn-primary lb-shop">👕 Vestuario y Tienda</button>
+          </div>
+          <label class="field-label" for="input-name">Tu nombre en los puntajes</label>
+          <input id="input-name" class="text-input lb-name" type="text" maxlength="16" placeholder="Jugador">
+        </aside>
+
+        <main class="lb-games">
+          <h2 class="lb-title">Elige un juego</h2>
+          <div id="game-feature" class="lb-feature"></div>
+          <div id="game-grid" class="game-grid lb-grid"></div>
+          <nav class="site-links lb-links" aria-label="Enlaces a matichoc.cl">
+            <a href="https://matichoc.cl/">← Volver a matichoc.cl</a>
+            <a href="https://matichoc.cl/pages/tienda.html">🍫 Tienda</a>
+            <a href="https://matichoc.cl/pages/la_maestra.html">La Maestra</a>
+          </nav>
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGROS -->
+  <section id="screen-achievements" class="screen hidden">
+    <div class="menu-card">
+      <h1 class="logo" style="font-size:1.8rem">LOGROS</h1>
+      <p class="tagline">Cumple objetivos y gana monedas Chocolate Dubai extra.</p>
+      <div id="achievement-list" class="achievement-list"></div>
+      <button id="btn-achievements-back" class="btn-primary">Volver</button>
+    </div>
+  </section>
+
+  <!-- TIENDA DE ATUENDOS -->
+  <section id="screen-shop" class="screen hidden">
+    <div class="menu-card">
+      <h1 class="logo" style="font-size:1.8rem">TIENDA</h1>
+      <p class="tagline">Compra atuendos para tu Matichico con monedas Chocolate Dubai.</p>
+      <div class="coins-banner">🍫✨ <span id="shop-coins">0</span> monedas</div>
+      <div id="shop-character-switcher" class="shop-character-switcher"></div>
+      <div id="shop-character-name" class="shop-character-name"></div>
+      <div id="outfit-grid" class="outfit-grid"></div>
+      <button id="btn-shop-back" class="btn-primary">Volver</button>
+    </div>
+  </section>
+
+  <!-- TABLA DE PUNTAJES -->
+  <section id="screen-leaderboard" class="screen hidden">
+    <div class="menu-card">
+      <h1 class="logo" style="font-size:1.8rem">TABLA DE PUNTAJES</h1>
+      <p class="tagline">Los mejores puntajes de cada juego.</p>
+      <div id="leaderboard-tabs" class="leaderboard-tabs"></div>
+      <ol id="leaderboard-list" class="leaderboard-list"></ol>
+      <p id="leaderboard-empty" class="leaderboard-empty hidden">Todavía no hay puntajes en este juego. ¡Sé el primero!</p>
+      <button id="btn-leaderboard-back" class="btn-primary">Volver</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE JUEGO: RECOLECTA Y CORRE (3D) -->
+  <section id="screen-recolecta" class="screen game-screen hidden">
+    <div id="recolecta-hud" class="hud">
+      <div class="hud-left">
+        <button id="recolecta-btn-menu" class="btn-icon" title="Volver al menú" data-action="menu">🏠</button>
+        <img id="recolecta-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div id="recolecta-hud-level" class="hud-level">Nivel 1</div>
+          <div id="recolecta-hud-mission" class="hud-mission">Misión</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">🍬 <span id="recolecta-hud-choco">0</span>/<span id="recolecta-hud-target">0</span></div>
+        <div class="hud-chip">⭐ <span id="recolecta-hud-score">0</span></div>
+        <div class="hud-chip">🍫✨ <span id="recolecta-hud-coins">0</span></div>
+        <div class="hud-chip" id="recolecta-hud-timer-chip">⏱ <span id="recolecta-hud-timer">00</span></div>
+        <button id="recolecta-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="recolecta-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="recolecta-canvas"></canvas>
+      <div id="recolecta-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="recolecta-popups" class="fps-popups" aria-hidden="true"></div>
+
+      <div id="recolecta-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="recolecta-intro-title">Nivel</h2>
+          <p class="fps-tag">Ahora en 3D</p>
+          <p id="recolecta-intro-text"></p>
+          <p class="fps-hint">Mueve con ← ↑ ↓ → (o W A S D). Salta con Espacio.</p>
+          <button class="btn-primary" data-action="begin">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="recolecta-overlay-win" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>¡Misión cumplida! 🎉</h2>
+          <p id="recolecta-win-text"></p>
+          <button class="btn-primary" data-action="next">Siguiente nivel</button>
+        </div>
+      </div>
+
+      <div id="recolecta-overlay-lose" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>¡Se acabó el tiempo!</h2>
+          <p id="recolecta-lose-text">Casi lo logras. ¡Inténtalo de nuevo!</p>
+          <button class="btn-primary" data-action="retry">Reintentar</button>
+          <button class="btn-secondary overlay-secondary-btn" data-action="menu">Volver al menú</button>
+        </div>
+      </div>
+
+      <div id="recolecta-overlay-victory" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>🏆 ¡Eres Campeón Matichoc!</h2>
+          <p id="recolecta-victory-text"></p>
+          <button class="btn-primary" data-action="restart">Jugar de nuevo</button>
+          <button class="btn-secondary overlay-secondary-btn" data-action="menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="recolecta-touch" class="touch-controls">
+      <div class="dpad">
+        <button class="dpad-btn" data-dir="up">▲</button>
+        <div class="dpad-row">
+          <button class="dpad-btn" data-dir="left">◀</button>
+          <button class="dpad-btn" data-dir="down">▼</button>
+          <button class="dpad-btn" data-dir="right">▶</button>
+        </div>
+      </div>
+      <button class="dpad-btn jump-btn" id="recolecta-btn-jump">⤴ Saltar</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE JUEGO: TETRIS DE PRODUCTOS -->
+  <section id="screen-tetris" class="screen game-screen hidden">
+    <div id="tetris-hud" class="hud">
+      <div class="hud-left">
+        <button id="tetris-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="tetris-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level">Tetris de Productos</div>
+          <div class="hud-mission">Encaja las golosinas y completa líneas</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">⭐ <span id="tetris-hud-score">0</span></div>
+        <div class="hud-chip">📏 <span id="tetris-hud-lines">0</span></div>
+        <div class="hud-chip">🔥 Nvl <span id="tetris-hud-level">1</span></div>
+        <div class="hud-chip">🍫✨ <span id="tetris-hud-coins">0</span></div>
+        <button id="tetris-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="tetris-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="tetris-canvas"></canvas>
+      <div id="tetris-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="tetris-popups" class="fps-popups" aria-hidden="true"></div>
+
+      <div id="tetris-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Tetris de Productos 3D</h2>
+          <p class="fps-tag">Ahora en 3D</p>
+          <p>Encaja las golosinas cayendo y completa líneas. ← → para mover,
+            ↑ para rotar, ↓ para bajar rápido y ESPACIO para caída instantánea.
+            En el celular: arrastra para mover, toca para girar y desliza hacia abajo para caer.
+            Las piezas doradas son Chocolate Dubai: ¡dan monedas extra!</p>
+          <button class="btn-primary" id="tetris-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="tetris-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>¡Se apilaron las golosinas!</h2>
+          <p id="tetris-gameover-text"></p>
+          <button class="btn-primary" id="tetris-btn-retry">Reintentar</button>
+          <button class="btn-secondary overlay-secondary-btn" id="tetris-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tetris-touch-controls">
+      <button class="tetris-btn" data-action="left">◀</button>
+      <button class="tetris-btn" data-action="rotate">⟳</button>
+      <button class="tetris-btn" data-action="right">▶</button>
+      <button class="tetris-btn" data-action="down">▼</button>
+      <button class="tetris-btn wide" data-action="drop">⬇ Caída</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE JUEGO: LANZAMIENTOS DE BÁSQUET -->
+  <section id="screen-basquet" class="screen game-screen hidden">
+    <div id="basquet-hud" class="hud">
+      <div class="hud-left">
+        <button id="basquet-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="basquet-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level">Lanzamientos de Básquet</div>
+          <div class="hud-mission">Fija puntería y potencia en el momento justo</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">🏀 <span id="basquet-hud-made">0</span>/<span id="basquet-hud-attempts">0</span></div>
+        <div class="hud-chip">⭐ <span id="basquet-hud-score">0</span></div>
+        <div class="hud-chip">🍫✨ <span id="basquet-hud-coins">0</span></div>
+        <div class="hud-chip" id="basquet-hud-timer-chip">⏱ <span id="basquet-hud-timer">00</span></div>
+        <button id="basquet-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="basquet-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="basquet-canvas"></canvas>
+      <div id="basquet-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="basquet-popups" class="fps-popups" aria-hidden="true"></div>
+
+      <div id="basquet-meters" class="bq-meters">
+        <div id="basquet-hint" class="bq-hint"></div>
+        <div class="bq-aim">
+          <span class="bq-label">PUNTERÍA</span>
+          <div class="bq-track bq-h"><div id="basquet-aim-zone" class="bq-zone"></div><div id="basquet-aim-marker" class="bq-marker"></div></div>
+        </div>
+        <div class="bq-pow">
+          <span class="bq-label">POTENCIA</span>
+          <div class="bq-track bq-v"><div id="basquet-power-zone" class="bq-zone"></div><div id="basquet-power-marker" class="bq-marker"></div></div>
+        </div>
+      </div>
+
+      <div id="basquet-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Lanzamientos de Básquet 3D</h2>
+          <p class="fps-tag">Ahora en 3D</p>
+          <p>ESPACIO (o toca la pantalla) para fijar la barra de puntería, y de nuevo para
+            fijar la de potencia. Encesta antes de que se acabe el tiempo —
+            cada 5° tiro es un aro dorado Chocolate Dubai, ¡vale monedas extra!</p>
+          <button class="btn-primary" id="basquet-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="basquet-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>¡Se acabó el tiempo!</h2>
+          <p id="basquet-gameover-text"></p>
+          <button class="btn-primary" id="basquet-btn-retry">Reintentar</button>
+          <button class="btn-secondary overlay-secondary-btn" id="basquet-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="basquet-touch-controls">
+      <button class="dpad-btn jump-btn" id="basquet-btn-shoot">🏀 ¡Lanzar!</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE JUEGO: SALTOS DE PORRISTAS -->
+  <section id="screen-porristas" class="screen game-screen hidden">
+    <div id="porristas-hud" class="hud">
+      <div class="hud-left">
+        <button id="porristas-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="porristas-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level">Saltos de Porristas</div>
+          <div class="hud-mission">Mueve la rebotadora y no la dejes caer</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">🤸 <span id="porristas-hud-score">0</span></div>
+        <div class="hud-chip">🔥 <span id="porristas-hud-combo">0</span></div>
+        <div class="hud-chip">🍫✨ <span id="porristas-hud-coins">0</span></div>
+        <button id="porristas-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="porristas-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="porristas-canvas"></canvas>
+      <div id="porristas-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="porristas-popups" class="fps-popups" aria-hidden="true"></div>
+
+      <div id="porristas-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Saltos de Porristas 3D</h2>
+          <p class="fps-tag">Ahora en 3D</p>
+          <p>Mueve la rebotadora con ← → (o arrastra el dedo / mouse) para que
+            quede justo debajo de tu Matichica cada vez que cae. Rebotar
+            centrado suma combo; recoge los pompones para puntos extra.
+            ¡Si cae fuera de la rebotadora, se acaba la partida!</p>
+          <button class="btn-primary" id="porristas-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="porristas-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>¡Se cayó!</h2>
+          <p id="porristas-gameover-text"></p>
+          <button class="btn-primary" id="porristas-btn-retry">Reintentar</button>
+          <button class="btn-secondary overlay-secondary-btn" id="porristas-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="porristas-touch-controls">
+      <button class="tetris-btn" id="porristas-btn-left">◀</button>
+      <button class="tetris-btn" id="porristas-btn-right">▶</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE JUEGO: PARKOUR CHOCO 3D -->
+  <section id="screen-parkour" class="screen game-screen hidden">
+    <div id="parkour-hud" class="hud">
+      <div class="hud-left">
+        <button id="parkour-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="parkour-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level">Parkour Choco 3D</div>
+          <div class="hud-mission">Salta, esquiva y llega a la cima</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">🏁 <span id="parkour-hud-stage">Etapa 1/6</span></div>
+        <div class="hud-chip">🍬 <span id="parkour-hud-items">0</span></div>
+        <div class="hud-chip">⏱ <span id="parkour-hud-time">0:00</span></div>
+        <div class="hud-chip">🍫✨ <span id="parkour-hud-coins">0</span></div>
+        <button id="parkour-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="parkour-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="parkour-canvas"></canvas>
+      <div id="parkour-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="parkour-popups" class="fps-popups" aria-hidden="true"></div>
+      <div class="pk-touch" id="parkour-touch">
+        <div class="pk-joy" id="parkour-joy"><div class="pk-knob" id="parkour-knob"></div></div>
+        <button class="g3d-tbtn pk-jump" id="parkour-btn-jump" aria-label="Saltar">⤴</button>
+      </div>
+
+      <div id="parkour-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Parkour Choco 3D</h2>
+          <p class="fps-tag">Nuevo · en 3D</p>
+          <p>Corre y salta por 6 etapas de plataformas: unas se mueven, otras se rompen o parpadean, hay trampolines y molinos giratorios. Junta alfajores y barras Matidubai, activa los checkpoints y desbloquea capa, gafas brillantes y corona.</p>
+          <p class="fps-hint">Mover: WASD o flechas · Saltar (¡dos veces en el aire!): Espacio · Cámara: arrastra el mouse o Q / E.</p>
+          <button class="btn-primary" id="parkour-btn-start">¡A correr!</button>
+        </div>
+      </div>
+
+      <div id="parkour-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>¡Llegaste a la cima! 🏆</h2>
+          <p id="parkour-gameover-text"></p>
+          <button class="btn-primary" id="parkour-btn-retry">Correr de nuevo</button>
+          <button class="btn-secondary overlay-secondary-btn" id="parkour-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE JUEGO: CHOCO BLASTER 3D (primera persona, propuesta) -->
+  <section id="screen-fps" class="screen game-screen hidden">
+    <div id="fps-hud" class="hud fps-hud">
+      <div class="hud-left">
+        <button id="fps-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="fps-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level">Choco Blaster 3D</div>
+          <div class="hud-mission">Baña de chocolate a los malvaviscos</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">⭐ <span id="fps-hud-score">0</span></div>
+        <div class="hud-chip">🌊 <span id="fps-hud-wave">0</span></div>
+        <div class="hud-chip">🔥 <span id="fps-hud-combo">x1</span></div>
+        <div class="hud-chip">🍫✨ <span id="fps-hud-coins">0</span></div>
+        <button id="fps-btn-full" class="btn-icon" title="Pantalla completa">⛶</button>
+        <button id="fps-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="fps-canvas-wrap" class="canvas-wrap fps-wrap">
+      <canvas id="fps-canvas"></canvas>
+      <div class="fps-crosshair" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div id="fps-hitmarker" class="fps-hitmarker" aria-hidden="true"></div>
+      <div id="fps-vignette" class="fps-vignette" aria-hidden="true"></div>
+      <div id="fps-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="fps-popups" class="fps-popups" aria-hidden="true"></div>
+      <div class="fps-hud-bottom">
+        <div id="fps-hearts" class="fps-hearts" aria-label="Vidas"></div>
+        <div class="fps-ammo">
+          <span id="fps-ammo">12/12</span>
+          <div class="fps-reload"><i id="fps-reload-bar"></i></div>
+        </div>
+      </div>
+
+      <div id="fps-touch" class="fps-touch">
+        <div id="fps-joy-zone" class="fps-joy-zone"><div class="fps-joy-base"><div id="fps-joy-knob" class="fps-joy-knob"></div></div></div>
+        <div id="fps-look-zone" class="fps-look-zone"></div>
+        <button id="fps-btn-fire" class="fps-tbtn fps-tbtn-fire" aria-label="Disparar">🍫</button>
+        <button id="fps-btn-jump" class="fps-tbtn fps-tbtn-jump" aria-label="Saltar">⤴</button>
+        <button id="fps-btn-reload" class="fps-tbtn fps-tbtn-reload" aria-label="Recargar">⟳</button>
+      </div>
+
+      <div id="fps-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Choco Blaster 3D</h2>
+          <p class="fps-tag">Propuesta jugable · primera persona</p>
+          <p>Los malvaviscos se colaron a la feria de Matichoc. ¡Báñalos de chocolate
+            con tu Choco Blaster antes de que te abracen! Apunta a la cabeza para
+            un cabezazo (daño doble) y encadena baños para subir el combo.</p>
+          <p class="fps-controls-hint fps-pc-hint"><b>PC:</b> mouse para apuntar · click para disparar · WASD moverse ·
+            ESPACIO saltar · SHIFT correr · R recargar · ESC pausa.</p>
+          <p class="fps-controls-hint fps-mobile-hint"><b>Celular:</b> joystick a la izquierda para moverte, arrastra a la derecha para mirar, 🍫 para disparar.</p>
+          <button class="btn-primary" id="fps-btn-start">¡A la feria!</button>
+        </div>
+      </div>
+
+      <div id="fps-overlay-paused" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Pausa</h2>
+          <p>Haz click para volver a la acción.</p>
+          <button class="btn-primary" id="fps-btn-resume">Continuar</button>
+          <button class="btn-secondary overlay-secondary-btn" id="fps-btn-paused-menu">Volver al menú</button>
+        </div>
+      </div>
+
+      <div id="fps-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>¡Te abrazaron los malvaviscos!</h2>
+          <p id="fps-gameover-text"></p>
+          <button class="btn-primary" id="fps-btn-retry">Reintentar</button>
+          <button class="btn-secondary overlay-secondary-btn" id="fps-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE JUEGO 3D: SALTO CHOCO 3D -->
+  <section id="screen-salto" class="screen game-screen hidden">
+    <div id="salto-hud" class="hud">
+      <div class="hud-left">
+        <button id="salto-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="salto-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level">Salto Choco 3D</div>
+          <div class="hud-mission">Rebota y sube sin caer</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">⭐ <span id="salto-hud-score">0</span></div>
+        <div class="hud-chip">⛰️ <span id="salto-hud-height">0 m</span></div>
+        <div class="hud-chip">🍫✨ <span id="salto-hud-coins">0</span></div>
+        <button id="salto-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="salto-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="salto-canvas"></canvas>
+      <div id="salto-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="salto-popups" class="fps-popups" aria-hidden="true"></div>
+      <div class="g3d-touch" id="salto-touch">
+        <button class="g3d-tbtn" id="salto-btn-left" aria-label="Izquierda">◀</button>
+        <button class="g3d-tbtn" id="salto-btn-right" aria-label="Derecha">▶</button>
+      </div>
+
+      <div id="salto-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Salto Choco 3D</h2>
+          <p class="fps-tag">Nuevo · en 3D</p>
+          <p>Tu Matichico rebota solo: ¡tú lo mueves! Usa ← → (o A / D), o arrastra el dedo o el mouse. Sube por las plataformas de chocolate, junta alfajores y busca el jetpack Matidubai. Cuidado con las plataformas blancas: se rompen.</p>
+          <button class="btn-primary" id="salto-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="salto-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>¡Se cayó el Matichico!</h2>
+          <p id="salto-gameover-text"></p>
+          <button class="btn-primary" id="salto-btn-retry">Jugar de nuevo</button>
+          <button class="btn-secondary overlay-secondary-btn" id="salto-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE JUEGO 3D: AUTOS DE CHOCOLATE 3D -->
+  <section id="screen-autos" class="screen game-screen hidden">
+    <div id="autos-hud" class="hud">
+      <div class="hud-left">
+        <button id="autos-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="autos-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level">Autos de Chocolate 3D</div>
+          <div class="hud-mission">Esquiva y acelera</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">⭐ <span id="autos-hud-score">0</span></div>
+        <div class="hud-chip">🏁 <span id="autos-hud-speed">0</span></div>
+        <div class="hud-chip">❤ <span id="autos-hud-hearts">❤❤❤</span></div>
+        <div class="hud-chip">🍫✨ <span id="autos-hud-coins">0</span></div>
+        <button id="autos-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="autos-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="autos-canvas"></canvas>
+      <div id="autos-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="autos-popups" class="fps-popups" aria-hidden="true"></div>
+      <div class="g3d-touch" id="autos-touch">
+        <button class="g3d-tbtn" id="autos-btn-left" aria-label="Izquierda">◀</button>
+        <button class="g3d-tbtn" id="autos-btn-right" aria-label="Derecha">▶</button>
+      </div>
+
+      <div id="autos-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Autos de Chocolate 3D</h2>
+          <p class="fps-tag">Nuevo · en 3D</p>
+          <p>Maneja tu auto de chocolate por la ruta de Matichoc. Cambia de carril con ← → (o A / D), toca/desliza a los lados en el celular. Esquiva conos y barriles, junta alfajores y toma el nitro Matidubai. ¡Tienes 3 vidas!</p>
+          <button class="btn-primary" id="autos-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="autos-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>¡Fin de la carrera!</h2>
+          <p id="autos-gameover-text"></p>
+          <button class="btn-primary" id="autos-btn-retry">Jugar de nuevo</button>
+          <button class="btn-secondary overlay-secondary-btn" id="autos-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE JUEGO 3D: MEMORIA MATICHOC 3D -->
+  <section id="screen-memoria" class="screen game-screen hidden">
+    <div id="memoria-hud" class="hud">
+      <div class="hud-left">
+        <button id="memoria-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="memoria-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level">Memoria Matichoc 3D</div>
+          <div class="hud-mission">Encuentra las parejas</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">🎴 <span id="memoria-hud-level">1</span></div>
+        <div class="hud-chip">👆 <span id="memoria-hud-moves">0</span></div>
+        <div class="hud-chip">⏱ <span id="memoria-hud-time">0:00</span></div>
+        <div class="hud-chip">⭐ <span id="memoria-hud-score">0</span></div>
+        <div class="hud-chip">🍫✨ <span id="memoria-hud-coins">0</span></div>
+        <button id="memoria-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="memoria-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="memoria-canvas"></canvas>
+      <div id="memoria-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="memoria-popups" class="fps-popups" aria-hidden="true"></div>
+
+      <div id="memoria-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Memoria Matichoc 3D</h2>
+          <p class="fps-tag">Nuevo · en 3D</p>
+          <p>Toca las cartas para darlas vuelta y encuentra las parejas de productos Matichoc. Menos intentos y menos tiempo dan más estrellas. ¡Tu Matichico te anima desde la mesa!</p>
+          <button class="btn-primary" id="memoria-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+      <div id="memoria-overlay-win" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="memoria-win-title">¡Nivel completado!</h2>
+          <div id="memoria-stars" class="g3d-stars" aria-label="Estrellas">★★★</div>
+          <p id="memoria-win-text"></p>
+          <button class="btn-primary" id="memoria-btn-next">Siguiente nivel</button>
+          <button class="btn-secondary overlay-secondary-btn" id="memoria-btn-win-menu">Volver al menú</button>
+        </div>
+      </div>
+
+      <div id="memoria-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>¡Terminaste todos los niveles!</h2>
+          <p id="memoria-gameover-text"></p>
+          <button class="btn-primary" id="memoria-btn-retry">Jugar de nuevo</button>
+          <button class="btn-secondary overlay-secondary-btn" id="memoria-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE JUEGO 3D: CREA TU CHOCOLATE -->
+  <section id="screen-creador" class="screen game-screen cr-screen hidden">
+    <div id="creador-hud" class="hud cr-hud">
+      <div class="hud-left">
+        <button id="creador-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="creador-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level">Crea tu Chocolate</div>
+          <div class="hud-mission">Diseña tu producto y su etiqueta</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">⭐ <span id="creador-hud-score">0</span></div>
+        <div class="hud-chip">🎨 <span id="creador-hud-count">0</span></div>
+        <div class="hud-chip">🍫✨ <span id="creador-hud-coins">0</span></div>
+        <button id="creador-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div class="cr-main">
+      <div id="creador-canvas-wrap" class="canvas-wrap g3d-wrap cr-canvas">
+        <canvas id="creador-canvas"></canvas>
+        <div id="creador-banner" class="fps-banner" aria-live="polite"></div>
+        <div id="creador-popups" class="fps-popups" aria-hidden="true"></div>
+        <div class="cr-drag-hint" aria-hidden="true">↔ arrastra para girar</div>
+
+        <div id="creador-overlay-intro" class="overlay hidden">
+          <div class="overlay-card">
+            <h2>Crea tu Chocolate</h2>
+            <p class="fps-tag">Nuevo · en 3D</p>
+            <p>Elige el producto, el chocolate, el relleno, los toppings, el envoltorio y
+              diseña tu propia etiqueta. Mientras eliges ves tu creación en 3D. Los
+              maridajes que combinan dan más puntos, y cada día hay un reto con monedas.</p>
+            <button class="btn-primary" id="creador-btn-start">¡A crear!</button>
+          </div>
+        </div>
+
+        <div id="creador-overlay-gameover" class="overlay hidden">
+          <div class="overlay-card">
+            <h2>¡Listo!</h2>
+            <p id="creador-gameover-text"></p>
+            <button class="btn-primary" id="creador-btn-retry">Crear otro</button>
+            <button class="btn-secondary overlay-secondary-btn" id="creador-btn-gameover-menu">Volver al menú</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="creador-panel" class="cr-panel"></div>
+    </div>
+  </section>
+
+</div>
+
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
