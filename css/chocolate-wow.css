@@ -419,7 +419,7 @@
   overflow: hidden;
   max-width: none;
   margin: 0;
-  padding: 34px 20px 92px;
+  padding: 34px 20px 38px;
   text-align: center;
   color: #fff8f0;
   background:
@@ -448,7 +448,46 @@
   color: #fff8f0;
 }
 @media (max-width: 480px) {
-  .page-banner { padding: 24px 16px 70px; }
+  .page-banner { padding: 24px 16px 28px; }
   .page-banner .page-banner__titulo { font-size: 2rem; }
   .page-banner .page-banner__sub { font-size: 1rem; }
+}
+
+/*
+ * Brillitos de fondo en los recuadros (js/brillos.js): los mismos chocolates y
+ * destellos que suben en el Hero, pero detrás del contenido de cada tarjeta.
+ * Solo transform + opacity (baratos); se animan únicamente mientras el recuadro
+ * está en pantalla (.is-activo) y no se crean con prefers-reduced-motion.
+ */
+.choco-fondo {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.brillos {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.brillos i {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding-left: var(--x);
+  font-style: normal;
+  font-size: 1.5rem;
+  line-height: 1;
+  opacity: 0;
+  transform: translateY(100%);
+}
+.choco-fondo.is-activo .brillos i {
+  animation: brillo-sube var(--dur, 9s) linear var(--delay, 0s) infinite;
+}
+@keyframes brillo-sube {
+  0%   { transform: translateY(100%) translateX(0) rotate(0deg); opacity: 0; }
+  12%  { opacity: 0.6; }
+  88%  { opacity: 0.6; }
+  100% { transform: translateY(-100%) translateX(14px) rotate(25deg); opacity: 0; }
 }
