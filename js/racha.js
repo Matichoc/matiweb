@@ -7,6 +7,12 @@
 // riesgo a cambio de no construir un backend todavía).
 
 const MATICHOC_WHATSAPP = '56975645591';
+
+// Con las cuentas Matilover encendidas (js/supabase-config.js), el avance de racha y de pedidos
+// se guarda solo en la cuenta (js/cuenta.js): aquí no se acumula nada en el navegador.
+function cuentasActivas() {
+  return !!(window.MATICHOC_SUPABASE && window.MATICHOC_SUPABASE.url);
+}
 const RACHA_KEY = 'matichoc_racha_v1';
 const PEDIDOS_KEY = 'matichoc_pedidos_v1';
 const META_RACHA = 7;
@@ -63,6 +69,7 @@ function leerPedidos() {
 }
 
 function sumarPedido() {
+  if (cuentasActivas()) return 0;
   const n = leerPedidos() + 1;
   try {
     localStorage.setItem(PEDIDOS_KEY, String(n));
@@ -74,7 +81,7 @@ function sumarPedido() {
 
 function renderRacha() {
   const el = document.getElementById('racha-widget');
-  if (!el) return;
+  if (!el || cuentasActivas()) return;
   const { racha } = actualizarRacha();
   const completa = racha >= META_RACHA;
   const faltan = Math.max(0, META_RACHA - racha);
@@ -98,7 +105,7 @@ function renderRacha() {
 
 function renderPedidosWidget() {
   const el = document.getElementById('pedidos-widget');
-  if (!el) return;
+  if (!el || cuentasActivas()) return;
   const pedidos = leerPedidos();
   const completa = pedidos >= META_PEDIDOS;
   const faltan = Math.max(0, META_PEDIDOS - pedidos);

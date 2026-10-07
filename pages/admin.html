@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://lfgfmequzmlajlvkjxlv.supabase.co; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self' https://wa.me;">
+    <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <title>Panel | Matichoc</title>
+    <link rel="icon" type="image/x-icon" href="../assets/brand/favicon.ico">
+    <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
+    <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../css/chocolate-wow.css" />
+    <link rel="stylesheet" href="../css/cuenta.css" />
+</head>
+<body>
+    <header id="header"></header>
+<div id="page-banner"></div>
+
+    <main class="cuenta">
+        <section id="a-cargando" class="cuenta-caja" aria-live="polite"><p>Cargando…</p></section>
+        <section id="a-apagada" class="cuenta-caja" hidden>
+            <h2>Panel del dueño</h2>
+            <p>Las cuentas todavía no están encendidas (falta configurar Supabase). Mira supabase/LEEME.md.</p>
+        </section>
+
+        <section id="a-entrar" class="cuenta-caja" hidden>
+            <h2>Panel de Matichoc</h2>
+            <p>Entra con tu cuenta de dueño. Te pedirá además el código de tu app de verificación en dos pasos.</p>
+            <div id="a-botones-proveedor"></div>
+            <form id="a-form-correo" novalidate>
+                <label for="a-correo">Tu correo</label>
+                <input type="email" id="a-correo" autocomplete="email" inputmode="email" required maxlength="120">
+                <button type="submit" class="btn btn--cafe">✉️ Enviarme un enlace para entrar</button>
+            </form>
+            <div id="a-mensaje" class="aviso" role="status" hidden></div>
+        </section>
+
+        <section id="a-mfa" class="cuenta-caja" hidden>
+            <h2 id="a-mfa-titulo">Verificación en dos pasos</h2>
+            <div id="a-mfa-alta" hidden>
+                <p>Primero vincula tu app de verificación (Google Authenticator, Authy, 1Password…). Escanea el código QR o escribe la clave a mano:</p>
+                <img id="a-qr" class="qr" alt="Código QR para tu app de verificación" width="200" height="200">
+                <p class="secreto" id="a-secreto"></p>
+            </div>
+            <form id="a-form-mfa" novalidate>
+                <label for="a-codigo">Código de 6 números de tu app</label>
+                <input type="text" id="a-codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required>
+                <button type="submit" class="btn">Verificar</button>
+            </form>
+            <div id="a-mfa-mensaje" class="aviso" role="status" hidden></div>
+        </section>
+
+        <div id="a-panel" hidden>
+            <section class="cuenta-caja" aria-labelledby="a-t-cupon">
+                <h2 id="a-t-cupon">Validar un cupón 🎁</h2>
+                <form id="a-form-cupon" novalidate>
+                    <label for="a-codigo-cupon">Código del cliente</label>
+                    <input type="text" id="a-codigo-cupon" maxlength="12" autocomplete="off" autocapitalize="characters" required style="text-transform:uppercase">
+                    <button type="submit" class="btn btn--cafe">Revisar cupón</button>
+                </form>
+                <div id="a-cupon-resultado" hidden></div>
+            </section>
+
+            <section class="cuenta-caja" aria-labelledby="a-t-pedidos">
+                <h2 id="a-t-pedidos">Pedidos por revisar 🍫</h2>
+                <p class="ayuda">Marca "Entregado" cuando el cliente ya recibió y pagó. Solo esos pedidos suman para el premio.</p>
+                <button type="button" class="btn btn--suave" id="a-recargar">↻ Actualizar</button>
+                <div id="a-lista-pedidos"></div>
+            </section>
+
+            <section class="cuenta-caja">
+                <button type="button" class="btn btn--suave" id="a-salir">Cerrar sesión</button>
+            </section>
+        </div>
+    </main>
+
+    <footer id="footer"></footer>
+
+    <a href="https://wa.me/56975645591" target="_blank" rel="noopener noreferrer" class="whatsapp-float" aria-label="Escríbenos por WhatsApp">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39a9.9 9.9 0 0 0 4.75 1.21h.01c5.46 0 9.9-4.45 9.9-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m0 1.67c2.2 0 4.26.86 5.82 2.42a8.2 8.2 0 0 1 2.41 5.82c0 4.53-3.7 8.23-8.24 8.23a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.14.82.84-3.06-.2-.32a8.18 8.18 0 0 1-1.26-4.37c0-4.53 3.7-8.23 8.24-8.23m-4.65 4.29c-.15 0-.4.06-.61.3s-.8.78-.8 1.9.82 2.2.94 2.36c.11.15 1.6 2.5 3.95 3.4 1.95.75 2.35.6 2.77.56.42-.04 1.36-.55 1.55-1.09.19-.53.19-.98.13-1.08-.06-.1-.22-.16-.46-.28-.24-.12-1.4-.69-1.62-.77-.22-.08-.37-.12-.53.12-.15.24-.6.77-.74.92-.14.15-.27.17-.51.06-.24-.12-1.01-.37-1.93-1.19-.71-.63-1.19-1.42-1.33-1.66-.14-.24-.01-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.53-1.29-.74-1.76-.19-.46-.39-.4-.53-.4z"/></svg>
+    </a>
+
+    <script src="../js/base.js"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/cuenta.js"></script>
+    <script src="../js/page-admin.js"></script>
+</body>
+</html>

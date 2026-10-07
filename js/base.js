@@ -7,7 +7,10 @@ async function loadComponent(id, path, vars = {}) {
       html = html.split(`{{${key}}}`).join(value);
     }
     const target = document.getElementById(id);
-    if (target) target.innerHTML = html;
+    if (target) {
+      target.innerHTML = html;
+      document.dispatchEvent(new CustomEvent('matichoc:componente', { detail: { id } }));
+    }
   } catch (error) {
     console.error(error);
   }

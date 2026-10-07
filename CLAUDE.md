@@ -30,6 +30,17 @@ Deploy directo a GitHub Pages (`.nojekyll`).
   política de seguridad en su `index.html` (el `importmap` va con hash: si se cambia, recalcular el sha256). Es copia del repo
   `Matichoc/MAtigame_v0`, que queda como respaldo y solo redirige aquí. Se edita aquí, no en el otro repo.
 
+## Cuentas Matilover (opcionales, apagadas hasta configurar Supabase)
+
+El sitio es abierto: sin cuenta se navega, se compra y se juega. La cuenta Matilover solo sirve para **guardar
+progreso** (racha, descuentos, premios, juegos). Con `js/supabase-config.js` vacío todo funciona como antes (racha y
+pedidos locales); encendidas, el avance vive solo en la cuenta y no se acumula nada en el navegador.
+- `supabase/schema.sql`: tablas + RLS + funciones (la racha, los cupones y los pedidos se validan en el servidor,
+  el navegador no escribe directo). Reglas del programa en `reglas()`. Guía: `supabase/LEEME.md`.
+- `js/cuenta.js` (API compartida), `pages/cuenta.html` (Matilover), `pages/admin.html` (panel del dueño: exige
+  estar en `admins` + verificación en dos pasos). `js/vendor/supabase.js` es la librería oficial copiada (MIT).
+- La clave `anon` es pública; **nunca** poner `service_role` en el repositorio.
+
 ## Datos legales (entregados por el dueño)
 
 Chocolatería Matichoc Inés Saavedra EIRL · RUT 77.877.372-4 · Guayacán 1409, La Ligua · i.saavedra.nu@gmail.com ·

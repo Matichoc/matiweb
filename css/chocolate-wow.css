@@ -543,3 +543,8 @@ html { scroll-padding-top: calc(var(--header-h) + 8px); }
   .site-logo img { height: 52px; }
 }
 .site-logo-link { text-align: left; margin: 0; }
+
+/* Invitación a hacerse Matilover bajo la racha (solo con cuentas encendidas). */
+#racha-widget .racha-cta { margin: 12px auto 0; max-width: 560px; font-size: 0.95rem; line-height: 1.5; color: #fff8f0; text-align: center; }
+#racha-widget .racha-cta a { color: #ffc800; font-weight: 800; text-decoration: underline; }
+#racha-widget .racha-btn { display: inline-block; margin-top: 8px; }

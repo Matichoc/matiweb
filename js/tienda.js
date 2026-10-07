@@ -264,6 +264,12 @@
     mensaje += `\n💵 Total: $${clp(total)}\n📸 Recuerda enviar tu comprobante de pago.`;
 
     window.open(`https://wa.me/${WSP}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
+    // Con cuenta Matilover, el pedido queda registrado como "solicitado" (el dueño lo marca entregado).
+    // No bloquea ni cambia el envío por WhatsApp: si falla, el pedido igual salió.
+    if (window.Cuenta && Cuenta.activa && Cuenta.haySesion()) {
+      const detalle = [...carrito].map(([id, cant]) => `${cant} x ${porId.get(id).nombre}`).join(', ');
+      Cuenta.registrarPedido(total, detalle).catch(() => {});
+    }
     if (typeof sumarPedido === 'function') sumarPedido();
     if (typeof renderPedidosWidget === 'function') renderPedidosWidget();
   });
