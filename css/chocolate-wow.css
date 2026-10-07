@@ -408,3 +408,47 @@
   margin: 10px auto 15px;
   max-width: 500px;
 }
+
+/*
+ * Banner de las páginas internas (components/page-banner.html): mismo goteo de
+ * chocolate y mismos brillitos que el Hero del inicio, en formato compacto.
+ * Va con .page-banner para ganarle a la regla global `section` de styles.css.
+ */
+.page-banner {
+  position: relative;
+  overflow: hidden;
+  max-width: none;
+  margin: 0;
+  padding: 34px 20px 92px;
+  text-align: center;
+  color: #fff8f0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 200, 0, 0.12), transparent 45%),
+    radial-gradient(circle at 85% 70%, rgba(212, 33, 108, 0.18), transparent 50%),
+    linear-gradient(165deg, #64321b 0%, #4b2e2e 55%, #2e1b12 100%);
+}
+.page-banner .page-banner__contenido {
+  position: relative;
+  z-index: 3;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.page-banner .page-banner__emoji { margin: 0; font-size: 2rem; line-height: 1; }
+.page-banner .page-banner__titulo {
+  margin: 6px 0 6px;
+  font-size: 2.6rem;
+  line-height: 1.1;
+  color: #ffc800;
+  text-shadow: 0 0 14px rgba(255, 200, 0, 0.35), 2px 2px 4px rgba(0, 0, 0, 0.55);
+}
+.page-banner .page-banner__sub {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  color: #fff8f0;
+}
+@media (max-width: 480px) {
+  .page-banner { padding: 24px 16px 70px; }
+  .page-banner .page-banner__titulo { font-size: 2rem; }
+  .page-banner .page-banner__sub { font-size: 1rem; }
+}

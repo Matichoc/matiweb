@@ -20,11 +20,10 @@
 </head>
 <body>
 <header id="header"></header>
+<div id="page-banner"></div>
 
 <main class="t-main">
   <div class="t-intro">
-    <p class="t-kicker">Hecho a mano en La Ligua</p>
-    <h1>Nuestra tienda</h1>
     <p>Elige tus chocolates, arma tu pedido y envíalo por WhatsApp. Nosotros te escribimos para coordinar el pago y la entrega.</p>
     <ol class="t-pasos" aria-label="Cómo pedir en 3 pasos">
       <li>Elige tus chocolates</li>
@@ -95,6 +94,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     loadComponent('header', '../components/header.html', { base: '../' });
+    loadComponent('page-banner', '../components/page-banner.html', { base: '../', emoji: '🛍️', titulo: 'Nuestra tienda', subtitulo: 'Chocolates artesanales hechos en La Ligua' });
     loadComponent('footer', '../components/footer.html', { base: '../' });
   });
 </script>

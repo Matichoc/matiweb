@@ -1,0 +1,37 @@
+<section class="page-banner" aria-label="{{titulo}}">
+  <div class="page-banner__contenido choco-fade-in">
+    <p class="page-banner__emoji" aria-hidden="true">{{emoji}}</p>
+    <h1 class="page-banner__titulo">{{titulo}}</h1>
+    <p class="page-banner__sub">{{subtitulo}}</p>
+  </div>
+
+  <svg class="choco-goo-defs" aria-hidden="true" focusable="false" style="position: absolute; width: 0; height: 0; overflow: hidden;">
+    <defs>
+      <filter id="choco-goo">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
+        <feColorMatrix in="blur" mode="matrix"
+          values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11" result="goo" />
+        <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+      </filter>
+    </defs>
+  </svg>
+  <div class="choco-drip" aria-hidden="true">
+    <span class="choco-drip__blob" style="--x: 6%; --size: 40px; --delay: .05s;"></span>
+    <span class="choco-drip__blob" style="--x: 16%; --size: 60px; --delay: .25s;"></span>
+    <span class="choco-drip__blob" style="--x: 27%; --size: 44px; --delay: 0s;"></span>
+    <span class="choco-drip__blob" style="--x: 38%; --size: 68px; --delay: .4s;"></span>
+    <span class="choco-drip__blob" style="--x: 50%; --size: 46px; --delay: .15s;"></span>
+    <span class="choco-drip__blob" style="--x: 62%; --size: 62px; --delay: .3s;"></span>
+    <span class="choco-drip__blob" style="--x: 73%; --size: 42px; --delay: .1s;"></span>
+    <span class="choco-drip__blob" style="--x: 84%; --size: 58px; --delay: .35s;"></span>
+    <span class="choco-drip__blob" style="--x: 94%; --size: 40px; --delay: .2s;"></span>
+  </div>
+
+  <div class="choco-particles" aria-hidden="true">
+    <span class="choco-particle" style="--x: 8%; --dur: 7s; --delay: 0s;">🍫</span>
+    <span class="choco-particle" style="--x: 20%; --dur: 9s; --delay: 1.2s;">✨</span>
+    <span class="choco-particle" style="--x: 78%; --dur: 8s; --delay: .6s;">🍫</span>
+    <span class="choco-particle" style="--x: 90%; --dur: 10s; --delay: 2s;">✨</span>
+    <span class="choco-particle" style="--x: 50%; --dur: 11s; --delay: 1.6s;">🍫</span>
+  </div>
+</section>

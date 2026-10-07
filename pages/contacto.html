@@ -14,9 +14,11 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
     <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
     <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../css/chocolate-wow.css" />
 </head>
 <body>
     <header id="header"></header>
+<div id="page-banner"></div>
     <section id="banner">
         <h2>Contáctanos para más información</h2>
     </section>
@@ -74,6 +76,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       loadComponent('header', '../components/header.html', { base: '../' });
+      loadComponent('page-banner', '../components/page-banner.html', { base: '../', emoji: '📲', titulo: 'Contáctanos', subtitulo: 'Escríbenos y te respondemos por WhatsApp' });
       loadComponent('footer', '../components/footer.html', { base: '../' });
     });
 
