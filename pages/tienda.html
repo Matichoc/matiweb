@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'self'; form-action 'self' https://wa.me;">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <title>Pedido Matichoc</title>
   <meta property="og:type" content="website">
   <meta property="og:title" content="Pide tus Chocolates Matichoc">
@@ -12,6 +14,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
   <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/chocolate-wow.css" />
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -176,10 +179,12 @@
 
     <h3>Paso 4: Envía tu pedido</h3>
     <p class="checkout-help">Este paso es obligatorio para confirmar tu pedido, hayas pagado online o no: te escribimos para coordinar el pago (efectivo, transferencia, o avisarnos si ya pagaste con Tuu) y la entrega.</p>
+    <p id="pedidos-widget" class="pedidos-widget"></p>
     <button type="submit">📲 Enviar pedido por WhatsApp</button>
   </form>
 
   <script src="../js/catalogo.js"></script>
+  <script src="../js/racha.js"></script>
   <script>
     // Catálogo compartido (js/catalogo.js) — misma fuente que productos.html.
     const productos = CATALOGO;
@@ -307,6 +312,8 @@
 
       const wspURL = `https://wa.me/56975645591?text=${mensaje}`;
       window.open(wspURL, "_blank");
+      sumarPedido();
+      renderPedidosWidget();
       return false;
     }
 
