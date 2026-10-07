@@ -507,13 +507,7 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 }
 .logo-placa img { display: block; height: 112px; width: auto; max-width: 100%; }
-.page-banner .page-banner__logo { margin: 0 0 8px; }
-.page-banner .page-banner__logo img { height: 96px; }
-#banner .banner-logo { margin: 0 0 14px; }
-#banner .banner-logo img { height: 120px; }
 @media (max-width: 480px) {
-  .page-banner .page-banner__logo img { height: 80px; }
-  #banner .banner-logo img { height: 96px; }
 }
 #racha-widget .racha-avatar {
   width: auto;
@@ -522,3 +516,30 @@
   object-fit: contain;
   padding: 4px 8px;
 }
+
+/* El emoji vuelve al banner de las páginas (el logo ahora va fijo en el encabezado). */
+.page-banner .page-banner__emoji { margin: 0; font-size: 2rem; line-height: 1; }
+
+/*
+ * Encabezado fijo con el logo oficial vertical arriba a la izquierda: se ve siempre al
+ * navegar. --header-h lo mantiene js/base.js (alto real, también con el menú abierto) y lo
+ * usan las barras que se pegan debajo (Historia y Tienda) para no quedar tapadas.
+ * Solo se fija el alto del logo; el ancho es automático para no deformarlo.
+ */
+:root { --header-h: 84px; }
+html { scroll-padding-top: calc(var(--header-h) + 8px); }
+/* padding 0: el <header id="header"> contenedor también recibía el relleno global de `header` (styles.css) y duplicaba el alto. */
+#header { position: sticky; top: 0; z-index: 1000; padding: 0; }
+.site-logo {
+  display: inline-block;
+  background: #fff;
+  border-radius: 12px;
+  padding: 4px 9px;
+  line-height: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.site-logo img { display: block; height: 60px; width: auto; }
+@media (max-width: 480px) {
+  .site-logo img { height: 52px; }
+}
+.site-logo-link { text-align: left; margin: 0; }

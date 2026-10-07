@@ -37,3 +37,13 @@ document.addEventListener('click', (event) => {
     }
   }
 });
+
+// Alto real del encabezado fijo (cambia al abrir el menú en celular) para que las barras
+// pegadas debajo (Historia, Tienda) y los saltos a anclas no queden tapados.
+(function () {
+  const cab = document.getElementById('header');
+  if (!cab || !('ResizeObserver' in window)) return;
+  new ResizeObserver(() => {
+    document.documentElement.style.setProperty('--header-h', cab.offsetHeight + 'px');
+  }).observe(cab);
+})();

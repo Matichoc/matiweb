@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 
 // Marca en la barra de años la etapa que se está leyendo: la última
-// parada cuyo borde superior ya subió bajo la barra de años (máx. 140px o 40% de la pantalla).
+// parada cuyo borde superior ya pasó por debajo del encabezado fijo y de la barra de años.
 (function () {
     const links = new Map([...document.querySelectorAll('.hist-nav a')].map(a => [a.getAttribute('href').slice(1), a]));
     const paradas = [...document.querySelectorAll('.parada')];
@@ -32,9 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let pendiente = false;
     function marcar() {
         pendiente = false;
+        const cab = document.getElementById('header');
+        const barra = document.querySelector('.hist-nav');
+        const limite = (cab ? cab.offsetHeight : 0) + (barra ? barra.offsetHeight : 0) + 40;
         let id = null;
         paradas.forEach((p) => {
-            if (p.getBoundingClientRect().top <= Math.min(window.innerHeight * 0.4, 140)) id = p.id;
+            if (p.getBoundingClientRect().top <= limite) id = p.id;
         });
         if (id === actual) return;
         actual = id;
