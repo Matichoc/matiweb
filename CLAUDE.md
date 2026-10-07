@@ -23,6 +23,9 @@ Deploy directo a GitHub Pages (`.nojekyll`).
   ignora `?monto=`, verificado por el dueño) y deja el total copiado al
   portapapeles para pegarlo; el pedido real se manda por WhatsApp. Son dos flujos **sin vínculo** — no asumir que
   están conectados ni afirmar un pago como confirmado.
+- `js/brillos.js` + `.brillos`/`.choco-fondo` (css/chocolate-wow.css): chocolates y destellos que suben
+  detrás de los recuadros. Para sumar un recuadro nuevo, agrega su selector a `SELECTOR` en el script.
+  La barra café con gotas (`.choco-drip`) se quitó de los banners por pedido del dueño: no volver a ponerla.
 - Matijuego vive en otro repo (`Matichoc/MAtigame_v0`), fuera de este.
 
 ## Convenciones
