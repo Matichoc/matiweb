@@ -31,6 +31,17 @@
     <div id="racha-widget" aria-live="polite"></div>
   </section>
 
+  <!-- Puntos de venta -->
+  <section id="puntos-venta" class="pv-seccion" aria-labelledby="pv-titulo">
+    <h2 id="pv-titulo">Encuéntranos también en</h2>
+    <p class="pv-intro">Nuestros chocolates ya están en estos negocios:</p>
+    <div data-puntos-venta></div>
+    <div class="pv-cta">
+      <p><strong>¿Tienes un almacén o negocio?</strong> Vende Matichoc y llévales a tus clientes chocolate artesanal hecho en La Ligua.</p>
+      <a class="pv-cta-btn" data-vender-matichoc href="https://wa.me/56975645591" target="_blank" rel="noopener noreferrer">🤝 Quiero vender Matichoc</a>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer id="footer" role="contentinfo" aria-label="Pie de página con redes sociales y política"></footer>
 
@@ -40,6 +51,7 @@
 
   <script src="js/base.js"></script>
   <script src="js/racha.js"></script>
+  <script src="js/puntos-venta.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       loadComponent('header', 'components/header.html', { base: '' });
