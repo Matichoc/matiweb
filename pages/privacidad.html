@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'self'; form-action 'self' https://wa.me;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self' https://wa.me;">
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-    <title>Política de Privacidad - Matichoc</title>
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Política de Privacidad - Matichoc">
-    <meta property="og:description" content="Cómo tratamos tus datos y usamos herramientas de inteligencia artificial en Matichoc.">
-    <meta property="og:image" content="../assets/brand/logo-horizontal.png">
+    <title>Política de privacidad | Matichoc</title>
+  <meta name="description" content="Cómo Matichoc cuida tus datos: qué recopilamos, para qué los usamos y cómo ejercer tus derechos.">
+  <link rel="canonical" href="https://matichoc.cl/pages/privacidad.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Matichoc">
+  <meta property="og:locale" content="es_CL">
+  <meta property="og:title" content="Política de privacidad | Matichoc">
+  <meta property="og:description" content="Cómo Matichoc cuida tus datos: qué recopilamos, para qué los usamos y cómo ejercer tus derechos.">
+  <meta property="og:url" content="https://matichoc.cl/pages/privacidad.html">
+  <meta property="og:image" content="https://matichoc.cl/assets/brand/logo-horizontal.png">
+  <meta name="twitter:card" content="summary">
     <link rel="icon" type="image/x-icon" href="../assets/brand/favicon.ico">
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
     <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
@@ -58,7 +64,7 @@
                 <h3>Quiénes somos</h3>
                 <p>Matichoc es un emprendimiento familiar de chocolatería artesanal, con base en La Ligua, Chile.
                 Este sitio (matichoc.github.io o el dominio asociado) es informativo: muestra nuestros productos y
-                permite contactarnos, pero no procesamos pagos ni creamos cuentas de usuario dentro del sitio.</p>
+                permite armar tu pedido y contactarnos, pero el sitio no procesa pagos ni crea cuentas de usuario: el pedido se envía por WhatsApp y el pago online, que es opcional, se hace en la página de Tuu.</p>
             </div>
 
             <div class="privacidad-bloque">
@@ -72,6 +78,11 @@
                     de WhatsApp con tu nombre y lo que escribiste, que tú decides si enviar.</li>
                     <li><strong>Reseñas:</strong> se dejan directamente en Google, según las políticas de Google;
                     las que mostramos en la página de Opiniones son reseñas públicas de nuestros clientes.</li>
+                    <li><strong>Pedidos por la tienda:</strong> el nombre y el contacto que escribes en el panel
+                    "Tu pedido" solo se usan para armar el mensaje de WhatsApp; no se guardan en el sitio.</li>
+                    <li><strong>Pago online (opcional):</strong> el botón "Pagar online con Tuu" abre la página de
+                    pago de Tuu (Haulmer), donde ingresas tú los datos de tu tarjeta. Matichoc no ve ni guarda esos
+                    datos; los trata Tuu según su propia política de privacidad.</li>
                 </ul>
                 <p>No usamos cookies de seguimiento ni analítica de terceros en este sitio. Lo único que
                 guardamos es, en tu propio navegador (localStorage), tu racha de visitas y cuántos pedidos has
@@ -134,12 +145,6 @@
 
     <script src="../js/base.js"></script>
     <script src="../js/brillos.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            loadComponent('header', '../components/header.html', { base: '../' });
-            loadComponent('page-banner', '../components/page-banner.html', { base: '../', emoji: '🔒', titulo: 'Privacidad', subtitulo: 'Cómo cuidamos tus datos' });
-            loadComponent('footer', '../components/footer.html', { base: '../' });
-        });
-    </script>
+    <script src="../js/page-privacidad.js"></script>
 </body>
 </html>

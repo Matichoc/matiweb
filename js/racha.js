@@ -22,11 +22,18 @@ function diaAnteriorISO(fechaISO) {
   return d.toISOString().slice(0, 10);
 }
 
+// Lo guardado en localStorage lo puede editar cualquiera desde su navegador y luego
+// se interpola en el HTML del widget: se valida el tipo y el rango antes de usarlo.
 function leerRacha() {
+  const vacio = { ultimaVisita: null, racha: 0 };
   try {
-    return JSON.parse(localStorage.getItem(RACHA_KEY)) || { ultimaVisita: null, racha: 0 };
+    const e = JSON.parse(localStorage.getItem(RACHA_KEY));
+    if (!e || typeof e !== 'object') return vacio;
+    const racha = Number.isInteger(e.racha) && e.racha >= 0 && e.racha <= 3650 ? e.racha : 0;
+    const fecha = typeof e.ultimaVisita === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(e.ultimaVisita) ? e.ultimaVisita : null;
+    return { ultimaVisita: fecha, racha: fecha ? racha : 0 };
   } catch (e) {
-    return { ultimaVisita: null, racha: 0 };
+    return vacio;
   }
 }
 
@@ -48,7 +55,8 @@ function actualizarRacha() {
 
 function leerPedidos() {
   try {
-    return parseInt(localStorage.getItem(PEDIDOS_KEY), 10) || 0;
+    const n = parseInt(localStorage.getItem(PEDIDOS_KEY), 10);
+    return Number.isInteger(n) && n >= 0 ? Math.min(n, 100000) : 0;
   } catch (e) {
     return 0;
   }

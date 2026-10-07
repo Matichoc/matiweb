@@ -3,14 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'self'; form-action 'self' https://wa.me;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self' https://wa.me;">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-  <title>Tienda - Matichoc</title>
+  <title>Tienda de chocolates artesanales | Matichoc La Ligua</title>
   <meta name="description" content="Alfajores, cuchuflí, Matidubai, barras y más chocolates artesanales de La Ligua. Arma tu pedido y envíalo por WhatsApp.">
+  <link rel="canonical" href="https://matichoc.cl/pages/tienda.html">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Tienda Matichoc">
-  <meta property="og:description" content="Arma tu pedido de chocolates artesanales Matichoc y envíalo por WhatsApp.">
-  <meta property="og:image" content="../assets/brand/logo-horizontal.png">
+  <meta property="og:site_name" content="Matichoc">
+  <meta property="og:locale" content="es_CL">
+  <meta property="og:title" content="Tienda de chocolates artesanales | Matichoc La Ligua">
+  <meta property="og:description" content="Alfajores, cuchuflí, Matidubai, barras y más chocolates artesanales de La Ligua. Arma tu pedido y envíalo por WhatsApp.">
+  <meta property="og:url" content="https://matichoc.cl/pages/tienda.html">
+  <meta property="og:image" content="https://matichoc.cl/assets/brand/logo-horizontal.png">
+  <meta name="twitter:card" content="summary">
   <link rel="icon" type="image/x-icon" href="../assets/brand/favicon.ico">
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
   <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
@@ -92,12 +97,6 @@
 <script src="../js/catalogo.js"></script>
 <script src="../js/racha.js"></script>
 <script src="../js/tienda.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    loadComponent('header', '../components/header.html', { base: '../' });
-    loadComponent('page-banner', '../components/page-banner.html', { base: '../', emoji: '🛍️', titulo: 'Nuestra tienda', subtitulo: 'Chocolates artesanales hechos en La Ligua' });
-    loadComponent('footer', '../components/footer.html', { base: '../' });
-  });
-</script>
+<script src="../js/page-tienda.js"></script>
 </body>
 </html>

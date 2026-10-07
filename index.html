@@ -3,14 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'self'; form-action 'self' https://wa.me;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self' https://wa.me;">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-  <title>Matichoc - Pasión por el Cacao</title>
-  <meta name="description" content="Chocolates artesanales con historia, emoción y pasión por el cacao desde 2011. Alfajores, bombones, tabletas y más, hechos a mano en La Ligua, Chile.">
+  <title>Matichoc | Chocolates artesanales en La Ligua, Chile — desde 2011</title>
+  <meta name="description" content="Chocolates artesanales con historia, emoción y pasión por el cacao desde 2011. Alfajores, cuchuflí, Matidubai, barras y más, hechos a mano en La Ligua, Chile.">
+  <link rel="canonical" href="https://matichoc.cl/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Matichoc - Pasión por el Cacao">
-  <meta property="og:description" content="Chocolates artesanales con historia, emoción y pasión por el cacao desde 2011.">
-  <meta property="og:image" content="assets/brand/logo-horizontal.png">
+  <meta property="og:site_name" content="Matichoc">
+  <meta property="og:locale" content="es_CL">
+  <meta property="og:title" content="Matichoc | Chocolates artesanales en La Ligua, Chile — desde 2011">
+  <meta property="og:description" content="Chocolates artesanales con historia, emoción y pasión por el cacao desde 2011. Alfajores, cuchuflí, Matidubai, barras y más, hechos a mano en La Ligua, Chile.">
+  <meta property="og:url" content="https://matichoc.cl/">
+  <meta property="og:image" content="https://matichoc.cl/assets/brand/logo-horizontal.png">
+  <meta name="twitter:card" content="summary">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    "name": "Matichoc",
+    "alternateName": "Matichoc, pasión por el cacao",
+    "description": "Chocolatería artesanal familiar de La Ligua, Chile, desde 2011: alfajores, cuchuflí, Matidubai, barras y más.",
+    "url": "https://matichoc.cl/",
+    "logo": "https://matichoc.cl/assets/brand/icon-512.png",
+    "image": "https://matichoc.cl/assets/brand/logo-horizontal.png",
+    "telephone": "+56975645591",
+    "foundingDate": "2011",
+    "founder": { "@type": "Person", "name": "Inés Saavedra" },
+    "address": { "@type": "PostalAddress", "addressLocality": "La Ligua", "addressRegion": "Valparaíso", "addressCountry": "CL" },
+    "areaServed": "La Ligua y provincia de Petorca, Chile",
+    "sameAs": [
+      "https://www.facebook.com/matichoc2011",
+      "https://www.instagram.com/matichoc.pasion.por.el.cacao"
+    ]
+  }
+  </script>
   <link rel="icon" type="image/x-icon" href="assets/brand/favicon.ico">
   <link rel="icon" type="image/png" sizes="512x512" href="assets/brand/icon-512.png">
   <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
@@ -53,12 +79,6 @@
     <script src="js/brillos.js"></script>
   <script src="js/racha.js"></script>
   <script src="js/puntos-venta.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      loadComponent('header', 'components/header.html', { base: '' });
-      loadComponent('banner', 'components/banner.html');
-      loadComponent('footer', 'components/footer.html', { base: '' });
-    });
-  </script>
+  <script src="js/page-index.js"></script>
 </body>
 </html>
