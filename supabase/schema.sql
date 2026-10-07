@@ -14,7 +14,8 @@
 
 -- ---------- Reglas del programa (un solo lugar; confirmar con el dueño) ----------
 create or replace function public.reglas()
-returns jsonb language sql immutable as $$
+returns jsonb
+as $$
   select jsonb_build_object(
     'racha_meta',        7,                              -- días seguidos para el descuento
     'racha_premio',      '10% de descuento',
@@ -23,7 +24,8 @@ returns jsonb language sql immutable as $$
     'vigencia_dias',     30,                             -- días de validez de cada cupón
     'pedidos_max_dia',   20                              -- tope de pedidos "solicitados" por día
   )
-$$;
+$$
+language sql immutable;
 
 -- ---------- Tablas ----------
 create table if not exists public.perfiles (
@@ -85,28 +87,35 @@ alter table public.admins   enable row level security;   -- sin políticas: nadi
 
 -- ---------- Ayudantes ----------
 create or replace function public.hoy_cl()
-returns date language sql stable as $$
+returns date
+as $$
   select (now() at time zone 'America/Santiago')::date
-$$;
+$$
+language sql stable;
 
 -- ¿Es el dueño (o quien administra) y entró con verificación en dos pasos?
 create or replace function public.es_admin()
-returns boolean language sql stable security definer set search_path = public as $$
+returns boolean
+as $$
   select exists (select 1 from public.admins where usuario = auth.uid())
      and coalesce(auth.jwt() ->> 'aal', '') = 'aal2'
-$$;
+$$
+language sql stable security definer set search_path = public;
 
 -- Perfil completo: ya declaró su edad y aceptó los términos.
 create or replace function public.perfil_listo()
-returns boolean language sql stable security definer set search_path = public as $$
+returns boolean
+as $$
   select exists (
     select 1 from public.perfiles
     where id = auth.uid() and declaracion_edad is not null and acepto_terminos_en is not null
   )
-$$;
+$$
+language sql stable security definer set search_path = public;
 
 create or replace function public.exigir_perfil_listo()
-returns void language plpgsql stable security definer set search_path = public as $$
+returns void
+as $$
 begin
   if auth.uid() is null then
     raise exception 'Debes iniciar sesión' using errcode = '28000';
@@ -114,12 +123,14 @@ begin
   if not public.perfil_listo() then
     raise exception 'Primero confirma tu edad y acepta los términos' using errcode = 'P0001';
   end if;
-end $$;
+end $$
+language plpgsql stable security definer set search_path = public;
 
 -- Racha de días seguidos del ciclo actual: cuenta solo los días POSTERIORES al último
 -- descuento por racha reclamado, así cada descuento exige una racha nueva.
 create or replace function public.racha_ciclo(p_usuario uuid)
-returns integer language plpgsql stable security definer set search_path = public as $$
+returns integer
+as $$
 declare
   v_desde date;
   v_dia   date := public.hoy_cl();
@@ -140,10 +151,12 @@ begin
     v_dia := v_dia - 1;
   end loop;
   return v_n;
-end $$;
+end $$
+language plpgsql stable security definer set search_path = public;
 
 create or replace function public.codigo_cupon()
-returns text language plpgsql volatile as $$
+returns text
+as $$
 declare v text;
 begin
   loop
@@ -151,11 +164,13 @@ begin
     exit when not exists (select 1 from public.cupones where codigo = v);
   end loop;
   return v;
-end $$;
+end $$
+language plpgsql volatile;
 
 -- ---------- Alta del perfil al crear la cuenta ----------
 create or replace function public.crear_perfil()
-returns trigger language plpgsql security definer set search_path = public as $$
+returns trigger
+as $$
 begin
   insert into public.perfiles (id, apodo)
   values (
@@ -168,7 +183,8 @@ begin
   )
   on conflict (id) do nothing;
   return new;
-end $$;
+end $$
+language plpgsql security definer set search_path = public;
 
 drop trigger if exists crear_perfil_al_registrarse on auth.users;
 create trigger crear_perfil_al_registrarse
@@ -179,7 +195,8 @@ create trigger crear_perfil_al_registrarse
 
 -- Confirma edad y términos (obligatorio antes de usar racha, cupones o pedidos).
 create or replace function public.declarar_perfil(p_edad text, p_apodo text default null)
-returns void language plpgsql security definer set search_path = public as $$
+returns void
+as $$
 declare v_apodo text := nullif(trim(coalesce(p_apodo, '')), '');
 begin
   if auth.uid() is null then raise exception 'Debes iniciar sesión' using errcode = '28000'; end if;
@@ -194,21 +211,25 @@ begin
          acepto_terminos_en = coalesce(acepto_terminos_en, now()),
          apodo = coalesce(v_apodo, apodo)
    where id = auth.uid();
-end $$;
+end $$
+language plpgsql security definer set search_path = public;
 
 -- Cuenta la visita de hoy (una por día, con la fecha del servidor) y devuelve la racha.
 create or replace function public.registrar_visita()
-returns jsonb language plpgsql security definer set search_path = public as $$
+returns jsonb
+as $$
 begin
   perform public.exigir_perfil_listo();
   insert into public.visitas (usuario, dia) values (auth.uid(), public.hoy_cl())
   on conflict do nothing;
   return jsonb_build_object('racha', public.racha_ciclo(auth.uid()), 'hoy', public.hoy_cl());
-end $$;
+end $$
+language plpgsql security definer set search_path = public;
 
 -- Todo lo que necesita la página "Mi cuenta" en una sola llamada.
 create or replace function public.mi_resumen()
-returns jsonb language plpgsql stable security definer set search_path = public as $$
+returns jsonb
+as $$
 declare
   v_reglas jsonb := public.reglas();
   v_desde  timestamptz;
@@ -238,10 +259,12 @@ begin
              order by o.creado_en desc)
       from (select * from public.pedidos where usuario = auth.uid() order by creado_en desc limit 20) o), '[]'::jsonb)
   );
-end $$;
+end $$
+language plpgsql stable security definer set search_path = public;
 
 create or replace function public.reclamar_cupon_racha()
-returns jsonb language plpgsql security definer set search_path = public as $$
+returns jsonb
+as $$
 declare
   v_reglas jsonb := public.reglas();
   v_codigo text;
@@ -255,10 +278,12 @@ begin
   values (auth.uid(), 'racha', v_codigo, v_reglas ->> 'racha_premio',
           now() + make_interval(days => (v_reglas ->> 'vigencia_dias')::int));
   return jsonb_build_object('codigo', v_codigo);
-end $$;
+end $$
+language plpgsql security definer set search_path = public;
 
 create or replace function public.reclamar_premio_pedidos()
-returns jsonb language plpgsql security definer set search_path = public as $$
+returns jsonb
+as $$
 declare
   v_reglas jsonb := public.reglas();
   v_desde  timestamptz;
@@ -277,12 +302,14 @@ begin
   values (auth.uid(), 'pedidos', v_codigo, v_reglas ->> 'pedidos_premio',
           now() + make_interval(days => (v_reglas ->> 'vigencia_dias')::int));
   return jsonb_build_object('codigo', v_codigo);
-end $$;
+end $$
+language plpgsql security definer set search_path = public;
 
 -- Deja registrado un pedido "solicitado" (el pedido real sigue yendo por WhatsApp).
 -- Solo cuenta para el premio cuando el dueño lo marca como entregado.
 create or replace function public.registrar_pedido(p_total integer, p_resumen text default null)
-returns bigint language plpgsql security definer set search_path = public as $$
+returns bigint
+as $$
 declare v_id bigint;
 begin
   perform public.exigir_perfil_listo();
@@ -298,11 +325,13 @@ begin
   values (auth.uid(), p_total, left(p_resumen, 500))
   returning id into v_id;
   return v_id;
-end $$;
+end $$
+language plpgsql security definer set search_path = public;
 
 -- Progreso de los juegos: solo se lee y escribe el propio, y solo con perfil completo.
 create or replace function public.guardar_progreso_juego(p_datos jsonb)
-returns void language plpgsql security definer set search_path = public as $$
+returns void
+as $$
 begin
   perform public.exigir_perfil_listo();
   if p_datos is null or jsonb_typeof(p_datos) <> 'object' then
@@ -314,26 +343,32 @@ begin
   insert into public.juego_progreso (usuario, datos, actualizado_en)
   values (auth.uid(), p_datos, now())
   on conflict (usuario) do update set datos = excluded.datos, actualizado_en = excluded.actualizado_en;
-end $$;
+end $$
+language plpgsql security definer set search_path = public;
 
 create or replace function public.cargar_progreso_juego()
-returns jsonb language plpgsql stable security definer set search_path = public as $$
+returns jsonb
+as $$
 begin
   perform public.exigir_perfil_listo();
   return (select datos from public.juego_progreso where usuario = auth.uid());
-end $$;
+end $$
+language plpgsql stable security definer set search_path = public;
 
 -- Borra la cuenta y todo lo asociado (visitas, pedidos, cupones, perfil).
 create or replace function public.borrar_mi_cuenta()
-returns void language plpgsql security definer set search_path = public as $$
+returns void
+as $$
 begin
   if auth.uid() is null then raise exception 'Debes iniciar sesión' using errcode = '28000'; end if;
   delete from auth.users where id = auth.uid();
-end $$;
+end $$
+language plpgsql security definer set search_path = public;
 
 -- ---------- Funciones del dueño (solo `admins` con verificación en dos pasos) ----------
 create or replace function public.admin_consultar_cupon(p_codigo text)
-returns jsonb language plpgsql stable security definer set search_path = public as $$
+returns jsonb
+as $$
 declare r record;
 begin
   if not public.es_admin() then raise exception 'No autorizado' using errcode = '42501'; end if;
@@ -351,10 +386,12 @@ begin
     'creado_en', r.creado_en, 'vence_en', r.vence_en, 'canjeado_en', r.canjeado_en,
     'estado', case when r.canjeado_en is not null then 'canjeado'
                    when r.vence_en < now() then 'vencido' else 'vigente' end);
-end $$;
+end $$
+language plpgsql stable security definer set search_path = public;
 
 create or replace function public.admin_canjear_cupon(p_codigo text)
-returns boolean language plpgsql security definer set search_path = public as $$
+returns boolean
+as $$
 declare v_n integer;
 begin
   if not public.es_admin() then raise exception 'No autorizado' using errcode = '42501'; end if;
@@ -363,10 +400,12 @@ begin
    where codigo = upper(trim(p_codigo)) and canjeado_en is null and vence_en >= now();
   get diagnostics v_n = row_count;
   return v_n = 1;
-end $$;
+end $$
+language plpgsql security definer set search_path = public;
 
 create or replace function public.admin_pedidos(p_estado text default 'solicitado')
-returns jsonb language plpgsql stable security definer set search_path = public as $$
+returns jsonb
+as $$
 begin
   if not public.es_admin() then raise exception 'No autorizado' using errcode = '42501'; end if;
   return coalesce((
@@ -375,10 +414,12 @@ begin
              'creado_en', o.creado_en, 'estado', o.estado) order by o.creado_en desc)
     from (select * from public.pedidos where estado = p_estado order by creado_en desc limit 100) o
     join public.perfiles p on p.id = o.usuario), '[]'::jsonb);
-end $$;
+end $$
+language plpgsql stable security definer set search_path = public;
 
 create or replace function public.admin_marcar_pedido(p_id bigint, p_estado text)
-returns boolean language plpgsql security definer set search_path = public as $$
+returns boolean
+as $$
 declare v_n integer;
 begin
   if not public.es_admin() then raise exception 'No autorizado' using errcode = '42501'; end if;
@@ -392,7 +433,8 @@ begin
    where id = p_id;
   get diagnostics v_n = row_count;
   return v_n = 1;
-end $$;
+end $$
+language plpgsql security definer set search_path = public;
 
 -- ---------- Permisos ----------
 revoke all on all tables    in schema public from anon, authenticated;
