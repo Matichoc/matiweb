@@ -14,6 +14,7 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
     <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
     <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../css/chocolate-wow.css" />
     <script src="../js/revelar.js"></script>
     <style>
         .hist {
@@ -39,10 +40,6 @@
             padding: 4px 14px;
             border-radius: 999px;
             margin: 0 0 10px;
-        }
-        .hist-intro h1 {
-            font-size: 2.6rem;
-            margin-bottom: 10px;
         }
         .hist-intro p {
             font-size: 1.05rem;
@@ -339,7 +336,6 @@
 
         /* ---------- Mobile: camino a la izquierda ---------- */
         @media (max-width: 720px) {
-            .hist-intro h1 { font-size: 2rem; }
             .camino-wrap { --linea-x: 22px; }
             .parada,
             .parada:nth-child(even) {
@@ -361,11 +357,10 @@
 </head>
 <body>
     <header id="header"></header>
+<div id="page-banner"></div>
 
     <main class="hist">
         <div class="hist-intro">
-            <p class="hist-kicker">Desde 2011</p>
-            <h1>Nuestro camino</h1>
             <p>De vender chocolates puerta a puerta a estar en ferias de toda la región. Recorre cada parada y toca "Leer la historia completa" para conocerla a fondo.</p>
             <ul class="hist-stats">
                 <li><strong>2011</strong><span>el primer chocolate</span></li>
@@ -577,6 +572,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             loadComponent('header', '../components/header.html', { base: '../' });
+            loadComponent('page-banner', '../components/page-banner.html', { base: '../', emoji: '🛤️', titulo: 'Nuestro camino', subtitulo: 'Desde 2011, parada por parada' });
             loadComponent('footer', '../components/footer.html', { base: '../' });
         });
 
