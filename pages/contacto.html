@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'self'; form-action 'self' https://wa.me;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self' https://wa.me;">
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-    <title>Contacto</title>
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Contacto - Matichoc">
-    <meta property="og:description" content="Contáctanos para pedidos y consultas de chocolates artesanales Matichoc.">
-    <meta property="og:image" content="../assets/brand/logo-horizontal.png">
+    <title>Contacto y puntos de venta | Matichoc</title>
+  <meta name="description" content="Escríbenos por WhatsApp para pedidos personalizados, consultas o para vender Matichoc en tu negocio. Estamos en La Ligua, Chile.">
+  <link rel="canonical" href="https://matichoc.cl/pages/contacto.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Matichoc">
+  <meta property="og:locale" content="es_CL">
+  <meta property="og:title" content="Contacto y puntos de venta | Matichoc">
+  <meta property="og:description" content="Escríbenos por WhatsApp para pedidos personalizados, consultas o para vender Matichoc en tu negocio. Estamos en La Ligua, Chile.">
+  <meta property="og:url" content="https://matichoc.cl/pages/contacto.html">
+  <meta property="og:image" content="https://matichoc.cl/assets/brand/logo-horizontal.png">
+  <meta name="twitter:card" content="summary">
     <link rel="icon" type="image/x-icon" href="../assets/brand/favicon.ico">
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
     <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
@@ -74,21 +80,6 @@
   <script src="../js/base.js"></script>
     <script src="../js/brillos.js"></script>
   <script src="../js/puntos-venta.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      loadComponent('header', '../components/header.html', { base: '../' });
-      loadComponent('page-banner', '../components/page-banner.html', { base: '../', emoji: '📲', titulo: 'Contáctanos', subtitulo: 'Escríbenos y te respondemos por WhatsApp' });
-      loadComponent('footer', '../components/footer.html', { base: '../' });
-    });
-
-    document.getElementById('contacto-form').addEventListener('submit', (event) => {
-      event.preventDefault();
-      const nombre = document.getElementById('contacto-nombre').value.trim();
-      const motivo = document.getElementById('contacto-motivo').value;
-      const mensaje = document.getElementById('contacto-mensaje').value.trim();
-      const texto = `¡Hola Matichoc! Soy ${nombre}.\nMotivo: ${motivo}\n\n${mensaje}`;
-      window.open(`https://wa.me/56975645591?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
-    });
-  </script>
+  <script src="../js/page-contacto.js"></script>
 </body>
 </html>

@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'self'; form-action 'self' https://wa.me;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self' https://wa.me;">
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-    <title>Historia de MatiChoc</title>
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Historia de Matichoc">
-    <meta property="og:description" content="Conoce la historia de Matichoc, chocolates artesanales con pasión por el cacao desde 2011.">
-    <meta property="og:image" content="../assets/brand/logo-horizontal.png">
+    <title>Nuestra historia, desde 2011 | Matichoc</title>
+  <meta name="description" content="De vender chocolates puerta a puerta en 2011 a ferias de toda la región: la historia de Matichoc, chocolatería artesanal familiar de La Ligua.">
+  <link rel="canonical" href="https://matichoc.cl/pages/historia.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Matichoc">
+  <meta property="og:locale" content="es_CL">
+  <meta property="og:title" content="Nuestra historia, desde 2011 | Matichoc">
+  <meta property="og:description" content="De vender chocolates puerta a puerta en 2011 a ferias de toda la región: la historia de Matichoc, chocolatería artesanal familiar de La Ligua.">
+  <meta property="og:url" content="https://matichoc.cl/pages/historia.html">
+  <meta property="og:image" content="https://matichoc.cl/assets/brand/logo-horizontal.png">
+  <meta name="twitter:card" content="summary">
     <link rel="icon" type="image/x-icon" href="../assets/brand/favicon.ico">
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
     <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
@@ -570,59 +576,6 @@
 
     <script src="../js/base.js"></script>
     <script src="../js/brillos.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            loadComponent('header', '../components/header.html', { base: '../' });
-            loadComponent('page-banner', '../components/page-banner.html', { base: '../', emoji: '🛤️', titulo: 'Nuestro camino', subtitulo: 'Desde 2011, parada por parada' });
-            loadComponent('footer', '../components/footer.html', { base: '../' });
-        });
-
-        // El camino se "llena de chocolate" a medida que se baja por la página.
-        (function () {
-            const camino = document.getElementById('camino');
-            const progreso = document.getElementById('caminoProgreso');
-            let pendiente = false;
-            function actualizar() {
-                pendiente = false;
-                const r = camino.getBoundingClientRect();
-                const avance = Math.min(Math.max((window.innerHeight * 0.6 - r.top) / r.height, 0), 1);
-                progreso.style.height = (avance * r.height) + 'px';
-            }
-            window.addEventListener('scroll', () => {
-                if (!pendiente) { pendiente = true; requestAnimationFrame(actualizar); }
-            }, { passive: true });
-            window.addEventListener('resize', actualizar);
-            actualizar();
-        })();
-
-        // Marca en la barra de años la etapa que se está leyendo: la última
-        // parada cuyo borde superior ya subió bajo la barra de años (máx. 140px o 40% de la pantalla).
-        (function () {
-            const links = new Map([...document.querySelectorAll('.hist-nav a')].map(a => [a.getAttribute('href').slice(1), a]));
-            const paradas = [...document.querySelectorAll('.parada')];
-            let actual = null;
-            let pendiente = false;
-            function marcar() {
-                pendiente = false;
-                let id = null;
-                paradas.forEach((p) => {
-                    if (p.getBoundingClientRect().top <= Math.min(window.innerHeight * 0.4, 140)) id = p.id;
-                });
-                if (id === actual) return;
-                actual = id;
-                links.forEach(a => a.classList.remove('activo'));
-                const a = links.get(id);
-                if (a) {
-                    a.classList.add('activo');
-                    const nav = a.parentElement;
-                    nav.scrollTo({ left: a.offsetLeft - (nav.clientWidth - a.offsetWidth) / 2, behavior: 'auto' });
-                }
-            }
-            window.addEventListener('scroll', () => {
-                if (!pendiente) { pendiente = true; requestAnimationFrame(marcar); }
-            }, { passive: true });
-            marcar();
-        })();
-    </script>
+    <script src="../js/page-historia.js"></script>
 </body>
 </html>

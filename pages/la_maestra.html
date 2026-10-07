@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'self'; form-action 'self' https://wa.me;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self' https://wa.me;">
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-    <title>La Maestra Chocolatera - MatiChoc</title>
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="La Maestra Chocolatera - Matichoc">
-    <meta property="og:description" content="Conoce a Inés Saavedra, fundadora de Matichoc, y la historia detrás del chocolate artesanal con más pasión.">
-    <meta property="og:image" content="../assets/brand/logo-horizontal.png">
+    <title>Inés Saavedra, maestra chocolatera | Matichoc</title>
+  <meta name="description" content="Conoce a Inés Saavedra, fundadora de Matichoc y maestra chocolatera: cómo empezó, sus reconocimientos y su formación constante.">
+  <link rel="canonical" href="https://matichoc.cl/pages/la_maestra.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Matichoc">
+  <meta property="og:locale" content="es_CL">
+  <meta property="og:title" content="Inés Saavedra, maestra chocolatera | Matichoc">
+  <meta property="og:description" content="Conoce a Inés Saavedra, fundadora de Matichoc y maestra chocolatera: cómo empezó, sus reconocimientos y su formación constante.">
+  <meta property="og:url" content="https://matichoc.cl/pages/la_maestra.html">
+  <meta property="og:image" content="https://matichoc.cl/assets/brand/logo-horizontal.png">
+  <meta name="twitter:card" content="summary">
     <link rel="icon" type="image/x-icon" href="../assets/brand/favicon.ico">
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
     <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
@@ -302,54 +308,6 @@
 
     <script src="../js/base.js"></script>
     <script src="../js/brillos.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            loadComponent('header', '../components/header.html', { base: '../' });
-            loadComponent('page-banner', '../components/page-banner.html', { base: '../', emoji: '👩‍🍳', titulo: 'La Maestra Chocolatera', subtitulo: 'La mano detrás de cada chocolate' });
-            loadComponent('footer', '../components/footer.html', { base: '../' });
-        });
-
-        // Visor de fotos: la miniatura elegida pasa a la foto grande.
-        (function () {
-            const foto = document.getElementById('mFoto');
-            const minis = [...document.querySelectorAll('.m-mini')];
-            minis.forEach((m, i) => m.addEventListener('click', () => {
-                foto.src = m.dataset.foto;
-                foto.alt = 'Inés Saavedra, maestra chocolatera de Matichoc (foto ' + (i + 1) + ' de ' + minis.length + ')';
-                minis.forEach(x => x.removeAttribute('aria-current'));
-                m.setAttribute('aria-current', 'true');
-            }));
-        })();
-
-        // Pestañas accesibles (flechas, Inicio y Fin). Sin JS se ven todos los paneles.
-        (function () {
-            const cont = document.getElementById('mTabs');
-            const tabs = [...cont.querySelectorAll('[role="tab"]')];
-            const paneles = tabs.map(t => document.getElementById(t.getAttribute('aria-controls')));
-            const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            cont.classList.add('m-tabs-js');
-            function activar(i, enfocar) {
-                tabs.forEach((t, j) => {
-                    const on = i === j;
-                    t.setAttribute('aria-selected', on ? 'true' : 'false');
-                    t.tabIndex = on ? 0 : -1;
-                    paneles[j].hidden = !on;
-                    paneles[j].classList.remove('m-anima');
-                });
-                if (!reducir) { void paneles[i].offsetWidth; paneles[i].classList.add('m-anima'); }
-                if (enfocar) tabs[i].focus();
-                tabs[i].scrollIntoView({ block: 'nearest', inline: 'center' });
-            }
-            paneles.forEach((p, j) => { p.hidden = j !== 0; });
-            tabs.forEach((t, i) => {
-                t.addEventListener('click', () => activar(i, false));
-                t.addEventListener('keydown', (e) => {
-                    const n = tabs.length;
-                    const map = { ArrowRight: (i + 1) % n, ArrowLeft: (i + n - 1) % n, Home: 0, End: n - 1 };
-                    if (e.key in map) { e.preventDefault(); activar(map[e.key], true); }
-                });
-            });
-        })();
-    </script>
+    <script src="../js/page-maestra.js"></script>
 </body>
 </html>

@@ -3,14 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'self'; form-action 'self' https://wa.me;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://i.imgur.com data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self' https://wa.me;">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-  <title>Tienda - Matichoc</title>
+  <title>Tienda de chocolates artesanales | Matichoc La Ligua</title>
   <meta name="description" content="Alfajores, cuchuflí, Matidubai, barras y más chocolates artesanales de La Ligua. Arma tu pedido y envíalo por WhatsApp.">
+  <link rel="canonical" href="https://matichoc.cl/pages/tienda.html">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Tienda Matichoc">
-  <meta property="og:description" content="Arma tu pedido de chocolates artesanales Matichoc y envíalo por WhatsApp.">
-  <meta property="og:image" content="../assets/brand/logo-horizontal.png">
+  <meta property="og:site_name" content="Matichoc">
+  <meta property="og:locale" content="es_CL">
+  <meta property="og:title" content="Tienda de chocolates artesanales | Matichoc La Ligua">
+  <meta property="og:description" content="Alfajores, cuchuflí, Matidubai, barras y más chocolates artesanales de La Ligua. Arma tu pedido y envíalo por WhatsApp.">
+  <meta property="og:url" content="https://matichoc.cl/pages/tienda.html">
+  <meta property="og:image" content="https://matichoc.cl/assets/brand/logo-horizontal.png">
+  <meta name="twitter:card" content="summary">
   <link rel="icon" type="image/x-icon" href="../assets/brand/favicon.ico">
   <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
   <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
@@ -31,6 +36,11 @@
       <li>Envíalo por WhatsApp</li>
     </ol>
   </div>
+
+  <aside class="t-aviso" aria-label="Información importante antes de pedir">
+    <p><strong>Antes de pedir:</strong> nuestros productos <strong>contienen frutos secos</strong>. Gran parte son <strong>altos en azúcares</strong> (excepto los especiales sin azúcar) y <strong>altos en grasas</strong>, como todo chocolate. Si tienes alguna alergia, <a href="https://wa.me/56975645591" target="_blank" rel="noopener noreferrer">escríbenos antes de comprar</a>.</p>
+    <p><strong>Entregas:</strong> martes y jueves en nuestro stand de la plaza de La Ligua, otro día a coordinar, o envío por pagar (a regiones por Blue Express). Más detalles en los <a href="terminos.html">Términos y condiciones</a>.</p>
+  </aside>
 
   <div class="t-barra">
     <label for="tBuscar" class="t-oculto">Buscar productos</label>
@@ -67,6 +77,8 @@
       <button type="button" class="t-btn t-btn--tuu" id="btnPagarTuu">💳 Pagar online con Tuu</button>
       <p class="t-tuu-aviso" id="pagoTuuAviso" aria-live="polite">🔒 Pago seguro — se abre en una pestaña nueva. Ahí tendrás que escribir tú el monto total de tu carrito; te lo dejamos copiado para que solo lo pegues.</p>
 
+      <p class="t-ayuda">📦 <strong>Entrega:</strong> martes y jueves en nuestro stand de la plaza de La Ligua, otro día a coordinar en nuestro domicilio, o envío por pagar (a regiones por Blue Express).</p>
+
       <h3>Tus datos</h3>
       <label class="t-label" for="nombre">Nombre completo*</label>
       <input class="t-input" type="text" id="nombre" name="nombre" required autocomplete="name">
@@ -77,6 +89,7 @@
       <p class="t-ayuda">Este paso es obligatorio para confirmar tu pedido, hayas pagado online o no: te escribimos para coordinar el pago (efectivo, transferencia, o avisarnos si ya pagaste con Tuu) y la entrega.</p>
       <p id="pedidos-widget" class="pedidos-widget"></p>
       <button type="submit" class="t-btn t-btn--enviar">📲 Enviar pedido por WhatsApp</button>
+      <p class="t-ayuda">Al enviar tu pedido aceptas los <a href="terminos.html">Términos y condiciones</a>. El pedido queda confirmado cuando te respondemos por WhatsApp.</p>
     </div>
   </form>
 </dialog>
@@ -92,12 +105,6 @@
 <script src="../js/catalogo.js"></script>
 <script src="../js/racha.js"></script>
 <script src="../js/tienda.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    loadComponent('header', '../components/header.html', { base: '../' });
-    loadComponent('page-banner', '../components/page-banner.html', { base: '../', emoji: '🛍️', titulo: 'Nuestra tienda', subtitulo: 'Chocolates artesanales hechos en La Ligua' });
-    loadComponent('footer', '../components/footer.html', { base: '../' });
-  });
-</script>
+<script src="../js/page-tienda.js"></script>
 </body>
 </html>

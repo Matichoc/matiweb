@@ -259,7 +259,7 @@
     });
     mensaje += `\n💵 Total: $${clp(total)}\n📸 Recuerda enviar tu comprobante de pago.`;
 
-    window.open(`https://wa.me/${WSP}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    window.open(`https://wa.me/${WSP}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
     if (typeof sumarPedido === 'function') sumarPedido();
     if (typeof renderPedidosWidget === 'function') renderPedidosWidget();
   });
@@ -274,9 +274,38 @@
     }
   }
 
+  // ---------- Datos estructurados (SEO) ----------
+  // Se arman desde el mismo CATALOGO, así Google ve los mismos precios que el cliente.
+  // No se declara disponibilidad ni reseñas: no hay forma de verificarlas desde el sitio.
+  function agregarDatosEstructurados() {
+    const lista = {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: 'Chocolates artesanales Matichoc',
+      itemListElement: CATALOGO.map((p, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        item: {
+          '@type': 'Product',
+          name: p.nombre,
+          description: p.descripcion || p.nombre + ' artesanal de Matichoc.',
+          image: p.img,
+          category: p.categoria,
+          brand: { '@type': 'Brand', name: 'Matichoc' },
+          offers: { '@type': 'Offer', price: p.precio, priceCurrency: 'CLP', url: 'https://matichoc.cl/pages/tienda.html#' + slug(p.categoria) }
+        }
+      }))
+    };
+    const tag = document.createElement('script');
+    tag.type = 'application/ld+json';
+    tag.textContent = JSON.stringify(lista);
+    document.head.appendChild(tag);
+  }
+
   // ---------- Inicio ----------
   document.addEventListener('DOMContentLoaded', () => {
     renderCatalogo();
+    agregarDatosEstructurados();
     sincronizar(false);
     aplicarFiltros();
     aplicarHash();

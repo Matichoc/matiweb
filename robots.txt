@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /pages/productos.html
+
+Sitemap: https://matichoc.cl/sitemap.xml
