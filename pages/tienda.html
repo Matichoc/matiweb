@@ -401,14 +401,16 @@
         aviso.textContent = 'Primero agrega productos al carrito para saber cuánto pagar.';
         return;
       }
-      window.open('https://www.tuu.cl/matichoc_pago', '_blank', 'noopener,noreferrer');
       const monto = '$' + totalActual.toLocaleString('es-CL');
       aviso.textContent = '👉 En Tuu escribe ' + monto + ' (solo números: ' + totalActual + ').';
+      // Copiar ANTES de abrir la pestaña: al abrirla, esta página pierde el foco y
+      // el navegador (sobre todo en celular) rechaza la copia.
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(String(totalActual)).then(() => {
-          aviso.textContent = '✅ Monto ' + monto + ' copiado: pégalo en el campo de Tuu (o escribe ' + totalActual + ').';
+          aviso.textContent = '✅ Monto ' + monto + ' copiado: en Tuu mantén apretado el campo y elige "Pegar" (o escribe ' + totalActual + ').';
         }).catch(() => {});
       }
+      window.open('https://www.tuu.cl/matichoc_pago', '_blank', 'noopener,noreferrer');
     });
 
     function renderCart() {
