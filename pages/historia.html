@@ -12,20 +12,142 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
     <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
     <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+        .seccion-historia h2 {
+            text-align: center;
+        }
+        .historia-etapa {
+            background-color: #ffffff;
+            border: 2px solid #FFC800;
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .historia-etapa h3 {
+            color: #D4216C;
+            margin-top: 0;
+        }
+        .historia-galeria {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 14px;
+            margin-top: 20px;
+        }
+        .historia-galeria figure {
+            margin: 0;
+            text-align: center;
+        }
+        .historia-galeria img {
+            width: 100%;
+            height: 140px;
+            object-fit: contain;
+            background-color: #fff;
+            border: 1px solid #D4216C;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .historia-galeria figcaption {
+            margin-top: 6px;
+            font-size: 0.85rem;
+            color: #64321B;
+        }
+    </style>
 </head>
 <body>
     <header id="header"></header>
 
     <main>
         <section id="historia" class="seccion-historia">
-            <h2>Historia</h2>
-            <p>En MatiChoc, nuestra historia comenzó con la pasión por el cacao y la creación de chocolates artesanales que reflejan nuestra tradición y compromiso con la calidad.</p>
+            <h2>Nuestra historia</h2>
+
+            <div class="historia-etapa">
+                <p>Todo comenzó en 2011, cuando Inés Saavedra tomó un curso de manipulación de alimentos y de
+                chocolatería en Pullally. Ese mismo año nació Matías, su hijo mayor, y esa nueva etapa la motivó a
+                buscar un ingreso propio, además de su trabajo habitual en aseo, cuidado y cocina. El chocolate
+                apareció como el complemento perfecto: en fechas como Semana Santa, el Día de la Madre y el Día del
+                Padre, Inés recorría la localidad puerta a puerta ofreciendo sus primeros chocolates a los vecinos,
+                que con el tiempo aprendieron a confiar en su trabajo — algunos de esos primeros clientes siguen con
+                nosotros hasta el día de hoy. Hasta 2015, el chocolate fue un gran complemento: nos hicimos conocidos
+                en la zona y empezamos a ganarnos clientes fieles que, fecha a fecha, nos preferían.</p>
+            </div>
+
+            <div class="historia-etapa">
+                <h3>2016 – 2018: El salto a Coquimbo y las primeras ferias</h3>
+                <p>En 2016 la familia se trasladó a la Región de Coquimbo, y Matichoc se fue con ellos. Durante 2017
+                la marca siguió creciendo en la Cuarta Región sin perder su presencia en la Quinta: cada dos semanas
+                Inés viajaba a entregar los pedidos, siempre fuerte en las fechas que más mueven al rubro — Semana
+                Santa, Día de la Madre, Día del Niño, Día del Padre, Fiestas Patrias, Halloween y Navidad. Ese mismo
+                2017 dimos el salto a las ferias, participando en la Feria de San Juan en Coquimbo. Junto a los
+                chocolates, ahí también empezamos a vender accesorios y juguetitos — algo que seguimos haciendo
+                hasta hoy.</p>
+            </div>
+
+            <div class="historia-etapa">
+                <h3>2018 – 2020: De vuelta en Pedegua</h3>
+                <p>En 2018 nació Ámbar, y la familia volvió a la Quinta Región para instalarse en Pedegua. Matichoc
+                siguió creciendo en ferias, convirtiéndose en una de las impulsoras de la feria de emprendedores de
+                Pedegua. Fueron años de participar activamente en la comunidad y de hacer crecer la marca feria a
+                feria.</p>
+            </div>
+
+            <div class="historia-etapa">
+                <h3>2020 – hoy: La Ligua, nuestro hogar</h3>
+                <p>En 2020, en medio de la pandemia, Matichoc se instaló en La Ligua — donde seguimos hasta hoy.
+                Mientras muchos negocios se achicaban, nosotros crecimos: los productos personalizados (alfajores,
+                cuchuflí y cajas con mensajes) se volvieron un sello propio, presentes en pedidas de mano, de
+                padrino, reconciliaciones y aniversarios. Ahí entendimos que no solo vendíamos chocolate —
+                acompañábamos los momentos más importantes de nuestros clientes.</p>
+                <p>Desde entonces somos presentes en las ferias de toda la provincia de Petorca (Petorca, Cabildo,
+                Papudo, Zapallar y La Ligua) y viajamos a Valparaíso, Viña del Mar, La Calera, Coquimbo, Santiago,
+                San Fernando, Constitución, Los Andes, Putaendo y San Felipe, llevando Matichoc cada vez más
+                lejos.</p>
+            </div>
+
+            <div class="historia-etapa">
+                <h3>Comprometidos con nuestra comunidad</h3>
+                <p>Somos auspiciadores de Alianza Pedegua (Petorca). En el pasado también fuimos auspiciadores de
+                las selecciones femenina y juvenil (sub-13 y sub-15) de La Ligua. Desde 2025 auspiciamos al club
+                profesional Colchagua Club de Deportes, y desde este año colaboramos con tres clubes más de La
+                Ligua: Comercio, Quebradilla y Navidad. Además apoyamos a clubes de básquetbol y karate de la
+                zona.</p>
+                <div class="historia-galeria">
+                    <figure>
+                        <img src="../assets/community/sponsor-alianza-pedegua.jpg" alt="Alianza Pedegua">
+                        <figcaption>Alianza Pedegua</figcaption>
+                    </figure>
+                    <figure>
+                        <img src="../assets/community/sponsor-seleccion-laligua.jpg" alt="Selección femenina y juvenil de La Ligua">
+                        <figcaption>Selección La Ligua</figcaption>
+                    </figure>
+                    <figure>
+                        <img src="../assets/community/sponsor-colchagua-cd.jpg" alt="Colchagua Club de Deportes">
+                        <figcaption>Colchagua Club de Deportes</figcaption>
+                    </figure>
+                    <figure>
+                        <img src="../assets/community/sponsor-club-granate.jpg" alt="Club de La Ligua que apoyamos">
+                        <figcaption>Clubes de La Ligua</figcaption>
+                    </figure>
+                    <figure>
+                        <img src="../assets/community/sponsor-club-verde.jpg" alt="Club de La Ligua que apoyamos">
+                        <figcaption>Clubes de La Ligua</figcaption>
+                    </figure>
+                </div>
+            </div>
+
+            <div class="historia-etapa">
+                <h3>La evolución de nuestros productos</h3>
+                <p>Todo comenzó con los alfajores, bombones, barras y el cuchuflí tradicional, que seguimos haciendo
+                hasta hoy. Con los años sumamos los personalizados, los rellenos, los prestigios y — nuestro
+                producto más pedido — el <strong>Mati Dubai</strong>: chocolate de Dubai 100% artesanal, con
+                pistacho natural y fideo kataifi crocante por dentro, cubierto en chocolate de leche.</p>
+            </div>
         </section>
     </main>
 
     <footer id="footer"></footer>
 
-    <a href="https://wa.me/56975645591" target="_blank" class="whatsapp-float" aria-label="Escríbenos por WhatsApp">
+    <a href="https://wa.me/56975645591" target="_blank" rel="noopener noreferrer" class="whatsapp-float" aria-label="Escríbenos por WhatsApp">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39a9.9 9.9 0 0 0 4.75 1.21h.01c5.46 0 9.9-4.45 9.9-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m0 1.67c2.2 0 4.26.86 5.82 2.42a8.2 8.2 0 0 1 2.41 5.82c0 4.53-3.7 8.23-8.24 8.23a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.14.82.84-3.06-.2-.32a8.18 8.18 0 0 1-1.26-4.37c0-4.53 3.7-8.23 8.24-8.23m-4.65 4.29c-.15 0-.4.06-.61.3s-.8.78-.8 1.9.82 2.2.94 2.36c.11.15 1.6 2.5 3.95 3.4 1.95.75 2.35.6 2.77.56.42-.04 1.36-.55 1.55-1.09.19-.53.19-.98.13-1.08-.06-.1-.22-.16-.46-.28-.24-.12-1.4-.69-1.62-.77-.22-.08-.37-.12-.53.12-.15.24-.6.77-.74.92-.14.15-.27.17-.51.06-.24-.12-1.01-.37-1.93-1.19-.71-.63-1.19-1.42-1.33-1.66-.14-.24-.01-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.53-1.29-.74-1.76-.19-.46-.39-.4-.53-.4z"/></svg>
     </a>
 

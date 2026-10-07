@@ -173,7 +173,7 @@ header nav a {
 .banner-background {
   background-size: cover;
   background-position: center;
-  height: 80vh;
+  min-height: 80vh;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -382,7 +382,7 @@ header nav a {
     text-align: center;
   }
   .banner-background {
-    height: 60vh;
+    min-height: 60vh;
     padding: 20px;
     justify-content: center;
   }
@@ -466,7 +466,7 @@ section {
   background-image: url('https://imgur.com/vH7ilNA.jpg');
   background-size: cover;
   background-position: center;
-  height: 80vh;
+  min-height: 80vh;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -995,5 +995,69 @@ section {
   .whatsapp-float svg {
     width: 20px;
     height: 20px;
+  }
+}
+
+/* Menú mobile (components/header.html): hamburguesa + nav colapsable.
+   El toggle se maneja por delegación de eventos en js/base.js, no acá. */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background-color: #FFC800;
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.nav-toggle[aria-expanded="true"] span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.nav-toggle[aria-expanded="true"] span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle[aria-expanded="true"] span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-toggle span {
+    transition: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .nav-toggle {
+    display: flex;
+  }
+  .site-nav {
+    display: none;
+    flex-basis: 100%;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: 10px;
+  }
+  .site-nav.is-open {
+    display: flex;
+  }
+  .site-nav a {
+    margin: 6px 0 !important;
+    width: 100%;
   }
 }
