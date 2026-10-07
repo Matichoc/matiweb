@@ -13,11 +13,12 @@ Deploy directo a GitHub Pages (`.nojekyll`).
   `header`, `banner` (solo home) y `footer` vía `js/base.js` → `loadComponent(id, path, vars)`
   (fetch + innerHTML, con `{{base}}` para rutas relativas).
 - `js/catalogo.js`: única fuente de verdad del catálogo (`CATALOGO`,
-  `CATALOGO_CONSULTAR`). `productos.html` y `tienda.html` leen de ahí — nunca
+  `CATALOGO_CONSULTAR`). La Tienda (`pages/tienda.html` + `js/tienda.js`) lee de ahí — nunca
   dupliques precios/productos a mano en una página.
 - `css/styles.css`: hoja global única; hay bloques duplicados/muertos de
   trabajo anterior, no asumir que todo lo que hay ahí está en uso.
-- Checkout: carrito 100% client-side en `tienda.html` (sin `localStorage`).
+- Checkout: catálogo y carrito viven juntos en `tienda.html` (`js/tienda.js`, `css/tienda.css`),
+  100% client-side y sin `localStorage`. `productos.html` solo redirige a la Tienda.
   "Pagar online con Tuu" abre un link fijo a Tuu (sin monto/detalle: Tuu
   ignora `?monto=`, verificado por el dueño) y deja el total copiado al
   portapapeles para pegarlo; el pedido real se manda por WhatsApp. Son dos flujos **sin vínculo** — no asumir que

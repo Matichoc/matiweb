@@ -1,5 +1,6 @@
 // Fuente única de verdad para el catálogo de Matichoc.
-// Productos.html y tienda.html leen de aquí — no dupliques precios a mano.
+// La tienda (pages/tienda.html + js/tienda.js) lee de aquí — no dupliques precios a mano.
+// Campo opcional `badge`: etiqueta destacada en la tarjeta.
 const CATALOGO = [
   {
     id: 'alfajor',
@@ -70,6 +71,7 @@ const CATALOGO = [
     nombre: 'Matidubai',
     descripcion: 'Chocolate de Dubai 100% artesanal, con pistacho natural y fideo kataifi crocante.',
     precio: 13000,
+    badge: 'Más pedido',
     img: 'https://i.imgur.com/FcrTH9K.jpg'
   },
   {
