@@ -14,46 +14,283 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/icon-512.png">
     <link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png">
     <link rel="stylesheet" href="../css/styles.css" />
+    <script src="../js/revelar.js"></script>
+    <style>
+        .maestra { max-width: 1000px; margin: 0 auto; padding: 24px 16px 60px; }
+
+        /* ---------- Presentación ---------- */
+        .m-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+            gap: 28px;
+            align-items: center;
+        }
+        .m-visor {
+            background: #4b2e2e;
+            border-radius: 20px;
+            padding: 10px;
+            box-shadow: 0 10px 28px rgba(75, 46, 46, 0.25);
+        }
+        .m-visor-foto {
+            display: block;
+            width: 100%;
+            height: 340px;
+            object-fit: contain;
+            border-radius: 12px;
+            background: #3a2222;
+        }
+        .m-miniaturas {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            overflow-x: auto;
+            padding: 2px;
+            scrollbar-width: none;
+        }
+        .m-miniaturas::-webkit-scrollbar { display: none; }
+        .m-mini {
+            flex: 0 0 auto;
+            width: 56px;
+            height: 56px;
+            padding: 0;
+            border: 3px solid transparent;
+            border-radius: 10px;
+            background: #3a2222;
+            cursor: pointer;
+            overflow: hidden;
+            opacity: 0.7;
+        }
+        .m-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .m-mini[aria-current="true"] { border-color: #ffc800; opacity: 1; }
+        .m-mini:focus-visible { outline: 3px solid #ffc800; outline-offset: 2px; }
+
+        .m-kicker {
+            display: inline-block;
+            background: #d4216c;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 4px 14px;
+            border-radius: 999px;
+            margin: 0 0 10px;
+        }
+        .m-hero h1 { font-size: 2.6rem; margin: 0 0 6px; }
+        .m-rol { font-size: 1.1rem; color: #4b2e2e; margin: 0 0 16px; font-weight: 600; }
+        .m-datos { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .m-datos li {
+            background: #4b2e2e;
+            color: #fff8f0;
+            border-radius: 14px;
+            padding: 10px 12px;
+            line-height: 1.25;
+            font-size: 0.85rem;
+        }
+        .m-datos strong { display: block; font-family: var(--font-display); font-size: 1.5rem; color: #ffc800; }
+
+        /* ---------- Pestañas ---------- */
+        .m-tabs { margin-top: 36px; }
+        .m-tablist {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 4px 2px 10px;
+            scrollbar-width: none;
+        }
+        .m-tablist::-webkit-scrollbar { display: none; }
+        .m-tab {
+            flex: 0 0 auto;
+            min-height: 44px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 2px solid #4b2e2e;
+            background: #fff;
+            color: #4b2e2e;
+            font: inherit;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .m-tab[aria-selected="true"] { background: #4b2e2e; color: #ffc800; }
+        .m-tab:focus-visible { outline: 3px solid #d4216c; outline-offset: 2px; }
+        .m-panel {
+            background: #fff;
+            border-radius: 18px;
+            border-top: 6px solid #ffc800;
+            box-shadow: 0 8px 22px rgba(75, 46, 46, 0.12);
+            padding: 22px;
+        }
+        .m-panel h2 { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 1.3rem; margin: 0 0 10px; color: #4b2e2e; }
+        .m-panel p { font-size: 1.02rem; line-height: 1.65; color: #4b2e2e; margin: 0; }
+        .m-tabs-js .m-panel[hidden] { display: none; }
+        .m-tabs:not(.m-tabs-js) .m-panel { margin-bottom: 16px; }
+        .m-tabs:not(.m-tabs-js) .m-tablist { display: none; }
+        .m-panel.m-anima { animation: m-entra 0.35s ease; }
+        @keyframes m-entra { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+        .m-insignias, .m-chips { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+        .m-insignias li {
+            background: #fff8f0;
+            border: 2px solid #ffc800;
+            border-radius: 14px;
+            padding: 8px 14px;
+            font-weight: 700;
+            color: #4b2e2e;
+        }
+        .m-insignias li::before { content: "🏅 "; }
+        .m-chips li {
+            background: #4b2e2e;
+            color: #ffc800;
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-weight: 600;
+            font-size: 0.92rem;
+        }
+
+        /* ---------- Cita y medios ---------- */
+        .m-cita {
+            margin: 36px 20px 0 !important;
+            padding: 26px 22px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #4b2e2e, #64321b);
+            color: #fff8f0;
+            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 600;
+            font-size: 1.35rem;
+            line-height: 1.45;
+        }
+        .m-cita::before { content: "“"; display: block; color: #ffc800; font-size: 3rem; line-height: 0.6; }
+        .m-cita cite { display: block; margin-top: 12px; font-family: 'Segoe UI', sans-serif; font-size: 0.95rem; font-style: normal; color: #ffc800; }
+
+        .m-medios { margin-top: 36px; }
+        .m-medios h2 { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 1.3rem; text-align: center; margin-bottom: 14px; color: #4b2e2e; }
+        .m-medios-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .m-medio {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 18px;
+            border-radius: 16px;
+            color: #fff;
+            text-decoration: none;
+            min-height: 110px;
+            justify-content: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .m-medio:hover, .m-medio:focus-visible { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25); }
+        .m-medio small { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.9; }
+        .m-medio strong { font-size: 1.1rem; }
+        .m-medio--tv { background: #a01a58; }
+        .m-medio--radio { background: #365899; }
+
+        /* ---------- Aparición al scroll ---------- */
+        .js-reveal [data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .js-reveal [data-reveal].is-visible { opacity: 1; transform: none; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .m-panel.m-anima { animation: none; }
+            .m-medio { transition: none; }
+        }
+
+        @media (max-width: 720px) {
+            .m-hero { grid-template-columns: minmax(0, 1fr); }
+            .m-hero h1 { font-size: 2rem; }
+            .m-visor-foto { height: 300px; }
+            .m-panel { padding: 18px 16px; }
+            .m-cita { font-size: 1.15rem; }
+            .m-medios-grid { grid-template-columns: minmax(0, 1fr); }
+        }
+    </style>
 </head>
 <body>
     <header id="header"></header>
 
-    <section style="background-color: #ffffff; padding: 60px 20px; font-family: 'Segoe UI', sans-serif; overflow: visible;">
-        <div style="max-width: 1200px; margin: 0 auto; overflow: visible;">
-            <h2 style="color: #7B003D; font-size: 32px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <img src="../assets/brand/icon-512.png" alt="Logo Matichoc" style="height: 40px;" /> La Maestra Chocolatera
-            </h2>
-            <div style="display: flex; flex-wrap: wrap; gap: 40px; justify-content: space-between; align-items: flex-start;">
-                <div style="flex: 1; min-width: 300px;">
-                    <div style="display: flex; overflow-x: auto; gap: 16px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;">
-                        <img src="https://i.imgur.com/82fxI1H.png" alt="Inés Saavedra 1" style="height: 250px; object-fit: cover; border-radius: 12px; flex: 0 0 auto; scroll-snap-align: start;" />
-                        <img src="https://i.imgur.com/rEex4wf.png" alt="Inés Saavedra 2" style="height: 250px; object-fit: cover; border-radius: 12px; flex: 0 0 auto; scroll-snap-align: start;" />
-                        <img src="https://i.imgur.com/Ji3vvrP.png" alt="Inés Saavedra 3" style="height: 250px; object-fit: cover; border-radius: 12px; flex: 0 0 auto; scroll-snap-align: start;" />
-                        <img src="https://i.imgur.com/HkiWYrG.png" alt="Inés Saavedra 4" style="height: 250px; object-fit: cover; border-radius: 12px; flex: 0 0 auto; scroll-snap-align: start;" />
-                        <img src="https://i.imgur.com/JpG4dmt.png" alt="Inés Saavedra 5" style="height: 250px; object-fit: cover; border-radius: 12px; flex: 0 0 auto; scroll-snap-align: start;" />
-                    </div>
-                </div>
-                <div style="flex: 2; min-width: 300px;">
-                    <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-                        Inés Saavedra, fundadora de Matichoc, inició este delicioso viaje en 2011 con su hijo Matías en coche y una libreta en mano, anotando los primeros pedidos para fechas importantes como el Día de la Madre. Lo que partió como una idea familiar fue creciendo con esfuerzo, amor y formación constante, hasta convertirse en un verdadero referente del chocolate artesanal en la región.
-                    </p>
-                    <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-                        A lo largo de estos años, ha sido reconocida por su dedicación y talento a través de importantes premios y apoyos como los de <strong>Sopraval</strong>, <strong>FOSIS</strong>, <strong>PRODEMU</strong> y otros fondos regionales. Su constante capacitación en <strong>manipulación de alimentos</strong>, <strong>contabilidad</strong>, <strong>formalización</strong> y <strong>digitalización del emprendimiento</strong> la han llevado a profesionalizar cada aspecto de su trabajo.
-                    </p>
-                    <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-                        Hoy, además de crear chocolates irresistibles, Inés también enseña su arte en centros de formación y actividades comunitarias, formando a nuevas emprendedoras y compartiendo su sabiduría con pasión.
-                    </p>
-                    <blockquote style="font-style: italic; color: #D4216C; font-size: 18px; margin: 20px 0; border-left: 4px solid #D4216C; padding-left: 12px;">
-                        "El chocolate no solo se hace con cacao, también con cariño, arte y raíces."
-                    </blockquote>
-                    <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 20px;">
-                        <a href="https://www.youtube.com/watch?v=ZcNYsStM7rI" target="_blank" rel="noopener noreferrer" style="padding: 10px 20px; background-color: #D4216C; color: white; border-radius: 6px; text-decoration: none;">Ver entrevista en TV La Ligua</a>
-                        <a href="https://www.facebook.com/montealegrefm/posts/pfbid02oN2rAttEQ46tTFawLuLzHoV6VZgjXxtV2fiwMZV5DCuVAr2ygcNjLaqB9QhginMPl?rdid=K30j9qC5RZNtaXQJ#" target="_blank" rel="noopener noreferrer" style="padding: 10px 20px; background-color: #4267B2; color: white; border-radius: 6px; text-decoration: none;">Entrevista en Radio Montealegre</a>
-                    </div>
+    <main class="maestra">
+        <section class="m-hero" aria-labelledby="m-titulo">
+            <div class="m-visor">
+                <img class="m-visor-foto" id="mFoto" src="https://i.imgur.com/82fxI1H.png" alt="Inés Saavedra, maestra chocolatera de Matichoc (foto 1 de 5)" />
+                <div class="m-miniaturas" role="group" aria-label="Fotos de Inés (toca una para verla grande)">
+                    <button type="button" class="m-mini" aria-current="true" data-foto="https://i.imgur.com/82fxI1H.png" aria-label="Ver foto 1"><img src="https://i.imgur.com/82fxI1H.png" alt="" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/rEex4wf.png" aria-label="Ver foto 2"><img src="https://i.imgur.com/rEex4wf.png" alt="" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/Ji3vvrP.png" aria-label="Ver foto 3"><img src="https://i.imgur.com/Ji3vvrP.png" alt="" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/HkiWYrG.png" aria-label="Ver foto 4"><img src="https://i.imgur.com/HkiWYrG.png" alt="" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/JpG4dmt.png" aria-label="Ver foto 5"><img src="https://i.imgur.com/JpG4dmt.png" alt="" loading="lazy" /></button>
                 </div>
             </div>
-        </div>
-    </section>
+            <div>
+                <p class="m-kicker">Fundadora de Matichoc</p>
+                <h1 id="m-titulo">Inés Saavedra</h1>
+                <p class="m-rol">La Maestra Chocolatera</p>
+                <ul class="m-datos">
+                    <li><strong>2011</strong>empezó con una libreta y un coche</li>
+                    <li><strong>+3</strong>apoyos y premios, entre ellos Sopraval, FOSIS y PRODEMU</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="m-tabs" id="mTabs" aria-label="Conoce a Inés" data-reveal>
+            <div class="m-tablist" role="tablist" aria-label="Secciones sobre Inés">
+                <button type="button" class="m-tab" role="tab" id="tab-empezo" aria-controls="panel-empezo" aria-selected="true">🍫 Cómo empezó</button>
+                <button type="button" class="m-tab" role="tab" id="tab-reconoc" aria-controls="panel-reconoc" aria-selected="false" tabindex="-1">🏅 Reconocimientos</button>
+                <button type="button" class="m-tab" role="tab" id="tab-aprende" aria-controls="panel-aprende" aria-selected="false" tabindex="-1">📚 Siempre aprendiendo</button>
+                <button type="button" class="m-tab" role="tab" id="tab-hoy" aria-controls="panel-hoy" aria-selected="false" tabindex="-1">🎓 Hoy</button>
+            </div>
+
+            <div class="m-panel" role="tabpanel" id="panel-empezo" aria-labelledby="tab-empezo" tabindex="0">
+                <h2>Cómo empezó</h2>
+                <p>Inés Saavedra, fundadora de Matichoc, inició este delicioso viaje en 2011 con su hijo Matías en coche y una libreta en mano, anotando los primeros pedidos para fechas importantes como el Día de la Madre. Lo que partió como una idea familiar fue creciendo con esfuerzo, amor y formación constante, hasta convertirse en un verdadero referente del chocolate artesanal en la región.</p>
+            </div>
+
+            <div class="m-panel" role="tabpanel" id="panel-reconoc" aria-labelledby="tab-reconoc" tabindex="0" hidden>
+                <h2>Reconocimientos</h2>
+                <p>A lo largo de estos años, ha sido reconocida por su dedicación y talento a través de importantes premios y apoyos como los de:</p>
+                <ul class="m-insignias">
+                    <li>Sopraval</li>
+                    <li>FOSIS</li>
+                    <li>PRODEMU</li>
+                    <li>Otros fondos regionales</li>
+                </ul>
+            </div>
+
+            <div class="m-panel" role="tabpanel" id="panel-aprende" aria-labelledby="tab-aprende" tabindex="0" hidden>
+                <h2>Siempre aprendiendo</h2>
+                <p>Su constante capacitación la ha llevado a profesionalizar cada aspecto de su trabajo:</p>
+                <ul class="m-chips">
+                    <li>Manipulación de alimentos</li>
+                    <li>Contabilidad</li>
+                    <li>Formalización</li>
+                    <li>Digitalización del emprendimiento</li>
+                </ul>
+            </div>
+
+            <div class="m-panel" role="tabpanel" id="panel-hoy" aria-labelledby="tab-hoy" tabindex="0" hidden>
+                <h2>Hoy</h2>
+                <p>Además de crear chocolates irresistibles, Inés también enseña su arte en centros de formación y actividades comunitarias, formando a nuevas emprendedoras y compartiendo su sabiduría con pasión.</p>
+            </div>
+        </section>
+
+        <blockquote class="m-cita" data-reveal>
+            El chocolate no solo se hace con cacao, también con cariño, arte y raíces.
+            <cite>— Inés Saavedra</cite>
+        </blockquote>
+
+        <section class="m-medios" aria-labelledby="m-medios-t" data-reveal>
+            <h2 id="m-medios-t">Escúchala y mírala en los medios</h2>
+            <div class="m-medios-grid">
+                <a class="m-medio m-medio--tv" href="https://www.youtube.com/watch?v=ZcNYsStM7rI" target="_blank" rel="noopener noreferrer">
+                    <small>📺 Video</small>
+                    <strong>Entrevista en TV La Ligua</strong>
+                </a>
+                <a class="m-medio m-medio--radio" href="https://www.facebook.com/montealegrefm/posts/pfbid02oN2rAttEQ46tTFawLuLzHoV6VZgjXxtV2fiwMZV5DCuVAr2ygcNjLaqB9QhginMPl?rdid=K30j9qC5RZNtaXQJ#" target="_blank" rel="noopener noreferrer">
+                    <small>📻 Radio</small>
+                    <strong>Entrevista en Radio Montealegre</strong>
+                </a>
+            </div>
+        </section>
+    </main>
 
     <footer id="footer"></footer>
 
@@ -67,6 +304,48 @@
             loadComponent('header', '../components/header.html', { base: '../' });
             loadComponent('footer', '../components/footer.html', { base: '../' });
         });
+
+        // Visor de fotos: la miniatura elegida pasa a la foto grande.
+        (function () {
+            const foto = document.getElementById('mFoto');
+            const minis = [...document.querySelectorAll('.m-mini')];
+            minis.forEach((m, i) => m.addEventListener('click', () => {
+                foto.src = m.dataset.foto;
+                foto.alt = 'Inés Saavedra, maestra chocolatera de Matichoc (foto ' + (i + 1) + ' de ' + minis.length + ')';
+                minis.forEach(x => x.removeAttribute('aria-current'));
+                m.setAttribute('aria-current', 'true');
+            }));
+        })();
+
+        // Pestañas accesibles (flechas, Inicio y Fin). Sin JS se ven todos los paneles.
+        (function () {
+            const cont = document.getElementById('mTabs');
+            const tabs = [...cont.querySelectorAll('[role="tab"]')];
+            const paneles = tabs.map(t => document.getElementById(t.getAttribute('aria-controls')));
+            const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            cont.classList.add('m-tabs-js');
+            function activar(i, enfocar) {
+                tabs.forEach((t, j) => {
+                    const on = i === j;
+                    t.setAttribute('aria-selected', on ? 'true' : 'false');
+                    t.tabIndex = on ? 0 : -1;
+                    paneles[j].hidden = !on;
+                    paneles[j].classList.remove('m-anima');
+                });
+                if (!reducir) { void paneles[i].offsetWidth; paneles[i].classList.add('m-anima'); }
+                if (enfocar) tabs[i].focus();
+                tabs[i].scrollIntoView({ block: 'nearest', inline: 'center' });
+            }
+            paneles.forEach((p, j) => { p.hidden = j !== 0; });
+            tabs.forEach((t, i) => {
+                t.addEventListener('click', () => activar(i, false));
+                t.addEventListener('keydown', (e) => {
+                    const n = tabs.length;
+                    const map = { ArrowRight: (i + 1) % n, ArrowLeft: (i + n - 1) % n, Home: 0, End: n - 1 };
+                    if (e.key in map) { e.preventDefault(); activar(map[e.key], true); }
+                });
+            });
+        })();
     </script>
 </body>
 </html>
