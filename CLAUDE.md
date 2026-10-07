@@ -26,7 +26,8 @@ Deploy directo a GitHub Pages (`.nojekyll`).
 - `js/brillos.js` + `.brillos`/`.choco-fondo` (css/chocolate-wow.css): chocolates y destellos que suben
   detrás de los recuadros. Para sumar un recuadro nuevo, agrega su selector a `SELECTOR` en el script.
   La barra café con gotas (`.choco-drip`) se quitó de los banners por pedido del dueño: no volver a ponerla.
-- Matijuego vive en otro repo (`Matichoc/MAtigame_v0`), fuera de este.
+- Matijuego vive en otro repo (`Matichoc/MAtigame_v0`), fuera de este. Se enlaza como `https://matichoc.cl/MAtigame_v0/`:
+  GitHub Pages sirve los proyectos de la misma cuenta bajo el dominio propio, así todo queda en matichoc.cl.
 
 ## Datos legales (entregados por el dueño)
 

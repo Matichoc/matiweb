@@ -197,8 +197,12 @@
     if (chip) {
       categoriaActiva = chip.dataset.chip;
       aplicarFiltros();
-      const tope = document.querySelector('.t-barra');
-      if (tope) window.scrollTo({ top: Math.max(tope.getBoundingClientRect().top + window.scrollY - 4, 0), behavior: reducir ? 'auto' : 'smooth' });
+      // Lleva el inicio del catálogo justo debajo del encabezado fijo y de la barra de filtros.
+      const cat = $('tCatalogo');
+      const cab = $('header');
+      const barra = document.querySelector('.t-barra');
+      const alto = (cab ? cab.offsetHeight : 0) + (barra ? barra.offsetHeight : 0);
+      window.scrollTo({ top: Math.max(cat.getBoundingClientRect().top + window.scrollY - alto - 8, 0), behavior: reducir ? 'auto' : 'smooth' });
       return;
     }
     const btn = e.target.closest('[data-accion]');
