@@ -1,0 +1,123 @@
+/*
+ * Efecto "chocolate derretido" para el Hero (components/banner.html).
+ * Solo CSS + un filtro SVG (gooey) — nada de JS ni dependencias externas,
+ * así no agrega peso a un sitio estático que hoy no tiene build step.
+ *
+ * Se degrada solo:
+ *  - prefers-reduced-motion: reduce  -> sin animación, drip en su estado final.
+ *  - sin soporte de filtros SVG      -> se ven círculos simples, sin fusionarse
+ *    (no rompe el layout, solo pierde el efecto "goo").
+ */
+
+.choco-drip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 70px;
+  pointer-events: none;
+  filter: url(#choco-goo);
+  z-index: 2;
+}
+
+.choco-drip::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 22px;
+  background-color: var(--color-brown-dark, #4b2e2e);
+}
+
+.choco-drip__blob {
+  position: absolute;
+  top: 0;
+  left: var(--x);
+  width: var(--size);
+  height: var(--size);
+  margin-left: calc(var(--size) / -2);
+  background-color: var(--color-brown-dark, #4b2e2e);
+  border-radius: 50%;
+  transform-origin: top center;
+  transform: translateY(55%) scaleY(1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .choco-drip__blob {
+    animation: choco-drip-fall 2.4s var(--delay, 0s) cubic-bezier(.65, 0, .35, 1) both;
+  }
+}
+
+@keyframes choco-drip-fall {
+  0% {
+    transform: translateY(-40%) scaleY(0.4);
+  }
+  55% {
+    transform: translateY(45%) scaleY(1.35);
+  }
+  100% {
+    transform: translateY(55%) scaleY(1);
+  }
+}
+
+@media (max-width: 480px) {
+  .choco-drip {
+    height: 46px;
+  }
+  .choco-drip::before {
+    height: 16px;
+  }
+}
+
+/* Entrada suave del contenido del Hero una vez que el componente llega al DOM. */
+.choco-fade-in {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .choco-fade-in {
+    animation: choco-fade-in 0.7s ease-out 0.05s both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choco-fade-in {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes choco-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Microinteracción "melt" para los botones del Hero: el botón se deforma
+ * hacia una silueta orgánica al pasar el mouse/foco. Solo border-radius +
+ * sombra (barato de pintar, sin filtros ni JS), reutilizable en cualquier
+ * botón del sitio con la clase .btn-melt.
+ */
+.btn-melt {
+  transition: border-radius 0.4s cubic-bezier(.65, 0, .35, 1), box-shadow 0.3s ease;
+}
+
+.btn-melt:hover,
+.btn-melt:focus-visible {
+  border-radius: 46% 54% 63% 37% / 45% 48% 52% 55%;
+  box-shadow: 0 10px 22px rgba(75, 46, 46, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-melt {
+    transition: none;
+  }
+}

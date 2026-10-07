@@ -173,7 +173,7 @@ header nav a {
 .banner-background {
   background-size: cover;
   background-position: center;
-  height: 80vh;
+  min-height: 80vh;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -382,7 +382,7 @@ header nav a {
     text-align: center;
   }
   .banner-background {
-    height: 60vh;
+    min-height: 60vh;
     padding: 20px;
     justify-content: center;
   }
@@ -466,7 +466,7 @@ section {
   background-image: url('https://imgur.com/vH7ilNA.jpg');
   background-size: cover;
   background-position: center;
-  height: 80vh;
+  min-height: 80vh;
   display: flex;
   align-items: center;
   justify-content: flex-start;

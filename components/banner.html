@@ -1,17 +1,39 @@
 <section class="banner-section" role="banner" aria-label="Banner principal de Matichoc">
   <div class="banner-background" style="background-image: url('assets/images/Familia en el mercado de MatiChoc.png'); background-size: cover; background-position: center; padding: 60px 20px; color: #fff; text-align: center;">
-    <div class="banner-content" style="max-width: 800px; margin: 0 auto; background-color: rgba(75, 46, 46, 0.7); padding: 30px; border-radius: 10px;">
+    <div class="banner-content choco-fade-in" style="max-width: 800px; margin: 0 auto; background-color: rgba(75, 46, 46, 0.7); padding: 30px; border-radius: 10px;">
       <h1 class="banner-title" style="font-size: 3rem; font-weight: bold; margin-bottom: 20px;">Matichoc, pasión por el cacao</h1>
       <p class="banner-text" style="font-size: 1.25rem; line-height: 1.5; margin-bottom: 30px;">
         Participando de tus momentos especiales desde el 2011.<br>
         Chocolates artesanales con historia, emoción y ese toque único que sólo la maestra puede entregar.
       </p>
       <div class="banner-buttons" style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-        <a href="pages/productos.html" class="btn btn-pink" style="background-color: #d6336c; color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: 600;">🍫 Ver productos</a>
-        <a href="https://wa.me/56975645591" target="_blank" class="btn btn-green" style="background-color: #28a745; color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: 600;">💬 Escríbenos</a>
-        <a href="pages/tienda.html" class="btn btn-yellow" style="background-color: #ffc107; color: #4b2e2e; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: 600;">🛍️ Compra aquí</a>
-        <a href="https://matichoc.github.io/MAtigame_v0/" target="_blank" class="btn btn-game" style="background-color: #cfd767; color: #4b2e2e; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: 600;">🎮 Jugar Matijuego</a>
+        <a href="pages/productos.html" class="btn btn-pink btn-melt" style="background-color: #d6336c; color: white; padding: 12px 25px; text-decoration: none; font-weight: 600;">🍫 Ver productos</a>
+        <a href="https://wa.me/56975645591" target="_blank" class="btn btn-green btn-melt" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; font-weight: 600;">💬 Escríbenos</a>
+        <a href="pages/tienda.html" class="btn btn-yellow btn-melt" style="background-color: #ffc107; color: #4b2e2e; padding: 12px 25px; text-decoration: none; font-weight: 600;">🛍️ Compra aquí</a>
+        <a href="https://matichoc.github.io/MAtigame_v0/" target="_blank" class="btn btn-game btn-melt" style="background-color: #cfd767; color: #4b2e2e; padding: 12px 25px; text-decoration: none; font-weight: 600;">🎮 Jugar Matijuego</a>
       </div>
+    </div>
+
+    <svg class="choco-goo-defs" aria-hidden="true" focusable="false" style="position: absolute; width: 0; height: 0; overflow: hidden;">
+      <defs>
+        <filter id="choco-goo">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
+          <feColorMatrix in="blur" mode="matrix"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11" result="goo" />
+          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+        </filter>
+      </defs>
+    </svg>
+    <div class="choco-drip" aria-hidden="true">
+      <span class="choco-drip__blob" style="--x: 6%; --size: 30px; --delay: .05s;"></span>
+      <span class="choco-drip__blob" style="--x: 16%; --size: 46px; --delay: .25s;"></span>
+      <span class="choco-drip__blob" style="--x: 27%; --size: 34px; --delay: 0s;"></span>
+      <span class="choco-drip__blob" style="--x: 38%; --size: 52px; --delay: .4s;"></span>
+      <span class="choco-drip__blob" style="--x: 50%; --size: 36px; --delay: .15s;"></span>
+      <span class="choco-drip__blob" style="--x: 62%; --size: 48px; --delay: .3s;"></span>
+      <span class="choco-drip__blob" style="--x: 73%; --size: 32px; --delay: .1s;"></span>
+      <span class="choco-drip__blob" style="--x: 84%; --size: 44px; --delay: .35s;"></span>
+      <span class="choco-drip__blob" style="--x: 94%; --size: 30px; --delay: .2s;"></span>
     </div>
   </div>
 </section>
