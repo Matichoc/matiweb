@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!$('terminos').checked) return aviso(msg, 'Para seguir, acepta los términos y la política de privacidad.');
       $('btn-perfil').disabled = true;
       try {
-        await Cuenta.declarar(edad, $('apodo').value);
+        await Cuenta.declarar(edad, $('apodo').value, $('novedades').checked);
         await cargarCuenta();
       } catch (e) { aviso(msg, Cuenta.traducir(e)); }
       finally { $('btn-perfil').disabled = false; }
@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function pintarCuenta(r) {
     const meta = r.reglas.racha_meta;
     $('saludo').textContent = `Hola, ${r.perfil.apodo} 💛`;
+    $('novedades-cuenta').checked = !!r.perfil.acepto_novedades;
 
     const puntos = $('racha-puntos');
     puntos.replaceChildren();
@@ -165,6 +166,15 @@ document.addEventListener('DOMContentLoaded', () => {
     prepararEntrada();
     $('btn-reclamar-racha').addEventListener('click', (ev) => reclamar(Cuenta.reclamarRacha, ev.currentTarget));
     $('btn-reclamar-pedidos').addEventListener('click', (ev) => reclamar(Cuenta.reclamarPedidos, ev.currentTarget));
+    $('novedades-cuenta').addEventListener('change', async (ev) => {
+      const caja = ev.currentTarget, msg = $('mensaje-novedades');
+      caja.disabled = true;
+      try {
+        await Cuenta.cambiarNovedades(caja.checked);
+        aviso(msg, caja.checked ? 'Listo: te avisaremos de las novedades.' : 'Listo: no te enviaremos novedades.', true);
+      } catch (e) { caja.checked = !caja.checked; aviso(msg, Cuenta.traducir(e)); }
+      finally { caja.disabled = false; }
+    });
     $('btn-salir').addEventListener('click', async () => { await Cuenta.salir(); location.reload(); });
     $('btn-borrar').addEventListener('click', async () => {
       if (!confirm('¿Seguro que quieres borrar tu cuenta Matilover? Se borra tu racha, cupones, pedidos y progreso de juegos. No se puede deshacer.')) return;

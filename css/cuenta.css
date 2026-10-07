@@ -69,3 +69,4 @@
 .fila-pedido .acciones .btn { width: auto; flex: 1 1 140px; margin: 0; }
 .qr { display: block; margin: 10px auto; width: 200px; height: 200px; background: #fff; }
 .secreto { font-family: ui-monospace, Menlo, Consolas, monospace; word-break: break-all; background: #f5ede2; padding: 8px; border-radius: 8px; font-size: 0.9rem; }
+.lista-matilovers { max-height: 420px; overflow: auto; margin-top: 8px; }

@@ -65,6 +65,7 @@
                     <label class="opcion"><input type="radio" name="edad" value="menor_con_permiso"> Soy menor de 14 y tengo permiso de un adulto</label>
                 </fieldset>
                 <label class="opcion"><input type="checkbox" id="terminos" required> <span>Acepto los <a href="terminos.html" target="_blank" rel="noopener noreferrer">Términos y condiciones</a> y la <a href="privacidad.html" target="_blank" rel="noopener noreferrer">Política de privacidad</a>.</span></label>
+                <label class="opcion"><input type="checkbox" id="novedades"> <span>Quiero recibir novedades y promociones de Matichoc por correo (opcional; puedes cambiarlo cuando quieras).</span></label>
                 <button type="submit" class="btn" id="btn-perfil">Guardar y empezar</button>
             </form>
             <div id="mensaje-perfil" class="aviso" role="status" hidden></div>
@@ -101,6 +102,12 @@
             <section class="cuenta-caja" aria-labelledby="t-historial">
                 <h2 id="t-historial">Pedidos recientes</h2>
                 <ul id="lista-pedidos" class="lista-simple"></ul>
+            </section>
+
+            <section class="cuenta-caja" aria-labelledby="t-novedades">
+                <h2 id="t-novedades">Novedades por correo ✉️</h2>
+                <label class="opcion"><input type="checkbox" id="novedades-cuenta"> <span>Quiero recibir novedades y promociones de Matichoc.</span></label>
+                <div id="mensaje-novedades" class="aviso" role="status" hidden></div>
             </section>
 
             <section class="cuenta-caja">

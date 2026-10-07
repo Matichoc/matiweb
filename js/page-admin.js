@@ -137,6 +137,41 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { cont.replaceChildren(nodo('p', 'aviso', Cuenta.traducir(e))); }
   }
 
+  // ---------- Matilovers ----------
+  let matilovers = [];
+  const celdaCsv = (v) => {
+    let t = v == null ? '' : String(v);
+    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; // evita que Excel lo trate como fórmula
+    return '"' + t.replace(/"/g, '""') + '"';
+  };
+  async function cargarMatilovers() {
+    const cont = $('a-lista-matilovers'), res = $('a-resumen-matilovers');
+    try {
+      const { data, error } = await sb.rpc('admin_matilovers');
+      if (error) throw error;
+      matilovers = data.lista;
+      res.textContent = `${data.total} cuenta${data.total === 1 ? '' : 's'} · ${data.con_perfil} con perfil completo · ${data.con_novedades} aceptaron novedades.`;
+      cont.replaceChildren();
+      if (!data.lista.length) cont.appendChild(nodo('p', 'ayuda', 'Todavía no hay Matilovers registrados.'));
+      data.lista.forEach((m) => {
+        const fila = nodo('div', 'fila-pedido');
+        fila.append(nodo('strong', null, `${m.apodo}${m.novedades ? ' ✉️' : ''}`),
+          nodo('span', 'ayuda', `${m.correo || 'sin correo'} · desde ${new Date(m.registrado).toLocaleDateString('es-CL')} · ${m.visitas} visita${m.visitas === 1 ? '' : 's'} · ${m.pedidos_entregados} pedido${m.pedidos_entregados === 1 ? '' : 's'} entregado${m.pedidos_entregados === 1 ? '' : 's'}`));
+        cont.appendChild(fila);
+      });
+    } catch (e) { cont.replaceChildren(nodo('p', 'aviso', Cuenta.traducir(e))); }
+  }
+  function descargarCsv() {
+    const cols = ['apodo', 'correo', 'novedades', 'edad', 'registrado', 'ultima_visita', 'visitas', 'pedidos_entregados'];
+    const filas = [cols.join(',')].concat(matilovers.map((m) => cols.map((c) => celdaCsv(m[c])).join(',')));
+    const blob = new Blob(['\ufeff' + filas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = nodo('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `matilovers-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
   async function iniciar() {
     if (!Cuenta.activa) return mostrar('a-apagada');
     prepararEntrada();
@@ -147,9 +182,12 @@ document.addEventListener('DOMContentLoaded', () => {
       await exigirDosPasos();
       $('a-form-cupon').addEventListener('submit', revisarCupon);
       $('a-recargar').addEventListener('click', cargarPedidos);
+      $('a-recargar-matilovers').addEventListener('click', cargarMatilovers);
+      $('a-csv').addEventListener('click', descargarCsv);
       $('a-salir').addEventListener('click', async () => { await Cuenta.salir(); location.reload(); });
       mostrar('a-panel');
       cargarPedidos();
+      cargarMatilovers();
     } catch (e) {
       console.warn('[panel]', e && e.message);
       mostrar('a-entrar');

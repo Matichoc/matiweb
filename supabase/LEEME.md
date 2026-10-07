@@ -75,3 +75,20 @@ Copia de **Project Settings → API** estos dos datos a `js/supabase-config.js` 
 - [ ] Prueba completa con dos cuentas de prueba (racha, cupón, pedido, canje, borrar cuenta).
 - [ ] Respaldo: el plan gratis no incluye respaldos diarios; evalúa el plan pago si los datos
       llegan a importar.
+
+## 7. Paso 2: dueño automático, datos de los Matilovers y usuarios de prueba
+1. En el **SQL Editor** pega y ejecuta `supabase/02_dueno_y_datos.sql` (después de `schema.sql`).
+2. **Hacerte dueño sin tocar nada más.** Agrega tu correo (el mismo con el que vas a entrar) en el SQL Editor.
+   No va en el repositorio, solo en tu Supabase, y en minúsculas:
+   ```sql
+   insert into public.admin_correos (correo) values ('tu@correo.com') on conflict do nothing;
+   select public.aplicar_admin_correos();   -- si tu cuenta ya existía, te hace dueño al tiro
+   ```
+   Si la cuenta aún no existe, basta con entrar una vez al sitio con ese correo y abrir el enlace: al
+   confirmar el correo pasas a ser dueño. Después entras a `/pages/admin.html` y vinculas tu app de
+   verificación en dos pasos (sin ese paso el panel no abre).
+3. **Usuarios de prueba sin crear correos nuevos.** Gmail entrega a tu misma bandeja cualquier
+   `tucorreo+algo@gmail.com`. Usa, por ejemplo, `tucorreo+matilover1@gmail.com` y
+   `tucorreo+matilover2@gmail.com`: para el sitio son dos cuentas distintas.
+4. En el panel, la sección **Matilovers registrados** muestra cuántas cuentas hay y permite descargar un CSV.
+   El correo completo solo se ve de quien marcó "quiero recibir novedades"; úsalo solo para eso.

@@ -83,7 +83,8 @@
   api.salir = async function () { await (await api.cliente()).auth.signOut(); };
 
   api.resumen = () => rpc('mi_resumen');
-  api.declarar = (edad, apodo) => rpc('declarar_perfil', { p_edad: edad, p_apodo: apodo || null });
+  api.declarar = (edad, apodo, novedades) => rpc('declarar_perfil', { p_edad: edad, p_apodo: apodo || null, p_novedades: typeof novedades === 'boolean' ? novedades : null });
+  api.cambiarNovedades = (valor) => rpc('cambiar_novedades', { p_valor: !!valor });
   api.reclamarRacha = () => rpc('reclamar_cupon_racha');
   api.reclamarPedidos = () => rpc('reclamar_premio_pedidos');
   api.borrarCuenta = () => rpc('borrar_mi_cuenta');
