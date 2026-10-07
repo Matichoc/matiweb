@@ -70,6 +70,59 @@
   }
 }
 
+/*
+ * Partículas flotantes del Hero ("ingredientes vivos" liviano): un puñado
+ * de emoji con drift vertical lento, decorativo, sin canvas ni dependencias.
+ * pointer-events: none para que nunca interfieran con los botones de abajo.
+ */
+.choco-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.choco-particle {
+  position: absolute;
+  top: 100%;
+  left: var(--x);
+  font-size: 1.6rem;
+  opacity: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .choco-particle {
+    animation: choco-float var(--dur, 9s) linear var(--delay, 0s) infinite;
+  }
+}
+
+@keyframes choco-float {
+  0% {
+    top: 100%;
+    opacity: 0;
+    transform: translateX(0) rotate(0deg);
+  }
+  10% {
+    opacity: 0.85;
+  }
+  90% {
+    opacity: 0.85;
+  }
+  100% {
+    top: -10%;
+    opacity: 0;
+    transform: translateX(18px) rotate(25deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .choco-particle {
+    font-size: 1.2rem;
+  }
+}
+
 /* Entrada suave del contenido del Hero una vez que el componente llega al DOM. */
 .choco-fade-in {
   opacity: 0;
@@ -120,4 +173,96 @@
   .btn-melt {
     transition: none;
   }
+}
+
+/*
+ * Racha de visitas / contador de pedidos (js/racha.js).
+ * Sistema de honor, 100% client-side — ver comentario en ese archivo.
+ */
+.racha-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #fff8f0, #fff);
+  border: 2px solid var(--color-yellow, #ffc800);
+  border-radius: 18px;
+  padding: 18px 22px;
+  max-width: 560px;
+  margin: 24px auto 0;
+  box-shadow: 0 6px 18px rgba(75, 46, 46, 0.12);
+  text-align: left;
+}
+
+.racha-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  border: 2px solid var(--color-pink, #d4216c);
+  flex-shrink: 0;
+}
+
+.racha-texto strong {
+  color: var(--color-pink, #d4216c);
+  font-size: 1.1rem;
+}
+
+.racha-texto p {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  color: #5a3a2a;
+}
+
+.racha-btn {
+  display: inline-block;
+  margin-top: 10px;
+  background-color: #25d366;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.racha-card--completa {
+  border-color: var(--color-pink, #d4216c);
+  background: linear-gradient(135deg, #fff0f6, #fff);
+  position: relative;
+  overflow: hidden;
+}
+
+.racha-card--completa::after {
+  content: "🎉";
+  position: absolute;
+  top: -6px;
+  right: 10px;
+  font-size: 1.6rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .racha-card--completa {
+    animation: racha-pop 0.5s ease-out both;
+  }
+}
+
+@keyframes racha-pop {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 480px) {
+  .racha-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+.pedidos-widget {
+  display: block;
+  text-align: center;
+  font-size: 0.9em;
+  color: #6b4a3a;
+  margin: 10px auto 15px;
+  max-width: 500px;
 }
