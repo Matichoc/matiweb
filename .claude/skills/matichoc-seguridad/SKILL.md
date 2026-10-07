@@ -21,8 +21,7 @@ de negocio concreta (ej. reconciliar pagos Tuu con pedidos).
 
 ## Qué sí revisar
 
-- **`innerHTML` con datos externos**: hoy todos los usos (`productos.html`,
-  `tienda.html`) construyen HTML a partir de `js/catalogo.js`, que es
+- **`innerHTML` con datos externos**: hoy todos los usos (`js/tienda.js`) construyen HTML a partir de `js/catalogo.js`, que es
   contenido interno controlado por el negocio, no input de usuario — no es
   explotable hoy. Si algún día un formulario empieza a escribir en el DOM
   con los datos que el usuario tipeó, eso sí sería un vector real de XSS a

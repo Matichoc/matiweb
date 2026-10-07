@@ -1,0 +1,485 @@
+/* Tienda Matichoc: catálogo + carrito en un solo lugar.
+   Todo va bajo .t-* para no chocar con las reglas heredadas de styles.css. */
+
+.t-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 110px;
+  color: #4b2e2e;
+}
+
+/* ---------- Introducción ---------- */
+.t-intro { text-align: center; max-width: 680px; margin: 0 auto 8px; }
+.t-kicker {
+  display: inline-block;
+  background: #d4216c;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 14px;
+  border-radius: 999px;
+  margin: 0 0 10px;
+}
+.t-intro h1 { font-size: 2.6rem; margin: 0 0 8px; }
+.t-intro p { font-size: 1.05rem; margin: 0; }
+.t-pasos {
+  list-style: none;
+  padding: 0;
+  margin: 18px auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  counter-reset: paso;
+}
+.t-pasos li {
+  counter-increment: paso;
+  background: #fff;
+  border: 2px solid #ffc800;
+  border-radius: 14px;
+  padding: 10px 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.t-pasos li::before {
+  content: counter(paso);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin: 0 auto 6px;
+  border-radius: 50%;
+  background: #4b2e2e;
+  color: #ffc800;
+  font-weight: 800;
+}
+
+/* ---------- Barra de filtros ---------- */
+.t-barra {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: 16px -16px 8px;
+  padding: 10px 16px;
+  background: rgba(255, 248, 240, 0.96);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid #ead9c4;
+}
+.t-buscar {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border: 2px solid #4b2e2e;
+  border-radius: 12px;
+  background: #fff;
+  color: #4b2e2e;
+  font: inherit;
+  font-size: 1rem;
+}
+.t-buscar:focus-visible { outline: 3px solid #d4216c; outline-offset: 2px; }
+.t-chips {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+  padding: 2px 2px 4px;
+  scrollbar-width: none;
+}
+.t-chips::-webkit-scrollbar { display: none; }
+.t-chip {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 2px solid #4b2e2e;
+  background: #fff;
+  color: #4b2e2e;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.t-chip[aria-pressed="true"] { background: #4b2e2e; color: #ffc800; }
+.t-chip:focus-visible { outline: 3px solid #d4216c; outline-offset: 2px; }
+
+/* ---------- Catálogo ---------- */
+.t-cat { margin-top: 26px; scroll-margin-top: 130px; }
+.t-cat-cab {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.t-cat-cab h2 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 1.35rem;
+  margin: 0;
+  color: #4b2e2e;
+}
+.t-cat-cab a { color: #a01a58; font-weight: 700; font-size: 0.9rem; }
+.t-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+}
+.t-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(75, 46, 46, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.t-card:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(75, 46, 46, 0.18); }
+.t-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #ead9c4;
+}
+.t-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ffc800;
+  color: #4b2e2e;
+  font-weight: 800;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.t-card-cuerpo { display: flex; flex-direction: column; gap: 6px; flex: 1; padding: 14px 14px 16px; }
+.t-card h3 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.25;
+  margin: 0;
+  color: #4b2e2e;
+}
+.t-desc {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #5a3a2a;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.t-desc.abierto { display: block; -webkit-line-clamp: unset; }
+.t-mas {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  min-height: 32px;
+  color: #a01a58;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.t-mas[hidden] { display: none; }
+.t-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+.t-precio { font-size: 1.35rem; font-weight: 800; color: #4b2e2e; }
+
+.t-add {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 12px;
+  background: #d4216c;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.t-add:hover { background: #b01859; }
+.t-step {
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid #157a37;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+.t-step[hidden], .t-add[hidden] { display: none; }
+.t-step button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: #157a37;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.t-step output { min-width: 34px; text-align: center; font-weight: 800; color: #157a37; }
+.t-add:focus-visible, .t-step button:focus-visible, .t-mas:focus-visible { outline: 3px solid #4b2e2e; outline-offset: 2px; }
+
+/* Producto de temporada (sin precio fijo) */
+.t-card--consulta { background: linear-gradient(135deg, #fff0f6, #fff); border: 2px dashed #d4216c; }
+.t-card--consulta .t-card-cuerpo { padding: 20px 18px; }
+.t-card--consulta .t-emoji { font-size: 2.4rem; line-height: 1; }
+.t-wsp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: #157a37;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.t-vacio { text-align: center; margin: 40px 0; font-size: 1.05rem; }
+.t-vacio[hidden] { display: none; }
+
+/* ---------- Barra del carrito ---------- */
+.t-barra-carrito {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 999;
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: calc(100% - 24px);
+  box-sizing: border-box;
+  padding: 10px 10px 10px 18px;
+  background: #4b2e2e;
+  color: #fff8f0;
+  border: 0;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.t-barra-carrito[hidden] { display: none; }
+.t-barra-info { font-size: 0.98rem; }
+.t-barra-info strong { color: #ffc800; }
+.t-barra-ver {
+  flex: 0 0 auto;
+  background: #d4216c;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.t-barra-carrito:focus-visible { outline: 3px solid #ffc800; outline-offset: 3px; }
+body.t-con-barra .whatsapp-float { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+@media (prefers-reduced-motion: no-preference) {
+  .t-barra-carrito { animation: t-sube 0.25s ease-out; }
+  .t-barra-carrito.bump .t-barra-info { animation: t-bump 0.3s ease; }
+  @keyframes t-sube { from { transform: translateY(130%); } to { transform: none; } }
+  @keyframes t-bump { 50% { transform: scale(1.06); } }
+}
+
+/* ---------- Panel del pedido ---------- */
+.t-dialog {
+  width: min(520px, 100%);
+  max-height: 92vh;
+  max-height: 92dvh;
+  padding: 0;
+  border: 0;
+  border-radius: 22px;
+  background: #fff;
+  color: #4b2e2e;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.t-dialog::backdrop { background: rgba(40, 20, 20, 0.6); }
+.t-dialog[open] { display: flex; flex-direction: column; }
+@media (prefers-reduced-motion: no-preference) {
+  .t-dialog[open] { animation: t-panel 0.25s ease-out; }
+  @keyframes t-panel { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+}
+.t-form { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.t-dialog-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 18px;
+  background: #4b2e2e;
+  color: #fff8f0;
+}
+.t-dialog-cab h2 { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; font-size: 1.25rem; color: #ffc800; }
+.t-cerrar {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+.t-cerrar:focus-visible { outline: 3px solid #ffc800; }
+.t-dialog-cuerpo { overflow-y: auto; padding: 16px 18px 20px; flex: 1; }
+.t-dialog-cuerpo h3 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 1.05rem;
+  margin: 22px 0 8px;
+  color: #4b2e2e;
+}
+.t-items { list-style: none; padding: 0; margin: 0; }
+.t-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0e4d4;
+}
+.t-item-nombre { font-weight: 700; overflow-wrap: anywhere; }
+.t-item-sub { font-weight: 800; color: #a01a58; justify-self: end; }
+.t-item .t-step { justify-self: start; }
+.t-item .t-quitar {
+  justify-self: end;
+  background: none;
+  border: 0;
+  color: #a01a58;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+  min-height: 40px;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.t-vacio-carrito { text-align: center; padding: 26px 0; color: #5a3a2a; }
+.t-resumen { margin-top: 12px; }
+.t-resumen div { display: flex; justify-content: space-between; padding: 4px 0; }
+.t-resumen .t-total { font-size: 1.25rem; font-weight: 800; border-top: 2px solid #4b2e2e; margin-top: 6px; padding-top: 8px; }
+.t-label { display: block; font-weight: 700; margin: 12px 0 4px; }
+.t-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 2px solid #d4216c;
+  border-radius: 10px;
+  background: #fff;
+  color: #4b2e2e;
+  font: inherit;
+  font-size: 1rem;
+}
+.t-input:focus-visible { outline: 3px solid #4b2e2e; outline-offset: 2px; }
+.t-ayuda { font-size: 0.88rem; line-height: 1.45; color: #5a3a2a; margin: 8px 0 0; }
+.t-btn {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+.t-btn--tuu { background: #4b2e2e; }
+.t-btn--tuu:hover { background: #64321b; }
+.t-btn--enviar { background: #157a37; }
+.t-btn--enviar:hover { background: #0f6029; }
+.t-btn:focus-visible { outline: 3px solid #d4216c; outline-offset: 2px; }
+.t-tuu-aviso { font-size: 0.88rem; line-height: 1.45; color: #5a3a2a; margin: 8px 0 0; }
+body.t-bloqueado { overflow: hidden; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 720px) {
+  .t-intro h1 { font-size: 2rem; }
+  .t-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .t-card { border-radius: 16px; }
+  .t-card-cuerpo { padding: 10px 10px 12px; }
+  .t-card h3 { font-size: 0.95rem; }
+  .t-desc { font-size: 0.82rem; -webkit-line-clamp: 2; }
+  .t-pie { flex-direction: column; align-items: stretch; gap: 8px; }
+  .t-precio { font-size: 1.2rem; }
+  .t-add { width: 100%; padding: 10px 8px; }
+  .t-step { justify-content: space-between; width: 100%; }
+  .t-step output { flex: 1; }
+  .t-card--consulta { grid-column: 1 / -1; }
+  .t-dialog {
+    width: 100%;
+    max-width: 100%;
+    margin: auto 0 0;
+    border-radius: 22px 22px 0 0;
+  }
+}
+@media (max-width: 380px) {
+  .t-pasos { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-card, .t-add { transition: none; }
+  .t-card:hover { transform: none; }
+}
+
+.t-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* styles.css pinta de rosa y agranda (scale 1.05) cualquier button en :hover/:focus.
+   Aquí cada botón conserva su color y su tamaño; se escopa por padre para ganar en especificidad. */
+.t-main button:hover, .t-main button:focus,
+.t-dialog button:hover, .t-dialog button:focus,
+button.t-barra-carrito:hover, button.t-barra-carrito:focus { transform: none; }
+.t-main button:active, .t-dialog button:active, button.t-barra-carrito:active { transform: none; }
+
+.t-main .t-chip, .t-main .t-chip:hover, .t-main .t-chip:focus { background-color: #fff; color: #4b2e2e; }
+.t-main .t-chip:hover { background-color: #fff0f6; }
+.t-main .t-chip[aria-pressed="true"],
+.t-main .t-chip[aria-pressed="true"]:hover,
+.t-main .t-chip[aria-pressed="true"]:focus { background-color: #4b2e2e; color: #ffc800; }
+
+.t-main .t-add, .t-main .t-add:focus { background-color: #d4216c; color: #fff; }
+.t-main .t-add:hover { background-color: #b01859; }
+.t-main .t-step button, .t-main .t-step button:hover, .t-main .t-step button:focus,
+.t-dialog .t-step button, .t-dialog .t-step button:hover, .t-dialog .t-step button:focus { background-color: #157a37; color: #fff; }
+.t-main .t-mas, .t-main .t-mas:hover, .t-main .t-mas:focus,
+.t-dialog .t-quitar, .t-dialog .t-quitar:hover, .t-dialog .t-quitar:focus { background-color: transparent; color: #a01a58; }
+
+.t-dialog .t-cerrar, .t-dialog .t-cerrar:hover, .t-dialog .t-cerrar:focus { background-color: rgba(255, 255, 255, 0.18); color: #fff; }
+.t-dialog .t-btn--tuu, .t-dialog .t-btn--tuu:focus { background-color: #4b2e2e; color: #fff; }
+.t-dialog .t-btn--tuu:hover { background-color: #64321b; }
+.t-dialog .t-btn--enviar, .t-dialog .t-btn--enviar:focus { background-color: #157a37; color: #fff; }
+.t-dialog .t-btn--enviar:hover { background-color: #0f6029; }
+
+button.t-barra-carrito, button.t-barra-carrito:hover, button.t-barra-carrito:focus { background-color: #4b2e2e; color: #fff8f0; }
+.t-intro h1 { margin-top: 6px; }
+.t-step button { border-radius: 0; padding: 0; margin: 0; }
