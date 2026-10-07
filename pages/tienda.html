@@ -273,8 +273,8 @@
           <span>Total</span>
           <span>$<span id="cartTotal">0</span></span>
         </div>
-        <button type="button" class="btn-finalizar-compra" onclick="window.open('https://www.tuu.cl/matichoc_pago', '_blank')">💳 Pagar online con Tuu</button>
-        <p class="pago-seguro">🔒 Pago seguro — se abre en una pestaña nueva. Vas a tener que ingresar tú el monto total de tu carrito.</p>
+        <button type="button" class="btn-finalizar-compra" id="btnPagarTuu">💳 Pagar online con Tuu</button>
+        <p class="pago-seguro" id="pagoTuuAviso" aria-live="polite">🔒 Pago seguro — se abre en una pestaña nueva. Ahí tendrás que escribir tú el monto total de tu carrito; te lo dejamos copiado para que solo lo pegues.</p>
       </div>
     </div>
 
@@ -301,6 +301,7 @@
     // Catálogo compartido (js/catalogo.js) — misma fuente que productos.html.
     const productos = CATALOGO;
 
+    let totalActual = 0; // total del carrito en pesos (número), para el paso de pago con Tuu
     let cart = []; // Array para almacenar los productos en el carrito
 
     const productosContainer = document.getElementById("productosContainer");
@@ -392,6 +393,24 @@
       renderCart();
     }
 
+    // Tuu no acepta el monto por URL (el campo llega vacío), así que dejamos el total
+    // copiado y bien visible para que la persona solo lo pegue en la pestaña de Tuu.
+    document.getElementById('btnPagarTuu').addEventListener('click', () => {
+      const aviso = document.getElementById('pagoTuuAviso');
+      if (totalActual <= 0) {
+        aviso.textContent = 'Primero agrega productos al carrito para saber cuánto pagar.';
+        return;
+      }
+      window.open('https://www.tuu.cl/matichoc_pago', '_blank', 'noopener,noreferrer');
+      const monto = '$' + totalActual.toLocaleString('es-CL');
+      aviso.textContent = '👉 En Tuu escribe ' + monto + ' (solo números: ' + totalActual + ').';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(String(totalActual)).then(() => {
+          aviso.textContent = '✅ Monto ' + monto + ' copiado: pégalo en el campo de Tuu (o escribe ' + totalActual + ').';
+        }).catch(() => {});
+      }
+    });
+
     function renderCart() {
       cartItemsContainer.innerHTML = ''; // Limpiar el contenedor antes de renderizar
       let subtotal = 0;
@@ -423,6 +442,7 @@
       }
       cartSubtotalSpan.innerText = subtotal.toLocaleString("es-CL");
       cartTotalSpan.innerText = subtotal.toLocaleString("es-CL"); // Por ahora, total es igual al subtotal
+      totalActual = subtotal;
       actualizarCartBar();
 
       // Añadir event listeners a los nuevos elementos
