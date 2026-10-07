@@ -14,9 +14,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 70px;
+  height: 100px;
   pointer-events: none;
-  filter: url(#choco-goo);
+  filter: url(#choco-goo) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
   z-index: 2;
 }
 
@@ -26,8 +26,8 @@
   left: 0;
   right: 0;
   top: 0;
-  height: 22px;
-  background-color: var(--color-brown-dark, #4b2e2e);
+  height: 30px;
+  background: linear-gradient(165deg, #8a5a33 0%, #4b2e2e 55%, #2e1b12 100%);
 }
 
 .choco-drip__blob {
@@ -37,7 +37,7 @@
   width: var(--size);
   height: var(--size);
   margin-left: calc(var(--size) / -2);
-  background-color: var(--color-brown-dark, #4b2e2e);
+  background: radial-gradient(circle at 35% 30%, #9c6c42 0%, #4b2e2e 60%, #2e1b12 100%);
   border-radius: 50%;
   transform-origin: top center;
   transform: translateY(55%) scaleY(1);
@@ -63,10 +63,10 @@
 
 @media (max-width: 480px) {
   .choco-drip {
-    height: 46px;
+    height: 64px;
   }
   .choco-drip::before {
-    height: 16px;
+    height: 20px;
   }
 }
 
