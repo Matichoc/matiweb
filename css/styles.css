@@ -260,7 +260,7 @@ header nav a {
 }
 
 .btn-green {
-  background-color: #25d366;
+  background-color: #157a37;
 }
 
 .btn-green:hover {
@@ -339,7 +339,7 @@ header nav a {
 .whatsapp-btn {
   display: inline-block;
   margin-bottom: 10px;
-  background-color: #25d366;
+  background-color: #157a37;
   color: white;
   padding: 10px 15px;
   border-radius: 8px;
@@ -524,7 +524,7 @@ section {
 }
 
 .btn-green {
-  background-color: #25D366;
+  background-color: #157a37;
 }
 
 /* Estilos para productos */
@@ -665,7 +665,7 @@ section {
 .whatsapp-btn {
   display: inline-block;
   margin-bottom: 10px;
-  background-color: #25D366;
+  background-color: #157a37;
   color: white;
   padding: 10px 15px;
   border-radius: 8px;
@@ -786,7 +786,7 @@ section {
 
 .cart-item-controls span {
   font-weight: normal;
-  color: #888;
+  color: #5a5a5a;
   font-size: 0.9em;
 }
 
@@ -868,7 +868,7 @@ section {
   text-align: center;
   margin-top: 15px;
   font-size: 0.9em;
-  color: #888;
+  color: #5a5a5a;
 }
 
 .checkout-help {

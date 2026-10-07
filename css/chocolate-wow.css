@@ -179,7 +179,13 @@
  * Racha de visitas / contador de pedidos (js/racha.js).
  * Sistema de honor, 100% client-side — ver comentario en ese archivo.
  */
-.racha-card {
+/* Todo escopado bajo #racha-widget (no solo .racha-card) a propósito:
+   el widget vive dentro de #bienvenida, y la regla #bienvenida p
+   (color claro, pensada para texto sobre el fondo oscuro de esa sección)
+   tiene más especificidad que una clase sola y ganaba por sobre el color
+   oscuro que esta tarjeta necesita sobre SU fondo claro — el texto
+   quedaba casi invisible. Iguala la especificidad con el mismo ID. */
+#racha-widget .racha-card {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -193,7 +199,7 @@
   text-align: left;
 }
 
-.racha-avatar {
+#racha-widget .racha-avatar {
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -203,21 +209,24 @@
   flex-shrink: 0;
 }
 
-.racha-texto strong {
+#racha-widget .racha-texto strong {
+  display: block;
   color: var(--color-pink, #d4216c);
-  font-size: 1.1rem;
+  font-size: 1.15rem;
 }
 
-.racha-texto p {
-  margin: 4px 0 0;
+#racha-widget .racha-texto p {
+  margin: 6px 0 0;
   font-size: 0.95rem;
-  color: #5a3a2a;
+  line-height: 1.5;
+  color: #4b2e2e;
+  font-weight: 500;
 }
 
-.racha-btn {
+#racha-widget .racha-btn {
   display: inline-block;
   margin-top: 10px;
-  background-color: #25d366;
+  background-color: #1da851;
   color: white;
   padding: 8px 16px;
   border-radius: 8px;
@@ -225,14 +234,14 @@
   font-weight: bold;
 }
 
-.racha-card--completa {
+#racha-widget .racha-card--completa {
   border-color: var(--color-pink, #d4216c);
   background: linear-gradient(135deg, #fff0f6, #fff);
   position: relative;
   overflow: hidden;
 }
 
-.racha-card--completa::after {
+#racha-widget .racha-card--completa::after {
   content: "🎉";
   position: absolute;
   top: -6px;
@@ -241,7 +250,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .racha-card--completa {
+  #racha-widget .racha-card--completa {
     animation: racha-pop 0.5s ease-out both;
   }
 }
@@ -252,7 +261,7 @@
 }
 
 @media (max-width: 480px) {
-  .racha-card {
+  #racha-widget .racha-card {
     flex-direction: column;
     text-align: center;
   }
