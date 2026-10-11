@@ -18,7 +18,9 @@ Deploy directo a GitHub Pages (`.nojekyll`).
 - `css/styles.css`: hoja global única; hay bloques duplicados/muertos de
   trabajo anterior, no asumir que todo lo que hay ahí está en uso.
 - Checkout: catálogo y carrito viven juntos en `tienda.html` (`js/tienda.js`, `css/tienda.css`),
-  100% client-side y sin `localStorage`. `productos.html` solo redirige a la Tienda.
+  sin `localStorage`. Con las cuentas encendidas, el carrito pide nombre y celular antes de Tuu/WhatsApp y los anota en
+  Supabase (`pedido_web_registrar`, `supabase/03_pedidos_web.sql`) con estados Interesado → Dice que pagó → … y aviso por
+  Telegram al dueño; nunca frena la compra si falla. "Ya pagué" NO es un pago confirmado: lo confirma el dueño en Tuu. `productos.html` solo redirige a la Tienda.
   "Pagar online con Tuu" abre un link fijo a Tuu (sin monto/detalle: Tuu
   ignora `?monto=`, verificado por el dueño) y deja el total copiado al
   portapapeles para pegarlo; el pedido real se manda por WhatsApp. Son dos flujos **sin vínculo** — no asumir que
@@ -35,11 +37,14 @@ Deploy directo a GitHub Pages (`.nojekyll`).
 El sitio es abierto: sin cuenta se navega, se compra y se juega. La cuenta Matilover solo sirve para **guardar
 progreso** (racha, descuentos, premios, juegos). Con `js/supabase-config.js` vacío todo funciona como antes (racha y
 pedidos locales); encendidas, el avance vive solo en la cuenta y no se acumula nada en el navegador.
-- `supabase/schema.sql`: tablas + RLS + funciones (la racha, los cupones y los pedidos se validan en el servidor,
+- `supabase/schema.sql` (+ `02_dueno_y_datos.sql`, `03_pedidos_web.sql`, `04_cuentas_desde_14.sql`, en ese orden): tablas + RLS + funciones (la racha, los cupones y los pedidos se validan en el servidor,
   el navegador no escribe directo). Reglas del programa en `reglas()`. Guía: `supabase/LEEME.md`.
 - `js/cuenta.js` (API compartida), `pages/cuenta.html` (Matilover), `pages/admin.html` (panel del dueño: exige
   estar en `admins` + verificación en dos pasos). `js/vendor/supabase.js` es la librería oficial copiada (MIT).
-- La clave `anon` es pública; **nunca** poner `service_role` en el repositorio.
+- Las cuentas son **solo desde los 14 años** (`04_cuentas_desde_14.sql`); no se crean cuentas de menores. Las reglas públicas del programa
+  están en `pages/bases-matilover.html` y deben coincidir con `reglas()` (7 días → 10%; 10 pedidos → 1 cuchuflí o alfajor; 30 días; no acumulables).
+- La clave `anon` es pública; **nunca** poner `service_role` ni el token del bot de Telegram en el repositorio
+  (el token vive solo en la tabla privada `config_privada` de Supabase).
 
 ## Datos legales (entregados por el dueño)
 

@@ -55,15 +55,11 @@
 
         <section id="estado-perfil" class="cuenta-caja" hidden>
             <h2>Un último paso 💛</h2>
-            <p>Para guardar tu progreso necesitamos estos datos.</p>
+            <p>Para guardar tu progreso necesitamos estos datos. Las cuentas son para personas de 14 años o más.</p>
             <form id="form-perfil" novalidate>
                 <label for="apodo">¿Cómo te llamamos? (apodo, hasta 24 letras)</label>
                 <input type="text" id="apodo" maxlength="24" autocomplete="nickname" required>
-                <fieldset style="border:0;padding:0;margin:14px 0 0;">
-                    <legend style="font-weight:700;padding:0;">Tu edad</legend>
-                    <label class="opcion"><input type="radio" name="edad" value="14_o_mas" required> Tengo 14 años o más</label>
-                    <label class="opcion"><input type="radio" name="edad" value="menor_con_permiso"> Soy menor de 14 y tengo permiso de un adulto</label>
-                </fieldset>
+                <label class="opcion"><input type="checkbox" id="mayor14" required> <span>Confirmo que tengo <strong>14 años o más</strong>. Las cuentas Matilover son solo desde los 14 años; si eres menor, puedes seguir navegando y jugando sin cuenta.</span></label>
                 <label class="opcion"><input type="checkbox" id="terminos" required> <span>Acepto los <a href="terminos.html" target="_blank" rel="noopener noreferrer">Términos y condiciones</a> y la <a href="privacidad.html" target="_blank" rel="noopener noreferrer">Política de privacidad</a>.</span></label>
                 <label class="opcion"><input type="checkbox" id="novedades"> <span>Quiero recibir novedades y promociones de Matichoc por correo (opcional; puedes cambiarlo cuando quieras).</span></label>
                 <button type="submit" class="btn" id="btn-perfil">Guardar y empezar</button>
@@ -74,7 +70,7 @@
         <div id="estado-cuenta" hidden>
             <section class="cuenta-caja">
                 <h2 id="saludo">Hola 💛</h2>
-                <p class="ayuda">Esta es tu cuenta Matilover. Aquí se guarda tu racha, tus premios y el progreso de tus juegos.</p>
+                <p class="ayuda">Esta es tu cuenta Matilover. Aquí se guarda tu racha, tus premios y el progreso de tus juegos. Reglas: <a href="bases-matilover.html">Bases del programa</a>.</p>
                 <a class="btn btn--verde" href="../matijuego/">🎮 Ir al Matijuego (se guarda tu progreso)</a>
             </section>
 
@@ -96,7 +92,7 @@
             <section class="cuenta-caja" aria-labelledby="t-cupones">
                 <h2 id="t-cupones">Tus cupones 🎁</h2>
                 <div id="lista-cupones"></div>
-                <p class="ayuda">Muéstrale el código a Matichoc por WhatsApp o al retirar tu pedido, y lo canjeamos.</p>
+                <p class="ayuda">Muéstrale el código a Matichoc por WhatsApp o al retirar tu pedido, y lo canjeamos. <strong>Los cupones no son acumulables:</strong> se usa un solo cupón por pedido y no se suman. Por ejemplo, 4 cupones de 10% no dan 40% en un pedido: cada uno sirve para un pedido distinto.</p>
             </section>
 
             <section class="cuenta-caja" aria-labelledby="t-historial">

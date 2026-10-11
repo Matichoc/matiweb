@@ -65,7 +65,7 @@
 
             <section class="cuenta-caja" aria-labelledby="a-t-pedidos">
                 <h2 id="a-t-pedidos">Pedidos por revisar 🍫</h2>
-                <p class="ayuda">Marca "Entregado" cuando el cliente ya recibió y pagó. Solo esos pedidos suman para el premio.</p>
+                <p class="ayuda">Aquí aparece cada persona que dejó su nombre y celular para comprar (también te llega un aviso por Telegram). "Dice que pagó" es solo lo que ella avisó: confírmalo en tu app de Tuu y marca "Pago confirmado". Marca "Entregado" cuando ya recibió; solo esos pedidos suman para el premio de quienes tienen cuenta.</p>
                 <button type="button" class="btn btn--suave" id="a-recargar">↻ Actualizar</button>
                 <div id="a-lista-pedidos"></div>
             </section>
@@ -74,6 +74,17 @@
                 <h2 id="a-t-matilovers">Matilovers registrados 💛</h2>
                 <p id="a-resumen-matilovers" class="ayuda">Cargando…</p>
                 <p class="ayuda">El correo completo solo aparece de quienes aceptaron recibir novedades; úsalo solo para eso. Del resto se muestra enmascarado.</p>
+                <label for="a-segmento">Ver</label>
+                <select id="a-segmento">
+                    <option value="todos">Todos</option>
+                    <option value="novedades">Aceptaron novedades ✉️</option>
+                    <option value="racha">Con racha de 3 días o más 🔥</option>
+                    <option value="clientes">Ya compraron (pedido entregado)</option>
+                    <option value="sin_pedidos">Aún sin compras</option>
+                    <option value="inactivos">Sin visitar hace 2 semanas o más</option>
+                </select>
+                <label for="a-buscar">Buscar por apodo o correo</label>
+                <input type="search" id="a-buscar" maxlength="60" autocomplete="off">
                 <button type="button" class="btn btn--suave" id="a-recargar-matilovers">↻ Actualizar</button>
                 <button type="button" class="btn btn--suave" id="a-csv">⬇ Descargar CSV</button>
                 <div id="a-lista-matilovers" class="lista-matilovers"></div>

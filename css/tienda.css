@@ -412,6 +412,13 @@ body.t-con-barra .whatsapp-float { bottom: calc(84px + env(safe-area-inset-botto
 .t-btn--enviar:hover { background: #0f6029; }
 .t-btn:focus-visible { outline: 3px solid #d4216c; outline-offset: 2px; }
 .t-tuu-aviso { font-size: 0.88rem; line-height: 1.45; color: #5a3a2a; margin: 8px 0 0; }
+.t-btn--suave { background: #fff3e6; color: #4b2e2e; border: 2px solid #4b2e2e; }
+.t-yapague { margin-top: 12px; padding: 12px; border-radius: 12px; background: #fff8f0; border: 1px dashed #b98a5c; }
+.t-yapague p { margin: 0; font-size: 0.92rem; line-height: 1.45; color: #4b2e2e; }
+.t-yapague .t-btn { margin-top: 8px; }
+.t-yapague[hidden] { display: none; }
+/* Campo trampa para bots: fuera de la vista y de la lectura de pantalla; las personas nunca lo ven. */
+.t-trampa { position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
 body.t-bloqueado { overflow: hidden; }
 
 /* ---------- Mobile ---------- */
@@ -477,6 +484,9 @@ button.t-barra-carrito:hover, button.t-barra-carrito:focus { transform: none; }
 .t-dialog .t-btn--tuu:hover { background-color: #64321b; }
 .t-dialog .t-btn--enviar, .t-dialog .t-btn--enviar:focus { background-color: #157a37; color: #fff; }
 .t-dialog .t-btn--enviar:hover { background-color: #0f6029; }
+.t-dialog .t-btn--suave, .t-dialog .t-btn--suave:focus { background-color: #fff3e6; color: #4b2e2e; }
+.t-dialog .t-btn--suave:hover { background-color: #ffe7cc; color: #4b2e2e; }
+.t-dialog .t-btn[disabled] { opacity: 0.6; cursor: default; }
 
 button.t-barra-carrito, button.t-barra-carrito:hover, button.t-barra-carrito:focus { background-color: #4b2e2e; color: #fff8f0; }
 .t-step button { border-radius: 0; padding: 0; margin: 0; }

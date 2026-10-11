@@ -45,6 +45,7 @@
     'Aún no completas la racha': 'Todavía no completas la racha.',
     'Aún no completas los pedidos': 'Todavía no completas los pedidos.',
     'Demasiados pedidos hoy': 'Ya registraste muchos pedidos hoy.',
+    'Las cuentas son desde los 14 años': 'Las cuentas Matilover son desde los 14 años.',
     'No autorizado': 'No tienes permiso para esto.'
   };
   api.traducir = function (error) {
@@ -90,6 +91,10 @@
   api.borrarCuenta = () => rpc('borrar_mi_cuenta');
   api.registrarVisita = () => rpc('registrar_visita');
   api.registrarPedido = (total, resumen) => rpc('registrar_pedido', { p_total: total, p_resumen: resumen });
+  // Pedidos de la tienda: funcionan con o sin sesión (el servidor solo valida y anota).
+  api.pedidoWebRegistrar = (nombre, telefono, resumen, total, origen) =>
+    rpc('pedido_web_registrar', { p_nombre: nombre, p_telefono: telefono, p_resumen: resumen, p_total: total, p_origen: origen });
+  api.pedidoWebEvento = (token, evento) => rpc('pedido_web_evento', { p_token: token, p_evento: evento });
 
   const rutaCuenta = () => new URL('../pages/cuenta.html', SRC).href;
 

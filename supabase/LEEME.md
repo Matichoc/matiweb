@@ -1,5 +1,8 @@
 # Cuentas Matilover — cómo encenderlas
 
+> **Esta guía es solo para leer: no hay que editarla.** Lo único que pegas y ejecutas son los bloques de código SQL, siempre en Supabase → *SQL Editor*. Los números de cada sección son pasos aparte (empiezan de nuevo en cada una).
+
+
 El sitio es **abierto para todos**: se puede navegar, comprar y jugar sin cuenta. La cuenta
 (**Matilover**) es opcional y se usa para **guardar el progreso**: racha, descuentos, premios y
 juegos. Mientras `js/supabase-config.js` tenga la `url` vacía, las cuentas están apagadas y el
@@ -92,3 +95,59 @@ Copia de **Project Settings → API** estos dos datos a `js/supabase-config.js` 
    `tucorreo+matilover2@gmail.com`: para el sitio son dos cuentas distintas.
 4. En el panel, la sección **Matilovers registrados** muestra cuántas cuentas hay y permite descargar un CSV.
    El correo completo solo se ve de quien marcó "quiero recibir novedades"; úsalo solo para eso.
+
+## 8. Paso 3: pedidos de la tienda y aviso por Telegram
+Cada vez que alguien deja su nombre y celular en la tienda y aprieta "Pagar online con Tuu" o "Enviar pedido por
+WhatsApp", queda anotado como **Interesado** y te llega un aviso por Telegram con su nombre, celular, productos, total y un
+link para escribirle por WhatsApp. Si después aprieta "Ya pagué", queda como **Dice que pagó** (y te llega otro aviso):
+eso es solo lo que la persona avisó, **el pago real lo confirmas tú en tu app de Tuu** y marcas "Pago confirmado" en el panel.
+
+**Parte A — Preparar Telegram (en tu celular)**
+- **A1.** Busca **@BotFather** → escribe `/newbot` → ponle nombre (ej. "Matichoc Avisos") y un usuario que termine en `bot`.
+  BotFather te entrega un **token** (se ve como `123456789:AAH...`). Es como una contraseña: **no lo compartas con nadie,
+  ni en chats, ni en el repositorio**. Solo va en el SQL de la Parte C.
+- **A2.** Abre tu bot nuevo y escríbele "hola" (un bot no puede escribirte primero).
+- **A3.** Escríbele a **@userinfobot**: te responde con tu `Id` (un número). Ese es tu número de chat. (Tu número de
+  teléfono no sirve para esto.) Si quieres que avise a otra persona, sumen el bot a un grupo y usen el Id del grupo (empieza con `-`).
+
+**Parte B — Crear lo necesario en Supabase (una sola vez)**
+Pega y ejecuta `supabase/03_pedidos_web.sql` en el SQL Editor. Si Supabase pide activar la extensión `pg_net`, acepta.
+
+**Parte C — Guardar tu token y tu Id, y mandar un mensaje de prueba**
+En el SQL Editor abre una consulta nueva (*New query*), pega esto, **cambia solo los dos textos entre comillas** (deja las
+comillas `'` y las comas) y pulsa Run. El token y el Id se guardan **solo en tu Supabase**, no en esta guía ni en el sitio:
+```sql
+insert into public.config_privada (clave, valor) values
+  ('telegram_token', 'PEGA_AQUI_EL_TOKEN'),
+  ('telegram_chat',  'PEGA_AQUI_TU_ID')
+on conflict (clave) do update set valor = excluded.valor;
+
+select public.avisar_telegram('✅ Prueba de Matichoc: si lees esto, los avisos funcionan.');
+```
+El mensaje de prueba debe llegar a tu Telegram en unos segundos. Si no llega, ejecuta esto para ver el motivo:
+`select status_code, content::text, error_msg from net._http_response order by created desc limit 3;`
+(`401` = token mal copiado; `400` o "chat not found" = el Id está mal, o no le escribiste "hola" al bot).
+
+**Parte D — Ver los pedidos**
+En `/pages/admin.html` → **Pedidos por revisar** ves cada pedido con su estado, el botón "Escribirle por WhatsApp" y los
+botones Contactado / Pago confirmado / Entregado / Cancelar.
+
+> Para cambiar o quitar el aviso: vuelve a ejecutar el `insert` de la Parte C con otros valores, o `delete from public.config_privada;`.
+> Si Telegram falla o no está configurado, los pedidos igual se guardan: el aviso nunca bloquea una compra.
+
+## 9. Dónde revisar a tus Matilovers
+- **Panel** (`/pages/admin.html` → "Matilovers registrados"): total de cuentas, buscador y filtros (aceptaron novedades,
+  racha de 3 días o más, ya compraron, aún sin compras, inactivos hace 2 semanas) y descarga CSV de lo que estás viendo.
+- **Supabase → Table Editor**: tablas `perfiles`, `visitas`, `pedidos`, `cupones` (solo lectura para ti; no edites a mano).
+  Los correos están en **Authentication → Users**.
+- El correo completo solo se muestra de quienes aceptaron recibir novedades; para promociones usa únicamente esa lista.
+
+## 10. Paso 4: cuentas solo desde los 14 años
+Pega y ejecuta `supabase/04_cuentas_desde_14.sql` en el SQL Editor (después de `03_...`; se puede repetir). Desde ahí el servidor
+rechaza cuentas de menores de 14 años, y las cuentas antiguas que hubieran elegido "menor con permiso" quedan sin el perfil
+completo (no juntan racha ni cupones) hasta confirmar que tienen 14 años o más. Para ver cuántas hay:
+`select count(*) from public.perfiles where declaracion_edad = 'menor_con_permiso';`
+
+Las reglas del programa que ve el público están en `pages/bases-matilover.html` y deben coincidir con `reglas()` de `schema.sql`
+(7 días seguidos → 10%; 10 pedidos entregados → 1 cuchuflí o alfajor gratis; cupones válidos 30 días; no acumulables).
+
