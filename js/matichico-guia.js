@@ -124,7 +124,12 @@
 
   // ---------- Dibujo ----------
   const el = (tag, clase, texto) => { const e = document.createElement(tag); if (clase) e.className = clase; if (texto != null) e.textContent = texto; return e; };
-  let mascota, panel, mensajes, sugeridas, entrada, burbuja;
+  // Poses del mismo Matichico (hoja de poses del dueño, sin fondo): normal "hablando" y "bienvenida" con la mano abierta.
+  const POSES = {
+    hablando: { src: ruta('assets/personajes/matichico-hablando-420.webp'), w: 172, h: 420 },
+    bienvenida: { src: ruta('assets/personajes/matichico-bienvenida-420.webp'), w: 170, h: 420 }
+  };
+  let mascota, panel, mensajes, sugeridas, entrada, burbuja, imgMascota;
   let abierto = false, recorrido = null, destacado = null, temporizadorSalto = null;
 
   function construir() {
@@ -132,11 +137,11 @@
     mascota.type = 'button';
     mascota.setAttribute('aria-label', 'Matichico, guía del sitio: abrir o cerrar el chat');
     mascota.setAttribute('aria-expanded', 'false');
-    const img = el('img');
-    img.src = ruta('assets/personajes/matichico-matichoc-300.webp');
-    img.alt = '';
-    img.width = 212; img.height = 300;
-    mascota.appendChild(img);
+    imgMascota = el('img');
+    imgMascota.alt = '';
+    poner('hablando');
+    mascota.appendChild(imgMascota);
+    Object.values(POSES).forEach((p) => { const pre = new Image(); pre.src = p.src; }); // precarga para que el cambio de pose sea instantáneo
 
     burbuja = el('div', 'mg-burbuja');
     burbuja.hidden = true;
@@ -171,6 +176,12 @@
     document.body.append(mascota, burbuja, panel);
     mascota.addEventListener('click', () => (abierto ? cerrarPanel() : abrirPanel()));
     mascota.addEventListener('animationend', () => { mascota.classList.remove('mg-entrando', 'mg-salto'); if (!REDUCIR) mascota.classList.add('mg-quieto'); });
+  }
+
+  function poner(nombre) {
+    const p = POSES[nombre] || POSES.hablando;
+    if (imgMascota.getAttribute('src') !== p.src) imgMascota.src = p.src;
+    imgMascota.width = p.w; imgMascota.height = p.h;
   }
 
   function saltar() {
@@ -217,6 +228,7 @@
     terminarRecorrido(true);
     mensaje('yo', texto);
     const tema = temaId ? (SABE.find((s) => s.id === temaId) || buscar(texto)) : buscar(texto);
+    poner('hablando');
     saltar();
     if (tema) mensaje('bot', tema.resp, tema.links);
     else mensaje('bot', 'Mmm, eso no lo sé 🙈 Yo solo conozco lo que cuenta este sitio. Para eso mejor te responde una persona por WhatsApp.', [WA]);
@@ -231,10 +243,12 @@
       mensaje('bot', '¡Hola! Soy Matichico 🍫 Te cuento cómo pedir, cómo son las entregas y más. Solo sé lo que cuenta este sitio; para lo demás te paso con una persona.');
       mostrarSugeridas();
     }
+    poner('bienvenida');
     saltar();
     entrada.focus({ preventScroll: true });
   }
   function cerrarPanel() {
+    poner('hablando');
     panel.hidden = true;
     abierto = false;
     mascota.setAttribute('aria-expanded', 'false');
@@ -274,6 +288,7 @@
     window.scrollTo({ top: Math.max(y, 0), behavior: REDUCIR ? 'auto' : 'smooth' });
     nodo.classList.add('mg-destacado');
     destacado = nodo;
+    poner(recorrido.i % 2 === 0 ? 'bienvenida' : 'hablando');
     saltar();
     const m = mensaje('bot', `(${recorrido.i + 1}/${recorrido.lista.length}) ${texto}`);
     const fila = el('div', 'mg-sugeridas');
@@ -292,6 +307,7 @@
   function quitarDestacado() { if (destacado) { destacado.classList.remove('mg-destacado'); destacado = null; } }
   function terminarRecorrido(callado, salio) {
     const habia = !!recorrido;
+    if (habia && imgMascota) poner('hablando');
     recorrido = null;
     quitarDestacado();
     if (habia && !callado) {
@@ -314,7 +330,8 @@
       burbuja.appendChild(document.createElement('br'));
       burbuja.appendChild(si);
       burbuja.hidden = false;
-      setTimeout(() => { if (burbuja) burbuja.hidden = true; }, 12000);
+      poner('bienvenida');
+      setTimeout(() => { if (burbuja) { burbuja.hidden = true; poner('hablando'); } }, 12000);
     }, REDUCIR ? 300 : 1300);
   }
 

@@ -53,7 +53,7 @@ Matijuego, el panel, Mi cuenta, Términos/Privacidad, ni con el carrito abierto)
 (palabras clave → respuestas fijas, sin IA libre ni servidor); **solo informa** con lo que el sitio ya dice y **no recomienda ni promociona
 productos** (Ley 20.606, personajes + alimentos "ALTO EN"); ingredientes, alérgenos y salud los **deriva a WhatsApp**; no guarda lo que se
 escribe (solo `sessionStorage` si lo despidieron). Si cambian las reglas del programa, el reparto o los datos legales, actualizar también su
-guion (`SABE`) y `pages/bases-matilover.html`. Imagen: `assets/personajes/` (Matichico sin fondo, recortado de la ilustración del dueño).
+guion (`SABE`) y `pages/bases-matilover.html`. Imágenes: `assets/personajes/` (Matichico de pie con polera negra de Matichoc, dos poses sin fondo, recortadas de la hoja de poses del dueño; el guía cambia de pose al saludar, responder y recorrer).
 
 ## Datos legales (entregados por el dueño)
 

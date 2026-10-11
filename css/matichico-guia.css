@@ -8,12 +8,12 @@ body:has(dialog[open]) .mg-mascota, body:has(dialog[open]) .mg-panel, body:has(d
 
 .mg-mascota {
   left: 8px; bottom: var(--mg-base);
-  width: 78px; height: 110px; padding: 0; border: 0; background: transparent; cursor: pointer;
+  width: auto; height: 150px; padding: 0; border: 0; background: transparent; cursor: pointer;
   filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.35));
   transform-origin: 50% 100%;
   transition: left 0.7s cubic-bezier(.3,1.4,.5,1), top 0.7s cubic-bezier(.3,1.4,.5,1), bottom 0.7s cubic-bezier(.3,1.4,.5,1);
 }
-.mg-mascota img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.mg-mascota img { display: block; height: 100%; width: auto; max-width: none; pointer-events: none; }
 .mg-mascota:focus-visible { outline: 3px solid #D4216C; outline-offset: 4px; border-radius: 12px; }
 .mg-mascota[hidden], .mg-panel[hidden], .mg-burbuja[hidden] { display: none; }
 
@@ -26,14 +26,14 @@ body:has(dialog[open]) .mg-mascota, body:has(dialog[open]) .mg-panel, body:has(d
 @keyframes mg-respira { 0%, 100% { transform: none; } 50% { transform: translateY(-4px) scale(1.01, 0.995); } }
 
 .mg-burbuja {
-  left: 70px; bottom: calc(var(--mg-base) + 84px); max-width: min(240px, calc(100vw - 90px));
+  left: 66px; bottom: calc(var(--mg-base) + 96px); max-width: min(240px, calc(100vw - 86px));
   background: #fff; color: #4b2e2e; border: 2px solid #FFC800; border-radius: 16px 16px 16px 4px;
   padding: 10px 12px; font-size: 0.95rem; line-height: 1.35; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 .mg-burbuja button { margin-top: 8px; }
 
 .mg-panel {
-  left: 8px; bottom: calc(var(--mg-base) + 118px);
+  left: 8px; bottom: calc(var(--mg-base) + 160px);
   width: min(340px, calc(100vw - 16px)); max-height: min(62vh, 480px);
   display: flex; flex-direction: column; overflow: hidden;
   background: #fffaf3; color: #4b2e2e; border: 2px solid #FFC800; border-radius: 18px;
@@ -64,9 +64,9 @@ body:has(dialog[open]) .mg-mascota, body:has(dialog[open]) .mg-panel, body:has(d
 .mg-destacado { outline: 4px solid #FFC800 !important; outline-offset: 6px; border-radius: 14px; box-shadow: 0 0 0 9px rgba(212, 33, 108, 0.35) !important; transition: box-shadow 0.3s; }
 
 @media (min-width: 900px) {
-  .mg-mascota { width: 104px; height: 147px; }
-  .mg-burbuja { left: 100px; bottom: calc(var(--mg-base) + 110px); }
-  .mg-panel { bottom: calc(var(--mg-base) + 156px); }
+  .mg-mascota { height: 220px; }
+  .mg-burbuja { left: 96px; bottom: calc(var(--mg-base) + 140px); }
+  .mg-panel { bottom: calc(var(--mg-base) + 232px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .mg-mascota { transition: none; }
