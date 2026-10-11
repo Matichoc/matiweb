@@ -48,12 +48,12 @@ pedidos locales); encendidas, el avance vive solo en la cuenta y no se acumula n
 
 ## Matichico, el guía (`js/matichico-guia.js` + `css/matichico-guia.css`)
 
-Mascota que llega saltando a la portada, Tienda, Historia, La Maestra y Contacto (cada página decide si carga el script; **no** va en el
+Mascota (**Matichico y Chocolatina se alternan: día par uno, día impar la otra, con la fecha de Chile; `?guia=chocolatina` o `?guia=matichico` fuerza uno para probar**) que llega saltando a la portada, Tienda, Historia, La Maestra y Contacto (cada página decide si carga el script; **no** va en el
 Matijuego, el panel, Mi cuenta, Términos/Privacidad, ni con el carrito abierto). Reglas acordadas con el dueño: es un **guion cerrado**
 (palabras clave → respuestas fijas, sin IA libre ni servidor); **solo informa** con lo que el sitio ya dice y **no recomienda ni promociona
 productos** (Ley 20.606, personajes + alimentos "ALTO EN"); ingredientes, alérgenos y salud los **deriva a WhatsApp**; no guarda lo que se
-escribe (solo `sessionStorage` si lo despidieron). Si cambian las reglas del programa, el reparto o los datos legales, actualizar también su
-guion (`SABE`) y `pages/bases-matilover.html`. Imagen: `assets/personajes/` (Matichico sin fondo, recortado de la ilustración del dueño).
+escribe (solo `sessionStorage` si lo despidieron; al despedirlo queda un botón redondo con su carita para volver a llamarlo). Si cambian las reglas del programa, el reparto o los datos legales, actualizar también su
+guion (`SABE`) y `pages/bases-matilover.html`. Imágenes: `assets/personajes/` (Matichico de pie con polera negra de Matichoc, dos poses sin fondo, recortadas de la hoja de poses del dueño; el guía cambia de pose al saludar, responder y recorrer).
 
 ## Datos legales (entregados por el dueño)
 

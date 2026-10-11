@@ -1,4 +1,4 @@
-// Matichico, el guía del sitio.
+// Matichico y Chocolatina, los guías del sitio (se alternan: un día uno, otro día la otra).
 //
 // Reglas de diseño (acordadas con el dueño):
 // - Solo INFORMA con lo que el sitio ya dice (cómo pedir, entregas, pagos, programa Matilover, historia,
@@ -22,7 +22,7 @@
   const RETRASO = 6000; // llega saltando unos segundos después de entrar
 
   const guardado = (k, v) => { try { return v === undefined ? sessionStorage.getItem(k) : sessionStorage.setItem(k, v); } catch (e) { return null; } };
-  if (guardado(CLAVE)) return;
+  const DESPEDIDO = !!guardado(CLAVE); // si lo despidieron en esta pestaña, solo queda el botón para volver a llamarlo
 
   const ruta = (r) => new URL(r, RAIZ).href;
   const wsp = (texto) => `https://wa.me/${WSP}` + (texto ? `?text=${encodeURIComponent(texto)}` : '');
@@ -35,7 +35,7 @@
       resp: 'Para ingredientes, alergias y todo lo de salud prefiero que te responda una persona 🙏 Escríbenos por WhatsApp antes de comprar y te decimos exactamente qué lleva el producto que te interesa.',
       links: [WA] },
     { id: 'saludo', claves: ['hola', 'holi', 'buenas', 'buen dia', 'buenos dias', 'buenas tardes', 'hey', 'saludos'],
-      resp: '¡Hola! Soy Matichico 🍫 Te puedo ayudar a recorrer el sitio y contarte cómo pedir, cómo son las entregas y más. ¿Qué te gustaría saber?' },
+      resp: '¡Hola! Soy {nombre} 🍫 Te puedo ayudar a recorrer el sitio y contarte cómo pedir, cómo son las entregas y más. ¿Qué te gustaría saber?' },
     { id: 'gracias', claves: ['gracias', 'chao', 'adios', 'hasta luego', 'listo', 'ok gracias'],
       resp: '¡De nada! 💛 Si necesitas algo más, aquí estoy.' },
     { id: 'comprar', claves: ['comprar', 'compro', 'pedir', 'pido', 'pedido', 'encargar', 'encargo', 'como hago', 'carrito', 'ordenar'],
@@ -124,19 +124,52 @@
 
   // ---------- Dibujo ----------
   const el = (tag, clase, texto) => { const e = document.createElement(tag); if (clase) e.className = clase; if (texto != null) e.textContent = texto; return e; };
-  let mascota, panel, mensajes, sugeridas, entrada, burbuja;
+  // Los dos guías (hoja de poses del dueño, sin fondo): cada uno con una pose "hablando" y otra de "bienvenida".
+  const GUIAS = {
+    matichico: {
+      nombre: 'Matichico',
+      poses: {
+        hablando: { src: ruta('assets/personajes/matichico-hablando-420.webp'), w: 172, h: 420 },
+        bienvenida: { src: ruta('assets/personajes/matichico-bienvenida-420.webp'), w: 170, h: 420 }
+      }
+    },
+    chocolatina: {
+      nombre: 'Chocolatina',
+      poses: {
+        hablando: { src: ruta('assets/personajes/chocolatina-hablando-420.webp'), w: 174, h: 420 },
+        bienvenida: { src: ruta('assets/personajes/chocolatina-bienvenida-420.webp'), w: 175, h: 420 }
+      }
+    }
+  };
+  // Día por medio (con la fecha de Chile): días pares Matichico, días impares Chocolatina. Con ?guia=chocolatina
+  // (o matichico) en la dirección se puede ver uno u otro, por ejemplo para probar.
+  function elegirGuia() {
+    const forzado = new URLSearchParams(location.search).get('guia');
+    if (forzado && GUIAS[forzado]) return forzado;
+    let dias;
+    try {
+      const f = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Santiago', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+      const [a, m, d] = f.split('-').map(Number);
+      dias = Math.floor(Date.UTC(a, m - 1, d) / 86400000);
+    } catch (e) { dias = Math.floor(Date.now() / 86400000); }
+    return dias % 2 === 0 ? 'matichico' : 'chocolatina';
+  }
+  const GUIA = GUIAS[elegirGuia()];
+  const NOMBRE = GUIA.nombre;
+  const POSES = GUIA.poses;
+  let mascota, panel, mensajes, sugeridas, entrada, burbuja, imgMascota;
   let abierto = false, recorrido = null, destacado = null, temporizadorSalto = null;
 
   function construir() {
     mascota = el('button', 'mg-mascota mg-entrando');
     mascota.type = 'button';
-    mascota.setAttribute('aria-label', 'Matichico, guía del sitio: abrir o cerrar el chat');
+    mascota.setAttribute('aria-label', NOMBRE + ', guía del sitio: abrir o cerrar el chat');
     mascota.setAttribute('aria-expanded', 'false');
-    const img = el('img');
-    img.src = ruta('assets/personajes/matichico-matichoc-300.webp');
-    img.alt = '';
-    img.width = 212; img.height = 300;
-    mascota.appendChild(img);
+    imgMascota = el('img');
+    imgMascota.alt = '';
+    poner('hablando');
+    mascota.appendChild(imgMascota);
+    Object.values(POSES).forEach((p) => { const pre = new Image(); pre.src = p.src; }); // precarga para que el cambio de pose sea instantáneo
 
     burbuja = el('div', 'mg-burbuja');
     burbuja.hidden = true;
@@ -145,10 +178,10 @@
     panel = el('div', 'mg-panel');
     panel.hidden = true;
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'Chat con Matichico, guía del sitio');
+    panel.setAttribute('aria-label', 'Chat con ' + NOMBRE + ', guía del sitio');
     const cab = el('div', 'mg-cab');
-    cab.appendChild(el('span', null, '🍫 Matichico, tu guía'));
-    const chao = el('button', null, 'Chao, Matichico');
+    cab.appendChild(el('span', null, '🍫 ' + NOMBRE + ', tu guía'));
+    const chao = el('button', null, 'Chao, ' + NOMBRE);
     chao.type = 'button';
     chao.addEventListener('click', despedir);
     cab.appendChild(chao);
@@ -160,7 +193,7 @@
     entrada = el('input');
     entrada.type = 'text'; entrada.maxLength = 120; entrada.autocomplete = 'off';
     entrada.placeholder = 'Pregúntame algo del sitio…';
-    entrada.setAttribute('aria-label', 'Escribe tu pregunta para Matichico');
+    entrada.setAttribute('aria-label', 'Escribe tu pregunta para ' + NOMBRE);
     const enviar = el('button', 'mg-primario', 'Enviar');
     enviar.type = 'submit';
     pie.append(entrada, enviar);
@@ -171,6 +204,12 @@
     document.body.append(mascota, burbuja, panel);
     mascota.addEventListener('click', () => (abierto ? cerrarPanel() : abrirPanel()));
     mascota.addEventListener('animationend', () => { mascota.classList.remove('mg-entrando', 'mg-salto'); if (!REDUCIR) mascota.classList.add('mg-quieto'); });
+  }
+
+  function poner(nombre) {
+    const p = POSES[nombre] || POSES.hablando;
+    if (imgMascota.getAttribute('src') !== p.src) imgMascota.src = p.src;
+    imgMascota.width = p.w; imgMascota.height = p.h;
   }
 
   function saltar() {
@@ -217,8 +256,9 @@
     terminarRecorrido(true);
     mensaje('yo', texto);
     const tema = temaId ? (SABE.find((s) => s.id === temaId) || buscar(texto)) : buscar(texto);
+    poner('hablando');
     saltar();
-    if (tema) mensaje('bot', tema.resp, tema.links);
+    if (tema) mensaje('bot', tema.resp.replace('{nombre}', NOMBRE), tema.links);
     else mensaje('bot', 'Mmm, eso no lo sé 🙈 Yo solo conozco lo que cuenta este sitio. Para eso mejor te responde una persona por WhatsApp.', [WA]);
   }
 
@@ -228,13 +268,15 @@
     abierto = true;
     mascota.setAttribute('aria-expanded', 'true');
     if (!mensajes.childElementCount) {
-      mensaje('bot', '¡Hola! Soy Matichico 🍫 Te cuento cómo pedir, cómo son las entregas y más. Solo sé lo que cuenta este sitio; para lo demás te paso con una persona.');
+      mensaje('bot', '¡Hola! Soy ' + NOMBRE + ' 🍫 Te cuento cómo pedir, cómo son las entregas y más. Solo sé lo que cuenta este sitio; para lo demás te paso con una persona.');
       mostrarSugeridas();
     }
+    poner('bienvenida');
     saltar();
     entrada.focus({ preventScroll: true });
   }
   function cerrarPanel() {
+    poner('hablando');
     panel.hidden = true;
     abierto = false;
     mascota.setAttribute('aria-expanded', 'false');
@@ -248,7 +290,28 @@
     mascota.style.transition = REDUCIR ? 'none' : 'left .6s ease-in, opacity .6s';
     mascota.style.left = '-160px';
     mascota.style.opacity = '0';
-    setTimeout(() => { [mascota, panel, burbuja].forEach((e) => e.remove()); }, REDUCIR ? 0 : 700);
+    setTimeout(() => { [mascota, panel, burbuja].forEach((e) => e.remove()); mostrarLlamar(); }, REDUCIR ? 0 : 700);
+  }
+
+  // Botón redondo con la carita del guía para volver a llamarlo después de despedirlo.
+  let botonLlamar = null;
+  function mostrarLlamar() {
+    if (botonLlamar) return;
+    botonLlamar = el('button', 'mg-llamar');
+    botonLlamar.type = 'button';
+    botonLlamar.setAttribute('aria-label', 'Llamar a ' + NOMBRE + ', guía del sitio');
+    botonLlamar.title = 'Llamar a ' + NOMBRE;
+    const cara = el('img');
+    cara.src = POSES.hablando.src;
+    cara.alt = '';
+    botonLlamar.appendChild(cara);
+    botonLlamar.addEventListener('click', () => {
+      botonLlamar.remove(); botonLlamar = null;
+      guardado(CLAVE, ''); // vuelve a estar disponible en esta pestaña
+      construir();
+      abrirPanel();
+    });
+    document.body.appendChild(botonLlamar);
   }
 
   // ---------- Recorrido de la página ----------
@@ -274,6 +337,7 @@
     window.scrollTo({ top: Math.max(y, 0), behavior: REDUCIR ? 'auto' : 'smooth' });
     nodo.classList.add('mg-destacado');
     destacado = nodo;
+    poner(recorrido.i % 2 === 0 ? 'bienvenida' : 'hablando');
     saltar();
     const m = mensaje('bot', `(${recorrido.i + 1}/${recorrido.lista.length}) ${texto}`);
     const fila = el('div', 'mg-sugeridas');
@@ -292,6 +356,7 @@
   function quitarDestacado() { if (destacado) { destacado.classList.remove('mg-destacado'); destacado = null; } }
   function terminarRecorrido(callado, salio) {
     const habia = !!recorrido;
+    if (habia && imgMascota) poner('hablando');
     recorrido = null;
     quitarDestacado();
     if (habia && !callado) {
@@ -307,17 +372,18 @@
     // un saludo corto; si no lo tocan, se esconde solo
     setTimeout(() => {
       if (abierto || !burbuja) return;
-      burbuja.replaceChildren(document.createTextNode('¡Hola! Soy Matichico 🍫 ¿Te ayudo a recorrer el sitio?'));
+      burbuja.replaceChildren(document.createTextNode('¡Hola! Soy ' + NOMBRE + ' 🍫 ¿Te ayudo a recorrer el sitio?'));
       const si = el('button', 'mg-primario', 'Sí, ayúdame');
       si.type = 'button';
       si.addEventListener('click', abrirPanel);
       burbuja.appendChild(document.createElement('br'));
       burbuja.appendChild(si);
       burbuja.hidden = false;
-      setTimeout(() => { if (burbuja) burbuja.hidden = true; }, 12000);
+      poner('bienvenida');
+      setTimeout(() => { if (burbuja) { burbuja.hidden = true; poner('hablando'); } }, 12000);
     }, REDUCIR ? 300 : 1300);
   }
 
-  function iniciar() { setTimeout(llegar, RETRASO); }
+  function iniciar() { if (DESPEDIDO) setTimeout(mostrarLlamar, 800); else setTimeout(llegar, RETRASO); }
   if (document.readyState === 'complete') iniciar(); else window.addEventListener('load', iniciar);
 })();
