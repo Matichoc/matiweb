@@ -37,10 +37,12 @@ Deploy directo a GitHub Pages (`.nojekyll`).
 El sitio es abierto: sin cuenta se navega, se compra y se juega. La cuenta Matilover solo sirve para **guardar
 progreso** (racha, descuentos, premios, juegos). Con `js/supabase-config.js` vacío todo funciona como antes (racha y
 pedidos locales); encendidas, el avance vive solo en la cuenta y no se acumula nada en el navegador.
-- `supabase/schema.sql` (+ `02_dueno_y_datos.sql`, `03_pedidos_web.sql`, en ese orden): tablas + RLS + funciones (la racha, los cupones y los pedidos se validan en el servidor,
+- `supabase/schema.sql` (+ `02_dueno_y_datos.sql`, `03_pedidos_web.sql`, `04_cuentas_desde_14.sql`, en ese orden): tablas + RLS + funciones (la racha, los cupones y los pedidos se validan en el servidor,
   el navegador no escribe directo). Reglas del programa en `reglas()`. Guía: `supabase/LEEME.md`.
 - `js/cuenta.js` (API compartida), `pages/cuenta.html` (Matilover), `pages/admin.html` (panel del dueño: exige
   estar en `admins` + verificación en dos pasos). `js/vendor/supabase.js` es la librería oficial copiada (MIT).
+- Las cuentas son **solo desde los 14 años** (`04_cuentas_desde_14.sql`); no se crean cuentas de menores. Las reglas públicas del programa
+  están en `pages/bases-matilover.html` y deben coincidir con `reglas()` (7 días → 10%; 10 pedidos → 1 cuchuflí o alfajor; 30 días; no acumulables).
 - La clave `anon` es pública; **nunca** poner `service_role` ni el token del bot de Telegram en el repositorio
   (el token vive solo en la tabla privada `config_privada` de Supabase).
 

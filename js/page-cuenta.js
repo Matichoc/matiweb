@@ -75,14 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
     $('apodo').value = (r.perfil && r.perfil.apodo) || '';
     $('form-perfil').addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      const edad = (document.querySelector('input[name="edad"]:checked') || {}).value;
       const msg = $('mensaje-perfil');
       if (!$('apodo').value.trim()) return aviso(msg, 'Escribe un apodo.');
-      if (!edad) return aviso(msg, 'Elige tu edad.');
+      if (!$('mayor14').checked) return aviso(msg, 'Las cuentas Matilover son desde los 14 años. Si eres menor, puedes seguir navegando y jugando sin cuenta.');
       if (!$('terminos').checked) return aviso(msg, 'Para seguir, acepta los términos y la política de privacidad.');
       $('btn-perfil').disabled = true;
       try {
-        await Cuenta.declarar(edad, $('apodo').value, $('novedades').checked);
+        await Cuenta.declarar('14_o_mas', $('apodo').value, $('novedades').checked);
         await cargarCuenta();
       } catch (e) { aviso(msg, Cuenta.traducir(e)); }
       finally { $('btn-perfil').disabled = false; }

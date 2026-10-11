@@ -142,3 +142,12 @@ botones Contactado / Pago confirmado / Entregado / Cancelar.
   Los correos están en **Authentication → Users**.
 - El correo completo solo se muestra de quienes aceptaron recibir novedades; para promociones usa únicamente esa lista.
 
+## 10. Paso 4: cuentas solo desde los 14 años
+Pega y ejecuta `supabase/04_cuentas_desde_14.sql` en el SQL Editor (después de `03_...`; se puede repetir). Desde ahí el servidor
+rechaza cuentas de menores de 14 años, y las cuentas antiguas que hubieran elegido "menor con permiso" quedan sin el perfil
+completo (no juntan racha ni cupones) hasta confirmar que tienen 14 años o más. Para ver cuántas hay:
+`select count(*) from public.perfiles where declaracion_edad = 'menor_con_permiso';`
+
+Las reglas del programa que ve el público están en `pages/bases-matilover.html` y deben coincidir con `reglas()` de `schema.sql`
+(7 días seguidos → 10%; 10 pedidos entregados → 1 cuchuflí o alfajor gratis; cupones válidos 30 días; no acumulables).
+

@@ -45,6 +45,7 @@
     'Aún no completas la racha': 'Todavía no completas la racha.',
     'Aún no completas los pedidos': 'Todavía no completas los pedidos.',
     'Demasiados pedidos hoy': 'Ya registraste muchos pedidos hoy.',
+    'Las cuentas son desde los 14 años': 'Las cuentas Matilover son desde los 14 años.',
     'No autorizado': 'No tienes permiso para esto.'
   };
   api.traducir = function (error) {
