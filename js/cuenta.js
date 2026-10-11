@@ -90,6 +90,10 @@
   api.borrarCuenta = () => rpc('borrar_mi_cuenta');
   api.registrarVisita = () => rpc('registrar_visita');
   api.registrarPedido = (total, resumen) => rpc('registrar_pedido', { p_total: total, p_resumen: resumen });
+  // Pedidos de la tienda: funcionan con o sin sesión (el servidor solo valida y anota).
+  api.pedidoWebRegistrar = (nombre, telefono, resumen, total, origen) =>
+    rpc('pedido_web_registrar', { p_nombre: nombre, p_telefono: telefono, p_resumen: resumen, p_total: total, p_origen: origen });
+  api.pedidoWebEvento = (token, evento) => rpc('pedido_web_evento', { p_token: token, p_evento: evento });
 
   const rutaCuenta = () => new URL('../pages/cuenta.html', SRC).href;
 

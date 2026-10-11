@@ -73,17 +73,24 @@
         <div class="t-total"><span>Total</span><span>$<span id="tTotal">0</span></span></div>
       </div>
 
+      <h3>Tus datos</h3>
+      <label class="t-label" for="nombre">Nombre completo*</label>
+      <input class="t-input" type="text" id="nombre" name="nombre" required autocomplete="name" maxlength="60">
+      <label class="t-label" for="contacto">Celular / WhatsApp*</label>
+      <input class="t-input" type="tel" id="contacto" name="contacto" required autocomplete="tel" inputmode="tel" maxlength="20">
+      <div class="t-trampa" aria-hidden="true"><label for="sitioWeb">Deja este campo vacío</label><input type="text" id="sitioWeb" name="sitioWeb" tabindex="-1" autocomplete="off"></div>
+      <p class="t-ayuda">Usamos tu nombre y celular solo para atender este pedido: te escribimos por WhatsApp para coordinar el pago y la entrega, y para avisarte si algo quedó pendiente. Más en la <a href="privacidad.html">Política de privacidad</a>.</p>
+
       <h3>Pagar online (opcional)</h3>
       <button type="button" class="t-btn t-btn--tuu" id="btnPagarTuu">💳 Pagar online con Tuu</button>
       <p class="t-tuu-aviso" id="pagoTuuAviso" aria-live="polite">🔒 Pago seguro — se abre en una pestaña nueva. Ahí tendrás que escribir tú el monto total de tu carrito; te lo dejamos copiado para que solo lo pegues.</p>
+      <div class="t-yapague" id="yaPague" hidden>
+        <p>¿Ya pagaste en Tuu? Avísanos con un toque y te escribimos para confirmar tu pedido.</p>
+        <button type="button" class="t-btn t-btn--suave" id="btnYaPague">✅ Ya pagué</button>
+        <p class="t-tuu-aviso" id="yaPagueAviso" aria-live="polite"></p>
+      </div>
 
       <p class="t-ayuda">📦 <strong>Entrega:</strong> martes y jueves en nuestro stand de la plaza de La Ligua, otro día a coordinar en nuestro domicilio, o envío por pagar (a regiones por Blue Express).</p>
-
-      <h3>Tus datos</h3>
-      <label class="t-label" for="nombre">Nombre completo*</label>
-      <input class="t-input" type="text" id="nombre" name="nombre" required autocomplete="name">
-      <label class="t-label" for="contacto">Celular / WhatsApp*</label>
-      <input class="t-input" type="tel" id="contacto" name="contacto" required autocomplete="tel">
 
       <h3>Envía tu pedido</h3>
       <p class="t-ayuda">Este paso es obligatorio para confirmar tu pedido, hayas pagado online o no: te escribimos para coordinar el pago (efectivo, transferencia, o avisarnos si ya pagaste con Tuu) y la entrega.</p>

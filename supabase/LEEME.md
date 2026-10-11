@@ -92,3 +92,44 @@ Copia de **Project Settings → API** estos dos datos a `js/supabase-config.js` 
    `tucorreo+matilover2@gmail.com`: para el sitio son dos cuentas distintas.
 4. En el panel, la sección **Matilovers registrados** muestra cuántas cuentas hay y permite descargar un CSV.
    El correo completo solo se ve de quien marcó "quiero recibir novedades"; úsalo solo para eso.
+
+## 8. Paso 3: pedidos de la tienda y aviso por Telegram
+Cada vez que alguien deja su nombre y celular en la tienda y aprieta "Pagar online con Tuu" o "Enviar pedido por
+WhatsApp", queda anotado como **Interesado** y te llega un aviso por Telegram con su nombre, celular, productos, total y un
+link para escribirle por WhatsApp. Si después aprieta "Ya pagué", queda como **Dice que pagó** (y te llega otro aviso):
+eso es solo lo que la persona avisó, **el pago real lo confirmas tú en tu app de Tuu** y marcas "Pago confirmado" en el panel.
+
+1. **SQL Editor**: pega y ejecuta `supabase/03_pedidos_web.sql` (después de `02_...`). Si Supabase pide activar la extensión
+   `pg_net`, acepta (viene incluida en todos los proyectos).
+2. **Crear tu bot en Telegram** (desde tu celular):
+   - Busca **@BotFather** → escribe `/newbot` → ponle nombre (ej. "Matichoc Avisos") y un usuario que termine en `bot`.
+   - BotFather te entrega un **token** (se ve como `123456789:AAH...`). Es como una contraseña: **no lo compartas con nadie,
+     ni en chats, ni en el repositorio**. Solo va en el SQL del paso 4.
+3. **Averiguar tu número de chat**: abre tu bot nuevo y escríbele "hola" (un bot no puede escribirte primero). Luego escríbele
+   a **@userinfobot**: te responde con tu `Id` (un número). Ese es tu número de chat. (Tu número de teléfono no sirve para esto.)
+   Si quieres que avise también a otra persona, sumen el bot a un grupo y usen el Id de ese grupo (empieza con `-`).
+4. **Guardarlos en tu Supabase** (solo ahí, nunca en el repositorio) y mandar un mensaje de prueba. En el SQL Editor:
+   ```sql
+   insert into public.config_privada (clave, valor) values
+     ('telegram_token', 'PEGA_AQUI_EL_TOKEN'),
+     ('telegram_chat',  'PEGA_AQUI_TU_ID')
+   on conflict (clave) do update set valor = excluded.valor;
+
+   select public.avisar_telegram('✅ Prueba de Matichoc: si lees esto, los avisos funcionan.');
+   ```
+   El mensaje debe llegar en unos segundos. Si no llega, mira el resultado con:
+   `select status_code, content::text, error_msg from net._http_response order by created desc limit 3;`
+   (`401` = token mal copiado; `400`/`chat not found` = el Id está mal o no le escribiste "hola" al bot).
+5. En `/pages/admin.html` → **Pedidos por revisar** ves cada pedido con su estado, el botón "Escribirle por WhatsApp" y los
+   botones Contactado / Pago confirmado / Entregado / Cancelar.
+
+> Para cambiar o quitar el aviso: vuelve a ejecutar el `insert` con otro valor, o `delete from public.config_privada;`.
+> Si Telegram falla o no está configurado, los pedidos igual se guardan: el aviso nunca bloquea una compra.
+
+## 9. Dónde revisar a tus Matilovers
+- **Panel** (`/pages/admin.html` → "Matilovers registrados"): total de cuentas, buscador y filtros (aceptaron novedades,
+  racha de 3 días o más, ya compraron, aún sin compras, inactivos hace 2 semanas) y descarga CSV de lo que estás viendo.
+- **Supabase → Table Editor**: tablas `perfiles`, `visitas`, `pedidos`, `cupones` (solo lectura para ti; no edites a mano).
+  Los correos están en **Authentication → Users**.
+- El correo completo solo se muestra de quienes aceptaron recibir novedades; para promociones usa únicamente esa lista.
+

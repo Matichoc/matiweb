@@ -89,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { once: false });
   }
 
+  const ETIQUETA_PEDIDO = { interesado: 'En revisión', dice_pagado: 'Avisaste tu pago', contactado: 'Te contactamos', pagado: 'Pago confirmado', solicitado: 'Solicitado', entregado: 'Entregado', cancelado: 'Cancelado' };
+
   // ---------- Mi cuenta ----------
   function pintarCuenta(r) {
     const meta = r.reglas.racha_meta;
@@ -132,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!r.pedidos.length) lp.appendChild(nodo('li', 'ayuda', 'Aún no hay pedidos registrados con tu cuenta.'));
     r.pedidos.forEach((o) => {
       const li = nodo('li');
-      li.append(nodo('span', null, `${fecha(o.creado_en)} · ${pesos(o.total)}`), nodo('span', `etiqueta etiqueta--${o.estado}`, o.estado));
+      li.append(nodo('span', null, `${fecha(o.creado_en)} · ${pesos(o.total)}`), nodo('span', `etiqueta etiqueta--${o.estado}`, ETIQUETA_PEDIDO[o.estado] || o.estado));
       lp.appendChild(li);
     });
   }

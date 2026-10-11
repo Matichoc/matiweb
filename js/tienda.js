@@ -223,6 +223,39 @@
   });
   $('tBuscar').addEventListener('input', (e) => { textoBusqueda = e.target.value; aplicarFiltros(); });
 
+  // ---------- Aviso al local: anota quién quiere comprar (solo con las cuentas encendidas) ----------
+  // Guarda nombre, celular y carrito en Supabase y avisa por Telegram, para poder escribirle a quien
+  // se queda a medio camino (por ejemplo, paga en Tuu y no manda el WhatsApp). NUNCA frena la compra:
+  // si falla, el pedido sigue igual por Tuu o WhatsApp.
+  let pedidoWeb = null; // { firma, promesa } del carrito actual, para no duplicar avisos
+  const avisoActivo = () => !!(window.Cuenta && Cuenta.activa);
+
+  function datosContactoValidos() {
+    const nombre = $('nombre'), contacto = $('contacto');
+    contacto.setCustomValidity('');
+    if (avisoActivo()) {
+      const digitos = contacto.value.replace(/\D/g, '').length;
+      if (digitos < 9 || digitos > 15) contacto.setCustomValidity('Escribe tu celular con todos sus números (ej. +56 9 1234 5678).');
+    }
+    return nombre.reportValidity() && contacto.reportValidity();
+  }
+  $('contacto').addEventListener('input', () => $('contacto').setCustomValidity(''));
+
+  async function registrarInteres(origen) {
+    if (!avisoActivo() || $('sitioWeb').value) return null; // sin cuentas, o un bot rellenó el campo trampa
+    const nombre = $('nombre').value.trim(), contacto = $('contacto').value.trim();
+    const resumen = [...carrito].map(([id, cant]) => `${cant} x ${porId.get(id).nombre}`).join(', ');
+    const { total } = totales();
+    const firma = JSON.stringify([nombre, contacto, resumen, total]);
+    if (pedidoWeb && pedidoWeb.firma === firma) {
+      const token = await pedidoWeb.promesa;
+      if (token) { Cuenta.pedidoWebEvento(token, origen).catch(() => {}); return token; }
+    }
+    const promesa = Cuenta.pedidoWebRegistrar(nombre, contacto, resumen, total, origen).catch(() => null);
+    pedidoWeb = { firma, promesa };
+    return promesa;
+  }
+
   // ---------- Pago con Tuu (sin cambios de proceso) ----------
   // Tuu no acepta el monto por URL (el campo llega vacío), así que dejamos el total
   // copiado y bien visible para que la persona solo lo pegue en la pestaña de Tuu.
@@ -231,6 +264,10 @@
     const { total } = totales();
     if (total <= 0) {
       aviso.textContent = 'Primero agrega productos al carrito para saber cuánto pagar.';
+      return;
+    }
+    if (avisoActivo() && !datosContactoValidos()) {
+      aviso.textContent = 'Primero escribe tu nombre y tu celular (arriba, en "Tus datos") para poder avisarte de tu pedido.';
       return;
     }
     const monto = '$' + clp(total);
@@ -243,13 +280,37 @@
       }).catch(() => {});
     }
     window.open(TUU_URL, '_blank', 'noopener,noreferrer');
+    if (avisoActivo()) {
+      registrarInteres('tuu');
+      $('yaPague').hidden = false;
+    }
+  });
+
+  // "Ya pagué": la persona nos avisa. No es una confirmación de pago (Tuu no está conectado al sitio):
+  // queda como "dice que pagó" y el dueño lo confirma en su app de Tuu.
+  $('btnYaPague').addEventListener('click', async (e) => {
+    const btn = e.currentTarget, aviso = $('yaPagueAviso');
+    if (!datosContactoValidos()) { aviso.textContent = 'Revisa tu nombre y celular para poder avisarnos.'; return; }
+    btn.disabled = true;
+    aviso.textContent = 'Avisando…';
+    let ok = false;
+    try {
+      const token = await registrarInteres('tuu');
+      ok = !!token && (await Cuenta.pedidoWebEvento(token, 'pagado'));
+    } catch (err) { ok = false; }
+    if (ok) {
+      aviso.textContent = '✅ ¡Gracias! Te escribiremos por WhatsApp para confirmar tu pago. Igual puedes enviarnos el pedido con el botón de abajo.';
+    } else {
+      aviso.textContent = 'No pudimos avisar automáticamente. Envíanos el pedido por WhatsApp con tu comprobante, con el botón de abajo.';
+      btn.disabled = false;
+    }
   });
 
   // ---------- Envío del pedido por WhatsApp ----------
   $('tForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const form = e.currentTarget;
-    if (!form.reportValidity()) return;
+    if (!datosContactoValidos() || !form.reportValidity()) return;
     const { unidades, total } = totales();
     if (unidades === 0) return;
 
@@ -264,12 +325,9 @@
     mensaje += `\n💵 Total: $${clp(total)}\n📸 Recuerda enviar tu comprobante de pago.`;
 
     window.open(`https://wa.me/${WSP}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
-    // Con cuenta Matilover, el pedido queda registrado como "solicitado" (el dueño lo marca entregado).
-    // No bloquea ni cambia el envío por WhatsApp: si falla, el pedido igual salió.
-    if (window.Cuenta && Cuenta.activa && Cuenta.haySesion()) {
-      const detalle = [...carrito].map(([id, cant]) => `${cant} x ${porId.get(id).nombre}`).join(', ');
-      Cuenta.registrarPedido(total, detalle).catch(() => {});
-    }
+    // Queda anotado como "interesado" (con o sin cuenta; si tiene cuenta Matilover se vincula solo) y
+    // llega el aviso por Telegram. No bloquea ni cambia el envío por WhatsApp: si falla, el pedido igual salió.
+    registrarInteres('whatsapp');
     if (typeof sumarPedido === 'function') sumarPedido();
     if (typeof renderPedidosWidget === 'function') renderPedidosWidget();
   });

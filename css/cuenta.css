@@ -55,7 +55,10 @@
 .etiqueta { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 800; }
 .etiqueta--vigente { background: #157a37; color: #fff; }
 .etiqueta--canjeado, .etiqueta--vencido, .etiqueta--cancelado { background: #8a7a70; color: #fff; }
-.etiqueta--solicitado { background: #ffc800; color: #4b2e2e; }
+.etiqueta--solicitado, .etiqueta--interesado { background: #ffc800; color: #4b2e2e; }
+.etiqueta--dice_pagado { background: #d4216c; color: #fff; }
+.etiqueta--contactado { background: #3a6ea5; color: #fff; }
+.etiqueta--pagado { background: #157a37; color: #fff; }
 .etiqueta--entregado { background: #157a37; color: #fff; }
 
 .lista-simple { list-style: none; padding: 0; margin: 0; }
@@ -70,3 +73,6 @@
 .qr { display: block; margin: 10px auto; width: 200px; height: 200px; background: #fff; }
 .secreto { font-family: ui-monospace, Menlo, Consolas, monospace; word-break: break-all; background: #f5ede2; padding: 8px; border-radius: 8px; font-size: 0.9rem; }
 .lista-matilovers { max-height: 420px; overflow: auto; margin-top: 8px; }
+.cab-pedido { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fila-pedido a.btn { display: block; text-align: center; text-decoration: none; margin: 0; }
+#a-segmento, #a-buscar { width: 100%; box-sizing: border-box; font: inherit; padding: 10px; border: 2px solid #d9c4a8; border-radius: 10px; margin: 4px 0 10px; }

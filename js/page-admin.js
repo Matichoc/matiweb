@@ -108,19 +108,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---------- Pedidos ----------
+  const ESTADOS = { interesado: 'Interesado', dice_pagado: 'Dice que pagó', contactado: 'Contactado', pagado: 'Pago confirmado', solicitado: 'Solicitado', entregado: 'Entregado', cancelado: 'Cancelado' };
+  const ORIGEN = { tuu: 'Tuu', whatsapp: 'WhatsApp', ambos: 'Tuu y WhatsApp' };
+  // Mensaje amable para escribirle a quien dejó su pedido (se abre en WhatsApp, tú decides si lo mandas).
+  function enlaceWhatsapp(o) {
+    const nombre = String(o.apodo || '').split(' ')[0];
+    const texto = o.estado === 'dice_pagado'
+      ? `Hola ${nombre}, soy de Matichoc 🍫 Vimos que avisaste tu pago, ¡gracias! Te escribo para confirmarlo y coordinar tu entrega. ¿Nos confirmas tu pedido: ${o.resumen || ''}?`
+      : `Hola ${nombre}, soy de Matichoc 🍫 Vimos que te interesó tu pedido (${o.resumen || 'tus chocolates'}). ¿Te ayudamos a terminarlo o tienes alguna duda?`;
+    return `https://wa.me/${encodeURIComponent(o.telefono)}?text=${encodeURIComponent(texto)}`;
+  }
   async function cargarPedidos() {
     const cont = $('a-lista-pedidos');
     cont.replaceChildren(nodo('p', 'ayuda', 'Cargando…'));
     try {
-      const { data, error } = await sb.rpc('admin_pedidos', { p_estado: 'solicitado' });
+      const { data, error } = await sb.rpc('admin_pedidos', { p_estado: 'abiertos' });
       if (error) throw error;
       cont.replaceChildren();
       if (!data.length) cont.appendChild(nodo('p', 'ayuda', 'No hay pedidos por revisar.'));
       data.forEach((o) => {
         const fila = nodo('div', 'fila-pedido');
-        fila.append(nodo('strong', null, `${o.apodo} · ${pesos(o.total)}`), nodo('span', 'ayuda', `${fecha(o.creado_en)} — ${o.resumen || 'sin detalle'}`));
+        const cab = nodo('div', 'cab-pedido');
+        cab.append(nodo('strong', null, `${o.apodo || 'Sin nombre'} · ${pesos(o.total)}`),
+          nodo('span', `etiqueta etiqueta--${o.estado}`, ESTADOS[o.estado] || o.estado));
+        fila.append(cab,
+          nodo('span', 'ayuda', `${fecha(o.creado_en)}${o.origen ? ' · ' + (ORIGEN[o.origen] || o.origen) : ''}${o.con_cuenta ? ' · con cuenta Matilover' : ''}`),
+          nodo('span', 'ayuda', o.resumen || 'sin detalle'));
+        if (o.telefono) {
+          const a = nodo('a', 'btn btn--verde', `💬 Escribirle por WhatsApp (+${o.telefono})`);
+          a.href = enlaceWhatsapp(o); a.target = '_blank'; a.rel = 'noopener noreferrer';
+          fila.appendChild(a);
+        }
         const acc = nodo('div', 'acciones');
-        [['✅ Entregado', 'entregado', 'btn--verde'], ['✖ Cancelar', 'cancelado', 'btn--suave']].forEach(([txt, estado, clase]) => {
+        [['📞 Contactado', 'contactado', 'btn--suave'], ['💳 Pago confirmado', 'pagado', 'btn--suave'],
+         ['✅ Entregado', 'entregado', 'btn--verde'], ['✖ Cancelar', 'cancelado', 'btn--suave']].forEach(([txt, estado, clase]) => {
+          if (estado === o.estado) return;
           const b = nodo('button', `btn ${clase}`, txt);
           b.type = 'button';
           b.addEventListener('click', async () => {
@@ -139,31 +161,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- Matilovers ----------
   let matilovers = [];
+  let resumenMatilovers = '';
+  // Segmentos para armar dinámicas (se calculan aquí con lo que ya trae la lista).
+  const SEGMENTOS = {
+    todos: () => true,
+    novedades: (m) => m.novedades,
+    racha: (m) => m.racha >= 3,
+    sin_pedidos: (m) => m.pedidos_entregados === 0,
+    clientes: (m) => m.pedidos_entregados >= 1,
+    inactivos: (m) => !m.ultima_visita || (Date.now() - new Date(m.ultima_visita).getTime()) > 14 * 864e5
+  };
+  function filtrarMatilovers() {
+    const q = $('a-buscar').value.trim().toLowerCase();
+    const seg = SEGMENTOS[$('a-segmento').value] || SEGMENTOS.todos;
+    return matilovers.filter((m) => seg(m) && (!q || `${m.apodo} ${m.correo || ''}`.toLowerCase().includes(q)));
+  }
+  function pintarMatilovers() {
+    const cont = $('a-lista-matilovers'), res = $('a-resumen-matilovers');
+    const lista = filtrarMatilovers();
+    res.textContent = `${resumenMatilovers} Mostrando ${lista.length}.`;
+    cont.replaceChildren();
+    if (!lista.length) cont.appendChild(nodo('p', 'ayuda', 'No hay Matilovers con ese filtro.'));
+    lista.forEach((m) => {
+      const fila = nodo('div', 'fila-pedido');
+      fila.append(nodo('strong', null, `${m.apodo}${m.novedades ? ' ✉️' : ''}${m.racha >= 3 ? ' 🔥' + m.racha : ''}`),
+        nodo('span', 'ayuda', `${m.correo || 'sin correo'} · desde ${new Date(m.registrado).toLocaleDateString('es-CL')} · ${m.visitas} visita${m.visitas === 1 ? '' : 's'} (última: ${m.ultima_visita ? new Date(m.ultima_visita + 'T12:00:00').toLocaleDateString('es-CL') : 'nunca'}) · ${m.pedidos_entregados} pedido${m.pedidos_entregados === 1 ? '' : 's'} entregado${m.pedidos_entregados === 1 ? '' : 's'}`));
+      cont.appendChild(fila);
+    });
+  }
   const celdaCsv = (v) => {
     let t = v == null ? '' : String(v);
     if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; // evita que Excel lo trate como fórmula
     return '"' + t.replace(/"/g, '""') + '"';
   };
   async function cargarMatilovers() {
-    const cont = $('a-lista-matilovers'), res = $('a-resumen-matilovers');
+    const cont = $('a-lista-matilovers');
     try {
       const { data, error } = await sb.rpc('admin_matilovers');
       if (error) throw error;
       matilovers = data.lista;
-      res.textContent = `${data.total} cuenta${data.total === 1 ? '' : 's'} · ${data.con_perfil} con perfil completo · ${data.con_novedades} aceptaron novedades.`;
-      cont.replaceChildren();
-      if (!data.lista.length) cont.appendChild(nodo('p', 'ayuda', 'Todavía no hay Matilovers registrados.'));
-      data.lista.forEach((m) => {
-        const fila = nodo('div', 'fila-pedido');
-        fila.append(nodo('strong', null, `${m.apodo}${m.novedades ? ' ✉️' : ''}`),
-          nodo('span', 'ayuda', `${m.correo || 'sin correo'} · desde ${new Date(m.registrado).toLocaleDateString('es-CL')} · ${m.visitas} visita${m.visitas === 1 ? '' : 's'} · ${m.pedidos_entregados} pedido${m.pedidos_entregados === 1 ? '' : 's'} entregado${m.pedidos_entregados === 1 ? '' : 's'}`));
-        cont.appendChild(fila);
-      });
+      resumenMatilovers = `${data.total} cuenta${data.total === 1 ? '' : 's'} · ${data.con_perfil} con perfil completo · ${data.con_novedades} aceptaron novedades.`;
+      pintarMatilovers();
     } catch (e) { cont.replaceChildren(nodo('p', 'aviso', Cuenta.traducir(e))); }
   }
   function descargarCsv() {
-    const cols = ['apodo', 'correo', 'novedades', 'edad', 'registrado', 'ultima_visita', 'visitas', 'pedidos_entregados'];
-    const filas = [cols.join(',')].concat(matilovers.map((m) => cols.map((c) => celdaCsv(m[c])).join(',')));
+    const cols = ['apodo', 'correo', 'novedades', 'edad', 'registrado', 'ultima_visita', 'visitas', 'racha', 'pedidos_entregados'];
+    const filas = [cols.join(',')].concat(filtrarMatilovers().map((m) => cols.map((c) => celdaCsv(m[c])).join(',')));
     const blob = new Blob(['\ufeff' + filas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const a = nodo('a');
     a.href = URL.createObjectURL(blob);
@@ -184,6 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
       $('a-recargar').addEventListener('click', cargarPedidos);
       $('a-recargar-matilovers').addEventListener('click', cargarMatilovers);
       $('a-csv').addEventListener('click', descargarCsv);
+      $('a-buscar').addEventListener('input', pintarMatilovers);
+      $('a-segmento').addEventListener('change', pintarMatilovers);
       $('a-salir').addEventListener('click', async () => { await Cuenta.salir(); location.reload(); });
       mostrar('a-panel');
       cargarPedidos();
