@@ -46,6 +46,15 @@ pedidos locales); encendidas, el avance vive solo en la cuenta y no se acumula n
 - La clave `anon` es pública; **nunca** poner `service_role` ni el token del bot de Telegram en el repositorio
   (el token vive solo en la tabla privada `config_privada` de Supabase).
 
+## Matichico, el guía (`js/matichico-guia.js` + `css/matichico-guia.css`)
+
+Mascota que llega saltando a la portada, Tienda, Historia, La Maestra y Contacto (cada página decide si carga el script; **no** va en el
+Matijuego, el panel, Mi cuenta, Términos/Privacidad, ni con el carrito abierto). Reglas acordadas con el dueño: es un **guion cerrado**
+(palabras clave → respuestas fijas, sin IA libre ni servidor); **solo informa** con lo que el sitio ya dice y **no recomienda ni promociona
+productos** (Ley 20.606, personajes + alimentos "ALTO EN"); ingredientes, alérgenos y salud los **deriva a WhatsApp**; no guarda lo que se
+escribe (solo `sessionStorage` si lo despidieron). Si cambian las reglas del programa, el reparto o los datos legales, actualizar también su
+guion (`SABE`) y `pages/bases-matilover.html`. Imagen: `assets/personajes/` (Matichico sin fondo, recortado de la ilustración del dueño).
+
 ## Datos legales (entregados por el dueño)
 
 Chocolatería Matichoc Inés Saavedra EIRL · RUT 77.877.372-4 · Guayacán 1409, La Ligua · i.saavedra.nu@gmail.com ·
