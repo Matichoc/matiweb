@@ -133,7 +133,7 @@
     mascota.setAttribute('aria-label', 'Matichico, guía del sitio: abrir o cerrar el chat');
     mascota.setAttribute('aria-expanded', 'false');
     const img = el('img');
-    img.src = ruta('assets/personajes/matichico-basquet-300.webp');
+    img.src = ruta('assets/personajes/matichico-matichoc-300.webp');
     img.alt = '';
     img.width = 212; img.height = 300;
     mascota.appendChild(img);
