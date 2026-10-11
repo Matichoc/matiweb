@@ -76,7 +76,7 @@ begin
   elsif tg_op = 'UPDATE' and new.estado = 'dice_pagado' and old.estado is distinct from 'dice_pagado' then
     perform public.avisar_telegram(
       E'💳 Dice que ya pagó\n👤 ' || v_quien || E'\n🛍️ ' || coalesce(new.resumen, 'sin detalle') ||
-      E'\n💵 $' || v_plata || E'\n⚠️ Confírmalo en tu app de Tuu antes de entregar.' || v_wsp);
+      E'\n💵 $' || v_plata || E'\n📎 Espera su comprobante por WhatsApp y confírmalo en tu app de Tuu antes de entregar.' || v_wsp);
   end if;
   return new;
 end $$

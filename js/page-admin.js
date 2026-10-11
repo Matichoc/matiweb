@@ -91,7 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
         nodo('div', 'codigo', data.codigo),
         nodo('div', null, data.descripcion),
         nodo('div', 'ayuda', `Cliente: ${data.apodo}${data.correo ? ' · ' + data.correo : ''}`),
-        nodo('div', 'ayuda', data.estado === 'canjeado' ? `Canjeado el ${fecha(data.canjeado_en)}` : `Vence el ${fecha(data.vence_en)}`));
+        nodo('div', 'ayuda', data.estado === 'canjeado' ? `Canjeado el ${fecha(data.canjeado_en)}` : `Vence el ${fecha(data.vence_en)}`),
+        nodo('div', 'ayuda', 'Recuerda: los cupones no son acumulables, un solo cupón por pedido.'));
       if (data.estado === 'vigente') {
         const b = nodo('button', 'btn btn--verde', '✅ Canjear ahora');
         b.type = 'button';
@@ -114,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function enlaceWhatsapp(o) {
     const nombre = String(o.apodo || '').split(' ')[0];
     const texto = o.estado === 'dice_pagado'
-      ? `Hola ${nombre}, soy de Matichoc 🍫 Vimos que avisaste tu pago, ¡gracias! Te escribo para confirmarlo y coordinar tu entrega. ¿Nos confirmas tu pedido: ${o.resumen || ''}?`
+      ? `Hola ${nombre}, soy de Matichoc 🍫 Vimos que avisaste tu pago, ¡gracias! Para confirmarlo necesitamos tu comprobante de pago (una captura o foto). ¿Nos lo envías por aquí? Pedido: ${o.resumen || ''}.`
       : `Hola ${nombre}, soy de Matichoc 🍫 Vimos que te interesó tu pedido (${o.resumen || 'tus chocolates'}). ¿Te ayudamos a terminarlo o tienes alguna duda?`;
     return `https://wa.me/${encodeURIComponent(o.telefono)}?text=${encodeURIComponent(texto)}`;
   }
@@ -134,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fila.append(cab,
           nodo('span', 'ayuda', `${fecha(o.creado_en)}${o.origen ? ' · ' + (ORIGEN[o.origen] || o.origen) : ''}${o.con_cuenta ? ' · con cuenta Matilover' : ''}`),
           nodo('span', 'ayuda', o.resumen || 'sin detalle'));
+        if (o.estado === 'dice_pagado') fila.appendChild(nodo('span', 'ayuda', '📎 Pídele el comprobante y confírmalo en tu app de Tuu antes de marcar "Pago confirmado".'));
         if (o.telefono) {
           const a = nodo('a', 'btn btn--verde', `💬 Escribirle por WhatsApp (+${o.telefono})`);
           a.href = enlaceWhatsapp(o); a.target = '_blank'; a.rel = 'noopener noreferrer';

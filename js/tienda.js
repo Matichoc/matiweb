@@ -223,6 +223,23 @@
   });
   $('tBuscar').addEventListener('input', (e) => { textoBusqueda = e.target.value; aplicarFiltros(); });
 
+  // Texto del pedido para WhatsApp. Texto plano + encodeURIComponent al enviarlo: un "&" o "#" en el nombre no corta el pedido.
+  function armarMensaje(yaPagado) {
+    const { total } = totales();
+    const nombre = $('nombre').value.trim();
+    const contacto = $('contacto').value.trim();
+    let mensaje = `🍫 ${yaPagado ? 'Pago' : 'Pedido'} Matichoc 🍫\n👤 Nombre: ${nombre}\n📱 Contacto: ${contacto}\n🛍️ Productos:\n`;
+    carrito.forEach((cant, id) => {
+      const p = porId.get(id);
+      mensaje += `- ${cant} x ${p.nombre} ($${clp(cant * p.precio)})\n`;
+    });
+    mensaje += `\n💵 Total: $${clp(total)}\n`;
+    mensaje += yaPagado
+      ? '✅ Ya pagué con Tuu. Te adjunto aquí mi comprobante de pago 📸'
+      : '📸 Recuerda enviar tu comprobante de pago.';
+    return mensaje;
+  }
+
   // ---------- Aviso al local: anota quién quiere comprar (solo con las cuentas encendidas) ----------
   // Guarda nombre, celular y carrito en Supabase y avisa por Telegram, para poder escribirle a quien
   // se queda a medio camino (por ejemplo, paga en Tuu y no manda el WhatsApp). NUNCA frena la compra:
@@ -291,6 +308,8 @@
   $('btnYaPague').addEventListener('click', async (e) => {
     const btn = e.currentTarget, aviso = $('yaPagueAviso');
     if (!datosContactoValidos()) { aviso.textContent = 'Revisa tu nombre y celular para poder avisarnos.'; return; }
+    // WhatsApp se abre ya, en el mismo toque (si se abriera después de esperar al servidor, el celular lo bloquearía).
+    window.open(`https://wa.me/${WSP}?text=${encodeURIComponent(armarMensaje(true))}`, '_blank', 'noopener,noreferrer');
     btn.disabled = true;
     aviso.textContent = 'Avisando…';
     let ok = false;
@@ -298,12 +317,10 @@
       const token = await registrarInteres('tuu');
       ok = !!token && (await Cuenta.pedidoWebEvento(token, 'pagado'));
     } catch (err) { ok = false; }
-    if (ok) {
-      aviso.textContent = '✅ ¡Gracias! Te escribiremos por WhatsApp para confirmar tu pago. Igual puedes enviarnos el pedido con el botón de abajo.';
-    } else {
-      aviso.textContent = 'No pudimos avisar automáticamente. Envíanos el pedido por WhatsApp con tu comprobante, con el botón de abajo.';
-      btn.disabled = false;
-    }
+    aviso.textContent = ok
+      ? '📸 Adjunta tu comprobante en el chat de WhatsApp que se abrió. Tu pedido queda confirmado cuando lo recibimos y verificamos el pago.'
+      : '📸 Adjunta tu comprobante en el chat de WhatsApp que se abrió: así podemos confirmar tu pago y tu pedido.';
+    btn.disabled = false;
   });
 
   // ---------- Envío del pedido por WhatsApp ----------
@@ -314,15 +331,7 @@
     const { unidades, total } = totales();
     if (unidades === 0) return;
 
-    const nombre = $('nombre').value.trim();
-    const contacto = $('contacto').value.trim();
-    // Texto plano + encodeURIComponent al final: un "&" o "#" en el nombre no corta el pedido.
-    let mensaje = `🍫 Pedido Matichoc 🍫\n👤 Nombre: ${nombre}\n📱 Contacto: ${contacto}\n🛍️ Productos:\n`;
-    carrito.forEach((cant, id) => {
-      const p = porId.get(id);
-      mensaje += `- ${cant} x ${p.nombre} ($${clp(cant * p.precio)})\n`;
-    });
-    mensaje += `\n💵 Total: $${clp(total)}\n📸 Recuerda enviar tu comprobante de pago.`;
+    const mensaje = armarMensaje();
 
     window.open(`https://wa.me/${WSP}?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener,noreferrer');
     // Queda anotado como "interesado" (con o sin cuenta; si tiene cuenta Matilover se vincula solo) y
