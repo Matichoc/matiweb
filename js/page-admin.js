@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         nodo('div', null, data.descripcion),
         nodo('div', 'ayuda', `Cliente: ${data.apodo}${data.correo ? ' · ' + data.correo : ''}`),
         nodo('div', 'ayuda', data.estado === 'canjeado' ? `Canjeado el ${fecha(data.canjeado_en)}` : `Vence el ${fecha(data.vence_en)}`),
-        nodo('div', 'ayuda', 'Recuerda: los cupones no son acumulables, un solo cupón por pedido.'));
+        nodo('div', 'ayuda', 'Recuerda: los cupones no se suman (4 cupones de 10% no dan 40%): un solo cupón por pedido.'));
       if (data.estado === 'vigente') {
         const b = nodo('button', 'btn btn--verde', '✅ Canjear ahora');
         b.type = 'button';
