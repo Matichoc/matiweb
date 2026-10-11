@@ -1,0 +1,87 @@
+/* Matichico, el guía del sitio. Solo informa: no recomienda ni promociona productos. */
+.mg-mascota, .mg-panel, .mg-burbuja { position: fixed; z-index: 900; font-family: 'Segoe UI', system-ui, sans-serif; }
+.mg-mascota, .mg-panel, .mg-burbuja { --mg-base: 14px; }
+body:has(#tBarra:not([hidden])) .mg-mascota,
+body:has(#tBarra:not([hidden])) .mg-panel,
+body:has(#tBarra:not([hidden])) .mg-burbuja { --mg-base: 84px; }
+body:has(dialog[open]) .mg-mascota, body:has(dialog[open]) .mg-panel, body:has(dialog[open]) .mg-burbuja { display: none; }
+
+.mg-mascota {
+  left: 8px; bottom: var(--mg-base);
+  width: 78px; height: 110px; padding: 0; border: 0; background: transparent; cursor: pointer;
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.35));
+  transform-origin: 50% 100%;
+  transition: left 0.7s cubic-bezier(.3,1.4,.5,1), top 0.7s cubic-bezier(.3,1.4,.5,1), bottom 0.7s cubic-bezier(.3,1.4,.5,1);
+}
+.mg-mascota img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.mg-mascota:focus-visible { outline: 3px solid #D4216C; outline-offset: 4px; border-radius: 12px; }
+.mg-mascota[hidden], .mg-panel[hidden], .mg-burbuja[hidden] { display: none; }
+
+/* Llega saltando y, de vez en cuando, da un saltito */
+.mg-entrando { animation: mg-llegada 1.1s cubic-bezier(.3,1.3,.5,1) both; }
+.mg-salto { animation: mg-salto 0.7s cubic-bezier(.3,1.5,.6,1); }
+.mg-quieto { animation: mg-respira 3.4s ease-in-out infinite; }
+@keyframes mg-llegada { 0% { transform: translateX(-130%) rotate(-12deg); } 55% { transform: translateX(8%) translateY(-34px) rotate(6deg); } 75% { transform: translateY(0) scale(1.05, 0.9); } 100% { transform: none; } }
+@keyframes mg-salto { 0% { transform: none; } 35% { transform: translateY(-46px) rotate(-6deg) scale(0.96, 1.06); } 70% { transform: translateY(0) scale(1.06, 0.92); } 100% { transform: none; } }
+@keyframes mg-respira { 0%, 100% { transform: none; } 50% { transform: translateY(-4px) scale(1.01, 0.995); } }
+
+.mg-burbuja {
+  left: 70px; bottom: calc(var(--mg-base) + 84px); max-width: min(240px, calc(100vw - 90px));
+  background: #fff; color: #4b2e2e; border: 2px solid #FFC800; border-radius: 16px 16px 16px 4px;
+  padding: 10px 12px; font-size: 0.95rem; line-height: 1.35; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.mg-burbuja button { margin-top: 8px; }
+
+.mg-panel {
+  left: 8px; bottom: calc(var(--mg-base) + 118px);
+  width: min(340px, calc(100vw - 16px)); max-height: min(62vh, 480px);
+  display: flex; flex-direction: column; overflow: hidden;
+  background: #fffaf3; color: #4b2e2e; border: 2px solid #FFC800; border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.mg-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; background: #4b2e2e; color: #FFC800; font-weight: 800; }
+.mg-cab button { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.mg-mensajes { flex: 1 1 auto; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; min-height: 120px; }
+.mg-msg { max-width: 92%; padding: 8px 11px; border-radius: 14px; font-size: 0.95rem; line-height: 1.4; overflow-wrap: anywhere; }
+.mg-msg--bot { align-self: flex-start; background: #fff; border: 1px solid #f0e0c8; border-bottom-left-radius: 4px; }
+.mg-msg--yo { align-self: flex-end; background: #FFC800; color: #3b2414; border-bottom-right-radius: 4px; }
+.mg-msg a { color: #a01a58; font-weight: 700; }
+.mg-sugeridas { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+.mg-pie { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid #f0e0c8; background: #fff; }
+.mg-pie input { flex: 1 1 auto; min-width: 0; font: inherit; padding: 9px 10px; border: 2px solid #d9c4a8; border-radius: 10px; }
+.mg-btn, .mg-panel button, .mg-burbuja button {
+  font: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer; border-radius: 999px; border: 2px solid #4b2e2e;
+  background: #fff3e6; color: #4b2e2e; padding: 7px 12px; min-height: 36px;
+}
+.mg-panel button:hover, .mg-panel button:focus, .mg-burbuja button:hover, .mg-burbuja button:focus { background: #ffe7cc; color: #4b2e2e; transform: none; }
+.mg-panel button:focus-visible, .mg-burbuja button:focus-visible, .mg-pie input:focus-visible { outline: 3px solid #D4216C; outline-offset: 2px; }
+.mg-panel .mg-primario, .mg-burbuja .mg-primario { background: #157a37; border-color: #157a37; color: #fff; }
+.mg-panel .mg-primario:hover, .mg-panel .mg-primario:focus, .mg-burbuja .mg-primario:hover { background: #0f6029; color: #fff; }
+.mg-panel .mg-cab button { border-color: transparent; }
+.mg-panel .mg-cab button:hover, .mg-panel .mg-cab button:focus { background: rgba(255, 255, 255, 0.3); color: #fff; }
+
+/* Lo que está explicando en el recorrido */
+.mg-destacado { outline: 4px solid #FFC800 !important; outline-offset: 6px; border-radius: 14px; box-shadow: 0 0 0 9px rgba(212, 33, 108, 0.35) !important; transition: box-shadow 0.3s; }
+
+@media (min-width: 900px) {
+  .mg-mascota { width: 104px; height: 147px; }
+  .mg-burbuja { left: 100px; bottom: calc(var(--mg-base) + 110px); }
+  .mg-panel { bottom: calc(var(--mg-base) + 156px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mg-mascota { transition: none; }
+  .mg-entrando, .mg-salto, .mg-quieto { animation: none; }
+  .mg-destacado { transition: none; }
+}
+@media print { .mg-mascota, .mg-panel, .mg-burbuja { display: none; } }
+
+/* Los estilos globales de "button" (styles.css) no deben recolorear ni agrandar a Matichico */
+.mg-mascota, .mg-mascota:hover, .mg-mascota:focus { background: transparent; box-shadow: none; padding: 0; border: 0; }
+.mg-panel { padding: 0; margin: 0; max-width: none; }
+.mg-cab button { white-space: nowrap; }
+.mg-panel button:active, .mg-burbuja button:active { transform: none; }
+.mg-mensajes { min-height: 80px; }
+.mg-sugeridas { flex: 0 0 auto; max-height: 112px; overflow-y: auto; }
+.mg-sugeridas button { padding: 5px 10px; min-height: 32px; font-size: 0.85rem; }
+.mg-pie { flex: 0 0 auto; }
+.mg-panel { max-height: min(70vh, 520px); }
