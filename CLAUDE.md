@@ -52,7 +52,7 @@ Mascota (**Matichico y Chocolatina se alternan: día par uno, día impar la otra
 Matijuego, el panel, Mi cuenta, Términos/Privacidad, ni con el carrito abierto). Reglas acordadas con el dueño: es un **guion cerrado**
 (palabras clave → respuestas fijas, sin IA libre ni servidor); **solo informa** con lo que el sitio ya dice y **no recomienda ni promociona
 productos** (Ley 20.606, personajes + alimentos "ALTO EN"); ingredientes, alérgenos y salud los **deriva a WhatsApp**; no guarda lo que se
-escribe (solo `sessionStorage` si lo despidieron; al despedirlo queda un botón redondo con su carita para volver a llamarlo). Si cambian las reglas del programa, el reparto o los datos legales, actualizar también su
+escribe (solo `sessionStorage` si lo despidieron; al despedirlo queda un botón redondo con su carita para volver a llamarlo). **Accesible**: habla con la voz del navegador (SpeechSynthesis: lee sus respuestas, los pasos del recorrido y, si se lo piden, la página; apagada por defecto), enlace de salto al inicio de la página para lectores de pantalla/teclado, "Letra grande", aria-live; sin voz en el navegador, esos botones no aparecen. Cualquier cambio al guía debe mantener esas pruebas (voz, teclado, Escape detiene la voz). Si cambian las reglas del programa, el reparto o los datos legales, actualizar también su
 guion (`SABE`) y `pages/bases-matilover.html`. Imágenes: `assets/personajes/` (Matichico de pie con polera negra de Matichoc, dos poses sin fondo, recortadas de la hoja de poses del dueño; el guía cambia de pose al saludar, responder y recorrer).
 
 ## Datos legales (entregados por el dueño)
