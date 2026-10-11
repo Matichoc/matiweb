@@ -8,6 +8,9 @@
 //   nunca inventa nada. Si no sabe, lo dice y ofrece WhatsApp.
 // - No envía ni guarda lo que se escribe (queda solo en la pantalla). Lo único que recuerda, mientras la
 //   pestaña está abierta, es si la persona lo despidió (sessionStorage), para no insistir.
+// - Accesible: habla (voz del navegador, SpeechSynthesis: lee sus respuestas, los pasos del recorrido y, si se lo piden, la página),
+//   tiene un enlace de salto al inicio de la página para lectores de pantalla y teclado, "Letra grande" y mensajes anunciados
+//   con aria-live. La voz solo lee texto del propio sitio (nada personal) y no se activa sola.
 // - Respeta "reducir movimiento" y se maneja con teclado. No aparece en el juego, el panel, "Mi cuenta"
 //   ni mientras el carrito está abierto (cada página decide si carga este script).
 (function () {
@@ -122,6 +125,71 @@
     return mejor;
   }
 
+  // ---------- Voz (SpeechSynthesis del navegador; sin servicios externos propios) ----------
+  const VOZ = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  let vozActiva = VOZ && guardado('matichico-voz') === '1';
+  let letraGrande = guardado('matichico-grande') === '1';
+  const sinEmojis = (t) => t.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '');
+  function paraHablar(t) {
+    return sinEmojis(String(t))
+      .replace(/\((\d+)\/(\d+)\)/g, 'Paso $1 de $2.')
+      .replace(/N°/g, 'número ')
+      .replace(/\+56 9/g, 'más cincuenta y seis, nueve')
+      .replace(/\s+/g, ' ').trim();
+  }
+  function partir(texto) { // trozos cortos: los navegadores cortan las frases muy largas
+    const frases = texto.split(/(?<=[.!?:;])\s+/);
+    const trozos = []; let actual = '';
+    for (const f of frases) {
+      if ((actual + ' ' + f).trim().length > 170 && actual) { trozos.push(actual); actual = f; } else actual = (actual + ' ' + f).trim();
+    }
+    if (actual) trozos.push(actual);
+    return trozos;
+  }
+  function callar() { if (VOZ) { try { window.speechSynthesis.cancel(); } catch (e) { /* sin voz */ } } }
+  function hablar(texto) {
+    if (!VOZ || !texto) return;
+    callar();
+    const lista = (window.speechSynthesis.getVoices && window.speechSynthesis.getVoices()) || [];
+    const preferida = ['es-CL', 'es-419', 'es-MX', 'es-US', 'es-AR', 'es-ES'].map((l) => lista.find((v) => v.lang === l || v.lang === l.replace('-', '_'))).find(Boolean)
+      || lista.find((v) => /^es/i.test(v.lang));
+    partir(paraHablar(texto)).forEach((trozo) => {
+      const u = new window.SpeechSynthesisUtterance(trozo);
+      u.lang = preferida ? preferida.lang : 'es-CL';
+      if (preferida) u.voice = preferida;
+      u.rate = 0.95;
+      u.pitch = GUIA === GUIAS.chocolatina ? 1.15 : 0.92;
+      window.speechSynthesis.speak(u);
+    });
+  }
+  function leerPagina() {
+    if (!VOZ) { mensaje('bot', 'Tu navegador no tiene voz para leer en voz alta. Si usas un lector de pantalla, puedes seguir recorriendo la página con él.'); return; }
+    const raiz = document.querySelector('main') || document.body;
+    let t = (raiz.innerText || '').replace(/\s*\n+\s*/g, '. ').replace(/\.\s*\./g, '.').replace(/\s+/g, ' ').trim();
+    if (t.length > 6000) t = t.slice(0, 6000).replace(/[^.]*$/, '') + ' La página sigue; puedes pedirme que te guíe por las partes que quieras.';
+    mensaje('bot', 'Voy a leerte esta página. Para detener la voz, toca "Parar voz" o la tecla Escape.', null, true);
+    hablar((document.title || '').split('|')[0] + '. ' + t);
+  }
+  function alternarVoz() {
+    vozActiva = !vozActiva;
+    guardado('matichico-voz', vozActiva ? '1' : '0');
+    actualizarAcc();
+    if (vozActiva) { hablar('Voz activada. Te voy a leer mis respuestas.'); mensaje('bot', 'Voz activada: te leo mis respuestas en voz alta. Puedes apagarla cuando quieras.', null, true); }
+    else { callar(); mensaje('bot', 'Voz apagada.', null, true); }
+  }
+  function alternarLetra() {
+    letraGrande = !letraGrande;
+    guardado('matichico-grande', letraGrande ? '1' : '0');
+    actualizarAcc();
+  }
+  let botonVoz, botonLetra;
+  function actualizarAcc() {
+    if (panel) panel.classList.toggle('mg-grande', letraGrande);
+    if (botonVoz) { botonVoz.setAttribute('aria-pressed', String(vozActiva)); botonVoz.textContent = vozActiva ? '🔊 Voz: activada' : '🔈 Voz: apagada'; }
+    if (botonLetra) { botonLetra.setAttribute('aria-pressed', String(letraGrande)); botonLetra.textContent = letraGrande ? '🔠 Letra grande: sí' : '🔠 Letra grande'; }
+  }
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && VOZ && window.speechSynthesis.speaking) callar(); });
+
   // ---------- Dibujo ----------
   const el = (tag, clase, texto) => { const e = document.createElement(tag); if (clase) e.className = clase; if (texto != null) e.textContent = texto; return e; };
   // Los dos guías (hoja de poses del dueño, sin fondo): cada uno con una pose "hablando" y otra de "bienvenida".
@@ -185,6 +253,17 @@
     chao.type = 'button';
     chao.addEventListener('click', despedir);
     cab.appendChild(chao);
+    const acc = el('div', 'mg-acc');
+    acc.setAttribute('role', 'group');
+    acc.setAttribute('aria-label', 'Accesibilidad');
+    if (VOZ) {
+      botonVoz = el('button'); botonVoz.type = 'button'; botonVoz.addEventListener('click', alternarVoz);
+      const leer = el('button', null, '📖 Leer esta página'); leer.type = 'button'; leer.addEventListener('click', leerPagina);
+      const parar = el('button', null, '⏹ Parar voz'); parar.type = 'button'; parar.addEventListener('click', callar);
+      acc.append(botonVoz, leer, parar);
+    }
+    botonLetra = el('button'); botonLetra.type = 'button'; botonLetra.addEventListener('click', alternarLetra);
+    acc.appendChild(botonLetra);
     mensajes = el('div', 'mg-mensajes');
     mensajes.setAttribute('aria-live', 'polite');
     sugeridas = el('div', 'mg-sugeridas');
@@ -198,7 +277,8 @@
     enviar.type = 'submit';
     pie.append(entrada, enviar);
     pie.addEventListener('submit', (e) => { e.preventDefault(); preguntar(entrada.value); entrada.value = ''; });
-    panel.append(cab, mensajes, sugeridas, pie);
+    panel.append(cab, acc, mensajes, sugeridas, pie);
+    actualizarAcc();
     panel.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarPanel(); mascota.focus(); } });
 
     document.body.append(mascota, burbuja, panel);
@@ -219,7 +299,7 @@
     mascota.classList.add('mg-salto');
   }
 
-  function mensaje(quien, texto, links) {
+  function mensaje(quien, texto, links, sinVoz) {
     const m = el('div', 'mg-msg mg-msg--' + quien);
     m.appendChild(document.createTextNode(texto)); // siempre texto: nada de lo escrito se interpreta como HTML
     (links || []).forEach((l) => {
@@ -231,6 +311,7 @@
     });
     mensajes.appendChild(m);
     mensajes.scrollTop = mensajes.scrollHeight;
+    if (quien === 'bot' && vozActiva && !sinVoz) hablar(texto + (links && links.length ? '. Enlaces: ' + links.map((l) => l.texto).join('. ') : ''));
     return m;
   }
 
@@ -268,7 +349,7 @@
     abierto = true;
     mascota.setAttribute('aria-expanded', 'true');
     if (!mensajes.childElementCount) {
-      mensaje('bot', '¡Hola! Soy ' + NOMBRE + ' 🍫 Te cuento cómo pedir, cómo son las entregas y más. Solo sé lo que cuenta este sitio; para lo demás te paso con una persona.');
+      mensaje('bot', '¡Hola! Soy ' + NOMBRE + ' 🍫 Te cuento cómo pedir, cómo son las entregas y más. Solo sé lo que cuenta este sitio; para lo demás te paso con una persona. Si lo prefieres, puedo hablar: toca "Voz".');
       mostrarSugeridas();
     }
     poner('bienvenida');
@@ -283,6 +364,7 @@
     terminarRecorrido(true);
   }
   function despedir() {
+    callar();
     terminarRecorrido(true);
     guardado(CLAVE, '1');
     [panel, burbuja].forEach((e) => { e.hidden = true; });
@@ -367,6 +449,7 @@
 
   // ---------- Llegada ----------
   function llegar() {
+    if (mascota && document.body.contains(mascota)) return; // ya la abrieron con el enlace de salto
     if (document.querySelector('dialog[open]')) { setTimeout(llegar, 3000); return; }
     construir();
     // un saludo corto; si no lo tocan, se esconde solo
@@ -383,6 +466,20 @@
       setTimeout(() => { if (burbuja) { burbuja.hidden = true; poner('hablando'); } }, 12000);
     }, REDUCIR ? 300 : 1300);
   }
+
+  // Enlace de salto: primer elemento al tabular (lectores de pantalla y teclado), antes de cualquier otro contenido.
+  function crearSalto() {
+    const a = el('a', 'mg-saltar', 'Hablar con ' + NOMBRE + ', la guía del sitio (con voz y ayuda)');
+    a.href = '#';
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (botonLlamar) { botonLlamar.remove(); botonLlamar = null; guardado(CLAVE, ''); }
+      if (!mascota || !document.body.contains(mascota)) construir();
+      abrirPanel();
+    });
+    document.body.insertBefore(a, document.body.firstChild);
+  }
+  crearSalto();
 
   function iniciar() { if (DESPEDIDO) setTimeout(mostrarLlamar, 800); else setTimeout(llegar, RETRASO); }
   if (document.readyState === 'complete') iniciar(); else window.addEventListener('load', iniciar);
