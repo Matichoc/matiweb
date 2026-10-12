@@ -2,11 +2,16 @@
 // golosinas (fotos reales de productos Matichoc) contra el reloj. Mismos 6
 // niveles y reglas de siempre (js/levels.js); ahora en 3D con cámara en tercera
 // persona, tu Matichico corriendo y saltando las vallas, y canchas con público.
+//
+// Misión Golosinas: guardias malvaviscos que patrullan el camino (¡salta o usa el impulso!),
+// cintas transportadoras, combo de golosinas, poderes (reloj, botas turbo, imán), impulso
+// con Shift, estrellas por nivel y música. Ahora son 8 canchas.
 
 import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js";
 import { createMatichico } from "./matichico3d.js";
-import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn } from "./levels.js";
+import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js";
 import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js";
+import { recordRun } from "./progression.js";
 import * as audio from "./audio.js";
 
 const GAME_ID = "recolecta";
@@ -23,6 +28,33 @@ const PRODUCT_SPRITES = {
 };
 
 const THEMES = {
+  factory: {
+    sky: 0x3a2a24, ground: 0x4a3830, outdoor: false, hemi: 1.1, sun: 2.0,
+    wallSide: 0x5a3320, wallTop: 0xb8793c,
+    floor(g, k) {
+      g.fillStyle = "#6b4a36";
+      g.fillRect(0, 0, 800 * k, 480 * k);
+      for (let x = 0; x < 800; x += 60) for (let y = 0; y < 480; y += 60) {
+        g.fillStyle = (x / 60 + y / 60) % 2 ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.08)";
+        g.fillRect(x * k, y * k, 60 * k, 60 * k);
+      }
+      g.fillStyle = "rgba(255,200,0,0.7)";
+      for (let x = 0; x < 800; x += 40) g.fillRect(x * k, 28 * k, 20 * k, 6 * k);
+    },
+  },
+  cacao: {
+    sky: 0x1a1240, ground: 0x24163a, outdoor: false, hemi: 0.95, sun: 1.7,
+    wallSide: 0x2b170d, wallTop: 0x6b3a22,
+    floor(g, k) {
+      g.fillStyle = "#3a2216";
+      g.fillRect(0, 0, 800 * k, 480 * k);
+      g.strokeStyle = "rgba(255,200,0,0.35)";
+      g.lineWidth = 2 * k;
+      for (let x = 0; x < 800; x += 50) for (let y = 0; y < 480; y += 50) g.strokeRect(x * k + 2, y * k + 2, 46 * k, 46 * k);
+      g.fillStyle = "rgba(212,33,108,0.18)";
+      g.fillRect(0, 440 * k, 800 * k, 14 * k);
+    },
+  },
   field: {
     sky: 0x9fdcf5, ground: 0x7fb84a, outdoor: true, hemi: 1.25, sun: 2.5,
     wallSide: 0x2f7a3a, wallTop: 0x57b04c,
@@ -107,10 +139,11 @@ function mergeWalls(cells) {
 export class RecolectaGame extends Game3D {
   constructor(character, progress, els) {
     super(GAME_ID, character, progress, els, { fov: 46 });
+    this.musicTheme = "arcade";
     this.keys = {};
     this.levelIndex = 0;
     this.q = els.q;
-    this.p = { x: 0, y: 0, radius: 16, speed: 190, facing: 0, isMoving: false, isJumping: false, jumpTimer: 0, jumpDuration: 0.45, jumpCooldown: 0 };
+    this.p = { x: 0, y: 0, radius: 16, speed: 190, facing: 0, isMoving: false, isJumping: false, jumpTimer: 0, jumpDuration: 0.45, jumpCooldown: 0, dash: 0, dashCd: 0, boots: 0, magnet: 0 };
   }
 
   // ---------- escena ----------
@@ -173,11 +206,11 @@ export class RecolectaGame extends Game3D {
 
   _ensureHero() {
     if (this.hero && this.heroId === this.character.id) {
-      this.hero.setOutfit(this.outfit);
+      this.hero.setLook(this.look);
       return;
     }
     if (this.hero) this.scene.remove(this.hero.group);
-    this.hero = createMatichico(this.character, this.outfit);
+    this.hero = createMatichico(this.character, this.outfit, this.look);
     this.heroId = this.character.id;
     this.hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.hero.group.scale.setScalar(1.25);
@@ -293,6 +326,37 @@ export class RecolectaGame extends Game3D {
       g.add(m.mesh);
     }
 
+    // cintas transportadoras (empujan a quien las pisa)
+    this.conveyors = (level.conveyors || []).map((c) => ({ ...c }));
+    this.conveyorTex = null;
+    if (this.conveyors.length) {
+      this.conveyorTex = canvasTexture(64, 64, (c, w, h) => {
+        c.fillStyle = "#2a2a30"; c.fillRect(0, 0, w, h);
+        c.fillStyle = "#ffc800";
+        c.beginPath(); c.moveTo(w / 2, 8); c.lineTo(w - 10, 36); c.lineTo(w / 2 + 10, 36); c.lineTo(w / 2 + 10, 58); c.lineTo(w / 2 - 10, 58); c.lineTo(w / 2 - 10, 36); c.lineTo(10, 36); c.closePath(); c.fill();
+      });
+      this.conveyorTex.wrapS = this.conveyorTex.wrapT = THREE.RepeatWrapping;
+      for (const c of this.conveyors) {
+        const tex = this.conveyorTex.clone();
+        tex.needsUpdate = true;
+        tex.repeat.set(Math.max(1, Math.round((c.w * S) / 1.2)), Math.max(1, Math.round((c.h * S) / 1.2)));
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(c.w * S, c.h * S), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }));
+        m.rotation.x = -Math.PI / 2;
+        m.rotation.z = Math.atan2(c.dx, -c.dy) * -1; // las flechas apuntan hacia donde empuja
+        m.position.set(wx(c.x + c.w / 2), 0.03, wz(c.y + c.h / 2));
+        m.receiveShadow = true;
+        g.add(m);
+        c.tex = tex;
+      }
+    }
+    // guardias malvaviscos que patrullan el camino
+    this.guards = (level.guards || []).map((gd) => {
+      const total = pathLength(level.path);
+      const mesh = this._guardMesh();
+      g.add(mesh);
+      return { s: gd.t0 * total, dir: Math.random() < 0.5 ? 1 : -1, speed: gd.speed, total, mesh, x: 0, y: 0, cool: 0 };
+    });
+
     // guía del camino: puntos brillantes sobre el piso
     const pts = [];
     for (let i = 0; i < level.path.length - 1; i++) {
@@ -334,6 +398,33 @@ export class RecolectaGame extends Game3D {
       this.flagCloth = null;
       this.beam = null;
     }
+  }
+
+  _guardMesh() {
+    const g = new THREE.Group();
+    const m = new THREE.MeshStandardMaterial({ color: 0xfff6ee, roughness: 0.85 });
+    const eye = new THREE.MeshBasicMaterial({ color: 0x1a1010 });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.56, 0.9, 16), m);
+    body.position.y = 0.55;
+    const top = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 12), m);
+    top.position.y = 1.0;
+    g.add(body, top);
+    for (const sx of [-1, 1]) {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), eye);
+      e.position.set(sx * 0.2, 0.95, 0.46);
+      const brow = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.05, 0.03), eye);
+      brow.position.set(sx * 0.2, 1.1, 0.48);
+      brow.rotation.z = sx * 0.5;
+      g.add(e, brow);
+    }
+    const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.05, 0.03), eye);
+    mouth.position.set(0, 0.74, 0.5);
+    g.add(mouth);
+    const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.22, 14), this.m.pink);
+    hat.position.y = 1.55;
+    g.add(hat);
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    return g;
   }
 
   _cone(x, z) {
@@ -495,6 +586,10 @@ export class RecolectaGame extends Game3D {
     const spawn = getSpawn(level);
     Object.assign(this.p, { x: spawn.x, y: spawn.y, isJumping: false, jumpTimer: 0, jumpCooldown: 0, facing: 0 });
     this.flagActive = false;
+    this.combo = 0;
+    this.comboT = 0;
+    this.hits = 0;
+    Object.assign(this.p, { dash: 0, dashCd: 0, boots: 0, magnet: 0 });
     this.bonus = null;
     this.bonusMesh = null;
     this.bonusSpawnTimer = rand(6, 10);
@@ -536,6 +631,7 @@ export class RecolectaGame extends Game3D {
   }
 
   pauseForMenu() {
+    audio.stopMusic();
     if (this.running) reportScore(this.progress, GAME_ID, this.score);
     this.running = false;
     this.state = "paused";
@@ -544,6 +640,8 @@ export class RecolectaGame extends Game3D {
   _updateHud() {
     this.q("hud-score").textContent = String(this.score);
     this.q("hud-coins").textContent = String(this.progress.coins);
+    const cb = this.q("hud-combo");
+    if (cb) cb.textContent = `x${this._mult()}`;
   }
 
   // ---------- entrada ----------
@@ -554,6 +652,7 @@ export class RecolectaGame extends Game3D {
       if (!this.running) return;
       if (map[e.code]) { this.keys[map[e.code]] = true; e.preventDefault(); }
       if (e.code === "Space") { this._tryJump(); e.preventDefault(); }
+      if (e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "KeyE") { this._tryDash(); e.preventDefault(); }
     });
     window.addEventListener("keyup", (e) => { if (map[e.code]) this.keys[map[e.code]] = false; });
     const root = document.getElementById("recolecta-touch");
@@ -568,7 +667,21 @@ export class RecolectaGame extends Game3D {
       });
       const j = root.querySelector("#recolecta-btn-jump");
       if (j) j.addEventListener("pointerdown", (e) => { e.preventDefault(); this._tryJump(); });
+      const d = root.querySelector("#recolecta-btn-dash");
+      if (d) d.addEventListener("pointerdown", (e) => { e.preventDefault(); this._tryDash(); });
     }
+  }
+
+  _tryDash() {
+    if (this.state !== "playing") return;
+    const p = this.p;
+    if (p.dash > 0 || p.dashCd > 0) return;
+    p.dash = 0.2;
+    p.dashCd = 1.8;
+    audio.playWhoosh();
+    this.haptic(15);
+    const at = new THREE.Vector3(wx(p.x), 0.8, wz(p.y));
+    this.particles.burst(at, [0xffffff, 0x7ee0ff, 0xffc800], 14, 4, 0.5, 4);
   }
 
   _tryJump() {
@@ -627,7 +740,14 @@ export class RecolectaGame extends Game3D {
         p.jumpTimer -= dt;
         if (p.jumpTimer <= 0) p.isJumping = false;
       }
+      if (p.dash > 0) p.dash -= dt;
+      if (p.dashCd > 0) p.dashCd -= dt;
+      if (p.boots > 0) p.boots -= dt;
+      if (p.magnet > 0) p.magnet -= dt;
+      if (this.comboT > 0) { this.comboT -= dt; if (this.comboT <= 0) this.combo = 0; }
       this._movePlayer(dt);
+      this._updateGuards(dt);
+      this._magnet(dt);
       this._checkChocolates();
       this._updateBonus(dt);
       this._checkFlag();
@@ -637,12 +757,24 @@ export class RecolectaGame extends Game3D {
       if (this.timeLeft <= 0) this._onLose();
     }
 
+    // guardias y cintas
+    for (const gd of this.guards || []) {
+      gd.mesh.position.set(wx(gd.x), 0, wz(gd.y));
+      gd.mesh.rotation.y = gd.dir > 0 ? 0.2 : -0.2;
+      const b = 1 + Math.sin(this.time * 6 + gd.s * 0.05) * 0.05;
+      gd.mesh.scale.set(2 - b, b, 2 - b);
+      gd.mesh.visible = gd.cool <= 0 || Math.floor(this.time * 12) % 2 === 0;
+    }
+    for (const c of this.conveyors || []) {
+      if (c.tex) { c.tex.offset.x -= c.dx * dt * 0.8; c.tex.offset.y += c.dy * dt * 0.8; }
+    }
     // dibujo del héroe
     const jp = p.isJumping ? 1 - p.jumpTimer / p.jumpDuration : 0;
     const jy = p.isJumping ? Math.sin(jp * Math.PI) * 1.3 : 0;
     this.hero.group.position.set(wx(p.x), jy, wz(p.y));
     this.hero.group.rotation.y = lerp(this.hero.group.rotation.y, p.facing, 1 - Math.exp(-14 * dt));
-    this.hero.animate(this.time, p.isJumping ? "jump" : p.isMoving ? "run" : "idle", 0.9);
+    this.hero.animate(this.time, p.isJumping ? "jump" : p.isMoving || p.dash > 0 ? "run" : "idle", p.boots > 0 || p.dash > 0 ? 1.4 : 0.9);
+    if (playing && (p.dash > 0 || p.boots > 0) && Math.random() < 0.6) this.particles.burst(new THREE.Vector3(wx(p.x), 0.3, wz(p.y)), p.dash > 0 ? [0xffffff, 0x7ee0ff] : [0xffc800, 0xff9ac6], 1, 1.2, 0.4, 2, 0.4);
 
     // coleccionables, bonus y bandera
     this.chocoMeshes.forEach((m, i) => {
@@ -680,11 +812,13 @@ export class RecolectaGame extends Game3D {
     if (this.keys.left) vx -= 1;
     if (this.keys.right) vx += 1;
     p.isMoving = vx !== 0 || vy !== 0;
-    if (p.isMoving) {
+    if (p.isMoving || p.dash > 0) {
+      if (!p.isMoving) { vx = Math.sin(p.facing); vy = Math.cos(p.facing); }
       const len = Math.hypot(vx, vy);
       p.facing = Math.atan2(vx, vy);
-      vx = (vx / len) * p.speed * dt;
-      vy = (vy / len) * p.speed * dt;
+      const sp = p.speed * (p.dash > 0 ? 2.7 : p.boots > 0 ? 1.55 : 1);
+      vx = (vx / len) * sp * dt;
+      vy = (vy / len) * sp * dt;
       const nx = p.x + vx;
       const hitX = this._hits(nx, p.y, true);
       if (!hitX) p.x = nx; else this._onObstacleHit(hitX);
@@ -692,8 +826,55 @@ export class RecolectaGame extends Game3D {
       const hitY = this._hits(p.x, ny, true);
       if (!hitY) p.y = ny; else this._onObstacleHit(hitY);
     }
+    // cintas transportadoras: empujan
+    for (const c of this.conveyors) {
+      if (p.x > c.x && p.x < c.x + c.w && p.y > c.y && p.y < c.y + c.h && !p.isJumping) {
+        const nx = p.x + c.dx * 85 * dt;
+        const ny = p.y + c.dy * 85 * dt;
+        if (!this._hits(nx, p.y, false)) p.x = nx;
+        if (!this._hits(p.x, ny, false)) p.y = ny;
+      }
+    }
     p.x = clamp(p.x, 26, CANVAS_W - 26);
     p.y = clamp(p.y, 26, CANVAS_H - 26);
+  }
+
+  _mult() {
+    return 1 + Math.min(3, Math.floor(this.combo / 4));
+  }
+
+  _updateGuards(dt) {
+    const p = this.p;
+    for (const gd of this.guards) {
+      gd.s += gd.dir * gd.speed * dt;
+      if (gd.s > gd.total) { gd.s = gd.total; gd.dir = -1; }
+      if (gd.s < 0) { gd.s = 0; gd.dir = 1; }
+      const pt = pointOnPath(this.level.path, gd.s);
+      gd.x = pt.x;
+      gd.y = pt.y;
+      gd.cool = Math.max(0, gd.cool - dt);
+      if (gd.cool <= 0 && !p.isJumping && p.dash <= 0 && Math.hypot(gd.x - p.x, gd.y - p.y) < p.radius + 18) this._guardHit(gd);
+    }
+  }
+
+  _guardHit(gd) {
+    const p = this.p;
+    gd.cool = 1.4;
+    this.hits++;
+    this.timeLeft = Math.max(0, this.timeLeft - 4);
+    this.combo = 0;
+    const dx = p.x - gd.x;
+    const dy = p.y - gd.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = clamp(p.x + (dx / len) * 46, 26, CANVAS_W - 26);
+    const ny = clamp(p.y + (dy / len) * 46, 26, CANVAS_H - 26);
+    if (!this._hits(nx, p.y, false)) p.x = nx;
+    if (!this._hits(p.x, ny, false)) p.y = ny;
+    const at = new THREE.Vector3(wx(p.x), 1.8, wz(p.y));
+    this.popups.add(at, "¡Guardia! -4 s", "kill");
+    this.particles.burst(at, [0xfff6ee, 0xd4216c, 0xffc800], 18, 5, 0.7, 5);
+    audio.playHurt();
+    this.haptic(70);
   }
 
   _checkChocolates() {
@@ -703,10 +884,15 @@ export class RecolectaGame extends Game3D {
       if (Math.hypot(c.x - p.x, c.y - p.y) < p.radius + 14) {
         c.taken = true;
         this.collected++;
-        this.score += 10;
+        const m = this._mult();
+        const before = m;
+        this.combo++;
+        this.comboT = 2.2;
+        this.score += 10 * this._mult();
         audio.playCollect();
+        if (this._mult() > before) { this.banner(`¡Combo x${this._mult()}!`); audio.playCombo(this._mult() * 2); }
         const at = new THREE.Vector3(wx(c.x), 1.4, wz(c.y));
-        this.popups.add(at, "+10", "kill");
+        this.popups.add(at, this._mult() > 1 ? `+${10 * this._mult()} x${this._mult()}` : "+10", "kill");
         this.particles.burst(at, [0xffc800, 0xfff6e6, 0xd4216c], 8, 3, 0.5, 4);
         this.q("hud-choco").textContent = String(this.collected);
         this._updateHud();
@@ -720,44 +906,91 @@ export class RecolectaGame extends Game3D {
     });
   }
 
+  _magnet(dt) {
+    const p = this.p;
+    if (p.magnet <= 0) return;
+    for (const c of this.chocolates) {
+      if (c.taken) continue;
+      const dx = p.x - c.x;
+      const dy = p.y - c.y;
+      const d = Math.hypot(dx, dy);
+      if (d < 150 && d > 1) {
+        const k = Math.min(1, dt * 6);
+        const nx = c.x + dx * k;
+        const ny = c.y + dy * k;
+        if (!this._hits(nx, ny, false)) { c.x = nx; c.y = ny; }
+      }
+    }
+    this.chocoMeshes.forEach((m, i) => { const c = this.chocolates[i]; m.position.x = wx(c.x); m.position.z = wz(c.y); });
+  }
+
+  _spawnBonus(kind) {
+    const spot = findFreeSpot(this.level, this.p);
+    if (!spot) return;
+    const life = kind === "bar" ? 3 : 7;
+    this.bonus = { x: spot.x, y: spot.y, timer: life, kind, value: 8 };
+    const m = new THREE.Group();
+    if (kind === "bar") {
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.6, 0.22), this.m.gold);
+      const pis = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.42, 0.05), new THREE.MeshStandardMaterial({ color: 0xcfd767, roughness: 0.4, emissive: 0x4a5a10 }));
+      pis.position.z = 0.13;
+      m.add(bar, pis);
+    } else {
+      const col = kind === "reloj" ? 0x35f0ff : kind === "botas" ? 0xffa800 : 0xff3fa4;
+      m.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, emissive: col, emissiveIntensity: 0.9 })));
+    }
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 8, 28), new THREE.MeshBasicMaterial({ color: 0xffe066 }));
+    m.add(halo);
+    m.position.set(wx(spot.x), 1.0, wz(spot.y));
+    this.levelGroup.add(m);
+    this.bonusMesh = m;
+  }
+
   _updateBonus(dt) {
     const p = this.p;
     if (this.bonus) {
       this.bonus.timer -= dt;
       if (Math.hypot(this.bonus.x - p.x, this.bonus.y - p.y) < p.radius + 16) {
-        earnCoins(this.progress, this.bonus.value);
-        this.score += 30;
         const at = new THREE.Vector3(wx(this.bonus.x), 1.6, wz(this.bonus.y));
-        this.popups.add(at, `+${this.bonus.value} 🍫✨`, "coin");
-        this.particles.burst(at, [0xcfd767, 0xffc800, 0xffffff], 18, 4.5, 0.8, 4);
-        audio.playBonusCollect();
-        saveProgress(this.progress);
+        const kind = this.bonus.kind;
+        if (kind === "bar") {
+          earnCoins(this.progress, this.bonus.value);
+          this.score += 30;
+          this.popups.add(at, `+${this.bonus.value} 🍫✨`, "coin");
+          this.particles.burst(at, [0xcfd767, 0xffc800, 0xffffff], 18, 4.5, 0.8, 4);
+          audio.playBonusCollect();
+          saveProgress(this.progress);
+        } else if (kind === "reloj") {
+          this.timeLeft += 6;
+          this.popups.add(at, "¡+6 s! ⏱", "combo");
+          this.particles.burst(at, [0x35f0ff, 0xffffff], 18, 4.5, 0.8, 4);
+          audio.playPowerup();
+        } else if (kind === "botas") {
+          p.boots = 7;
+          this.popups.add(at, "¡Botas turbo! 👟", "combo");
+          this.particles.burst(at, [0xffa800, 0xffffff], 18, 4.5, 0.8, 4);
+          audio.playPowerup();
+        } else {
+          p.magnet = 8;
+          this.popups.add(at, "¡Imán! 🧲", "combo");
+          this.particles.burst(at, [0xff3fa4, 0xffffff], 18, 4.5, 0.8, 4);
+          audio.playPowerup();
+        }
         this._clearBonus();
-        this.bonusSpawnTimer = rand(10, 16);
+        this.bonusSpawnTimer = rand(7, 12);
         this._updateHud();
         return;
       }
       if (this.bonus.timer <= 0) {
         this._clearBonus();
-        this.bonusSpawnTimer = rand(8, 14);
+        this.bonusSpawnTimer = rand(6, 11);
       }
     } else {
       this.bonusSpawnTimer -= dt;
       if (this.bonusSpawnTimer <= 0) {
-        const spot = findFreeSpot(this.level, p);
-        if (spot) {
-          this.bonus = { x: spot.x, y: spot.y, timer: 3, value: 8 };
-          const m = new THREE.Group();
-          const bar = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.6, 0.22), this.m.gold);
-          const pis = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.42, 0.05), new THREE.MeshStandardMaterial({ color: 0xcfd767, roughness: 0.4, emissive: 0x4a5a10 }));
-          pis.position.z = 0.13;
-          const halo = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 8, 28), new THREE.MeshBasicMaterial({ color: 0xffe066 }));
-          m.add(bar, pis, halo);
-          m.position.set(wx(spot.x), 1.0, wz(spot.y));
-          this.levelGroup.add(m);
-          this.bonusMesh = m;
-        }
-        this.bonusSpawnTimer = rand(10, 16);
+        const r = Math.random();
+        this._spawnBonus(r < 0.45 ? "bar" : r < 0.65 ? "reloj" : r < 0.83 ? "botas" : "iman");
+        this.bonusSpawnTimer = rand(8, 13);
       }
     }
   }
@@ -776,28 +1009,41 @@ export class RecolectaGame extends Game3D {
 
   _onWin() {
     this.state = "win";
+    audio.stopMusic();
     audio.playMissionComplete();
     const isLast = this.levelIndex === LEVELS.length - 1;
     this.progress.unlockedLevel = Math.max(this.progress.unlockedLevel, this.levelIndex + 1);
+    // estrellas según el tiempo que sobró y los golpes recibidos
+    const ratio = this.timeLeft / this.level.timeLimit;
+    const stars = this.hits === 0 && ratio > 0.4 ? 3 : ratio > 0.2 && this.hits <= 1 ? 2 : 1;
+    const timeBonus = Math.round(this.timeLeft * 4);
+    this.score += timeBonus;
+    this.progress.recolectaStars = this.progress.recolectaStars || {};
+    this.progress.recolectaStars[this.level.id] = Math.max(this.progress.recolectaStars[this.level.id] || 0, stars);
+    const starText = "⭐".repeat(stars) + "☆".repeat(3 - stars);
     reportScore(this.progress, GAME_ID, this.score);
     saveProgress(this.progress);
+    recordRun(this.progress, GAME_ID, this.score);
     const p = this.p;
     this.particles.burst(new THREE.Vector3(wx(p.x), 1.5, wz(p.y)), [0xd4216c, 0xffc800, 0xcfd767, 0xfff6e6], 50, 7, 1.4, 6);
     if (isLast) {
-      this.q("victory-text").textContent = `Completaste las ${LEVELS.length} canchas con ${this.score} puntos y ${this.progress.coins} monedas Dubai. ¡Toda La Liga te aplaude!`;
+      const totalStars = Object.values(this.progress.recolectaStars).reduce((a, b) => a + b, 0);
+      this.q("victory-text").textContent = `Completaste las ${LEVELS.length} canchas con ${this.score} puntos y ${totalStars} de ${LEVELS.length * 3} estrellas. ¡Toda La Liga te aplaude!`;
       audio.playVictory();
       addToLeaderboard(this.progress, GAME_ID, this.progress.playerName, this.score);
       this.showOverlay("victory");
     } else {
-      this.q("win-text").textContent = `¡Cumpliste la misión con ${this.score} puntos! Prepárate para el siguiente reto.`;
+      this.q("win-text").textContent = `${starText}  ¡Cumpliste la misión con ${this.score} puntos (+${timeBonus} por el tiempo que sobró)! Prepárate para el siguiente reto.`;
       this.showOverlay("win");
     }
   }
 
   _onLose() {
+    audio.stopMusic();
     this.state = "lose";
     audio.playLose();
     reportScore(this.progress, GAME_ID, this.score);
+    recordRun(this.progress, GAME_ID, this.score);
     this.q("lose-text").textContent = `Recolectaste ${this.collected} de ${this.level.target} golosinas. ¡Tú puedes lograrlo!`;
     this.showOverlay("lose");
   }

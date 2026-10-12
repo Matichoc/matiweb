@@ -28,6 +28,7 @@ export class Porristas3DGame extends Game3D {
     this.dip = 0;
     this.cheer = 0;
     this.flipT = 0;
+    this.musicTheme = "sport";
   }
 
   // ---------- escena ----------
@@ -239,7 +240,18 @@ export class Porristas3DGame extends Game3D {
     this.pompomMesh.visible = false;
     this.pomNormal = this._fluffy(0xd4216c, 0.38, 0.25);
     this.pomGold = this._fluffy(0xffc800, 0.38, 0.8);
-    this.pompomMesh.add(this.pomNormal, this.pomGold);
+    this.pomNet = this._fluffy(0x2fa8d6, 0.38, 0.6);
+    this.pomWide = this._fluffy(0x7ddc4a, 0.38, 0.6);
+    this.pompomMesh.add(this.pomNormal, this.pomGold, this.pomNet, this.pomWide);
+    // red de seguridad (se ve solo mientras la tienes)
+    this.safetyNet = new THREE.Mesh(
+      new THREE.PlaneGeometry(26, 2.6, 26, 3),
+      new THREE.MeshBasicMaterial({ color: 0x4fd0ff, wireframe: true, transparent: true, opacity: 0.55 }),
+    );
+    this.safetyNet.position.set(0, 0.55, 0.2);
+    this.safetyNet.rotation.x = -Math.PI / 2;
+    this.safetyNet.visible = false;
+    this.scene.add(this.safetyNet);
     this.pomLight = new THREE.PointLight(0xffc800, 0, 5);
     this.pompomMesh.add(this.pomLight);
     this.scene.add(this.pompomMesh);
@@ -247,11 +259,11 @@ export class Porristas3DGame extends Game3D {
 
   _ensureHero() {
     if (this.hero && this.heroId === this.character.id) {
-      this.hero.setOutfit(this.outfit);
+      this.hero.setLook(this.look);
       return;
     }
     if (this.hero) this.scene.remove(this.hero.group);
-    this.hero = createMatichico(this.character, this.outfit);
+    this.hero = createMatichico(this.character, this.outfit, this.look);
     this.heroId = this.character.id;
     this.hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.hero.group.scale.setScalar(1.45);
@@ -286,6 +298,12 @@ export class Porristas3DGame extends Game3D {
     this.paddle = { x: PX_W / 2, w: PADDLE_BASE_W };
     this.pompom = null;
     this.pompomTimer = rand(3, 5);
+    this.net = false;
+    this.wideT = 0;
+    this.windT = 0;
+    this.windDir = 0;
+    this.windNext = rand(14, 20);
+    this.nextMilestone = 5;
     this.char = { x: PX_W / 2, y: 120, vx: rand(-60, 60), vy: 0 };
     this.dip = 0;
     this.cheer = 0;
@@ -294,6 +312,7 @@ export class Porristas3DGame extends Game3D {
     this.pointerX = null;
     this.keys = {};
     this.pompomMesh.visible = false;
+    this.safetyNet.visible = false;
     this._ensureHero();
     this._updateHud();
     this._sync(0);
@@ -309,7 +328,8 @@ export class Porristas3DGame extends Game3D {
     this.spots.forEach((sp, i) => { sp.target.position.x = (i - 1) * 2 + wob * 2 * (i - 1 || 1); });
 
     if (this.state === "playing") {
-      this.paddle.w = Math.max(PADDLE_MIN_W, PADDLE_BASE_W - this.score * 1.2);
+      this.wideT = Math.max(0, this.wideT - dt);
+      this.paddle.w = Math.max(PADDLE_MIN_W, PADDLE_BASE_W - this.score * 1.2) * (this.wideT > 0 ? 1.55 : 1);
       const halfW = this.paddle.w / 2;
       if (this.keys.left) this.paddle.x -= PADDLE_SPEED * dt;
       if (this.keys.right) this.paddle.x += PADDLE_SPEED * dt;
@@ -320,6 +340,21 @@ export class Porristas3DGame extends Game3D {
       this.paddle.x = clamp(this.paddle.x, 40 + halfW, PX_W - 40 - halfW);
 
       const c = this.char;
+      // ráfagas de viento desde los 40 puntos: empujan a la porrista hacia un lado
+      if (this.windT > 0) {
+        this.windT -= dt;
+        c.vx += this.windDir * 260 * dt;
+        c.vx = clamp(c.vx, -240, 240);
+        if (this.windT <= 0) this.windNext = rand(14, 22);
+      } else if (this.score >= 40) {
+        this.windNext -= dt;
+        if (this.windNext <= 0) {
+          this.windDir = Math.random() < 0.5 ? -1 : 1;
+          this.windT = 4;
+          this.banner(this.windDir < 0 ? "¡Viento hacia la izquierda! 💨" : "¡Viento hacia la derecha! 💨");
+          audio.playWhoosh();
+        }
+      }
       c.vy += GRAVITY * dt;
       c.x += c.vx * dt;
       c.y += c.vy * dt;
@@ -340,8 +375,18 @@ export class Porristas3DGame extends Game3D {
     if (this.pompom) {
       const d = Math.hypot(this.pompom.x - this.char.x, this.pompom.y - this.char.y);
       if (d < 30) {
-        const golden = this.pompom.golden;
+        const golden = this.pompom.kind === "golden";
+        const kind = this.pompom.kind;
         this.score += golden ? 15 : 5;
+        if (kind === "net") {
+          this.net = true;
+          this.banner("¡Red de seguridad! Te salva una caída 🛟");
+          audio.playPowerup();
+        } else if (kind === "wide") {
+          this.wideT = 9;
+          this.banner("¡Rebotadora gigante por 9 s!");
+          audio.playPowerup();
+        }
         if (golden) {
           earnCoins(this.progress, 10);
           this.coinsEarned += 10;
@@ -349,8 +394,8 @@ export class Porristas3DGame extends Game3D {
         }
         audio.playBonusCollect();
         const at = new THREE.Vector3(wx(this.pompom.x), wy(this.pompom.y) + 0.8, 0.6);
-        this.popups.add(at, golden ? "+10 🍫✨" : "+5", golden ? "coin" : "kill");
-        this.particles.burst(new THREE.Vector3(wx(this.pompom.x), wy(this.pompom.y), 0.3), golden ? [0xffc800, 0xfff6e6] : [0xd4216c, 0xfff6e6], 22, 4.5, 0.9, 6, 1.2);
+        this.popups.add(at, golden ? "+10 🍫✨" : kind === "net" ? "¡Red!" : kind === "wide" ? "¡Gigante!" : "+5", golden ? "coin" : "kill");
+        this.particles.burst(new THREE.Vector3(wx(this.pompom.x), wy(this.pompom.y), 0.3), golden ? [0xffc800, 0xfff6e6] : kind === "net" ? [0x4fd0ff, 0xfff6e6] : kind === "wide" ? [0x7ddc4a, 0xfff6e6] : [0xd4216c, 0xfff6e6], 22, 4.5, 0.9, 6, 1.2);
         this._updateHud();
         this.pompom = null;
         this.pompomTimer = rand(4, 7);
@@ -364,7 +409,9 @@ export class Porristas3DGame extends Game3D {
     } else {
       this.pompomTimer -= dt;
       if (this.pompomTimer <= 0) {
-        this.pompom = { x: rand(80, PX_W - 80), y: rand(140, 260), timer: 5, golden: Math.random() < 0.25 };
+        const r = Math.random();
+        const kind = r < 0.2 ? "golden" : r < 0.34 && !this.net ? "net" : r < 0.5 && this.wideT <= 0 ? "wide" : "normal";
+        this.pompom = { x: rand(80, PX_W - 80), y: rand(140, 260), timer: 5, kind };
       }
     }
   }
@@ -384,14 +431,41 @@ export class Porristas3DGame extends Game3D {
     const at = new THREE.Vector3(wx(c.x), wy(PADDLE_Y) + 1.4, 0.6);
     this.popups.add(at, this.combo >= 3 ? `x${this.combo} +${gained}` : `+${gained}`, this.combo >= 3 ? "combo" : "kill");
     this.particles.burst(new THREE.Vector3(wx(c.x), 0.75, 0.3), centered ? [0xffc800, 0xd4216c, 0xfff6e6] : [0xfff6e6], centered ? 14 : 6, 4, 0.6, 7, 1);
-    if (this.combo >= 5 && this.combo % 5 === 0) this.cheer = 1;
+    if (this.combo >= 2) audio.playCombo(Math.min(this.combo, 12));
+    if (this.combo >= 5 && this.combo % 5 === 0) {
+      this.cheer = 1;
+      this.banner(this.combo >= 20 ? `¡Súper estrella! x${this.combo} 🌟` : this.combo >= 10 ? `¡Increíble! x${this.combo} 🔥` : `¡Racha de ${this.combo}!`);
+      this.haptic(40);
+    }
+    // hitos de altura: cada 100 puntos, ovación
+    if (this.score >= this.nextMilestone * 20) {
+      this.nextMilestone = Math.floor(this.score / 20) + 5;
+      this.banner(`¡${Math.floor(this.score / 100) * 100} puntos! Gran rutina 🎉`);
+      this.cheer = 1;
+    }
     this._updateHud();
   }
 
   _onMiss() {
+    if (this.net) {
+      // la red te atrapa y te devuelve al aire
+      this.net = false;
+      const c = this.char;
+      c.y = PADDLE_Y;
+      c.vy = -this._bounceStrength() * 1.05;
+      c.vx = rand(-80, 80);
+      this.combo = 0;
+      this.flip = false;
+      this.dip = 1;
+      audio.playBounce();
+      this.banner("¡La red te salvó! 🛟");
+      this.particles.burst(new THREE.Vector3(wx(c.x), 0.8, 0.3), [0x4fd0ff, 0xfff6e6], 24, 5, 0.9, 6);
+      this._updateHud();
+      return;
+    }
     audio.playLose();
     this.cheer = 0;
-    this.finish(`Llegaste a ${this.score} puntos rebotando` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : "."));
+    this.finish(`Llegaste a ${this.score} puntos rebotando` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."));
   }
 
   _updateHud() {
@@ -430,14 +504,19 @@ export class Porristas3DGame extends Game3D {
     this.blob.position.set(wx(c.x), 0.68, 0);
     this.blob.scale.setScalar(clamp(1 - h / 9, 0.3, 1));
     this.blob.material.opacity = 0.35 * clamp(1 - h / 9, 0.2, 1);
+    this.safetyNet.visible = this.net && this.state === "playing";
+    if (this.safetyNet.visible) this.safetyNet.material.opacity = 0.4 + Math.sin(this.time * 6) * 0.15;
     // pompón
     if (this.pompom) {
       this.pompomMesh.visible = true;
       this.pompomMesh.position.set(wx(this.pompom.x), wy(this.pompom.y) + Math.sin(this.time * 4) * 0.12, 0);
       this.pompomMesh.rotation.y += dt * 2;
-      this.pomGold.visible = this.pompom.golden;
-      this.pomNormal.visible = !this.pompom.golden;
-      this.pomLight.intensity = this.pompom.golden ? 18 : 0;
+      const k = this.pompom.kind;
+      this.pomGold.visible = k === "golden";
+      this.pomNet.visible = k === "net";
+      this.pomWide.visible = k === "wide";
+      this.pomNormal.visible = k === "normal";
+      this.pomLight.intensity = k === "golden" ? 18 : k === "normal" ? 0 : 8;
       this.pompomMesh.scale.setScalar(this.pompom.timer < 1.2 ? 0.7 + Math.abs(Math.sin(this.time * 18)) * 0.3 : 1);
     } else {
       this.pompomMesh.visible = false;

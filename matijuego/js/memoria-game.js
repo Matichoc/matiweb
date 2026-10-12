@@ -58,6 +58,7 @@ export class MemoriaGame extends Game3D {
     this.levelIndex = 0;
     this.cards = [];
     this.hover = null;
+    this.musicTheme = "chill";
   }
 
   // ---------- escena ----------
@@ -230,11 +231,11 @@ export class MemoriaGame extends Game3D {
 
   _ensureMascot() {
     if (this.mascot && this.mascotId === this.character.id) {
-      this.mascot.setOutfit(this.outfit);
+      this.mascot.setLook(this.look);
       return;
     }
     if (this.mascot) this.mascotRoot.remove(this.mascot.group);
-    this.mascot = createMatichico(this.character, this.outfit);
+    this.mascot = createMatichico(this.character, this.outfit, this.look);
     this.mascotId = this.character.id;
     this.mascot.group.scale.setScalar(1.5);
     this.mascot.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
@@ -288,8 +289,13 @@ export class MemoriaGame extends Game3D {
     this.mismatchTimer = 0;
     this.mascotMode = "idle";
     this.mascotTimer = 0;
+    this.peek = 0;
+    this.misses = 0;
+    this.goldPi = -1;
 
     const picks = shuffle(PRODUCTS.map((_, i) => i)).slice(0, lv.pairs);
+    // desde el nivel 2 hay una pareja dorada: vale mucho más
+    if (this.levelIndex >= 1) this.goldPi = picks[Math.floor(Math.random() * picks.length)];
     const deck = shuffle([...picks, ...picks]);
     deck.forEach((pi, idx) => {
       const mats = [this.sideMat, this.sideMat, new THREE.MeshStandardMaterial({ map: this.backTex, roughness: 0.5 }), new THREE.MeshStandardMaterial({ map: this.frontTex[pi], roughness: 0.5 }), this.sideMat, this.sideMat];
@@ -297,11 +303,21 @@ export class MemoriaGame extends Game3D {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       this.scene.add(mesh);
-      this.cards.push({ mesh, pi, idx, state: "down", flip: 0, target: 0, lift: 0, glow: 0, deal: -idx * 0.05, drop: 6, x: 0, z: 0, hop: 0 });
+      if (pi === this.goldPi) {
+        // borde dorado para reconocerla al mostrarla
+        mats[3].emissive = new THREE.Color(0x6a4a00);
+        mats[3].emissiveIntensity = 0.9;
+      }
+      this.cards.push({ mesh, pi, idx, state: "down", flip: 0, target: 0, lift: 0, glow: 0, deal: -idx * 0.05, drop: 6, x: 0, z: 0, cx: 0, cz: 0, hop: 0 });
     });
     this._placeCards();
+    for (const c of this.cards) { c.cx = c.x; c.cz = c.z; }
     this._fitCamera();
     this._updateHud();
+    // ¡memoriza! las cartas se muestran un momento al empezar el nivel (menos tiempo en los difíciles)
+    this.peekAt = this.cards.length * 0.05 + 0.5;
+    this.peekLen = Math.max(1.2, 3 - this.levelIndex * 0.6);
+    this.peekPending = true;
   }
 
   _placeCards() {
@@ -313,6 +329,7 @@ export class MemoriaGame extends Game3D {
       const row = Math.floor(i / cols);
       c.x = (col - (cols - 1) / 2) * GAP_X;
       c.z = (row - (rows - 1) / 2) * GAP_Z + 0.35;
+      if (c.cx === undefined || !this.swapping) { c.cx = c.x; c.cz = c.z; }
     });
     // mascota a un costado del tablero (o arriba si es vertical)
     const w = cols * GAP_X;
@@ -378,7 +395,7 @@ export class MemoriaGame extends Game3D {
   }
 
   _flip(card) {
-    if (card.state !== "down" || this.busy > 0 || this.second) return;
+    if (card.state !== "down" || this.busy > 0 || this.second || this.peek > 0 || this.peekPending) return;
     if (!this.timeRunning) this.timeRunning = true;
     card.state = "up";
     card.target = 1;
@@ -410,6 +427,24 @@ export class MemoriaGame extends Game3D {
       this._updateHud();
     }
     if (this.busy > 0) this.busy -= dt;
+    // vistazo inicial
+    if (playing && this.peekPending) {
+      this.peekAt -= dt;
+      if (this.peekAt <= 0) {
+        this.peekPending = false;
+        this.peek = this.peekLen;
+        for (const c of this.cards) if (c.state === "down") c.target = 1;
+        this.banner("¡Memoriza!");
+        audio.playCountdown(false);
+      }
+    } else if (playing && this.peek > 0) {
+      this.peek -= dt;
+      if (this.peek <= 0) {
+        for (const c of this.cards) if (c.state === "down") c.target = 0;
+        this.banner("¡Ahora a encontrarlas!");
+        audio.playCountdown(true);
+      }
+    }
     if (this.second && this.resolveTimer !== undefined) {
       this.resolveTimer -= dt;
       if (this.resolveTimer <= 0) this._resolve();
@@ -424,7 +459,9 @@ export class MemoriaGame extends Game3D {
       c.hop = Math.max(0, c.hop - dt * 3);
       const hover = this.hover === c ? 0.22 : 0;
       c.lift = lerp(c.lift, hover + arc * 0.9 + (c.state === "matched" ? Math.sin(c.hop * Math.PI) * 0.5 : 0), 1 - Math.exp(-14 * dt));
-      c.mesh.position.set(c.x, 0.05 + c.lift + c.drop, c.z);
+      c.cx = lerp(c.cx, c.x, 1 - Math.exp(-7 * dt));
+      c.cz = lerp(c.cz, c.z, 1 - Math.exp(-7 * dt));
+      c.mesh.position.set(c.cx, 0.05 + c.lift + c.drop + (Math.abs(c.cx - c.x) + Math.abs(c.cz - c.z) > 0.05 ? 0.35 : 0), c.cz);
       c.mesh.rotation.set(c.flip * Math.PI, 0, arc * 0.12);
       if (c.shake) {
         c.shake = Math.max(0, c.shake - dt * 3);
@@ -455,10 +492,20 @@ export class MemoriaGame extends Game3D {
       a.hop = b.hop = 1;
       this.matched++;
       this.combo++;
-      const pts = 100 + this.combo * 20;
+      const gold = a.pi === this.goldPi;
+      const pts = 100 + this.combo * 20 + (gold ? 300 : 0);
       this.levelScore += pts;
       const at = new THREE.Vector3((a.x + b.x) / 2, 1.4, (a.z + b.z) / 2);
-      this.popups.add(at, this.combo > 1 ? `¡Pareja! x${this.combo}` : "¡Pareja!", this.combo > 1 ? "combo" : "head");
+      this.popups.add(at, gold ? "¡Pareja dorada! +300" : this.combo > 1 ? `¡Pareja! x${this.combo}` : "¡Pareja!", this.combo > 1 || gold ? "combo" : "head");
+      if (gold) {
+        this.particles.burst(new THREE.Vector3(at.x, 1, at.z), [0xffc800, 0xfff2a0, 0xffffff], 30, 6, 1.2, 7);
+        audio.playPowerup();
+        this.haptic(60);
+      } else if (this.combo >= 2) {
+        audio.playCombo(this.combo);
+      }
+      if (this.combo === 3) this.banner("¡Racha de 3!");
+      else if (this.combo === 5) this.banner("¡Memoria de elefante! 🐘");
       this.particles.burst(new THREE.Vector3(a.x, 0.8, a.z), [0xd4216c, 0xffc800, 0xcfd767, 0xfff6e6], 14, 4, 0.9, 6);
       this.particles.burst(new THREE.Vector3(b.x, 0.8, b.z), [0xd4216c, 0xffc800, 0xcfd767, 0xfff6e6], 14, 4, 0.9, 6);
       audio.playCollect();
@@ -474,8 +521,29 @@ export class MemoriaGame extends Game3D {
       audio.playBump();
       this.mascotMode = "sad";
       this.mascotTimer = 1.0;
+      this.misses++;
+      this._maybeMischief();
       this._updateHud();
     }
+  }
+
+  /** Desde el nivel 3, cada ciertos errores dos cartas boca abajo se cambian de lugar. */
+  _maybeMischief() {
+    if (this.levelIndex < 2) return;
+    const every = this.levelIndex >= 3 ? 2 : 3;
+    if (this.misses % every !== 0) return;
+    const down = this.cards.filter((c) => c.state === "down");
+    if (down.length < 4) return;
+    shuffle(down);
+    const [p, q] = down;
+    [p.x, q.x] = [q.x, p.x];
+    [p.z, q.z] = [q.z, p.z];
+    this.swapping = true;
+    setTimeout(() => { this.swapping = false; }, 900);
+    this.banner("¡Cartas traviesas! Se cambiaron de lugar");
+    this.particles.burst(new THREE.Vector3(p.cx, 0.8, p.cz), [0x9a5cff, 0xffffff], 8, 3, 0.8, 5);
+    this.particles.burst(new THREE.Vector3(q.cx, 0.8, q.cz), [0x9a5cff, 0xffffff], 8, 3, 0.8, 5);
+    audio.playWhoosh();
   }
 
   _levelDone() {
@@ -504,7 +572,7 @@ export class MemoriaGame extends Game3D {
       audio.playVictory();
       this.finish(
         `Completaste los ${LEVELS.length} niveles con ${this.stars.reduce((a, b) => a + b, 0)} estrellas y ${this.score} puntos` +
-          (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : ".")
+          (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : ".")
       );
       return;
     }
@@ -512,7 +580,7 @@ export class MemoriaGame extends Game3D {
     this.els.stars.innerHTML = [1, 2, 3].map((n) => `<span class="${n <= stars ? "on" : "off"}">★</span>`).join("");
     this.els.winTitle.textContent = `¡Nivel ${this.levelIndex + 1} completado!`;
     this.els.winText.textContent =
-      `${this.moves} intentos en ${Math.round(this.seconds)} s: +${gained} puntos` + (coins ? ` y +${coins} monedas Dubai 🍫✨.` : ".");
+      `${this.moves} intentos en ${Math.round(this.seconds)} s: +${gained} puntos` + (coins ? ` y +${coins} Matipuntos 🍫✨.` : ".");
     this.showOverlay("win");
   }
 

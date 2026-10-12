@@ -2,6 +2,10 @@
 // Matichico en un gimnasio con hinchada. Dos barras (puntería y potencia) se fijan con
 // ESPACIO / toque; el balón vuela con física real (aro, tablero y piso rebotan) y la red
 // se mueve cuando es un "swish". Cada 5° tiro el aro es dorado (Chocolate Dubai).
+//
+// Torneo: tiras desde 5 lugares distintos de la cancha (más lejos = más puntos), la zona de
+// puntería cambia en cada tiro, las rachas te ponen "en llamas" (zonas más grandes y puntos
+// multiplicados), los swish y los aros dorados regalan segundos extra, y suena la hinchada.
 
 import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js";
 import { createMatichico } from "./matichico3d.js";
@@ -14,11 +18,19 @@ const AIM_TARGET = 0.5;
 const POWER_TARGET = 0.7;
 const GOLDEN_EVERY = 5;
 
+// lugares de tiro: [nombre, x, z, multiplicador de puntos]
+const SPOTS = [
+  ["Tiro libre", 0, 0, 1],
+  ["Esquina izquierda", -2.5, -1.1, 1.3],
+  ["Esquina derecha", 2.5, -1.1, 1.3],
+  ["Triple", 0, 2.1, 1.7],
+  ["Desde lejos", -1.3, 3.1, 2],
+];
+
 const HOOP = { x: 0, y: 2.75, z: -6.4, r: 0.46 };
 const BOARD_Z = HOOP.z - 0.62;
 const BALL_R = 0.24;
 const GRAV = -9.8;
-const FLIGHT = 1.05;
 
 const oscillate = (t, speed) => (Math.sin(t * speed) + 1) / 2;
 
@@ -81,6 +93,7 @@ function ballTexture() {
 export class Basquet3DGame extends Game3D {
   constructor(character, progress, els) {
     super(GAME_ID, character, progress, els, { fov: 50 });
+    this.musicTheme = "sport";
     this.q = els.q;
     this.cheer = 0;
     this.swish = 0;
@@ -330,11 +343,11 @@ export class Basquet3DGame extends Game3D {
 
   _ensureHero() {
     if (this.hero && this.heroId === this.character.id) {
-      this.hero.setOutfit(this.outfit);
+      this.hero.setLook(this.look);
       return;
     }
     if (this.hero) this.scene.remove(this.hero.group);
-    this.hero = createMatichico(this.character, this.outfit);
+    this.hero = createMatichico(this.character, this.outfit, this.look);
     this.heroId = this.character.id;
     this.hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.hero.group.scale.setScalar(1.35);
@@ -359,6 +372,11 @@ export class Basquet3DGame extends Game3D {
     this.cheer = 0;
     this.swish = 0;
     this.sbLast = "";
+    this.streak = 0;
+    this.bestStreak = 0;
+    this.spotIdx = 0;
+    this.aimTarget = AIM_TARGET;
+    this.powerTarget = POWER_TARGET;
     this._ensureHero();
     this._startShot();
     this._updateHud();
@@ -367,16 +385,18 @@ export class Basquet3DGame extends Game3D {
   }
 
   _difficulty() { return this.attempts; }
-  _accTol() { return Math.max(0.05, 0.16 - this._difficulty() * 0.006); }
-  _powTol() { return Math.max(0.045, 0.14 - this._difficulty() * 0.006); }
+  _fire() { return this.streak >= 3; }
+  _accTol() { return Math.max(0.05, 0.16 - this._difficulty() * 0.006) * (this._fire() ? 1.3 : 1); }
+  _powTol() { return Math.max(0.045, 0.14 - this._difficulty() * 0.006) * (this._fire() ? 1.3 : 1); }
+  _mult() { return 1 + Math.min(3, Math.floor(this.streak / 2)) * 0.5; }
   _isGolden() { return this.attempts % GOLDEN_EVERY === GOLDEN_EVERY - 1; }
 
   _setZones() {
     const q = this.q;
     const aim = q("aim-zone");
     const pow = q("power-zone");
-    if (aim) { aim.style.left = `${(AIM_TARGET - this._accTol()) * 100}%`; aim.style.width = `${this._accTol() * 200}%`; }
-    if (pow) { pow.style.bottom = `${(POWER_TARGET - this._powTol()) * 100}%`; pow.style.height = `${this._powTol() * 200}%`; }
+    if (aim) { aim.style.left = `${(this.aimTarget - this._accTol()) * 100}%`; aim.style.width = `${this._accTol() * 200}%`; }
+    if (pow) { pow.style.bottom = `${(this.powerTarget - this._powTol()) * 100}%`; pow.style.height = `${this._powTol() * 200}%`; }
     const meters = q("meters");
     if (meters) meters.classList.toggle("golden", this._isGolden());
     this.rim.material = this._isGolden() ? this.m.gold : this.m.rim;
@@ -384,6 +404,18 @@ export class Basquet3DGame extends Game3D {
   }
 
   _startShot() {
+    // lugar de tiro de este lanzamiento: el primero es el tiro libre, los demás varían
+    if (this.attempts > 0) {
+      let next = Math.floor(Math.random() * SPOTS.length);
+      if (next === this.spotIdx) next = (next + 1) % SPOTS.length;
+      this.spotIdx = next;
+    }
+    const [name, sx, sz] = SPOTS[this.spotIdx];
+    this.hero.group.position.set(sx, 0, sz);
+    const dist = Math.hypot(sx - HOOP.x, sz - HOOP.z);
+    this.aimTarget = clamp(AIM_TARGET + (this.attempts > 0 ? rand(-0.16, 0.16) : 0), 0.3, 0.7);
+    this.powerTarget = clamp(POWER_TARGET + (6.4 - dist) * -0.045 + (this.attempts > 0 ? rand(-0.05, 0.05) : 0), 0.45, 0.88);
+    if (this.attempts > 0) this.banner(name);
     this.stage = "aim";
     this.aimTime = 0;
     this.powerTime = 0;
@@ -432,8 +464,8 @@ export class Basquet3DGame extends Game3D {
   }
 
   _launchBall() {
-    const accErr = this.aimLocked - AIM_TARGET;
-    const powErr = this.powerLocked - POWER_TARGET;
+    const accErr = this.aimLocked - this.aimTarget;
+    const powErr = this.powerLocked - this.powerTarget;
     const aErr = Math.abs(accErr);
     const pErr = Math.abs(powErr);
     const made = aErr <= this._accTol() && pErr <= this._powTol();
@@ -445,8 +477,9 @@ export class Basquet3DGame extends Game3D {
     let ox;
     let oz;
     if (made) {
-      ox = clean ? 0 : (accErr / this._accTol()) * 0.15;
-      oz = clean ? 0 : (powErr / this._powTol()) * 0.15;
+      // el balón baja en picada: se apunta un poquito más allá del centro para que no roce el aro de adelante
+      ox = clean ? 0 : (accErr / this._accTol()) * 0.12;
+      oz = -0.17 + (clean ? 0 : (powErr / this._powTol()) * 0.09);
     } else {
       ox = accErr * 3.4;
       oz = -powErr * 3.6; // potencia de más → más lejos (z más negativo)
@@ -460,7 +493,9 @@ export class Basquet3DGame extends Game3D {
     }
     const start = this._handPos(new THREE.Vector3());
     const target = new THREE.Vector3(HOOP.x + ox, HOOP.y + (made ? 0.0 : 0.05), HOOP.z + oz);
-    const T = FLIGHT;
+    // el tiempo de vuelo crece con la distancia para que el balón siempre baje con la misma pendiente
+    const D = Math.hypot(target.x - start.x, target.z - start.z);
+    const T = Math.sqrt((2 * (0.72 * D + (HOOP.y - start.y))) / -GRAV);
     this.ballV.set(
       (target.x - start.x) / T,
       (target.y - start.y - 0.5 * GRAV * T * T) / T,
@@ -481,6 +516,10 @@ export class Basquet3DGame extends Game3D {
     this.resultTimer = 1.0;
     if (made) {
       this.made++;
+      const wasFire = this._fire();
+      this.streak++;
+      this.bestStreak = Math.max(this.bestStreak, this.streak);
+      const spotMult = SPOTS[this.spotIdx][3];
       let gained = 20 + (this.shotClean ? 10 : 0);
       if (this.shotGolden) {
         gained += 10;
@@ -488,6 +527,12 @@ export class Basquet3DGame extends Game3D {
         this.coinsEarned += 15;
         saveProgress(this.progress);
       }
+      gained = Math.round(gained * spotMult * this._mult());
+      // segundos de regalo: swish +2, aro dorado +4
+      const extra = (this.shotClean ? 2 : 0) + (this.shotGolden ? 4 : 0);
+      if (extra) { this.timeLeft += extra; this.popups.add(new THREE.Vector3(HOOP.x + 1, HOOP.y + 0.3, HOOP.z + 0.6), `+${extra} s ⏱`, "combo"); }
+      if (!wasFire && this._fire()) { this.banner("¡EN LLAMAS! 🔥"); audio.playPowerup(); this.haptic(50); }
+      else if (this.streak >= 2) audio.playCombo(this.streak);
       this.score += gained;
       this.cheer = 1;
       this.swish = this.shotClean ? 1 : 0.6;
@@ -500,6 +545,7 @@ export class Basquet3DGame extends Game3D {
       this.heroModeTimer = 1.1;
     } else {
       audio.playBump();
+      this.streak = 0;
       this.heroMode = "sad";
       this.heroModeTimer = 0.9;
     }
@@ -513,6 +559,8 @@ export class Basquet3DGame extends Game3D {
     q("hud-made").textContent = String(this.made);
     q("hud-attempts").textContent = String(this.attempts);
     q("hud-coins").textContent = String(this.progress.coins);
+    const st = q("hud-streak");
+    if (st) st.textContent = this._fire() ? `🔥 x${this.streak}` : `x${this.streak}`;
   }
 
   // ---------- física del balón ----------
@@ -601,6 +649,7 @@ export class Basquet3DGame extends Game3D {
     this.rimShake = Math.max(0, (this.rimShake || 0) - dt * 4);
     this._animateCrowd();
     this._animateNet();
+    this._fireFx();
     this.rim.position.y = HOOP.y + Math.sin(this.time * 60) * 0.012 * this.rimShake;
 
     if (this.state === "playing") {
@@ -661,6 +710,13 @@ export class Basquet3DGame extends Game3D {
     if (hint) hint.textContent = this.stage === "aim" ? "¡Fija la PUNTERÍA!" : this.stage === "power" ? "¡Ahora la POTENCIA!" : "";
   }
 
+  _fireFx() {
+    // la pelota echa fuego cuando estás en racha
+    if (this._fire() && (this.stage === "flying" || this.stage === "aim" || this.stage === "power") && Math.random() < 0.7) {
+      this.particles.burst(this.ball.position.clone(), [0xff8a2a, 0xffe14a, 0xff3b3b], 1, 1.2, 0.5, 3, -0.6);
+    }
+  }
+
   _animateNet() {
     const pos = this.netGeo.attributes.position;
     const base = this.netBase;
@@ -708,7 +764,7 @@ export class Basquet3DGame extends Game3D {
   _onGameOver() {
     audio.playLose();
     this.finish(
-      `Encestaste ${this.made} de ${this.attempts} tiros y sumaste ${this.score} puntos` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : "."),
+      `Encestaste ${this.made} de ${this.attempts} tiros (mejor racha: ${this.bestStreak}) y sumaste ${this.score} puntos` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."),
     );
   }
 
