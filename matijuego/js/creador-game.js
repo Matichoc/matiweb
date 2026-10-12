@@ -3,17 +3,17 @@
 // maridajes, guarda las creaciones en el perfil y permite pedir algo parecido
 // por WhatsApp (solo un mensaje, sin precios ni promesas).
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, makeBunting } from "./three-kit.js?v=f2916d806a";
-import { createMatichico } from "./matichico3d.js?v=f2916d806a";
-import { saveProgress, earnCoins, reportScore, addToLeaderboard, saveCreation, deleteCreation, todayKey } from "./storage.js?v=f2916d806a";
-import { recordRun } from "./progression.js?v=f2916d806a";
-import * as audio from "./audio.js?v=f2916d806a";
+import { THREE, Game3D, clamp, lerp, canvasTexture, makeBunting } from "./three-kit.js?v=1140a83fef";
+import { createMatichico } from "./matichico3d.js?v=1140a83fef";
+import { saveProgress, earnCoins, reportScore, addToLeaderboard, saveCreation, deleteCreation, todayKey } from "./storage.js?v=1140a83fef";
+import { recordRun } from "./progression.js?v=1140a83fef";
+import * as audio from "./audio.js?v=1140a83fef";
 import {
   PRODUCTS, CHOCOLATES, FLAVORS, TOPPINGS, WRAPS, WRAP_COLORS, MOTIFS, STEPS,
   defaultCreation, sanitize, scoreCreation, comboKey, dailyChallenge, matchesChallenge,
   describeChallenge, describeCreation, whatsappUrl, drawLabel, getProduct, getFlavor,
-} from "./creador-data.js?v=f2916d806a";
-import { buildCreation } from "./creador-3d.js?v=f2916d806a";
+} from "./creador-data.js?v=1140a83fef";
+import { buildCreation } from "./creador-3d.js?v=1140a83fef";
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);

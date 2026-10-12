@@ -4,12 +4,12 @@
 // completar el baño estallan en confeti. Ver docs/PROPUESTA-3D.md.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { buildWorld, rayAabb, ARENA_HALF } from "./fps-world.js?v=f2916d806a";
-import { createEnemy, applyChocolate, hitSpheres, animateEnemy } from "./fps-enemies.js?v=f2916d806a";
-import { getOutfit } from "./characters.js?v=f2916d806a";
-import { saveProgress, addToLeaderboard, equippedOutfitId, reportScore, earnCoins } from "./storage.js?v=f2916d806a";
-import { recordRun } from "./progression.js?v=f2916d806a";
-import * as audio from "./audio.js?v=f2916d806a";
+import { buildWorld, rayAabb, ARENA_HALF } from "./fps-world.js?v=1140a83fef";
+import { createEnemy, applyChocolate, hitSpheres, animateEnemy } from "./fps-enemies.js?v=1140a83fef";
+import { getOutfit } from "./characters.js?v=1140a83fef";
+import { saveProgress, addToLeaderboard, equippedOutfitId, reportScore, earnCoins } from "./storage.js?v=1140a83fef";
+import { recordRun } from "./progression.js?v=1140a83fef";
+import * as audio from "./audio.js?v=1140a83fef";
 
 const GAME_ID = "fps3d";
 const EYE = 1.65;
