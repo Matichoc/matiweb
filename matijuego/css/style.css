@@ -1438,3 +1438,14 @@ html[data-app] .game-screen:not(.cr-screen) {
 /* Pantallas largas (Mi aventura, Logros, Puntajes, Mi Casa): se pueden deslizar con el dedo */
 #screen-progress, #screen-achievements, #screen-leaderboard { overflow-y: auto; align-items: flex-start; -webkit-overflow-scrolling: touch; }
 @media (max-width: 760px) { #screen-house { overflow-y: auto; align-items: flex-start; -webkit-overflow-scrolling: touch; } }
+
+/* Logros con escalones, barras de progreso y categorías */
+.ach-summary { text-align: center; padding: 8px 12px; border-radius: 12px; background: rgba(255,200,0,0.12); border: 2px solid var(--dorado); color: var(--crema); font-size: 0.95rem; }
+.ach-ready { color: #ffd34d; font-weight: 800; }
+.ach-cat { margin: 10px 0 0; font-size: 1.15rem; color: var(--dorado); text-align: left; }
+.achievement-card.complete { opacity: 0.75; }
+.abar { position: relative; height: 14px; border-radius: 8px; background: rgba(255,255,255,0.15); overflow: hidden; margin: 5px 0 2px; }
+.abar i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #cfd767, #4fd09a); border-radius: 8px; }
+.abar span { position: relative; display: block; text-align: center; font-size: 0.68rem; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.6); line-height: 14px; }
+.adots { font-size: 0.7rem; letter-spacing: 2px; color: var(--dorado); margin-top: 2px; }
+#screen-achievements .menu-card { max-width: 760px; }

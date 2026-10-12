@@ -4,12 +4,12 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=64b04a2636";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=64b04a2636";
-import * as audio from "./audio.js?v=64b04a2636";
-import { recordRun, runBonus } from "./progression.js?v=64b04a2636";
-import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=64b04a2636";
-import { missionFor } from "./missions.js?v=64b04a2636";
+import { getOutfit } from "./characters.js?v=6c0737455c";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=6c0737455c";
+import * as audio from "./audio.js?v=6c0737455c";
+import { recordRun, runBonus } from "./progression.js?v=6c0737455c";
+import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=6c0737455c";
+import { missionFor } from "./missions.js?v=6c0737455c";
 
 export { THREE };
 
@@ -390,6 +390,7 @@ export class Game3D {
       this._missionWon = true;
       const n = this.mission.n;
       if (n >= LEVELS_PER_GAME) {
+        campaignWin(this.progress, this.missionId || this.gameId, n, 3);
         const t = this.els.q("gameover-title");
         if (t) t.textContent = `¡Completaste las ${LEVELS_PER_GAME} misiones! 🏆`;
         audio.playVictory();
@@ -498,6 +499,15 @@ export class Game3D {
     this._adaptQuality(dt);
     this.update(dt);
     this._missionTick(dt);
+    if (this.state === "playing" && this.progress) {
+      // tiempo jugado (para los logros de constancia); se guarda cada ~10 s
+      this._playAcc = (this._playAcc || 0) + dt;
+      if (this._playAcc >= 10) {
+        this.progress.stats.playSecs = (this.progress.stats.playSecs || 0) + this._playAcc;
+        this._playAcc = 0;
+        saveProgress(this.progress);
+      }
+    }
     this.particles.update(dt);
     this.popups.update(dt);
     if (this.composer) this.composer.render(dt);

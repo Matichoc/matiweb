@@ -6,15 +6,15 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=64b04a2636";
-import { createMatichico } from "./matichico3d.js?v=64b04a2636";
-import { CHARACTERS, getOutfit } from "./characters.js?v=64b04a2636";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=64b04a2636";
-import { GAMES_CATALOG } from "./games-catalog.js?v=64b04a2636";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=64b04a2636";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=64b04a2636";
-import { levelInfo } from "./progression.js?v=64b04a2636";
-import * as audio from "./audio.js?v=64b04a2636";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=6c0737455c";
+import { createMatichico } from "./matichico3d.js?v=6c0737455c";
+import { CHARACTERS, getOutfit } from "./characters.js?v=6c0737455c";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=6c0737455c";
+import { GAMES_CATALOG } from "./games-catalog.js?v=6c0737455c";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6c0737455c";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=6c0737455c";
+import { levelInfo } from "./progression.js?v=6c0737455c";
+import * as audio from "./audio.js?v=6c0737455c";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -962,6 +962,7 @@ export class TownGame extends Game3D {
       const at = new THREE.Vector3(it.x, 1.6, it.z);
       if (daily.collected < COLLECT_CAP) {
         daily.collected++;
+        this.progress.stats.townItems = (this.progress.stats.townItems || 0) + 1;
         earnCoins(this.progress, 1);
         saveProgress(this.progress);
         audio.playCollect();
@@ -1023,6 +1024,7 @@ export class TownGame extends Game3D {
     n.speaking = 2.5;
     if (!daily.talked.includes(n.def.name)) {
       daily.talked.push(n.def.name);
+      this.progress.stats.townTalks = (this.progress.stats.townTalks || 0) + 1;
       earnCoins(this.progress, NPC_GIFT);
       saveProgress(this.progress);
       text += `  (¡Regalo por saludarme hoy: +${NPC_GIFT} 🍫✨!)`;

@@ -2,10 +2,10 @@
 // con tu Matichico y su mascota adentro. Lo que hay en cada lugar viene de
 // js/house-data.js; aquí solo se dibuja. Es liviano y solo corre cuando la pantalla está visible.
 
-import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=64b04a2636";
-import { createMatichico } from "./matichico3d.js?v=64b04a2636";
-import { getOutfit } from "./wardrobe-data.js?v=64b04a2636";
-import { getHouseItem, houseItemsOfSpot, isWallItem } from "./house-data.js?v=64b04a2636";
+import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=6c0737455c";
+import { createMatichico } from "./matichico3d.js?v=6c0737455c";
+import { getOutfit } from "./wardrobe-data.js?v=6c0737455c";
+import { getHouseItem, houseItemsOfSpot, isWallItem } from "./house-data.js?v=6c0737455c";
 
 let W = 10; // ancho del cuarto (10, 14 o 18 según cuánto lo agrandes); el alto es siempre 5.2
 const H = 5.2;

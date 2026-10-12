@@ -7,11 +7,11 @@
 // puntería cambia en cada tiro, las rachas te ponen "en llamas" (zonas más grandes y puntos
 // multiplicados), los swish y los aros dorados regalan segundos extra, y suena la hinchada.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=64b04a2636";
-import { createMatichico } from "./matichico3d.js?v=64b04a2636";
-import { saveProgress, earnCoins } from "./storage.js?v=64b04a2636";
-import * as audio from "./audio.js?v=64b04a2636";
-import { campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=64b04a2636";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=6c0737455c";
+import { createMatichico } from "./matichico3d.js?v=6c0737455c";
+import { saveProgress, earnCoins } from "./storage.js?v=6c0737455c";
+import * as audio from "./audio.js?v=6c0737455c";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=6c0737455c";
 
 const GAME_ID = "basquet_tiros";
 const TIME_LIMIT = 60;
@@ -786,6 +786,7 @@ export class Basquet3DGame extends Game3D {
       if (ratio >= 1) {
         const stars = ratio >= 1.7 ? 3 : ratio >= 1.3 ? 2 : 1;
         if (this.level >= LEVELS_PER_GAME) {
+          campaignWin(this.progress, "basquet_tiros", this.level, stars);
           const t = this.els.q("gameover-title");
           if (t) t.textContent = `¡Completaste los ${LEVELS_PER_GAME} niveles! 🏆`;
           audio.playVictory();

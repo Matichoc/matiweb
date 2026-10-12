@@ -4,7 +4,7 @@
 // Todo el progreso vive dentro de un "perfil" (ver js/profiles.js), para que
 // varias personas puedan jugar desde el mismo navegador sin mezclar su avance.
 
-import { getItem, EMPTY_LOOK } from "./wardrobe-data.js?v=64b04a2636";
+import { getItem, EMPTY_LOOK } from "./wardrobe-data.js?v=6c0737455c";
 
 const SAVE_PREFIX = "matichoc_save_v3_profile_";
 const DEFAULT_OUTFIT = "liga";
@@ -203,6 +203,7 @@ export function claimDailyReward(progress) {
   if (!canClaimDailyReward(progress)) return null;
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   progress.dailyStreak = progress.lastDailyRewardDate === yesterday ? progress.dailyStreak + 1 : 1;
+  progress.stats.bestStreak = Math.max(progress.stats.bestStreak || 0, progress.dailyStreak); // para los logros de constancia
   const reward = Math.min(10 + (progress.dailyStreak - 1) * 5, 50);
   earnCoins(progress, reward);
   progress.lastDailyRewardDate = todayKey();
