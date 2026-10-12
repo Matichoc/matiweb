@@ -4,6 +4,8 @@
 // Todo el progreso vive dentro de un "perfil" (ver js/profiles.js), para que
 // varias personas puedan jugar desde el mismo navegador sin mezclar su avance.
 
+import { getItem, EMPTY_LOOK } from "./wardrobe-data.js";
+
 const SAVE_PREFIX = "matichoc_save_v3_profile_";
 const DEFAULT_OUTFIT = "liga";
 const MAX_LEADERBOARD = 10;
@@ -16,9 +18,17 @@ function defaultProgress() {
   return {
     playerName: "",
     selectedCharacterId: null,
-    equippedOutfit: {}, // { [characterId]: outfitId }
-    ownedOutfits: {}, // { [characterId]: [outfitId, ...] }
-    coins: 0,
+    // Guardarropa (ver js/wardrobe-data.js): objetos comprados (compartidos por todos los
+    // Matichicos) y lo que lleva puesto cada uno.
+    wardrobe: { owned: [], looks: {} }, // looks: { [characterId]: { hair, hat, outfit, ... } }
+    house: { owned: [], placed: {} }, // Mi Casa (ver js/house-data.js)
+    eventTokens: {}, // fichas de eventos de temporada: { [idEvento]: n }
+    xp: 0, // experiencia total (ver js/progression.js)
+    packs: 1, // sobres de figuritas sin abrir (empieza con uno de regalo)
+    album: {}, // { [idFigurita]: cuántas tiene }
+    albumClaimed: [], // hitos del álbum ya cobrados
+    daily: null, // misiones de hoy
+    coins: 0, // Matipuntos: los puntos que se ganan jugando y se gastan en la tienda
     unlockedLevel: 0, // progreso dentro de "Recolecta y Corre"
     bestScores: {}, // { [gameId]: number }
     leaderboards: {}, // { [gameId]: [{ name, score, date }] }
@@ -33,6 +43,21 @@ function defaultProgress() {
 
 export const MAX_CREATIONS = 12;
 
+/** Lee el guardarropa guardado; si viene de la versión anterior (atuendos por personaje) lo migra. */
+function normalizeWardrobe(parsed) {
+  const w = parsed.wardrobe || {};
+  const owned = new Set(Array.isArray(w.owned) ? w.owned : []);
+  const looks = {};
+  for (const [id, look] of Object.entries(w.looks || {})) looks[id] = { ...look };
+  // migración: antes la tienda guardaba `ownedOutfits` y `equippedOutfit` por personaje
+  for (const list of Object.values(parsed.ownedOutfits || {})) for (const id of list) owned.add(id);
+  for (const [charId, outfitId] of Object.entries(parsed.equippedOutfit || {})) {
+    if (!looks[charId]) looks[charId] = {};
+    if (!looks[charId].outfit) looks[charId].outfit = outfitId;
+  }
+  return { owned: [...owned], looks };
+}
+
 /** Carga (o crea) el progreso de un perfil. El id queda "pegado" al objeto
  * (no enumerable, así no se guarda dentro del JSON) para que saveProgress
  * sepa a qué perfil escribir sin que cada llamador tenga que pasarlo. */
@@ -44,12 +69,16 @@ export function loadProgress(profileId) {
     progress = {
       ...defaultProgress(),
       ...parsed,
-      equippedOutfit: { ...parsed.equippedOutfit },
-      ownedOutfits: { ...parsed.ownedOutfits },
+      wardrobe: normalizeWardrobe(parsed),
       bestScores: { ...parsed.bestScores },
       leaderboards: { ...parsed.leaderboards },
       stats: { ...defaultProgress().stats, ...parsed.stats },
       claimedAchievements: parsed.claimedAchievements || [],
+      album: { ...parsed.album },
+      eventTokens: { ...parsed.eventTokens },
+      house: { owned: [...((parsed.house && parsed.house.owned) || [])], placed: { ...((parsed.house && parsed.house.placed) || {}) } },
+      albumClaimed: parsed.albumClaimed || [],
+      packs: parsed.packs ?? 1,
       creations: Array.isArray(parsed.creations) ? parsed.creations.slice(0, MAX_CREATIONS) : [],
     };
   } catch (e) {
@@ -67,29 +96,46 @@ export function saveProgress(progress) {
   }
 }
 
-export function ownsOutfit(progress, characterId, outfitId) {
-  if (outfitId === DEFAULT_OUTFIT) return true;
-  return (progress.ownedOutfits[characterId] || []).includes(outfitId);
+/** ¿Es del jugador este objeto del guardarropa? ("" = el estilo normal, siempre disponible). */
+export function ownsItem(progress, itemId) {
+  if (!itemId) return true;
+  const item = getItem(itemId);
+  if (!item) return false;
+  return item.price === 0 || progress.wardrobe.owned.includes(itemId);
+}
+
+/** Lo que lleva puesto un Matichico (con los valores por defecto para lo que no se haya elegido). */
+export function getLook(progress, characterId) {
+  return { ...EMPTY_LOOK, ...(progress.wardrobe.looks[characterId] || {}) };
 }
 
 export function equippedOutfitId(progress, characterId) {
-  return progress.equippedOutfit[characterId] || DEFAULT_OUTFIT;
+  return getLook(progress, characterId).outfit || "liga";
 }
 
-export function buyOutfit(progress, characterId, outfit) {
-  if (progress.coins < outfit.price) return false;
-  if (ownsOutfit(progress, characterId, outfit.id)) return false;
-  progress.coins -= outfit.price;
-  if (!progress.ownedOutfits[characterId]) progress.ownedOutfits[characterId] = [];
-  progress.ownedOutfits[characterId].push(outfit.id);
-  progress.equippedOutfit[characterId] = outfit.id;
+/** Se pone (o se quita, con itemId "") un objeto en la categoría `slot` del Matichico. */
+export function equipItem(progress, characterId, slot, itemId) {
+  if (!ownsItem(progress, itemId)) return false;
+  if (!progress.wardrobe.looks[characterId]) progress.wardrobe.looks[characterId] = {};
+  progress.wardrobe.looks[characterId][slot] = itemId;
   saveProgress(progress);
   return true;
 }
 
-export function equipOutfit(progress, characterId, outfitId) {
-  progress.equippedOutfit[characterId] = outfitId;
+/** Gasta Matipuntos. Punto único de pago: aquí se sumarán otras monedas en el futuro. */
+export function spendCoins(progress, amount) {
+  if (progress.coins < amount) return false;
+  progress.coins -= amount;
+  return true;
+}
+
+export function buyItem(progress, itemId) {
+  const item = getItem(itemId);
+  if (!item || item.event || ownsItem(progress, itemId)) return false; // los de evento se compran con fichas
+  if (!spendCoins(progress, item.price)) return false;
+  progress.wardrobe.owned.push(itemId);
   saveProgress(progress);
+  return true;
 }
 
 export function getBestScore(progress, gameId) {

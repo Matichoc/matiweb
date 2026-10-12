@@ -2,6 +2,9 @@
 // golosinas son cubos de chocolate brillantes dentro de una vitrina de cristal con
 // marco dorado. Las líneas explotan en confeti, la pieza cae con sombra "fantasma"
 // y tu Matichico celebra cada línea desde un costado.
+//
+// Versión "Gran Vitrina": guardar una pieza (C / Shift), combos y back-to-back, cubos de poder
+// (bomba que limpia 3x3 y rayo que limpia la fila), subida de nivel con cambio de ambiente y música.
 
 import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js";
 import { createMatichico } from "./matichico3d.js";
@@ -21,6 +24,7 @@ const cy = (row) => ROWS - 1 - row + 0.5;
 export class Tetris3DGame extends Game3D {
   constructor(character, progress, els) {
     super("tetris", character, progress, els, { fov: 38 });
+    this.musicTheme = "puzzle";
     this.grid = [];
     this.pieceMeshes = [];
     this.ghostMeshes = [];
@@ -95,6 +99,16 @@ export class Tetris3DGame extends Game3D {
       color: 0xffc800, roughness: 0.2, metalness: 0.6, clearcoat: 1, emissive: 0xffa800, emissiveIntensity: 0.55,
     });
     this.ghostMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, depthWrite: false });
+    const emojiPlate = (e) => new THREE.MeshBasicMaterial({
+      map: canvasTexture(128, 128, (g, w, h) => { g.font = "92px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(e, w / 2, h / 2 + 6); }),
+      transparent: true,
+      depthWrite: false,
+    });
+    this.powerPlates = { bomb: emojiPlate("💣"), rayo: emojiPlate("⚡") };
+    this.powerMats = {
+      bomb: new THREE.MeshPhysicalMaterial({ color: 0x2a2a34, roughness: 0.3, metalness: 0.4, clearcoat: 1, emissive: 0x551010, emissiveIntensity: 0.5 }),
+      rayo: new THREE.MeshPhysicalMaterial({ color: 0xffe14a, roughness: 0.2, metalness: 0.3, clearcoat: 1, emissive: 0xffa800, emissiveIntensity: 0.7 }),
+    };
 
     this._buildRoom();
     this._buildTank();
@@ -206,17 +220,38 @@ export class Tetris3DGame extends Game3D {
     this.nextHolder.add(ped, ring, this.nextLabel);
     s.add(this.nextHolder);
 
+    // pedestal para la pieza guardada
+    this.holdHolder = new THREE.Group();
+    const ped2 = new THREE.Mesh(roundedBox(3.4, 3.4, 0.5, 0.3, 0.08), new THREE.MeshStandardMaterial({ color: 0x3d1f10, roughness: 0.4 }));
+    ped2.position.z = -0.5;
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.09, 8, 36), new THREE.MeshStandardMaterial({ color: 0x35f0ff, roughness: 0.25, metalness: 0.6, emissive: 0x1a8a9a, emissiveIntensity: 0.5 }));
+    ring2.position.z = -0.2;
+    const holdLabel = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.6, 0.7),
+      new THREE.MeshBasicMaterial({
+        transparent: true,
+        map: canvasTexture(512, 140, (g, w, h) => {
+          g.font = '78px "Baby Chipmunk", sans-serif'; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#7ee0ff";
+          g.fillText("GUARDA", w / 2, h / 2 + 4);
+        }),
+      }),
+    );
+    holdLabel.position.set(0, 2.2, 0);
+    this.holdHolder.add(ped2, ring2, holdLabel);
+    s.add(this.holdHolder);
+    this.holdMeshes = [];
+
     this.cellRoot = new THREE.Group();
     s.add(this.cellRoot);
   }
 
   _ensureHero() {
     if (this.hero && this.heroId === this.character.id) {
-      this.hero.setOutfit(this.outfit);
+      this.hero.setLook(this.look);
       return;
     }
     if (this.hero) this.scene.remove(this.hero.group);
-    this.hero = createMatichico(this.character, this.outfit);
+    this.hero = createMatichico(this.character, this.outfit, this.look);
     this.heroId = this.character.id;
     this.hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.hero.group.scale.setScalar(2.1);
@@ -230,11 +265,12 @@ export class Tetris3DGame extends Game3D {
 
   // ---------- cubos ----------
 
-  _makeCube(type, special) {
+  _makeCube(type, special, power = null) {
     const g = new THREE.Group();
-    const body = new THREE.Mesh(this.cubeGeo, special ? this.specialMat : this.cubeMats[type]);
+    const body = new THREE.Mesh(this.cubeGeo, power ? this.powerMats[power] : special ? this.specialMat : this.cubeMats[type]);
     body.castShadow = true;
-    const plate = new THREE.Mesh(this.plateGeo, special ? this.starMat : this.plateMat);
+    const plate = new THREE.Mesh(this.plateGeo, power ? this.powerPlates[power] : special ? this.starMat : this.plateMat);
+    if (power) plate.scale.setScalar(1.35);
     plate.position.z = CUBE / 2 + 0.012;
     g.add(body, plate);
     if (special) {
@@ -266,6 +302,8 @@ export class Tetris3DGame extends Game3D {
     if (this.portrait) {
       this.nextHolder.position.set(3.1, ROWS + 3.1, 0);
       this.nextHolder.scale.setScalar(0.75);
+      this.holdHolder.position.set(-0.1, ROWS + 3.1, 0);
+      this.holdHolder.scale.setScalar(0.75);
       this.hero.group.position.set(-3.4, ROWS + 1.3, 0.6);
       this.hero.group.scale.setScalar(1.15);
       this.heroPlatform.position.set(-3.4, ROWS + 1.05, 0.6);
@@ -275,6 +313,8 @@ export class Tetris3DGame extends Game3D {
     } else {
       this.nextHolder.position.set(COLS / 2 + 3.6, ROWS - 3.2, 0);
       this.nextHolder.scale.setScalar(1);
+      this.holdHolder.position.set(COLS / 2 + 3.6, ROWS - 7.4, 0);
+      this.holdHolder.scale.setScalar(1);
       this.hero.group.position.set(-COLS / 2 - 3.6, 2.2, 1);
       this.hero.group.scale.setScalar(2.1);
       this.heroPlatform.position.set(-COLS / 2 - 3.6, 1.95, 1);
@@ -306,14 +346,72 @@ export class Tetris3DGame extends Game3D {
     this.coinsEarned = 0;
     this.dropTimer = 0;
     this.shake = 0;
-    this.current = spawnPiece(this._nextFromBag());
-    this.next = spawnPiece(this._nextFromBag());
+    this.combo = 0;
+    this.lastWasTetris = false;
+    this.hold = null;
+    this.holdUsed = false;
+    this.bombs = 0;
+    for (const m of this.holdMeshes || []) this.holdHolder.remove(m);
+    this.holdMeshes = [];
+    this.current = this._newPiece(this._nextFromBag());
+    this.next = this._newPiece(this._nextFromBag());
+    this.scene.background.setHex(0x2a140b);
     this._ensureHero();
     this.onResize(Math.max(1, this.els.wrap.clientWidth), Math.max(1, this.els.wrap.clientHeight));
     this._rebuildCurrent(true);
     this._rebuildNext();
     this._setHero("idle", 0);
     this._updateHud();
+  }
+
+  /** Pieza nueva; a veces trae un cubo de poder (bomba o rayo) en una de sus 4 celdas. */
+  _newPiece(type) {
+    const piece = spawnPiece(type);
+    if (!piece.special && Math.random() < 0.1) {
+      piece.power = Math.random() < 0.55 ? "bomb" : "rayo";
+      piece.powerCell = Math.floor(Math.random() * 4);
+    }
+    return piece;
+  }
+
+  _holdPiece() {
+    if (this.state !== "playing" || this.holdUsed) return;
+    const type = this.current.type;
+    if (this.hold) {
+      this.current = this._newPiece(this.hold);
+    } else {
+      this.current = this.next;
+      this.next = this._newPiece(this._nextFromBag());
+      this._rebuildNext();
+    }
+    this.hold = type;
+    this.holdUsed = true;
+    this._rebuildCurrent(true);
+    this._rebuildHold();
+    audio.playWhoosh();
+    if (!this._fits(this.current, 0, 0, this.current.rotation)) this._onGameOver();
+  }
+
+  _rebuildHold() {
+    for (const m of this.holdMeshes) this.holdHolder.remove(m);
+    this.holdMeshes = [];
+    if (!this.hold) return;
+    const piece = { type: this.hold, rotation: 0, x: 0, y: 0 };
+    const cells = pieceCells(piece);
+    const xs = cells.map((c) => c[0]);
+    const ys = cells.map((c) => c[1]);
+    const mx = (Math.min(...xs) + Math.max(...xs)) / 2 + 0.5;
+    const my = (Math.min(...ys) + Math.max(...ys)) / 2 + 0.5;
+    const holder = new THREE.Group();
+    for (const [ox, oy] of cells) {
+      const m = this._makeCube(this.hold, false);
+      m.position.set(ox + 0.5 - mx, -(oy + 0.5 - my), 0);
+      holder.add(m);
+    }
+    holder.scale.setScalar(0.62);
+    holder.position.set(0, -0.15, 0.2);
+    this.holdHolder.add(holder);
+    this.holdMeshes.push(holder);
   }
 
   _nextFromBag() {
@@ -401,15 +499,20 @@ export class Tetris3DGame extends Game3D {
   _lockPiece() {
     const style = PIECE_STYLE[this.current.type];
     let toppedOut = false;
+    const powers = [];
+    this.holdUsed = false;
     for (const [ox, oy] of pieceCells(this.current)) {
       const x = this.current.x + ox;
       const y = this.current.y + oy;
       if (y < 0) { toppedOut = true; continue; }
-      const mesh = this._makeCube(this.current.type, this.current.special);
+      const idx = pieceCells(this.current).findIndex(([qx, qy]) => qx === ox && qy === oy);
+      const power = this.current.power && idx === this.current.powerCell ? this.current.power : null;
+      const mesh = this._makeCube(this.current.type, this.current.special, power);
       mesh.position.set(cx(x), cy(y), 0);
       mesh.userData.row = y;
       this.cellRoot.add(mesh);
-      this.grid[y][x] = { style, special: this.current.special, mesh, type: this.current.type };
+      this.grid[y][x] = { style, special: this.current.special, mesh, type: this.current.type, power };
+      if (power) powers.push({ x, y, power });
       this.particles.burst(new THREE.Vector3(cx(x), cy(y), 0.6), [0xfff6e6, style.fill], 3, 1.6, 0.35, 5, 0.7);
     }
     audio.playBounce();
@@ -418,12 +521,82 @@ export class Tetris3DGame extends Game3D {
 
     if (toppedOut) { this._onGameOver(); return; }
 
-    this._clearLines();
+    for (const pw of powers) this._firePower(pw.x, pw.y, pw.power);
+    const cleared = this._clearLines();
+    if (cleared > 0) this._comboHit(cleared);
+    else if (!powers.length) this.combo = 0;
     this.current = this.next;
-    this.next = spawnPiece(this._nextFromBag());
+    this.next = this._newPiece(this._nextFromBag());
     this._rebuildCurrent(true);
     this._rebuildNext();
     if (!this._fits(this.current, 0, 0, this.current.rotation)) this._onGameOver();
+  }
+
+  /** Cubo de poder: la bomba limpia un cuadro de 3x3 y el rayo limpia toda su fila. */
+  _firePower(x, y, power) {
+    const at = new THREE.Vector3(cx(x), cy(y), 1);
+    if (power === "bomb") {
+      let n = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const c = this.grid[y + dy] && this.grid[y + dy][x + dx];
+        if (!c) continue;
+        this.particles.burst(new THREE.Vector3(cx(x + dx), cy(y + dy), 0.6), [0xff8a2a, 0xffe14a, 0xd4216c, 0xffffff], 8, 7, 0.9, 8, 1.2);
+        this.cellRoot.remove(c.mesh);
+        this.grid[y + dy][x + dx] = null;
+        n++;
+      }
+      this.score += n * 15;
+      this.shake = 0.4;
+      this.popups.add(at, `¡Bum! +${n * 15}`, "combo");
+      audio.playCrash();
+      this.haptic(60);
+    } else {
+      let n = 0;
+      for (let xx = 0; xx < COLS; xx++) {
+        const c = this.grid[y][xx];
+        if (!c) continue;
+        this.particles.burst(new THREE.Vector3(cx(xx), cy(y), 0.6), [0xffe14a, 0xffffff, 0x7ee0ff], 7, 6, 0.8, 7, 1);
+        this.cellRoot.remove(c.mesh);
+        n++;
+      }
+      const flash = new THREE.Mesh(new THREE.PlaneGeometry(COLS + 0.6, 1), new THREE.MeshBasicMaterial({ color: 0xffe14a, transparent: true, opacity: 0.9, depthWrite: false }));
+      flash.position.set(0, cy(y), 0.7);
+      this.scene.add(flash);
+      this.flashes.push({ mesh: flash, t: 0 });
+      this.grid.splice(y, 1);
+      this.grid.unshift(Array(COLS).fill(null));
+      this.score += 150;
+      this.lines += 1;
+      this.shake = 0.25;
+      this.popups.add(at, "¡Rayo! +150", "combo");
+      audio.playPowerup();
+      this.haptic(40);
+    }
+    this.bombs++;
+    this._updateHud();
+  }
+
+  _comboHit(cleared) {
+    this.combo++;
+    this.bestCombo = Math.max(this.bestCombo || 0, this.combo);
+    let bonus = 0;
+    if (this.combo >= 2) {
+      bonus += 50 * this.combo * this.level;
+      this.banner(`¡Combo x${this.combo}!`);
+      audio.playCombo(this.combo);
+    }
+    if (cleared >= 4) {
+      if (this.lastWasTetris) {
+        bonus += Math.round(LINE_SCORE[4] * this.level * 0.5);
+        this.banner("¡Back-to-back! 🍫");
+      }
+      this.lastWasTetris = true;
+    } else this.lastWasTetris = false;
+    if (bonus > 0) {
+      this.score += bonus;
+      this.popups.add(new THREE.Vector3(0, ROWS / 2, 1.2), `+${bonus}`, "combo");
+    }
+    this._updateHud();
   }
 
   _clearLines() {
@@ -435,7 +608,7 @@ export class Tetris3DGame extends Game3D {
         if (this.grid[y].some((c) => c.special)) specialCleared++;
       }
     }
-    if (!fullRows.length) return;
+    if (!fullRows.length) return 0;
 
     for (const y of fullRows) {
       for (let x = 0; x < COLS; x++) {
@@ -454,7 +627,9 @@ export class Tetris3DGame extends Game3D {
       this.grid.unshift(Array(COLS).fill(null));
     }
     this.lines += fullRows.length;
+    const prevLevel = this.level;
     this.level = Math.floor(this.lines / 10) + 1;
+    if (this.level > prevLevel) this._levelUp();
     const pts = LINE_SCORE[fullRows.length] * this.level;
     this.score += pts;
     this.shake = 0.1 + fullRows.length * 0.07;
@@ -475,13 +650,25 @@ export class Tetris3DGame extends Game3D {
       audio.playMissionComplete();
     }
     this._updateHud();
+    return fullRows.length;
+  }
+
+  /** Cada nivel cambia el color del ambiente y suelta confeti. */
+  _levelUp() {
+    this.banner(`¡Nivel ${this.level}!`);
+    const hues = [0x2a140b, 0x1b1440, 0x0f2a3a, 0x3a1030, 0x103a24, 0x3a2a10];
+    this.scene.background.setHex(hues[(this.level - 1) % hues.length]);
+    this.scene.fog.color.setHex(hues[(this.level - 1) % hues.length]);
+    this.particles.burst(new THREE.Vector3(0, ROWS / 2, 1.5), [0xffc800, 0xd4216c, 0x35f0ff, 0xfff6e6], 50, 8, 1.2, 6);
+    audio.playVictory();
+    this.haptic(50);
   }
 
   _onGameOver() {
     this._setHero("sad", 99);
     audio.playLose();
     this.finish(
-      `Hiciste ${this.score} puntos y ${this.lines} líneas` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : "."),
+      `Hiciste ${this.score} puntos y ${this.lines} líneas (mejor combo x${this.bestCombo || 1}, ${this.bombs} poderes usados)` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."),
     );
   }
 
@@ -490,6 +677,7 @@ export class Tetris3DGame extends Game3D {
     this.els.hudLines.textContent = String(this.lines);
     this.els.hudLevel.textContent = String(this.level);
     this.els.hudCoins.textContent = String(this.progress.coins);
+    if (this.els.hudCombo) this.els.hudCombo.textContent = this.combo > 1 ? `x${this.combo}` : "x1";
   }
 
   // ---------- render ----------
@@ -498,7 +686,7 @@ export class Tetris3DGame extends Game3D {
     this._clearGroup(this.pieceMeshes);
     this._clearGroup(this.ghostMeshes);
     for (let i = 0; i < 4; i++) {
-      const m = this._makeCube(this.current.type, this.current.special);
+      const m = this._makeCube(this.current.type, this.current.special, this.current.power && i === this.current.powerCell ? this.current.power : null);
       m.userData.snap = !!snap;
       m.visible = false;
       this.cellRoot.add(m);
@@ -519,8 +707,8 @@ export class Tetris3DGame extends Game3D {
     const mx = (Math.min(...xs) + Math.max(...xs)) / 2 + 0.5;
     const my = (Math.min(...ys) + Math.max(...ys)) / 2 + 0.5;
     const holder = new THREE.Group();
-    for (const [ox, oy] of cells) {
-      const m = this._makeCube(this.next.type, this.next.special);
+    for (const [i, [ox, oy]] of cells.entries()) {
+      const m = this._makeCube(this.next.type, this.next.special, this.next.power && i === this.next.powerCell ? this.next.power : null);
       m.position.set(ox + 0.5 - mx, -(oy + 0.5 - my), 0);
       holder.add(m);
     }
@@ -588,6 +776,7 @@ export class Tetris3DGame extends Game3D {
     this.hero.animate(this.time, this.heroMode, 1);
     this.hero.group.rotation.y = Math.sin(this.time * 0.8) * 0.18 + (this.portrait ? 0.25 : 0.55);
     if (this.nextMeshes[0]) this.nextMeshes[0].rotation.y = Math.sin(this.time * 1.4) * 0.35;
+    if (this.holdMeshes[0]) this.holdMeshes[0].rotation.y = Math.sin(this.time * 1.4 + 1) * 0.35;
     this.sign.material.opacity = 0.85 + Math.sin(this.time * 2) * 0.15;
     this._placeCamera();
   }
@@ -610,6 +799,7 @@ export class Tetris3DGame extends Game3D {
       else if (k === "ArrowDown" || k === "s" || k === "S") this._softDrop();
       else if (k === "ArrowUp" || k === "w" || k === "W") this._rotate();
       else if (k === " ") this._hardDrop();
+      else if (k === "c" || k === "C" || k === "Shift") this._holdPiece();
     });
 
     document.querySelectorAll("#tetris-touch-controls .tetris-btn").forEach((btn) => {
@@ -621,6 +811,7 @@ export class Tetris3DGame extends Game3D {
         else if (action === "down") this._softDrop();
         else if (action === "rotate") this._rotate();
         else if (action === "drop") this._hardDrop();
+        else if (action === "hold") this._holdPiece();
       });
     });
 

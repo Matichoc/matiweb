@@ -2,6 +2,10 @@
 // Tres carriles, curvas suaves, banderines y letreros de la marca, alfajores de
 // verdad como monedas y el nitro Matidubai. Tu Matichico maneja un auto hecho
 // de barra de chocolate. El día pasa de mañana a noche mientras avanzas.
+//
+// Gran Premio: autos rivales que hay que adelantar ("roces" dan puntos y combo), rampas para
+// volar y juntar alfajores en el aire, charcos de chocolate, poderes (nitro, imán, escudo),
+// combo de alfajores, un hito cada kilómetro y música.
 
 import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js";
 import { createMatichico } from "./matichico3d.js";
@@ -16,6 +20,9 @@ const AHEAD = SEG_LEN * SEG_COUNT;
 const TREES = 72;
 const BASE_SPEED = 19;
 const MAX_SPEED = 44;
+const GRAV = 24;
+const ZONES = ["Mañana soleada", "Mediodía dulce", "Atardecer de caramelo", "Anochecer", "Noche de cacao", "Amanecer"];
+const RIVAL_COLORS = [0x3b8cff, 0x4fd09a, 0xffc800, 0x9a5cff, 0xff8a2a, 0x35f0ff];
 
 const SPRITES = ["alf-frambuesa", "alf-menta", "alf-naranja", "alf-trufa", "alf-pie-limon", "alf-maracuya", "alf-almendra", "alf-capuchino"];
 
@@ -32,6 +39,7 @@ const DAY = [
 export class AutosGame extends Game3D {
   constructor(character, progress, els) {
     super("autos", character, progress, els, { fov: 62 });
+    this.musicTheme = "race";
     this.laneIndex = 1;
     this.tmpA = new THREE.Color();
     this.tmpB = new THREE.Color();
@@ -103,7 +111,15 @@ export class AutosGame extends Game3D {
     this._buildArches();
     this._buildBackdrop();
     this._buildCar();
-
+    this.shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(1.7, 20, 14), new THREE.MeshBasicMaterial({ color: 0x35f0ff, transparent: true, opacity: 0.28, depthWrite: false }));
+    this.shieldMesh.position.y = 0.9;
+    this.shieldMesh.visible = false;
+    this.car.add(this.shieldMesh);
+    this.rampTex = canvasTexture(128, 128, (g, w, h) => {
+      g.fillStyle = "#ffc800"; g.fillRect(0, 0, w, h);
+      g.fillStyle = "#d4216c";
+      for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(0, i * 36); g.lineTo(w / 2, i * 36 - 22); g.lineTo(w, i * 36); g.lineTo(w, i * 36 + 14); g.lineTo(w / 2, i * 36 - 8); g.lineTo(0, i * 36 + 14); g.fill(); }
+    });
     this.obstacles = [];
     this.pickups = [];
   }
@@ -287,11 +303,11 @@ export class AutosGame extends Game3D {
 
   _ensureDriver() {
     if (this.driver && this.driverId === this.character.id) {
-      this.driver.setOutfit(this.outfit);
+      this.driver.setLook(this.look);
       return;
     }
     if (this.driver) this.car.remove(this.driver.group);
-    this.driver = createMatichico(this.character, this.outfit);
+    this.driver = createMatichico(this.character, this.outfit, this.look);
     this.driverId = this.character.id;
     this.driver.group.scale.setScalar(0.62);
     this.driver.group.position.set(0, 0.72, 0.4);
@@ -320,6 +336,18 @@ export class AutosGame extends Game3D {
     this.coinsEarned = 0;
     this.score = 0;
     this.nextRow = 70;
+    this.carY = 0;
+    this.vy = 0;
+    this.flip = 0;
+    this.airFromRamp = false;
+    this.combo = 0;
+    this.comboT = 0;
+    this.power = null;
+    this.shield = false;
+    this.km = 0;
+    this.zoneIdx = -1;
+    this.nearMisses = 0;
+    this.vxLean = 0;
     this.shake = 0;
     this.lastPop = 0;
     this.headTurn = 0;
@@ -404,6 +432,7 @@ export class AutosGame extends Game3D {
     const prevX = this.carX;
     this.carX = lerp(this.carX, targetX, 1 - Math.exp(-13 * dt));
     const vx = (this.carX - prevX) / Math.max(dt, 0.0001);
+    this.vxLean = lerp(this.vxLean, vx, 1 - Math.exp(-8 * dt));
 
     this._updateRoad();
     this._updateTrees();
@@ -415,14 +444,21 @@ export class AutosGame extends Game3D {
       this.score = Math.floor(this.dist / 4) + this.bonus;
       if (this.boost > 0) this.boost -= dt;
       if (this.invuln > 0) this.invuln -= dt;
+      if (this.power) { this.power.t -= dt; if (this.power.t <= 0) this.power = null; }
+      if (this.comboT > 0) { this.comboT -= dt; if (this.comboT <= 0) this.combo = 0; }
+      this._updateAir(dt);
+      this._milestones();
       this.shake = Math.max(0, this.shake - dt * 3);
       this._updateHud();
     }
 
     // auto
-    this.car.position.set(this.carX, 0, 0);
+    this.car.position.set(this.carX, this.carY, 0);
     this.car.rotation.y = clamp(-vx * 0.03, -0.35, 0.35);
     this.car.rotation.z = clamp(-vx * 0.012, -0.12, 0.12);
+    if (this.carY > 0.05) this.car.rotation.z = this.flip; // voltereta lateral en el aire
+    this.shieldMesh.visible = this.shield;
+    if (this.shield) this.shieldMesh.material.opacity = 0.22 + Math.sin(this.time * 6) * 0.06;
     this.car.visible = this.invuln <= 0 || Math.floor(this.time * 14) % 2 === 0;
     for (const w of this.wheels) w.children[0].rotation.x += this.speed * dt / 0.4;
     this.headTurn = Math.max(0, this.headTurn - dt);
@@ -435,6 +471,75 @@ export class AutosGame extends Game3D {
 
     this._placeCamera(dt);
     this._environment();
+  }
+
+  // ---------- vuelo (rampas) ----------
+
+  _updateAir(dt) {
+    if (this.carY <= 0 && this.vy <= 0) return;
+    this.vy -= GRAV * dt;
+    this.carY += this.vy * dt;
+    this.flip = Math.min(Math.PI * 2, this.flip + dt * 7.5);
+    if (this.carY <= 0) {
+      this.carY = 0;
+      this.vy = 0;
+      this.flip = 0;
+      if (this.airFromRamp) {
+        this.airFromRamp = false;
+        this.bonus += 50 * this._mult();
+        this.popups.add(new THREE.Vector3(this.carX, 2, -1), `¡Aterrizaje! +${50 * this._mult()}`, "combo");
+        this.particles.burst(new THREE.Vector3(this.carX, 0.3, 0), [0xfff6e6, 0xffc800, 0xd4216c], 22, 5, 0.7, 4);
+        this.shake = Math.max(this.shake, 0.35);
+        audio.playBounce();
+      }
+    }
+  }
+
+  _launch() {
+    this.vy = 9.2;
+    this.carY = 0.01;
+    this.flip = 0;
+    this.airFromRamp = true;
+    audio.playJump();
+    audio.playWhoosh();
+    this.popups.add(new THREE.Vector3(this.carX, 2.2, -1), "¡Vuelo!", "combo");
+  }
+
+  _mult() {
+    return 1 + Math.min(4, Math.floor(this.combo / 8));
+  }
+
+  _addCombo(n = 1) {
+    const before = this._mult();
+    this.combo += n;
+    this.comboT = 2.6;
+    const after = this._mult();
+    if (after > before) {
+      this.banner(`¡Combo x${after}!`);
+      audio.playCombo(after * 2);
+    }
+  }
+
+  /** Cada kilómetro hay premio, y cambia el momento del día. */
+  _milestones() {
+    const km = Math.floor(this.dist / 1000);
+    if (km > this.km) {
+      this.km = km;
+      const b = 100 * km;
+      this.bonus += b;
+      this.banner(`¡${km} km! +${b}`);
+      audio.playMissionComplete();
+      this.haptic(60);
+      earnCoins(this.progress, 3);
+      this.coinsEarned += 3;
+      saveProgress(this.progress);
+      this.particles.burst(new THREE.Vector3(this.carX, 3, -2), [0xffc800, 0xd4216c, 0x35f0ff, 0xfff6e6], 40, 7, 1.1, 5);
+    }
+    const zone = Math.floor(((this.dist / 2600) % 1) * ZONES.length);
+    if (zone !== this.zoneIdx) {
+      if (this.zoneIdx >= 0) this.banner(ZONES[zone]);
+      this.zoneIdx = zone;
+    }
   }
 
   _updateRoad() {
@@ -505,21 +610,94 @@ export class AutosGame extends Game3D {
     while (this.nextRow - this.dist < AHEAD * 0.85) {
       const diff = clamp(this.dist / 6000, 0, 1);
       const free = Math.floor(Math.random() * 3);
-      const r = Math.random();
       const lanes = [0, 1, 2];
-      if (r < 0.42) {
-        this._addObstacle(lanes.filter((l) => l !== free)[Math.floor(Math.random() * 2)], this.nextRow);
-      } else if (r < 0.42 + 0.3 + diff * 0.2) {
-        for (const l of lanes) if (l !== free) this._addObstacle(l, this.nextRow);
+      const others = lanes.filter((l) => l !== free);
+      const r = Math.random();
+      let airArc = false;
+      if (r < 0.26) {
+        this._addObstacle(others[Math.floor(Math.random() * 2)], this.nextRow);
+      } else if (r < 0.26 + 0.2 + diff * 0.14) {
+        for (const l of others) this._addObstacle(l, this.nextRow);
+      } else if (r < 0.7 + diff * 0.14 && this.dist > 250) {
+        this._addRival(others[Math.floor(Math.random() * 2)], this.nextRow);
+        if (Math.random() < 0.5) this._addRival(free === 1 ? 0 : 1, this.nextRow + rand(10, 22));
+      } else if (r < 0.8 + diff * 0.1 && this.dist > 450) {
+        this._addRamp(free, this.nextRow);
+        airArc = true;
+        for (const l of others) if (Math.random() < 0.6) this._addObstacle(l, this.nextRow + 6);
+      } else if (r < 0.9 && this.dist > 300) {
+        this._addPuddle(others[Math.floor(Math.random() * 2)], this.nextRow);
       }
       const q = Math.random();
-      if (q < 0.5) {
+      if (airArc) {
+        // alfajores en el aire: solo se juntan si vuelas
+        const flightT = (2 * 9.2) / GRAV;
+        const reach = Math.max(this.speed, BASE_SPEED) * flightT;
+        for (let i = 0; i < 6; i++) {
+          const t = (i + 0.7) / 7;
+          this._addPickup("alfajor", free, this.nextRow + 2 + reach * t, 0.95 + 4 * 1.7 * t * (1 - t) * 1.05);
+        }
+      } else if (q < 0.5) {
         for (let i = 0; i < 5; i++) this._addPickup("alfajor", free, this.nextRow + i * 4.2);
       } else if (q < 0.55 && this.dist > 300) {
         this._addPickup("nitro", free, this.nextRow + 6);
+      } else if (q < 0.6 && this.dist > 400) {
+        this._addPickup("iman", free, this.nextRow + 6);
+      } else if (q < 0.65 && this.dist > 400) {
+        this._addPickup("escudo", free, this.nextRow + 6);
       }
       this.nextRow += lerp(30, 15, diff) * rand(0.85, 1.15);
     }
+  }
+
+  _addRival(lane, d) {
+    const g = new THREE.Group();
+    const color = RIVAL_COLORS[Math.floor(Math.random() * RIVAL_COLORS.length)];
+    const body = new THREE.Mesh(roundedBox(1.6, 0.55, 3.0, 0.2, 0.05), new THREE.MeshStandardMaterial({ color, roughness: 0.4 }));
+    body.position.y = 0.55;
+    const cab = new THREE.Mesh(roundedBox(1.2, 0.5, 1.4, 0.15, 0.04), new THREE.MeshStandardMaterial({ color: 0xfff6e6, roughness: 0.4 }));
+    cab.position.set(0, 1.05, 0.1);
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(1.22, 0.3, 1.0), this.m.glass);
+    glass.position.set(0, 1.1, 0.12);
+    g.add(body, cab, glass);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.3, 14), this.m.black);
+      w.rotation.z = Math.PI / 2;
+      w.position.set(sx * 0.85, 0.36, sz * 1.0);
+      g.add(w);
+    }
+    for (const sx of [-1, 1]) {
+      const tl = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff3b3b }));
+      tl.position.set(sx * 0.58, 0.62, 1.52);
+      g.add(tl);
+    }
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    this.scene.add(g);
+    this.obstacles.push({ mesh: g, lane, d, hit: false, kind: "rival", v: rand(9, 15), prevA: d - this.dist, passed: false });
+  }
+
+  _addRamp(lane, d) {
+    const g = new THREE.Group();
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.2, 3.6), new THREE.MeshStandardMaterial({ map: this.rampTex, roughness: 0.5 }));
+    slab.rotation.x = 0.28;
+    slab.position.y = 0.45;
+    const side = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.6, 0.15), this.m.pink);
+    side.position.set(0, 0.3, -1.65);
+    g.add(slab, side);
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    this.scene.add(g);
+    this.obstacles.push({ mesh: g, lane, d, hit: false, kind: "ramp" });
+  }
+
+  _addPuddle(lane, d) {
+    const m = new THREE.Mesh(new THREE.CircleGeometry(1.25, 24), new THREE.MeshStandardMaterial({ color: 0x3a1c0e, roughness: 0.08, metalness: 0.3 }));
+    m.rotation.x = -Math.PI / 2;
+    m.scale.set(1, 1.5, 1);
+    const g = new THREE.Group();
+    m.position.y = 0.05;
+    g.add(m);
+    this.scene.add(g);
+    this.obstacles.push({ mesh: g, lane, d, hit: false, kind: "puddle" });
   }
 
   _addObstacle(lane, d) {
@@ -557,7 +735,7 @@ export class AutosGame extends Game3D {
     this.obstacles.push({ mesh, lane, d, hit: false });
   }
 
-  _addPickup(kind, lane, d) {
+  _addPickup(kind, lane, d, y = 0.95) {
     let mesh;
     if (kind === "alfajor") {
       const top = new THREE.MeshStandardMaterial({ map: this.textures[Math.floor(Math.random() * this.textures.length)], roughness: 0.5 });
@@ -567,6 +745,13 @@ export class AutosGame extends Game3D {
       rim.position.z = 0.03;
       mesh = new THREE.Group();
       mesh.add(disc, rim);
+    } else if (kind === "iman" || kind === "escudo") {
+      const col = kind === "iman" ? 0xff3fa4 : 0x35f0ff;
+      mesh = new THREE.Group();
+      const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, emissive: col, emissiveIntensity: 0.9 }));
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.06, 8, 24), this.m.cream);
+      ring.rotation.x = Math.PI / 2.4;
+      mesh.add(orb, ring);
     } else {
       mesh = new THREE.Group();
       const bar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.2), this.m.gold);
@@ -576,12 +761,13 @@ export class AutosGame extends Game3D {
       mesh.scale.setScalar(1.3);
     }
     this.scene.add(mesh);
-    this.pickups.push({ mesh, kind, lane, d, taken: false });
+    this.pickups.push({ mesh, kind, lane, d, y, x: LANES[lane], taken: false });
   }
 
   _updateObjects(dt) {
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const o = this.obstacles[i];
+      if (o.kind === "rival") o.d += o.v * dt;
       const a = o.d - this.dist;
       if (a < -12) {
         this.scene.remove(o.mesh);
@@ -590,10 +776,20 @@ export class AutosGame extends Game3D {
       }
       o.mesh.position.set(this.bend(a) + LANES[o.lane], 0, -a);
       o.mesh.rotation.y = -Math.atan(2 * this.curvNow * a);
-      if (!o.hit && a < 1.6 && a > -1.7 && Math.abs(LANES[o.lane] - this.carX) < 1.2) {
-        o.hit = true;
-        this._crash(o);
+      const dx = Math.abs(LANES[o.lane] - this.carX);
+      const reachF = o.kind === "rival" ? 2.3 : o.kind === "ramp" ? 1.8 : 1.6;
+      const reachB = o.kind === "rival" ? 2.3 : o.kind === "ramp" ? 1.4 : 1.7;
+      if (!o.hit && a < reachF && a > -reachB && dx < (o.kind === "rival" ? 1.5 : 1.2)) {
+        if (o.kind === "ramp") { o.hit = true; if (this.carY <= 0.05) this._launch(); }
+        else if (o.kind === "puddle") { o.hit = true; if (this.carY <= 0.05) this._splash(o); }
+        else if (this.carY < 0.9) { o.hit = true; this._crash(o); }
       }
+      // roce: pasar muy cerca de un auto rival sin chocar
+      if (o.kind === "rival" && !o.hit && !o.passed && o.prevA > 0 && a <= 0) {
+        o.passed = true;
+        if (dx > 1.2 && dx < 3.6) this._nearMiss(o);
+      }
+      o.prevA = a;
     }
     for (let i = this.pickups.length - 1; i >= 0; i--) {
       const k = this.pickups[i];
@@ -603,27 +799,63 @@ export class AutosGame extends Game3D {
         this.pickups.splice(i, 1);
         continue;
       }
-      k.mesh.position.set(this.bend(a) + LANES[k.lane], 0.95 + Math.sin(this.time * 4 + k.d) * 0.08, -a);
+      if (this.power && this.power.kind === "iman" && k.kind === "alfajor" && a > -1 && a < 26) k.x = lerp(k.x, this.carX, 1 - Math.exp(-7 * dt));
+      k.mesh.position.set(this.bend(a) + k.x, k.y + Math.sin(this.time * 4 + k.d) * 0.08, -a);
       if (k.kind === "alfajor") k.mesh.rotation.y = Math.sin(this.time * 2.6 + k.d) * 0.7;
       else k.mesh.rotation.y += dt * 2.5;
-      if (a < 1.5 && a > -1.5 && Math.abs(LANES[k.lane] - this.carX) < 1.35) this._collect(k);
+      const dy = Math.abs(k.y - (this.carY + 0.95));
+      if (a < 1.5 && a > -1.5 && Math.abs(k.x - this.carX) < 1.35 && dy < 1.25) this._collect(k);
     }
+  }
+
+  _splash(o) {
+    this.speed *= 0.72;
+    this.shake = Math.max(this.shake, 0.4);
+    this.combo = Math.max(0, this.combo - 4);
+    this.popups.add(new THREE.Vector3(this.carX, 1.6, -1), "¡Resbalón!", "kill");
+    this.particles.burst(new THREE.Vector3(this.carX, 0.4, 0), [0x5a2d16, 0x7a3f22, 0xfff6e6], 20, 4, 0.8, 5);
+    audio.playBump();
+  }
+
+  _nearMiss(o) {
+    this.nearMisses++;
+    const m = this._mult();
+    const pts = 25 * m;
+    this.bonus += pts;
+    this._addCombo(2);
+    this.popups.add(new THREE.Vector3(this.carX, 1.9, -1), `¡Roce! +${pts}`, "combo");
+    audio.playWhoosh();
+    audio.playCombo(this.combo);
+    this.haptic(15);
   }
 
   _collect(k) {
     k.taken = true;
-    const at = this.car.position.clone();
-    at.set(this.carX, 1.6, -0.5);
+    const at = new THREE.Vector3(this.carX, 1.6 + this.carY, -0.5);
     this.headTurn = 0.7;
     if (k.kind === "alfajor") {
       this.items++;
-      this.bonus += 10;
+      const m = this._mult();
+      this.bonus += 10 * m;
+      this._addCombo(1);
       if (this.time - this.lastPop > 0.35) {
         this.lastPop = this.time;
-        this.popups.add(at, "+10", "kill");
+        this.popups.add(at, m > 1 ? `+${10 * m} x${m}` : "+10", "kill");
       }
       this.particles.burst(at, [0xffc800, 0xfff6e6], 8, 3.5, 0.5, 4);
       audio.playCollect();
+    } else if (k.kind === "iman") {
+      this.power = { kind: "iman", t: 9 };
+      this.bonus += 40;
+      this.popups.add(at, "¡Imán! 🧲", "combo");
+      this.particles.burst(at, [0xff3fa4, 0xfff6e6], 20, 5, 0.8, 3);
+      audio.playPowerup();
+    } else if (k.kind === "escudo") {
+      this.shield = true;
+      this.bonus += 40;
+      this.popups.add(at, "¡Escudo! 🛡️", "combo");
+      this.particles.burst(at, [0x35f0ff, 0xfff6e6], 20, 5, 0.8, 3);
+      audio.playPowerup();
     } else {
       this.boost = 3.2;
       this.bonus += 60;
@@ -646,11 +878,25 @@ export class AutosGame extends Game3D {
       return;
     }
     if (this.invuln > 0) return;
+    if (this.shield) {
+      this.shield = false;
+      this.invuln = 1;
+      this.shake = 0.6;
+      this.scene.remove(o.mesh);
+      o.mesh.visible = false;
+      this.popups.add(new THREE.Vector3(this.carX, 1.8, -1), "¡Escudo roto!", "combo");
+      this.particles.burst(new THREE.Vector3(this.carX, 1, 0), [0x35f0ff, 0xffffff], 26, 6, 0.8, 5);
+      audio.playCrash();
+      return;
+    }
+    this.combo = 0;
     this.hearts--;
     this.invuln = 1.7;
     this.shake = 1;
     this.speed *= 0.55;
     audio.playHurt();
+    audio.playCrash();
+    this.haptic(80);
     const at = new THREE.Vector3(this.carX, 1, -1);
     this.particles.burst(at, [0x5a2d16, 0xd4216c, 0xffc800, 0xfff6e6], 24, 6, 0.9, 9);
     this.popups.add(at, "¡Ouch!", "kill");
@@ -663,8 +909,8 @@ export class AutosGame extends Game3D {
   _gameOver() {
     audio.playLose();
     this.finish(
-      `Recorriste ${Math.floor(this.dist)} metros, juntaste ${this.items} alfajores y sumaste ${this.score} puntos` +
-        (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : ".")
+      `Recorriste ${Math.floor(this.dist)} metros, juntaste ${this.items} alfajores, hiciste ${this.nearMisses} roces y sumaste ${this.score} puntos` +
+        (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : ".")
     );
   }
 
@@ -673,6 +919,13 @@ export class AutosGame extends Game3D {
     this.els.hudSpeed.textContent = `${Math.round(this.speed * 4)} km/h`;
     this.els.hudHearts.textContent = "❤".repeat(Math.max(0, this.hearts)) + "♡".repeat(Math.max(0, 3 - this.hearts));
     this.els.hudCoins.textContent = String(this.progress.coins);
+    if (this.els.hudCombo) this.els.hudCombo.textContent = this._mult() > 1 || this.combo >= 3 ? `x${this._mult()} (${this.combo})` : "x1";
+    if (this.els.hudPower) {
+      const p = this.power ? `🧲 ${Math.ceil(this.power.t)}` : "";
+      const sh = this.shield ? "🛡️" : "";
+      this.els.hudPower.parentElement.classList.toggle("hidden", !p && !sh);
+      this.els.hudPower.textContent = `${sh} ${p}`.trim();
+    }
   }
 
   // ---------- cámara y ambiente ----------
@@ -681,10 +934,11 @@ export class AutosGame extends Game3D {
     const sh = this.shake * 0.12;
     this.camera.position.set(
       this.carX * 0.62 + (Math.random() - 0.5) * sh,
-      3.5 + (Math.random() - 0.5) * sh,
+      3.5 + this.carY * 0.55 + (Math.random() - 0.5) * sh,
       7.4 + (this.boost > 0 ? 0.8 : 0)
     );
     this.camera.lookAt(this.carX * 0.3, 1.1, -16);
+    this.camera.rotateZ(clamp(-this.vxLean * 0.004, -0.06, 0.06));
     const targetFov = this.fovBase + clamp(this.speed - BASE_SPEED, 0, 25) * 0.45 + (this.boost > 0 ? 10 : 0);
     this.camera.fov = lerp(this.camera.fov, targetFov, 1 - Math.exp(-4 * dt));
     this.camera.updateProjectionMatrix();

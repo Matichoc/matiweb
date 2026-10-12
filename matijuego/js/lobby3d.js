@@ -4,6 +4,7 @@
 
 import { THREE, loadTexture } from "./three-kit.js";
 import { createMatichico } from "./matichico3d.js";
+import { getOutfit } from "./wardrobe-data.js";
 
 const SPRITES = ["alf-frambuesa", "alf-menta", "alf-naranja", "alf-trufa", "alf-maracuya"];
 
@@ -16,6 +17,7 @@ export class Lobby3D {
     this.dragYaw = 0;
     this.cheerT = 0;
     this.pop = 1;
+    this.viewYaw = 0;
     this.key = "";
   }
 
@@ -100,10 +102,10 @@ export class Lobby3D {
       this.renderer.setSize(w, h, false);
       this.camera.aspect = w / h;
       // encuadre: que quepa el pedestal y los alfajores
-      const need = Math.max(5.3, 6.4 / Math.min(1, this.camera.aspect * 1.05));
+      const need = Math.max(6.2, 7.0 / Math.min(1, this.camera.aspect * 1.05));
       const dist = (need / 2) / Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
-      this.camera.position.set(0, 2.3, dist);
-      this.camera.lookAt(0, 1.55, 0);
+      this.camera.position.set(0, 2.4, dist);
+      this.camera.lookAt(0, 1.7, 0);
       this.camera.updateProjectionMatrix();
     };
     new ResizeObserver(this._resize).observe(canvas);
@@ -130,17 +132,22 @@ export class Lobby3D {
     this.ready = true;
   }
 
-  setHero(character, outfit, key) {
+  setHero(character, look, key) {
     if (!this.ready) return;
     if (this.hero) this.scene.remove(this.hero.group);
-    this.hero = createMatichico(character, outfit);
+    this.hero = createMatichico(character, getOutfit(look.outfit), look);
     this.hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-    this.hero.group.scale.setScalar(2.1);
+    this.hero.group.scale.setScalar(1.9);
     this.hero.group.position.y = 0.45;
     this.scene.add(this.hero.group);
     this.pop = 0;
     this.cheerT = 1.3;
     this.key = key;
+  }
+
+  /** Hacia dónde mira el avatar (0 = de frente, π = de espaldas) mientras no se arrastra. */
+  setView(yaw) {
+    this.viewYaw = yaw;
   }
 
   setActive(on) {
@@ -163,9 +170,10 @@ export class Lobby3D {
     if (this.hero) {
       this.pop = Math.min(1, this.pop + dt * 3.2);
       const e = 1 - Math.pow(1 - this.pop, 3);
-      this.hero.group.scale.setScalar(2.1 * (0.55 + 0.45 * e));
+      this.hero.group.scale.setScalar(1.9 * (0.55 + 0.45 * e));
       this.dragYaw *= Math.pow(0.12, dt); // vuelve suavemente a mirar al frente
-      this.hero.group.rotation.y = Math.sin(t * 0.7) * 0.28 + this.dragYaw;
+      this.shownYaw = (this.shownYaw ?? 0) + (this.viewYaw - (this.shownYaw ?? 0)) * Math.min(1, dt * 6);
+      this.hero.group.rotation.y = this.shownYaw + Math.sin(t * 0.7) * 0.28 + this.dragYaw;
       this.cheerT = Math.max(0, this.cheerT - dt);
       this.hero.animate(t, this.cheerT > 0 ? "cheer" : "idle", 1);
       this.hero.group.position.y = 0.45 + (this.cheerT > 0 ? Math.abs(Math.sin(t * 7)) * 0.12 : 0);

@@ -3,7 +3,20 @@
 // lo único que cambia es la mecánica y las canchas de cada modo.
 // Ver ROADMAP.md para el plan de etapas de cada juego "próximamente".
 
-export const GAMES_CATALOG = [
+// En la app de tienda (data-app="1") se ocultan los juegos marcados con `appHidden`:
+// la app está pensada para público infantil y no incluye juegos de "disparos".
+const IN_APP = typeof document !== "undefined" && document.documentElement.dataset.app === "1";
+
+const ALL_GAMES = [
+  {
+    id: "town",
+    name: "Pueblo Matichoc",
+    icon: "🏘️",
+    tagline: "Pasea por el pueblo: fuente de chocolate, boutique, fábrica, vecinos y un arcade con puertas mágicas.",
+    status: "available",
+    tag: "Mundo abierto",
+    noScore: true,
+  },
   {
     id: "recolecta",
     name: "Recolecta y Corre",
@@ -16,7 +29,7 @@ export const GAMES_CATALOG = [
     id: "parkour",
     name: "Parkour Choco",
     icon: "🧗",
-    tagline: "Estilo Roblox: salta plataformas, esquiva molinos, junta alfajores y desbloquea capa, gafas y corona.",
+    tagline: "Estilo Roblox: ¡mundo infinito con 10 ambientes, poderes y récord de metros! O la aventura de 6 etapas.",
     status: "available",
     tag: "Nuevo 3D",
   },
@@ -74,6 +87,7 @@ export const GAMES_CATALOG = [
     icon: "🎯",
     tagline: "Primera persona: baña de chocolate a los malvaviscos traviesos.",
     status: "available",
+    appHidden: true,
     tag: "3D",
   },
   {
@@ -85,3 +99,5 @@ export const GAMES_CATALOG = [
     tag: "3D",
   },
 ];
+
+export const GAMES_CATALOG = ALL_GAMES.filter((g) => !(IN_APP && g.appHidden));

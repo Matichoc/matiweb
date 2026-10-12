@@ -5,8 +5,9 @@
 
 import * as THREE from "../vendor/three.module.min.js";
 import { getOutfit } from "./characters.js";
-import { addToLeaderboard, equippedOutfitId, reportScore } from "./storage.js";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js";
 import * as audio from "./audio.js";
+import { recordRun, runBonus } from "./progression.js";
 
 export { THREE };
 
@@ -263,6 +264,11 @@ export class Game3D {
     return getOutfit(equippedOutfitId(this.progress, this.character.id));
   }
 
+  /** Todo lo que lleva puesto el Matichico (peinado, sombrero, ropa...; ver js/wardrobe-data.js). */
+  get look() {
+    return getLook(this.progress, this.character.id);
+  }
+
   async init() {
     if (this.ready) return;
     const { canvas, wrap } = this.els;
@@ -348,7 +354,23 @@ export class Game3D {
     if (this.state === "playing") return;
     this.state = "playing";
     this.showOverlay(null);
+    if (this.musicTheme) audio.startMusic(this.musicTheme);
     this.onBegin?.();
+  }
+
+  /** Cartel grande en el centro del escenario ("¡Zona 2!", "¡Combo x5!"...). */
+  banner(text) {
+    const el = this.els.banner;
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove("show");
+    void el.offsetWidth;
+    el.classList.add("show");
+  }
+
+  /** Vibración corta en el celular (golpes, premios). */
+  haptic(ms = 30) {
+    try { navigator.vibrate?.(ms); } catch (e) { /* no disponible */ }
   }
 
   retry() {
@@ -360,6 +382,7 @@ export class Game3D {
   }
 
   pauseForMenu() {
+    audio.stopMusic();
     if (this.running) reportScore(this.progress, this.gameId, this.score || 0);
     this.running = false;
     this.state = "paused";
@@ -372,9 +395,21 @@ export class Game3D {
 
   /** Cierra la partida: guarda puntaje/ranking y muestra el resumen. */
   finish(text) {
+    audio.stopMusic();
     this.state = "gameover";
     reportScore(this.progress, this.gameId, this.score);
     addToLeaderboard(this.progress, this.gameId, this.progress.playerName, this.score);
+    // Matipuntos por terminar la partida, según el puntaje (cada juego puntúa distinto)
+    const bonus = runBonus(this.gameId, this.score);
+    if (bonus > 0) {
+      earnCoins(this.progress, bonus);
+      saveProgress(this.progress);
+      text += ` Por jugar ganas +${bonus} Matipuntos 🍫✨.`;
+    }
+    const run = recordRun(this.progress, this.gameId, this.score, this.runInfo || {});
+    this.runInfo = null;
+    text += ` +${run.xp} XP ⭐`;
+    if (run.tokens) text += ` +${run.tokens} ${run.eventToken}`;
     if (this.els.gameoverText) this.els.gameoverText.textContent = text;
     this.showOverlay("gameover");
   }

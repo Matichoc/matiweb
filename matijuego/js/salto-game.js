@@ -2,6 +2,10 @@
 // Tu Matichico (en 3D) rebota solo; tú lo mueves a los lados. Hay plataformas que
 // se mueven, que se rompen y con resorte; alfajores de verdad como monedas, y el
 // jetpack Matidubai. El cielo cambia del bosque de cacao a la noche con estrellas.
+//
+// Escalada al cielo: malvaviscos enojados que se pueden pisar (¡o te quitan un corazón!),
+// bolas con pinchos, aterrizajes perfectos, combo, poderes (jetpack, imán, burbuja), cuatro
+// zonas con su propia decoración (globos, aves, planetas) y música.
 
 import { THREE, Game3D, clamp, lerp, rand, loadTexture, makeStars, roundedBox } from "./three-kit.js";
 import { createMatichico } from "./matichico3d.js";
@@ -38,11 +42,20 @@ function skyColor(h, out) {
   return out.setHex(SKY[SKY.length - 1][1]);
 }
 
+const ZONES = [
+  { from: 0, name: "Bosque de Cacao", ice: 0xd4216c },
+  { from: 120, name: "Nubes de Algodón", ice: 0xff9ac6 },
+  { from: 300, name: "Cielo de Caramelo", ice: 0xffa34a },
+  { from: 520, name: "Espacio Dulce", ice: 0x7ee0ff },
+];
+const zoneOf = (h) => ZONES.reduce((z, e, i) => (h >= e.from ? i : z), 0);
+
 const SPRITES = ["alf-frambuesa", "alf-menta", "alf-naranja", "alf-trufa", "alf-pie-limon", "alf-maracuya", "alf-almendra", "alf-capuchino"];
 
 export class SaltoGame extends Game3D {
   constructor(character, progress, els) {
     super("salto", character, progress, els, { fov: 45 });
+    this.musicTheme = "adventure";
     this.keys = {};
     this.pointerX = null;
     this.tmpColor = new THREE.Color();
@@ -149,15 +162,20 @@ export class SaltoGame extends Game3D {
 
     this.platforms = [];
     this.pickups = [];
+    this.enemies = [];
+    this.decos = [];
+    this.bubbleMesh = new THREE.Mesh(new THREE.SphereGeometry(0.95, 18, 14), new THREE.MeshBasicMaterial({ color: 0x7ee0ff, transparent: true, opacity: 0.3, depthWrite: false }));
+    this.bubbleMesh.visible = false;
+    s.add(this.bubbleMesh);
   }
 
   _ensureHero() {
     if (this.hero && this.heroId === this.character.id) {
-      this.hero.setOutfit(this.outfit);
+      this.hero.setLook(this.look);
       return;
     }
     if (this.hero) this.scene.remove(this.hero.group);
-    this.hero = createMatichico(this.character, this.outfit);
+    this.hero = createMatichico(this.character, this.outfit, this.look);
     this.heroId = this.character.id;
     this.hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.scene.add(this.hero.group);
@@ -214,6 +232,20 @@ export class SaltoGame extends Game3D {
     this.lastX = 0;
     this.plain = 0;
     this.milestone = 100;
+    this.hearts = 3;
+    this.invuln = 0;
+    this.combo = 0;
+    this.comboT = 0;
+    this.magnet = 0;
+    this.bubble = false;
+    this.stomps = 0;
+    this.perfects = 0;
+    this.zone = 0;
+    this.nextDeco = 14;
+    for (const e of this.enemies) this.scene.remove(e.mesh);
+    for (const d of this.decos) this.scene.remove(d.mesh);
+    this.enemies = [];
+    this.decos = [];
     this.ground.visible = true;
     this._ensureHero();
     this.hero.group.position.set(0, 0, 0);
@@ -238,7 +270,12 @@ export class SaltoGame extends Game3D {
     const base = new THREE.Mesh(this.g.base, white ? this.m.baseWhite : this.m.base);
     base.castShadow = true;
     base.receiveShadow = true;
-    const iceMat = type === "moving" ? this.m.icePista : type === "crumble" ? this.m.iceCream : type === "spring" ? this.m.iceGold : this.m.icePink;
+    let iceMat = type === "moving" ? this.m.icePista : type === "crumble" ? this.m.iceCream : type === "spring" ? this.m.iceGold : this.m.icePink;
+    if (type === "normal" && this.nextY > ZONES[1].from) {
+      this.zoneIce = this.zoneIce || {};
+      const zi = zoneOf(this.nextY);
+      iceMat = this.zoneIce[zi] || (this.zoneIce[zi] = new THREE.MeshStandardMaterial({ color: ZONES[zi].ice, roughness: 0.35 }));
+    }
     const ice = new THREE.Mesh(this.g.ice, iceMat);
     ice.position.y = PH / 2 + 0.01;
     ice.castShadow = true;
@@ -297,7 +334,83 @@ export class SaltoGame extends Game3D {
       if (q < 0.3) this._spawnPickup("alfajor", x, h + 1.45);
       else if (q < 0.34) this._spawnPickup("gold", x, h + 1.45);
       else if (q < 0.37 && h > 60) this._spawnPickup("jet", x, h + 1.5);
+      else if (q < 0.395 && h > 40) this._spawnPickup("iman", x, h + 1.5);
+      else if (q < 0.42 && h > 40) this._spawnPickup("burbuja", x, h + 1.5);
     }
+    // enemigos flotando entre plataformas
+    if (h > 45 && Math.random() < clamp(0.08 + h / 1800, 0, 0.26)) {
+      const ex = clamp(x + (Math.random() < 0.5 ? -1 : 1) * rand(2.2, 3.6), -HALF + 0.6, HALF - 0.6);
+      this._spawnEnemy(Math.random() < 0.7 - clamp(h / 1500, 0, 0.25) ? "blob" : "spike", ex, h + rand(1.2, 1.9));
+    }
+    // decoración de fondo según la zona
+    while (this.nextDeco < this.nextY) { this._spawnDeco(this.nextDeco); this.nextDeco += rand(10, 18); }
+  }
+
+  _spawnEnemy(kind, x, y) {
+    const g = new THREE.Group();
+    const eye = new THREE.MeshBasicMaterial({ color: 0x1a1010 });
+    if (kind === "blob") {
+      const m = new THREE.MeshStandardMaterial({ color: 0xfff6ee, roughness: 0.85 });
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 0.7, 14), m);
+      const top = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), m);
+      top.position.y = 0.35;
+      g.add(body, top);
+      for (const sx of [-1, 1]) {
+        g.add(new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), eye).translateX(sx * 0.17).translateY(0.28).translateZ(0.38));
+        const brow = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.04, 0.03), eye);
+        brow.position.set(sx * 0.17, 0.43, 0.4);
+        brow.rotation.z = sx * 0.45;
+        g.add(brow);
+      }
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.04, 0.03), eye).translateY(0.1).translateZ(0.42));
+    } else {
+      const m = new THREE.MeshStandardMaterial({ color: 0x5a2a6a, roughness: 0.5 });
+      g.add(new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), m));
+      for (let i = 0; i < 12; i++) {
+        const sp = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.35, 6), new THREE.MeshStandardMaterial({ color: 0xff3fa4, roughness: 0.4 }));
+        const a = (i / 12) * Math.PI * 2;
+        const b = (i % 3) * 1.0 - 1.0;
+        sp.position.set(Math.cos(a) * 0.5, Math.sin(a * 2) * 0.35, Math.sin(a) * 0.5);
+        sp.lookAt(sp.position.clone().multiplyScalar(3));
+        sp.rotateX(Math.PI / 2);
+        g.add(sp);
+      }
+      for (const sx of [-1, 1]) g.add(new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffe14a })).translateX(sx * 0.15).translateY(0.08).translateZ(0.38));
+    }
+    g.position.set(x, y, 0);
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    this.scene.add(g);
+    this.enemies.push({ mesh: g, kind, x, y, baseY: y, vx: rand(0.9, 1.7) * (Math.random() < 0.5 ? -1 : 1), phase: rand(0, 6), dead: 0 });
+  }
+
+  _spawnDeco(h) {
+    const zi = zoneOf(h);
+    const g = new THREE.Group();
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const std = (c, r = 0.6) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
+    if (zi === 0) { // globos de fiesta
+      const c = [0xff3b6b, 0xffe14a, 0x4fd0ff, 0x9a5cff][Math.floor(Math.random() * 4)];
+      const b = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 10), std(c, 0.3));
+      b.scale.y = 1.2;
+      g.add(b, new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 2.2, 4), std(0xffffff)).translateY(-2));
+    } else if (zi === 1) { // aves de papel / cometas
+      const k = new THREE.Mesh(new THREE.OctahedronGeometry(0.8), std([0xff9ac6, 0xffe14a, 0x9fe8ff][Math.floor(Math.random() * 3)], 0.5));
+      k.scale.set(1, 1.4, 0.2);
+      g.add(k);
+    } else if (zi === 2) { // dulces gigantes
+      const c = [0xff6fb0, 0xffc800, 0x4fd09a][Math.floor(Math.random() * 3)];
+      g.add(new THREE.Mesh(new THREE.SphereGeometry(0.9, 14, 10), std(c, 0.3)));
+      const t = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.12, 8, 24), std(0xffffff, 0.4));
+      t.rotation.x = 1.1;
+      g.add(t);
+    } else { // planetas y asteroides
+      const c = [0x9a5cff, 0xff8a2a, 0x35f0ff, 0xff3fa4][Math.floor(Math.random() * 4)];
+      g.add(new THREE.Mesh(new THREE.SphereGeometry(rand(0.9, 1.8), 16, 12), std(c, 0.5)));
+      if (Math.random() < 0.5) { const t = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.08, 6, 30), std(0xffe14a, 0.4)); t.rotation.x = 1.2; g.add(t); }
+    }
+    g.position.set(side * rand(HALF + 2, HALF + 9), h, -rand(6, 16));
+    this.scene.add(g);
+    this.decos.push({ mesh: g, y: h, spin: rand(-0.6, 0.6), phase: rand(0, 6) });
   }
 
   _spawnPickup(kind, x, y) {
@@ -316,6 +429,13 @@ export class SaltoGame extends Game3D {
       const pis = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.26, 0.04), this.m.icePista);
       pis.position.z = 0.09;
       mesh.add(bar, pis);
+    } else if (kind === "iman" || kind === "burbuja") {
+      const col = kind === "iman" ? 0xff3fa4 : 0x35f0ff;
+      mesh = new THREE.Group();
+      mesh.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 1), new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, emissive: col, emissiveIntensity: 0.9 })));
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.05, 8, 24), this.m.iceCream);
+      ring.rotation.x = Math.PI / 2.4;
+      mesh.add(ring);
     } else {
       mesh = new THREE.Group();
       const body = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.55, 12), this.m.icePink);
@@ -403,6 +523,30 @@ export class SaltoGame extends Game3D {
       else k.mesh.rotation.y += dt * 2.2;
     }
 
+    for (const e of this.enemies) {
+      if (e.dead > 0) {
+        e.dead -= dt;
+        e.mesh.scale.setScalar(Math.max(0.01, e.dead * 3));
+        e.mesh.rotation.z += dt * 10;
+        continue;
+      }
+      if (playing) {
+        e.x += e.vx * dt;
+        if (Math.abs(e.x) > HALF - 0.5) e.vx *= -1;
+        e.y = e.baseY + (e.kind === "spike" ? Math.sin(this.time * 2 + e.phase) * 0.7 : Math.sin(this.time * 3 + e.phase) * 0.12);
+      }
+      e.mesh.position.set(e.x, e.y, 0);
+      e.mesh.rotation.y = e.kind === "spike" ? this.time * 2 : Math.sin(this.time * 2 + e.phase) * 0.3;
+      const bounce = e.kind === "blob" ? 1 + Math.sin(this.time * 6 + e.phase) * 0.06 : 1;
+      e.mesh.scale.set(2 - bounce, bounce, 2 - bounce);
+    }
+    for (const d of this.decos) {
+      d.mesh.rotation.y += d.spin * dt;
+      d.mesh.position.y = d.y + Math.sin(this.time * 0.8 + d.phase) * 0.4;
+    }
+    this.bubbleMesh.visible = this.bubble;
+    if (this.bubble) this.bubbleMesh.position.set(this.x, this.y + 0.8, 0);
+    this.hero.group.visible = this.invuln <= 0 || Math.floor(this.time * 14) % 2 === 0;
     this.squash = Math.max(0, this.squash - dt * 6);
     const sq = 1 - this.squash * 0.3;
     this.hero.group.scale.set(2 - sq, sq, 2 - sq);
@@ -428,6 +572,9 @@ export class SaltoGame extends Game3D {
     if (this.x > HALF + 0.7) this.x = -HALF - 0.7;
     else if (this.x < -HALF - 0.7) this.x = HALF + 0.7;
 
+    if (this.invuln > 0) this.invuln -= dt;
+    if (this.magnet > 0) this.magnet -= dt;
+    if (this.comboT > 0) { this.comboT -= dt; if (this.comboT <= 0) this.combo = 0; }
     const prevY = this.y;
     if (this.jet > 0) {
       this.jet -= dt;
@@ -451,8 +598,15 @@ export class SaltoGame extends Game3D {
 
     for (const k of this.pickups) {
       if (k.taken) continue;
+      if (this.magnet > 0 && (k.kind === "alfajor" || k.kind === "gold")) {
+        const dx = this.x - k.x;
+        const dy = this.y + 0.8 - k.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 4.2) { const f = Math.min(1, dt * 7); k.x += dx * f; k.y += dy * f; }
+      }
       if (Math.hypot(k.x - this.x, k.y - (this.y + 0.8)) < 0.95) this._collect(k);
     }
+    this._enemyHits(prevY);
 
     if (this.y > this.maxY) {
       this.maxY = this.y;
@@ -481,11 +635,96 @@ export class SaltoGame extends Game3D {
       }
     }
     if (this.camY > 6) this.ground.visible = false;
+    for (let i = this.enemies.length - 1; i >= 0; i--) {
+      if (this.enemies[i].y < this.camY - this.viewHalfH - 4 || (this.enemies[i].dead <= 0 && this.enemies[i].gone)) { this.scene.remove(this.enemies[i].mesh); this.enemies.splice(i, 1); }
+    }
+    for (let i = this.decos.length - 1; i >= 0; i--) {
+      if (this.decos[i].y < this.camY - this.viewHalfH - 6) { this.scene.remove(this.decos[i].mesh); this.decos.splice(i, 1); }
+    }
+    const z = zoneOf(this.maxY);
+    if (z !== this.zone) {
+      this.zone = z;
+      this._banner(`Zona: ${ZONES[z].name}`);
+      audio.playMissionComplete();
+    }
 
     if (this.y < this.camY - this.viewHalfH - 1.4) this._gameOver();
   }
 
+  _mult() {
+    return 1 + Math.min(4, Math.floor(this.combo / 6));
+  }
+
+  _addCombo(n = 1) {
+    const before = this._mult();
+    this.combo += n;
+    this.comboT = 3.2;
+    if (this._mult() > before) {
+      this._banner(`¡Combo x${this._mult()}!`);
+      audio.playCombo(this._mult() * 2);
+    }
+  }
+
+  _enemyHits(prevY) {
+    for (const e of this.enemies) {
+      if (e.dead > 0) continue;
+      const dx = e.x - this.x;
+      const dy = e.y + 0.3 - (this.y + 0.7);
+      if (Math.hypot(dx, dy) > 0.95) continue;
+      const stomp = e.kind === "blob" && this.vy < 0 && prevY >= e.y + 0.45;
+      if (stomp) {
+        e.dead = 0.35;
+        e.gone = true;
+        this.vy = BOUNCE * 1.12;
+        this.squash = 1;
+        this.stomps++;
+        const pts = 30 * this._mult();
+        this.bonus += pts;
+        this._addCombo(2);
+        this.score = Math.floor(this.maxY * 10) + this.bonus;
+        const at = new THREE.Vector3(e.x, e.y + 0.5, 0.5);
+        this.popups.add(at, `¡Pisotón! +${pts}`, "combo");
+        this.particles.burst(at, [0xfff6ee, 0xffc800, 0xff9ac6], 18, 5, 0.7, 5);
+        audio.playPop();
+        this.haptic(20);
+      } else if (this.invuln <= 0 && this.jet <= 0) {
+        e.dead = 0.01;
+        e.gone = true;
+        if (this.bubble) {
+          this.bubble = false;
+          this.invuln = 1;
+          this.popups.add(new THREE.Vector3(this.x, this.y + 1.4, 0.5), "¡Burbuja rota!", "combo");
+          this.particles.burst(new THREE.Vector3(this.x, this.y + 0.8, 0.4), [0x7ee0ff, 0xffffff], 22, 5, 0.8, 5);
+          audio.playCrash();
+        } else {
+          this.hearts--;
+          this.invuln = 1.6;
+          this.combo = 0;
+          this.vy = Math.max(this.vy, 7);
+          this.vx = -Math.sign(dx || 1) * 6;
+          this.popups.add(new THREE.Vector3(this.x, this.y + 1.4, 0.5), "¡Ouch!", "kill");
+          this.particles.burst(new THREE.Vector3(this.x, this.y + 0.8, 0.4), [0xd4216c, 0xffc800, 0xfff6e6], 20, 5, 0.8, 6);
+          audio.playHurt();
+          this.haptic(70);
+          this._updateHud();
+          if (this.hearts <= 0) this._gameOver();
+        }
+      }
+    }
+  }
+
   _land(p, top) {
+    // aterrizaje perfecto: justo en el centro de la plataforma
+    if (p.type !== "start" && Math.abs(this.x - p.x) < 0.3) {
+      this.perfects++;
+      const pts = 5 * this._mult();
+      this.bonus += pts;
+      this._addCombo(1);
+      this.popups.add(new THREE.Vector3(this.x, top + 0.8, 0.5), `¡Perfecto! +${pts}`, "kill");
+      this.particles.burst(new THREE.Vector3(this.x, top, 0.4), [0xffe14a, 0xffffff], 10, 3.5, 0.5, 5);
+      audio.playCombo(this.combo);
+      this.score = Math.floor(this.maxY * 10) + this.bonus;
+    }
     this.y = top;
     this.squash = 1;
     const col = [0xd4216c, 0xffc800, 0xcfd767, 0xfff6e6];
@@ -511,11 +750,22 @@ export class SaltoGame extends Game3D {
     const at = new THREE.Vector3(k.x, k.y, 0.5);
     if (k.kind === "alfajor") {
       this.items++;
-      this.bonus += 10;
+      this.bonus += 10 * this._mult();
+      this._addCombo(1);
       this.score = Math.floor(this.maxY * 10) + this.bonus;
-      this.popups.add(at, "+10", "kill");
+      this.popups.add(at, this._mult() > 1 ? `+${10 * this._mult()} x${this._mult()}` : "+10", "kill");
       this.particles.burst(at, [0xffc800, 0xfff6e6], 8, 3, 0.5, 4);
       audio.playCollect();
+    } else if (k.kind === "iman") {
+      this.magnet = 9;
+      this.popups.add(at, "¡Imán! 🧲", "combo");
+      this.particles.burst(at, [0xff3fa4, 0xfff6e6], 16, 5, 0.7, 3);
+      audio.playPowerup();
+    } else if (k.kind === "burbuja") {
+      this.bubble = true;
+      this.popups.add(at, "¡Burbuja! 🫧", "combo");
+      this.particles.burst(at, [0x35f0ff, 0xfff6e6], 16, 5, 0.7, 3);
+      audio.playPowerup();
     } else if (k.kind === "gold") {
       this.bonus += 50;
       this.score = Math.floor(this.maxY * 10) + this.bonus;
@@ -537,8 +787,8 @@ export class SaltoGame extends Game3D {
   _gameOver() {
     audio.playLose();
     this.finish(
-      `Subiste ${Math.floor(this.maxY)} metros, juntaste ${this.items} alfajores y sumaste ${this.score} puntos` +
-        (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : ".")
+      `Subiste ${Math.floor(this.maxY)} metros, juntaste ${this.items} alfajores, pisaste ${this.stomps} malvaviscos y sumaste ${this.score} puntos` +
+        (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : ".")
     );
   }
 
@@ -554,6 +804,8 @@ export class SaltoGame extends Game3D {
     this.els.hudScore.textContent = String(this.score);
     this.els.hudHeight.textContent = `${Math.floor(this.maxY)} m`;
     this.els.hudCoins.textContent = String(this.progress.coins);
+    if (this.els.hudHearts) this.els.hudHearts.textContent = "❤".repeat(Math.max(0, this.hearts)) + "♡".repeat(Math.max(0, 3 - this.hearts));
+    if (this.els.hudCombo) this.els.hudCombo.textContent = `x${this._mult()}`;
   }
 
   // ---------- cámara y ambiente ----------

@@ -57,6 +57,7 @@ export const LEVELS = [
       { x: 680, y: 410 },
     ],
     corridorWidth: 120,
+    guards: [{ t0: 0.55, speed: 60 }],
     obstacles: [],
     movingObstacles: [
       { x: 120, y: 280, w: 26, h: 26, axis: "x", range: 45, speed: 70 },
@@ -82,6 +83,7 @@ export const LEVELS = [
       { x: 700, y: 60 },
     ],
     corridorWidth: 110,
+    guards: [{ t0: 0.45, speed: 65 }],
     flag: { x: 690, y: 28, w: 36, h: 36 },
     obstacles: [
       { x: 105, y: 260, w: 30, h: 30 },
@@ -108,6 +110,7 @@ export const LEVELS = [
       { x: 690, y: 350 },
     ],
     corridorWidth: 100,
+    guards: [{ t0: 0.4, speed: 70 }],
     obstacles: [
       { x: 70, y: 345, w: 100, h: 16, jumpable: true },
       { x: 202, y: 230, w: 16, h: 100, jumpable: true },
@@ -136,6 +139,7 @@ export const LEVELS = [
       { x: 690, y: 410 },
     ],
     corridorWidth: 90,
+    guards: [{ t0: 0.3, speed: 75 }, { t0: 0.75, speed: 70 }],
     obstacles: [
       { x: 262, y: 165, w: 16, h: 90, jumpable: true },
       { x: 645, y: 300, w: 90, h: 16, jumpable: true },
@@ -166,6 +170,7 @@ export const LEVELS = [
       { x: 690, y: 60 },
     ],
     corridorWidth: 90,
+    guards: [{ t0: 0.35, speed: 75 }, { t0: 0.8, speed: 70 }],
     flag: { x: 672, y: 28, w: 36, h: 36 },
     obstacles: [
       { x: 65, y: 355, w: 90, h: 16, jumpable: true },
@@ -175,6 +180,82 @@ export const LEVELS = [
       { x: 435, y: 235, w: 90, h: 16, jumpable: true },
       { x: 577, y: 275, w: 16, h: 90, jumpable: true },
       { x: 645, y: 190, w: 90, h: 16, jumpable: true },
+    ],
+  },
+  {
+    id: "fabrica",
+    name: "Nivel 7 · Fábrica de Chocolate",
+    theme: "factory",
+    missionText: "Las cintas transportadoras te empujan: recolecta 12 golosinas, salta las vallas y llega a la meta.",
+    target: 12,
+    timeLimit: 50,
+    chocoCount: 14,
+    requiresFlag: true,
+    path: [
+      { x: 110, y: 410 },
+      { x: 110, y: 110 },
+      { x: 400, y: 110 },
+      { x: 400, y: 370 },
+      { x: 690, y: 370 },
+      { x: 690, y: 90 },
+    ],
+    corridorWidth: 100,
+    flag: { x: 672, y: 72, w: 36, h: 36 },
+    guards: [{ t0: 0.5, speed: 70 }],
+    conveyors: [
+      { x: 60, y: 180, w: 100, h: 120, dx: 0, dy: -1 },
+      { x: 350, y: 200, w: 100, h: 140, dx: 0, dy: 1 },
+      { x: 640, y: 160, w: 100, h: 140, dx: 0, dy: 1 },
+    ],
+    obstacles: [
+      { x: 95, y: 340, w: 30, h: 30 },
+      { x: 385, y: 260, w: 30, h: 30 },
+      { x: 250, y: 60, w: 16, h: 100, jumpable: true },
+      { x: 540, y: 320, w: 16, h: 100, jumpable: true },
+    ],
+    movingObstacles: [
+      { x: 690, y: 330, w: 24, h: 24, axis: "x", range: 32, speed: 80 },
+    ],
+  },
+  {
+    id: "gran_final",
+    name: "Nivel 8 · Gran Final del Cacao",
+    theme: "cacao",
+    missionText: "El circuito más largo: 16 golosinas, vallas, guardias y cintas. ¡Usa el impulso (Shift) para escapar!",
+    target: 16,
+    timeLimit: 62,
+    chocoCount: 18,
+    requiresFlag: true,
+    path: [
+      { x: 100, y: 420 },
+      { x: 100, y: 330 },
+      { x: 300, y: 330 },
+      { x: 300, y: 200 },
+      { x: 100, y: 200 },
+      { x: 100, y: 100 },
+      { x: 400, y: 100 },
+      { x: 400, y: 380 },
+      { x: 700, y: 380 },
+      { x: 700, y: 100 },
+    ],
+    corridorWidth: 84,
+    flag: { x: 682, y: 82, w: 36, h: 36 },
+    guards: [{ t0: 0.25, speed: 78 }, { t0: 0.7, speed: 72 }],
+    conveyors: [
+      { x: 360, y: 150, w: 80, h: 100, dx: 0, dy: 1 },
+      { x: 660, y: 260, w: 80, h: 100, dx: 0, dy: 1 },
+    ],
+    obstacles: [
+      { x: 196, y: 288, w: 16, h: 84, jumpable: true },
+      { x: 196, y: 158, w: 16, h: 84, jumpable: true },
+      { x: 240, y: 58, w: 16, h: 84, jumpable: true },
+      { x: 540, y: 338, w: 16, h: 84, jumpable: true },
+      { x: 358, y: 280, w: 84, h: 16, jumpable: true },
+      { x: 658, y: 200, w: 84, h: 16, jumpable: true },
+    ],
+    movingObstacles: [
+      { x: 320, y: 100, w: 24, h: 24, axis: "y", range: 28, speed: 90 },
+      { x: 600, y: 380, w: 24, h: 24, axis: "y", range: 28, speed: 95 },
     ],
   },
 ];
@@ -315,4 +396,23 @@ function rectContains(rect, x, y, pad) {
 
 function dist(x1, y1, x2, y2) {
   return Math.hypot(x1 - x2, y1 - y2);
+}
+
+/** Posición sobre el camino a `s` píxeles desde el inicio (para los guardias que patrullan). */
+export function pathLength(path) {
+  let total = 0;
+  for (let i = 0; i < path.length - 1; i++) total += Math.hypot(path[i + 1].x - path[i].x, path[i + 1].y - path[i].y);
+  return total;
+}
+
+export function pointOnPath(path, s) {
+  let left = Math.max(0, s);
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i];
+    const b = path[i + 1];
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (left <= len) return { x: a.x + ((b.x - a.x) * left) / len, y: a.y + ((b.y - a.y) * left) / len };
+    left -= len;
+  }
+  return { ...path[path.length - 1] };
 }
