@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=12a3a39f99">
 </head>
 <body>
 <div id="toast" class="toast hidden"></div>
@@ -276,14 +276,7 @@
     </div>
 
     <div id="recolecta-touch" class="touch-controls">
-      <div class="dpad">
-        <button class="dpad-btn" data-dir="up">▲</button>
-        <div class="dpad-row">
-          <button class="dpad-btn" data-dir="left">◀</button>
-          <button class="dpad-btn" data-dir="down">▼</button>
-          <button class="dpad-btn" data-dir="right">▶</button>
-        </div>
-      </div>
+      <div class="pk-joy" id="recolecta-joy" aria-label="Joystick"><div class="pk-knob"></div></div>
       <button class="dpad-btn jump-btn" id="recolecta-btn-jump">⤴ Saltar</button>
       <button class="dpad-btn jump-btn" id="recolecta-btn-dash">💨 Impulso</button>
     </div>
@@ -458,8 +451,7 @@
     </div>
 
     <div id="porristas-touch-controls">
-      <button class="tetris-btn" id="porristas-btn-left">◀</button>
-      <button class="tetris-btn" id="porristas-btn-right">▶</button>
+      <div class="pk-joy" id="porristas-joy" aria-label="Joystick"><div class="pk-knob"></div></div>
     </div>
   </section>
 
@@ -549,6 +541,8 @@
       <div id="town-popups" class="fps-popups" aria-hidden="true"></div>
       <div id="town-dialog" class="town-dialog hidden"><b class="td-name"></b><span class="td-text"></span><small>toca para cerrar</small></div>
       <button id="town-btn-action" class="town-action hidden" type="button"></button>
+      <button id="town-btn-speed" class="town-speed" type="button" aria-label="Cambiar cómo te mueves (correr, patines…)">🏃</button>
+      <span id="town-speed-hint" class="town-speed-hint"></span>
       <div class="pk-touch" id="town-touch">
         <div class="pk-joy" id="town-joy"><div class="pk-knob" id="town-knob"></div></div>
       </div>
@@ -669,8 +663,7 @@
       <div id="salto-banner" class="fps-banner" aria-live="polite"></div>
       <div id="salto-popups" class="fps-popups" aria-hidden="true"></div>
       <div class="g3d-touch" id="salto-touch">
-        <button class="g3d-tbtn" id="salto-btn-left" aria-label="Izquierda">◀</button>
-        <button class="g3d-tbtn" id="salto-btn-right" aria-label="Derecha">▶</button>
+        <div class="pk-joy" id="salto-joy" aria-label="Joystick"><div class="pk-knob"></div></div>
       </div>
 
       <div id="salto-overlay-intro" class="overlay hidden">
@@ -720,8 +713,7 @@
       <div id="autos-banner" class="fps-banner" aria-live="polite"></div>
       <div id="autos-popups" class="fps-popups" aria-hidden="true"></div>
       <div class="g3d-touch" id="autos-touch">
-        <button class="g3d-tbtn" id="autos-btn-left" aria-label="Izquierda">◀</button>
-        <button class="g3d-tbtn" id="autos-btn-right" aria-label="Derecha">▶</button>
+        <div class="pk-joy" id="autos-joy" aria-label="Joystick"><div class="pk-knob"></div></div>
       </div>
 
       <div id="autos-overlay-intro" class="overlay hidden">
@@ -852,7 +844,15 @@
 
 </div>
 
+<div id="rotate-overlay" class="rotate-overlay hidden" role="alert">
+  <div class="rotate-card">
+    <div class="rot-icon">📱↻</div>
+    <h2>¡Gira tu celular!</h2>
+    <p><b class="rot-game"></b> se juega con el celular <b>acostado (horizontal)</b>.</p>
+    <small>Cuando lo gires, el juego sigue solo.</small>
+  </div>
+</div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js"></script>
+<script type="module" src="js/main.js?v=12a3a39f99"></script>
 </body>
 </html>

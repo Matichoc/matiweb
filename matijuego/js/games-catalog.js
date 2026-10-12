@@ -10,6 +10,7 @@ const IN_APP = typeof document !== "undefined" && document.documentElement.datas
 const ALL_GAMES = [
   {
     id: "town",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Pueblo Matichoc",
     icon: "🏘️",
     tagline: "Pasea por el pueblo: fuente de chocolate, boutique, fábrica, vecinos y un arcade con puertas mágicas.",
@@ -19,6 +20,7 @@ const ALL_GAMES = [
   },
   {
     id: "recolecta",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Recolecta y Corre",
     icon: "🏃",
     tagline: "Corre por canchas 3D, salta vallas y junta golosinas contrarreloj.",
@@ -27,6 +29,7 @@ const ALL_GAMES = [
   },
   {
     id: "parkour",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Parkour Choco",
     icon: "🧗",
     tagline: "Estilo Roblox: ¡mundo infinito con 10 ambientes, poderes y récord de metros! O la aventura de 6 etapas.",
@@ -35,6 +38,7 @@ const ALL_GAMES = [
   },
   {
     id: "salto",
+    orient: "any", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Salto Choco",
     icon: "🦘",
     tagline: "Sube sin parar con tu Matichico en 3D, junta alfajores y vuela con el jetpack.",
@@ -43,6 +47,7 @@ const ALL_GAMES = [
   },
   {
     id: "autos",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Autos de Chocolate",
     icon: "🏎️",
     tagline: "Esquiva y acelera por la ruta de Matichoc, de día y de noche.",
@@ -51,6 +56,7 @@ const ALL_GAMES = [
   },
   {
     id: "tetris",
+    orient: "any", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Tetris de Productos",
     icon: "🧱",
     tagline: "Encaja cubos de chocolate en tu vitrina 3D antes de que se acumulen.",
@@ -59,6 +65,7 @@ const ALL_GAMES = [
   },
   {
     id: "memoria",
+    orient: "any", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Memoria Matichoc",
     icon: "🧠",
     tagline: "Encuentra las parejas de productos Matichoc con fotos reales.",
@@ -67,6 +74,7 @@ const ALL_GAMES = [
   },
   {
     id: "basquet_tiros",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Lanzamientos de Básquet",
     icon: "🏀",
     tagline: "Tiro libre en 3D: fija puntería y potencia y encesta antes de que acabe el tiempo.",
@@ -75,6 +83,7 @@ const ALL_GAMES = [
   },
   {
     id: "porristas",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Saltos de Porristas",
     icon: "🤸",
     tagline: "Mueve la rebotadora, haz volteretas y mantén a tu Matichica rebotando.",
@@ -83,6 +92,7 @@ const ALL_GAMES = [
   },
   {
     id: "fps3d",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Choco Blaster 3D",
     icon: "🎯",
     tagline: "Primera persona: baña de chocolate a los malvaviscos traviesos.",
@@ -92,6 +102,7 @@ const ALL_GAMES = [
   },
   {
     id: "creador",
+    orient: "any", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Crea tu Chocolate",
     icon: "🍫",
     tagline: "Elige producto, sabor, toppings, envoltorio y etiqueta, y crea tu propio chocolate.",

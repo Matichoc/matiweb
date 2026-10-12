@@ -3,10 +3,10 @@
 // cae; rebotar centrado suma combo (¡y hace volteretas!), los pompones dan puntos extra.
 // Si cae fuera de la rebotadora, se acaba la partida. Las reglas son las de siempre.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js";
-import { createMatichico } from "./matichico3d.js";
-import { saveProgress, earnCoins } from "./storage.js";
-import * as audio from "./audio.js";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=12a3a39f99";
+import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
+import { saveProgress, earnCoins } from "./storage.js?v=12a3a39f99";
+import * as audio from "./audio.js?v=12a3a39f99";
 
 const GAME_ID = "porristas";
 const PX_W = 800;
@@ -333,6 +333,7 @@ export class Porristas3DGame extends Game3D {
       const halfW = this.paddle.w / 2;
       if (this.keys.left) this.paddle.x -= PADDLE_SPEED * dt;
       if (this.keys.right) this.paddle.x += PADDLE_SPEED * dt;
+      if (this.stickX) this.paddle.x += this.stickX * PADDLE_SPEED * 1.5 * dt;
       if (this.pointerX != null && !this.keys.left && !this.keys.right) {
         const d = this.pointerX - this.paddle.x;
         this.paddle.x += clamp(d, -PADDLE_SPEED * 1.4 * dt, PADDLE_SPEED * 1.4 * dt);
@@ -524,6 +525,8 @@ export class Porristas3DGame extends Game3D {
   }
 
   // ---------- entrada ----------
+
+  setStick(x) { this.stickX = x; }
 
   async init() {
     const first = !this.ready;

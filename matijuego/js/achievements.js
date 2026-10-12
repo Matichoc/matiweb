@@ -2,7 +2,7 @@
 // progreso guardado (sin necesidad de rastrear eventos en tiempo real) y se
 // puede reclamar una sola vez por perfil.
 
-import { getBestScore } from "./storage.js";
+import { getBestScore } from "./storage.js?v=12a3a39f99";
 
 const IN_APP = typeof document !== "undefined" && document.documentElement.dataset.app === "1";
 

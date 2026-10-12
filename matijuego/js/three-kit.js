@@ -4,10 +4,10 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js";
-import * as audio from "./audio.js";
-import { recordRun, runBonus } from "./progression.js";
+import { getOutfit } from "./characters.js?v=12a3a39f99";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=12a3a39f99";
+import * as audio from "./audio.js?v=12a3a39f99";
+import { recordRun, runBonus } from "./progression.js?v=12a3a39f99";
 
 export { THREE };
 

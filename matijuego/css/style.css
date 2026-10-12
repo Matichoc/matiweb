@@ -1370,3 +1370,23 @@ html[data-app] .game-screen:not(.cr-screen) {
 .eb-tokens { font-weight: 800; font-size: 1.05rem; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px; }
 .eb-go { padding: 8px 14px; font-size: 0.85rem; flex: none; }
 @media (max-width: 760px) { .event-banner { flex-wrap: wrap; } .eb-go { width: 100%; } }
+
+/* Pueblo: botón para correr / patines / monopatín */
+.town-speed { position: absolute; right: 14px; bottom: 120px; z-index: 6; width: 58px; height: 58px; border-radius: 50%; border: 3px solid #fff; background: linear-gradient(180deg, #4fd0ff, #2a8fd6); font-size: 1.7rem; line-height: 1; box-shadow: 0 4px 0 #1b5f9a; cursor: pointer; touch-action: manipulation; }
+.town-speed:active { transform: translateY(2px); box-shadow: 0 2px 0 #1b5f9a; }
+.town-speed-hint { position: absolute; right: 12px; bottom: 90px; z-index: 6; font-size: 0.72rem; font-weight: 800; color: #fff6e6; background: rgba(0,0,0,0.45); padding: 3px 8px; border-radius: 999px; pointer-events: none; }
+.town-speed-hint:empty { display: none; }
+.canvas-wrap:has(.overlay:not(.hidden)) :is(.town-speed, .town-speed-hint) { display: none !important; }
+
+/* Aviso de "gira el celular" para los juegos que exigen pantalla ancha */
+.rotate-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: rgba(28,15,7,0.96); padding: 24px; text-align: center; }
+.rotate-overlay.hidden { display: none; }
+.rotate-card { max-width: 340px; color: #fff6e6; }
+.rotate-card .rot-icon { font-size: 4rem; animation: rot-turn 1.6s ease-in-out infinite; display: inline-block; }
+.rotate-card h2 { color: var(--dorado); margin: 10px 0 6px; font-size: 1.8rem; }
+.rotate-card p { margin: 0 0 10px; font-size: 1.05rem; }
+.rotate-card small { opacity: 0.8; }
+@keyframes rot-turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+.gorient { position: absolute; left: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px; font-size: 0.66rem; font-weight: 800; background: rgba(28,15,7,0.78); color: #fff6e6; border: 1px solid rgba(255,255,255,0.35); }
+.gorient.land { background: rgba(212,33,108,0.9); border-color: #fff; }
+.g3d-touch { align-items: flex-end; }

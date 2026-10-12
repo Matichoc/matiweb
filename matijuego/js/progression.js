@@ -6,9 +6,9 @@
 // Todo se guarda por perfil dentro de `progress` (xp, packs, album, daily) y se paga solo
 // con Matipuntos, sin compras reales.
 
-import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js";
-import { getItem } from "./wardrobe-data.js";
-import { activeEvent, addEventTokens } from "./events.js";
+import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=12a3a39f99";
+import { getItem } from "./wardrobe-data.js?v=12a3a39f99";
+import { activeEvent, addEventTokens } from "./events.js?v=12a3a39f99";
 
 // ---------- partidas ----------
 
