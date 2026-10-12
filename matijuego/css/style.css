@@ -310,6 +310,11 @@ h1, h2, h3 {
   transition: transform .1s ease, background .1s ease;
 }
 .stat-chip-btn:hover { transform: translateY(-2px); background: rgba(255,200,0,0.25); }
+.stat-chip-btn.daily-ready { position: relative; background: linear-gradient(180deg, #ffd34d, #ffa800); color: #4a2c24; border: 2px solid #fff; font-weight: 900; box-shadow: 0 3px 0 #b36b00, 0 0 16px rgba(255,200,0,0.75); animation: daily-pulse 1.3s ease-in-out infinite; overflow: visible; }
+.stat-chip-btn.daily-ready:hover { background: linear-gradient(180deg, #ffe07a, #ffb52e); }
+.stat-chip-btn.daily-ready::after { content: "1"; position: absolute; top: -8px; left: -8px; min-width: 20px; height: 20px; border-radius: 999px; background: #e0245e; color: #fff; border: 2px solid #fff; font-size: 0.7rem; font-weight: 900; line-height: 16px; text-align: center; }
+@keyframes daily-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@media (prefers-reduced-motion: reduce) { .stat-chip-btn.daily-ready { animation: none; } }
 .stat-chip-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 .section-title {

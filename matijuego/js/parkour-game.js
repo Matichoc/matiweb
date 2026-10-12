@@ -4,14 +4,14 @@
 // checkpoints y llega a la cumbre. Al avanzar, tu Matichico desbloquea accesorios
 // (capa, gafas brillantes y corona) además del atuendo que compraste en la tienda.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=6a6ce838a4";
-import { createMatichico } from "./matichico3d.js?v=6a6ce838a4";
-import { earnCoins, saveProgress } from "./storage.js?v=6a6ce838a4";
-import { bindStick } from "./stick.js?v=6a6ce838a4";
-import { trailColors } from "./wardrobe-data.js?v=6a6ce838a4";
-import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=6a6ce838a4";
-import * as audio from "./audio.js?v=6a6ce838a4";
-import { campaign, renderLevelPicker } from "./campaign.js?v=6a6ce838a4";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=f909fd82db";
+import { createMatichico } from "./matichico3d.js?v=f909fd82db";
+import { earnCoins, saveProgress } from "./storage.js?v=f909fd82db";
+import { bindStick } from "./stick.js?v=f909fd82db";
+import { trailColors } from "./wardrobe-data.js?v=f909fd82db";
+import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=f909fd82db";
+import * as audio from "./audio.js?v=f909fd82db";
+import { campaign, renderLevelPicker } from "./campaign.js?v=f909fd82db";
 
 const GAME_ID = "parkour";
 const R = 0.34; // radio del héroe
@@ -1275,7 +1275,7 @@ export class ParkourGame extends Game3D {
     const map = { ArrowLeft: "left", a: "left", A: "left", ArrowRight: "right", d: "right", D: "right", ArrowUp: "up", w: "up", W: "up", ArrowDown: "down", s: "down", S: "down" };
     window.addEventListener("keydown", (e) => {
       if (!this.running) return;
-      if (e.code === "Space" || e.key === " ") {
+      if (e.code === "Space" || e.key === " " || e.code === "KeyK" || e.code === "KeyJ") { // K o J por si el teclado no deja apretar tantas teclas con Espacio
         if (this.state === "playing") { e.preventDefault(); if (!e.repeat) this.buffer = BUFFER; }
         return;
       }

@@ -34,21 +34,22 @@ export function bindStick(joy, onChange, area = joy.closest(".canvas-wrap") || j
     onChange(Math.abs(dx) < 0.14 ? 0 : dx, Math.abs(dy) < 0.14 ? 0 : -dy);
   };
 
-  /** Pone el joystick con el centro en el dedo (sin salirse del escenario). */
+  /**
+   * Pone el joystick con el centro en el dedo (sin salirse del escenario). Se mueve con transform, así sigue
+   * ocupando su lugar y los botones de al lado (Saltar, Impulso) no se corren.
+   */
   const moveTo = (e) => {
+    joy.style.transform = "";
+    const h = joy.getBoundingClientRect();
     const a = area.getBoundingClientRect();
-    const w = joy.offsetWidth || 116;
+    const w = h.width || 116;
     const x = Math.min(Math.max(e.clientX, a.left + w / 2 + 6), a.right - w / 2 - 6);
     const y = Math.min(Math.max(e.clientY, a.top + w / 2 + 6), a.bottom - w / 2 - 6);
-    joy.style.position = "fixed";
-    joy.style.left = `${x - w / 2}px`;
-    joy.style.top = `${y - w / 2}px`;
-    joy.style.margin = "0";
-    joy.style.zIndex = "6";
+    joy.style.transform = `translate(${x - (h.left + h.width / 2)}px, ${y - (h.top + h.height / 2)}px)`;
   };
 
   const home = () => {
-    joy.style.position = joy.style.left = joy.style.top = joy.style.margin = joy.style.zIndex = "";
+    joy.style.transform = "";
     joy.classList.remove("on");
   };
 
