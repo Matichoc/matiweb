@@ -4,7 +4,7 @@
 // Todo el progreso vive dentro de un "perfil" (ver js/profiles.js), para que
 // varias personas puedan jugar desde el mismo navegador sin mezclar su avance.
 
-import { getItem, EMPTY_LOOK } from "./wardrobe-data.js?v=12a3a39f99";
+import { getItem, EMPTY_LOOK } from "./wardrobe-data.js?v=64b04a2636";
 
 const SAVE_PREFIX = "matichoc_save_v3_profile_";
 const DEFAULT_OUTFIT = "liga";
@@ -21,8 +21,10 @@ function defaultProgress() {
     // Guardarropa (ver js/wardrobe-data.js): objetos comprados (compartidos por todos los
     // Matichicos) y lo que lleva puesto cada uno.
     wardrobe: { owned: [], looks: {} }, // looks: { [characterId]: { hair, hat, outfit, ... } }
-    house: { owned: [], placed: {} }, // Mi Casa (ver js/house-data.js)
+    house: { owned: [], placed: {}, layout: null, size: 0 }, // Mi Casa (ver js/house-data.js)
     eventTokens: {}, // fichas de eventos de temporada: { [idEvento]: n }
+    campaign: {}, // niveles por juego: { [idJuego]: { unlocked, stars: { nivel: n } } } (js/campaign.js)
+    missionsDone: {}, // misiones de cada juego ya cumplidas: { [idJuego]: [n, ...] } (js/missions.js)
     xp: 0, // experiencia total (ver js/progression.js)
     packs: 1, // sobres de figuritas sin abrir (empieza con uno de regalo)
     album: {}, // { [idFigurita]: cuántas tiene }
@@ -76,7 +78,14 @@ export function loadProgress(profileId) {
       claimedAchievements: parsed.claimedAchievements || [],
       album: { ...parsed.album },
       eventTokens: { ...parsed.eventTokens },
-      house: { owned: [...((parsed.house && parsed.house.owned) || [])], placed: { ...((parsed.house && parsed.house.placed) || {}) } },
+      campaign: JSON.parse(JSON.stringify(parsed.campaign || {})),
+      missionsDone: JSON.parse(JSON.stringify(parsed.missionsDone || {})),
+      house: {
+        owned: [...((parsed.house && parsed.house.owned) || [])],
+        placed: { ...((parsed.house && parsed.house.placed) || {}) },
+        layout: parsed.house && Array.isArray(parsed.house.layout) ? parsed.house.layout.map((f) => ({ ...f })) : null,
+        size: (parsed.house && parsed.house.size) || 0,
+      },
       albumClaimed: parsed.albumClaimed || [],
       packs: parsed.packs ?? 1,
       creations: Array.isArray(parsed.creations) ? parsed.creations.slice(0, MAX_CREATIONS) : [],

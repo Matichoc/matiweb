@@ -6,17 +6,21 @@
 // Versión "Gran Vitrina": guardar una pieza (C / Shift), combos y back-to-back, cubos de poder
 // (bomba que limpia 3x3 y rayo que limpia la fila), subida de nivel con cambio de ambiente y música.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=12a3a39f99";
-import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
-import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=12a3a39f99";
-import { saveProgress, earnCoins } from "./storage.js?v=12a3a39f99";
-import * as audio from "./audio.js?v=12a3a39f99";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=64b04a2636";
+import { createMatichico } from "./matichico3d.js?v=64b04a2636";
+import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=64b04a2636";
+import { saveProgress, earnCoins } from "./storage.js?v=64b04a2636";
+import * as audio from "./audio.js?v=64b04a2636";
+import { campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=64b04a2636";
 
 const COLS = 8;
 const ROWS = 14;
 const LINE_SCORE = [0, 100, 300, 500, 800];
 const SPECIAL_COIN_REWARD = 5;
 const CUBE = 0.94;
+// Modo niveles (20): cada nivel pide cierta cantidad de líneas, cae más rápido y empieza con filas de "basura".
+const lineGoal = (level) => 5 + level;
+const levelGarbage = (level) => Math.min(6, Math.floor((level - 1) / 3));
 
 const cx = (col) => col - COLS / 2 + 0.5;
 const cy = (row) => ROWS - 1 - row + 0.5;
@@ -342,7 +346,11 @@ export class Tetris3DGame extends Game3D {
     this.bag = createBag();
     this.score = 0;
     this.lines = 0;
-    this.level = 1;
+    this.mode = campaignMode(this.progress, "tetris");
+    this.level = this.mode === "levels" ? campaignLevel(this.progress, "tetris") : 1;
+    this.goal = this.mode === "levels" ? lineGoal(this.level) : 0;
+    this.pieces = 0;
+    this.pendingWin = false;
     this.coinsEarned = 0;
     this.dropTimer = 0;
     this.shake = 0;
@@ -353,6 +361,7 @@ export class Tetris3DGame extends Game3D {
     this.bombs = 0;
     for (const m of this.holdMeshes || []) this.holdHolder.remove(m);
     this.holdMeshes = [];
+    if (this.mode === "levels") this._addGarbage(levelGarbage(this.level));
     this.current = this._newPiece(this._nextFromBag());
     this.next = this._newPiece(this._nextFromBag());
     this.scene.background.setHex(0x2a140b);
@@ -420,7 +429,55 @@ export class Tetris3DGame extends Game3D {
   }
 
   _dropIntervalMs() {
+    if (this.mode === "levels") return Math.max(110, 780 - (this.level - 1) * 34);
     return Math.max(120, 800 - (this.level - 1) * 60);
+  }
+
+  /** Filas ya llenas (con un par de huecos) abajo de la vitrina: el reto de los niveles altos. */
+  _addGarbage(rows) {
+    const types = Object.keys(SHAPES);
+    for (let r = 0; r < rows; r++) {
+      const y = ROWS - 1 - r;
+      const holes = new Set([Math.floor(Math.random() * COLS), Math.floor(Math.random() * COLS)]);
+      for (let x = 0; x < COLS; x++) {
+        if (holes.has(x)) continue;
+        const type = types[Math.floor(Math.random() * types.length)];
+        const mesh = this._makeCube(type, false, null);
+        mesh.position.set(cx(x), cy(y), 0);
+        mesh.userData.row = y;
+        this.cellRoot.add(mesh);
+        this.grid[y][x] = { style: PIECE_STYLE[type], special: false, mesh, type, power: null };
+      }
+    }
+  }
+
+  /** En la tarjeta de inicio se elige entre "Infinito" y los 20 niveles. */
+  onIntro() {
+    renderModePicker(this.els.q("lvlpick"), { id: "tetris", progress: this.progress, onChange: () => this.reset() });
+  }
+
+  nextLevel() {
+    const c = campaign(this.progress, "tetris");
+    c.selected = Math.min(LEVELS_PER_GAME, this.level + 1);
+    this.particles.clear();
+    this.popups.clear();
+    this.state = "intro";
+    this.reset();
+    this.beginPlaying();
+  }
+
+  _levelDone() {
+    const needed = this.goal * 2; // lo mínimo de piezas: 2 por línea
+    const stars = this.pieces <= needed * 1.35 ? 3 : this.pieces <= needed * 1.8 ? 2 : 1;
+    this._setHero("cheer", 99);
+    if (this.level >= LEVELS_PER_GAME) {
+      const t = this.els.q("gameover-title");
+      if (t) t.textContent = `¡Completaste los ${LEVELS_PER_GAME} niveles! 🏆`;
+      audio.playVictory();
+      this.finish(`Llegaste a ${this.score} puntos en el último nivel.`);
+      return;
+    }
+    this.levelWin({ level: this.level, stars, text: `${this.lines} líneas con ${this.pieces} piezas y ${this.score} puntos.` });
   }
 
   _setHero(mode, seconds) {
@@ -522,9 +579,11 @@ export class Tetris3DGame extends Game3D {
     if (toppedOut) { this._onGameOver(); return; }
 
     for (const pw of powers) this._firePower(pw.x, pw.y, pw.power);
+    this.pieces++;
     const cleared = this._clearLines();
     if (cleared > 0) this._comboHit(cleared);
     else if (!powers.length) this.combo = 0;
+    if (this.pendingWin) { this._levelDone(); return; }
     this.current = this.next;
     this.next = this._newPiece(this._nextFromBag());
     this._rebuildCurrent(true);
@@ -627,9 +686,13 @@ export class Tetris3DGame extends Game3D {
       this.grid.unshift(Array(COLS).fill(null));
     }
     this.lines += fullRows.length;
-    const prevLevel = this.level;
-    this.level = Math.floor(this.lines / 10) + 1;
-    if (this.level > prevLevel) this._levelUp();
+    if (this.mode === "levels") {
+      if (this.lines >= this.goal) this.pendingWin = true;
+    } else {
+      const prevLevel = this.level;
+      this.level = Math.floor(this.lines / 10) + 1;
+      if (this.level > prevLevel) this._levelUp();
+    }
     const pts = LINE_SCORE[fullRows.length] * this.level;
     this.score += pts;
     this.shake = 0.1 + fullRows.length * 0.07;
@@ -667,14 +730,15 @@ export class Tetris3DGame extends Game3D {
   _onGameOver() {
     this._setHero("sad", 99);
     audio.playLose();
+    const lvl = this.mode === "levels" ? `Nivel ${this.level}: ` : "";
     this.finish(
-      `Hiciste ${this.score} puntos y ${this.lines} líneas (mejor combo x${this.bestCombo || 1}, ${this.bombs} poderes usados)` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."),
+      `${lvl}Hiciste ${this.score} puntos y ${this.lines} líneas (mejor combo x${this.bestCombo || 1}, ${this.bombs} poderes usados)` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."),
     );
   }
 
   _updateHud() {
     this.els.hudScore.textContent = String(this.score);
-    this.els.hudLines.textContent = String(this.lines);
+    this.els.hudLines.textContent = this.goal ? `${Math.min(this.lines, this.goal)}/${this.goal}` : String(this.lines);
     this.els.hudLevel.textContent = String(this.level);
     this.els.hudCoins.textContent = String(this.progress.coins);
     if (this.els.hudCombo) this.els.hudCombo.textContent = this.combo > 1 ? `x${this.combo}` : "x1";

@@ -1,23 +1,26 @@
-import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=12a3a39f99";
-import { SLOTS, RARITIES, getItem, itemsOfSlot } from "./wardrobe-data.js?v=12a3a39f99";
-import * as audio from "./audio.js?v=12a3a39f99";
-import { bindStick } from "./stick.js?v=12a3a39f99";
-import { GAMES_CATALOG } from "./games-catalog.js?v=12a3a39f99";
+import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=64b04a2636";
+import { SLOTS, RARITIES, getItem, itemsOfSlot } from "./wardrobe-data.js?v=64b04a2636";
+import * as audio from "./audio.js?v=64b04a2636";
+import { bindStick } from "./stick.js?v=64b04a2636";
+import { GAMES_CATALOG } from "./games-catalog.js?v=64b04a2636";
 import {
   loadProgress, saveProgress, ownsItem, getLook, equipItem, buyItem, equippedOutfitId,
   getBestScore, getLeaderboard, canClaimDailyReward, claimDailyReward, claimAchievement,
-} from "./storage.js?v=12a3a39f99";
+} from "./storage.js?v=64b04a2636";
 import {
   listProfiles, createProfile, deleteProfile, updateProfileMeta,
   getLastActiveProfileId, setLastActiveProfileId, MAX_PROFILES,
-} from "./profiles.js?v=12a3a39f99";
-import { ACHIEVEMENTS } from "./achievements.js?v=12a3a39f99";
-import { activeEvent, eventById, eventEnd, nextEvent, eventTokens, eventItemAvailable, buyEventItem } from "./events.js?v=12a3a39f99";
-import { HOUSE_SPOTS, houseItemsOfSpot, getHouseItem, ownsHouseItem, buyHouseItem, placeHouseItem, placedWithDefaults } from "./house-data.js?v=12a3a39f99";
+} from "./profiles.js?v=64b04a2636";
+import { ACHIEVEMENTS } from "./achievements.js?v=64b04a2636";
+import { activeEvent, eventById, eventEnd, nextEvent, eventTokens, eventItemAvailable, buyEventItem } from "./events.js?v=64b04a2636";
+import {
+  HOUSE_SPOTS, houseItemsOfSpot, getHouseItem, ownsHouseItem, buyHouseItem, placeHouseItem, placedWithDefaults,
+  FURN_CATEGORIES, furnitureOf, isWallItem, houseLayout, layoutAdd, layoutRemove, buyFurniture, HOUSE_SIZES, houseSize, buyHouseSize,
+} from "./house-data.js?v=64b04a2636";
 import {
   levelInfo, xpForLevel, LEVEL_GIFTS, ensureDaily, missionLabel, missionProgress, missionDone, claimMission,
   canClaimChest, claimChest, hasPending, STICKERS, albumCount, ALBUM_MILESTONES, openPack, onProgressEvent,
-} from "./progression.js?v=12a3a39f99";
+} from "./progression.js?v=64b04a2636";
 
 let progress = null;
 let selectedCharacter = null;
@@ -71,7 +74,7 @@ function showToast(message, ms = 2600) {
 function paintAvatar(canvas, char, lookOverride = null, prog = progress) {
   const look = lookOverride || getLook(prog, char.id);
   renderCharacterThumb(canvas, char, getOutfit(look.outfit));
-  import("./thumb3d.js?v=12a3a39f99")
+  import("./thumb3d.js?v=64b04a2636")
     .then((m) => {
       m.renderHeroThumb(canvas, char, look);
       canvas.dispatchEvent(new Event("repainted"));
@@ -130,7 +133,7 @@ async function syncLobby(visible) {
   try {
     if (lobbyFailed) { useFallback(); return; }
     if (!lobby) {
-      const { Lobby3D } = await import("./lobby3d.js?v=12a3a39f99");
+      const { Lobby3D } = await import("./lobby3d.js?v=64b04a2636");
       lobby = new Lobby3D(cv);
       lobby.init();
     }
@@ -179,6 +182,11 @@ function refreshHubStats() {
   document.getElementById("hub-level").textContent = String(lv.level);
   document.getElementById("hub-xp-fill").style.width = `${Math.round((lv.into / lv.need) * 100)}%`;
   document.getElementById("hub-progress-dot").classList.toggle("hidden", !hasPending(progress));
+  const hs = document.getElementById("house-banner-sub");
+  if (hs && progress.house) {
+    const n = (progress.house.layout || []).length;
+    hs.textContent = `${houseSize(progress).name}${n ? ` · ${n} mueble${n > 1 ? "s" : ""}` : ""} — ¡arrastra muebles, decora y agranda tu casa!`;
+  }
 }
 
 // ---------- PERFILES ("¿Quién juega?") ----------
@@ -323,16 +331,28 @@ btnDailyReward.addEventListener("click", () => {
 });
 
 // ---------- MI CASA ----------
+// Tres modos: "decor" (poner y arrastrar muebles donde quieras), "style" (piso, paredes y techo)
+// y "size" (agrandar la casa). Todo se paga con los Matipuntos que se ganan jugando.
 
 const houseTabsEl = document.getElementById("house-tabs");
 const houseGridEl = document.getElementById("house-grid");
 const houseBarEl = document.getElementById("house-bar");
-let houseSpot = HOUSE_SPOTS[0].id;
-let houseTrial = {}; // objetos que se están probando y todavía no son tuyos: { [lugar]: idObjeto }
+const houseModesEl = document.getElementById("house-modes");
+const houseToolsEl = document.getElementById("house-tools");
+const STYLE_SPOTS = HOUSE_SPOTS.filter((s) => ["floor", "wall", "ceiling"].includes(s.id));
+let houseMode = "decor";
+let houseSpot = "floor";
+let houseCat = FURN_CATEGORIES[0].id;
+let houseTrial = {}; // objetos de estilo que se están probando y todavía no son tuyos: { [lugar]: idObjeto }
+let houseBuying = null; // mueble que se está mirando para comprar
+let houseSel = null; // uid de la pieza seleccionada
 let house3d = null;
 
+document.getElementById("btn-house-banner").addEventListener("click", () => document.getElementById("btn-open-house").click());
 document.getElementById("btn-open-house").addEventListener("click", () => {
   houseTrial = {};
+  houseBuying = null;
+  houseSel = null;
   showScreen(screenHouse);
   renderHouse();
   openHousePreview();
@@ -352,14 +372,19 @@ function housePlaced() {
 async function openHousePreview() {
   try {
     if (!house3d) {
-      const { House3D } = await import("./house3d.js?v=12a3a39f99");
+      const { House3D } = await import("./house3d.js?v=64b04a2636");
       house3d = new House3D(document.getElementById("house-canvas"));
       house3d.init();
+      bindHouseDrag();
+      if (location.search.includes("debug3d")) window.__house = house3d; // solo para pruebas
     }
     const look = getLook(progress, selectedCharacter.id);
     const key = `${selectedCharacter.id}|${JSON.stringify(look)}`;
     if (house3d.key !== key) house3d.setHero(selectedCharacter, look, key);
+    house3d.setSize(houseSize(progress).size);
+    house3d.layoutData = houseLayout(progress);
     house3d.setPlaced(housePlaced());
+    house3d.setSelected(houseSel);
     house3d.setActive(true);
   } catch (err) {
     console.error(err);
@@ -367,18 +392,208 @@ async function openHousePreview() {
   }
 }
 
+function selectPiece(uid) {
+  houseSel = uid;
+  house3d && house3d.setSelected(uid);
+  renderHouseTools();
+}
+
+function renderHouseTools() {
+  houseToolsEl.innerHTML = "";
+  const d = houseSel && houseLayout(progress).find((f) => f.uid === houseSel);
+  houseToolsEl.classList.toggle("hidden", !d || houseMode !== "decor");
+  if (!d) return;
+  const item = getHouseItem(d.id);
+  const add = (label, title, fn) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = label;
+    b.title = title;
+    b.addEventListener("click", () => { fn(); house3d && house3d.updateFurn(d); saveProgress(progress); });
+    houseToolsEl.appendChild(b);
+  };
+  const name = document.createElement("span");
+  name.className = "ht-name";
+  name.textContent = `${item.icon} ${item.name}`;
+  houseToolsEl.appendChild(name);
+  if (d.wall) add("↔", "Cambiar de pared", () => { d.wall = d.wall === "back" ? "left" : "back"; });
+  else add("⟳", "Girar", () => { d.rot = ((d.rot || 0) + Math.PI / 4) % (Math.PI * 2); });
+  add("➖", "Más chico", () => { d.s = Math.max(0.5, Math.round(((d.s || 1) - 0.15) * 100) / 100); });
+  add("➕", "Más grande", () => { d.s = Math.min(2.2, Math.round(((d.s || 1) + 0.15) * 100) / 100); });
+  const del = document.createElement("button");
+  del.type = "button";
+  del.textContent = "🗑";
+  del.title = "Guardar en el baúl";
+  del.addEventListener("click", () => { layoutRemove(progress, d.uid); house3d && house3d.removeFurn(d.uid); selectPiece(null); audio.playBump(); });
+  houseToolsEl.appendChild(del);
+  const ok = document.createElement("button");
+  ok.type = "button";
+  ok.textContent = "✔";
+  ok.title = "Listo";
+  ok.addEventListener("click", () => selectPiece(null));
+  houseToolsEl.appendChild(ok);
+}
+
+/** Arrastrar muebles dentro del cuarto (mouse o dedo). */
+function bindHouseDrag() {
+  const cv = document.getElementById("house-canvas");
+  let drag = null;
+  const point = (e, d) => (d.wall ? house3d.wallPoint(e.clientX, e.clientY) : house3d.floorPoint(e.clientX, e.clientY));
+  const snap = (v) => Math.round(v * 4) / 4;
+  cv.addEventListener("pointerdown", (e) => {
+    if (houseMode !== "decor") return;
+    const uid = house3d.pick(e.clientX, e.clientY);
+    if (!uid) { if (houseSel) selectPiece(null); return; }
+    const d = houseLayout(progress).find((f) => f.uid === uid);
+    if (!d) return;
+    selectPiece(uid);
+    const p = point(e, d);
+    drag = { d, id: e.pointerId, off: p && !d.wall ? { x: d.x - p.x, z: d.z - p.z } : { x: 0, z: 0 } };
+    cv.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  cv.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const p = point(e, drag.d);
+    if (!p) return;
+    if (drag.d.wall) {
+      drag.d.wall = p.wall;
+      drag.d.u = snap(p.u);
+      drag.d.y = snap(p.y);
+    } else {
+      drag.d.x = snap(p.x + drag.off.x);
+      drag.d.z = snap(p.z + drag.off.z);
+    }
+    house3d.updateFurn(drag.d);
+  });
+  const end = (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag = null;
+    saveProgress(progress);
+  };
+  cv.addEventListener("pointerup", end);
+  cv.addEventListener("pointercancel", end);
+}
+
+/** Pone una copia de un mueble que ya es tuyo (en el centro, o donde lo soltaste). */
+function placeFurniture(id, at = null) {
+  const item = getHouseItem(id);
+  const piece = layoutAdd(progress, id);
+  if (!piece) return;
+  if (at && !piece.wall) { piece.x = at.x; piece.z = at.z; }
+  if (at && piece.wall && at.wall) { piece.wall = at.wall; piece.u = at.u; piece.y = at.y; }
+  house3d && house3d.addFurn(piece);
+  house3d && house3d.updateFurn(piece);
+  selectPiece(piece.uid);
+  audio.playJump();
+  showToast(`${item.icon} ${item.name} puesto: ¡arrástralo donde quieras!`);
+}
+
+/** Arrastrar una tarjeta de mueble hasta el cuarto (también funciona con un toque). */
+function bindCardDrag(card, id) {
+  let start = null;
+  card.addEventListener("pointerdown", (e) => { start = { x: e.clientX, y: e.clientY, moved: false }; });
+  card.addEventListener("pointermove", (e) => { if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 12) start.moved = true; });
+  card.addEventListener("pointerup", (e) => {
+    if (!start) return;
+    const s = start;
+    start = null;
+    if (!s.moved) return;
+    const r = document.getElementById("house-canvas").getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    const item = getHouseItem(id);
+    const at = isWallItem(item) ? house3d.wallPoint(e.clientX, e.clientY) : house3d.floorPoint(e.clientX, e.clientY);
+    card.dataset.dragged = "1";
+    placeFurniture(id, at);
+    renderHouse();
+  });
+  card.addEventListener("pointercancel", () => { start = null; });
+}
+
 function renderHouse() {
   document.getElementById("house-coins").textContent = String(progress.coins);
+  // modos
+  houseModesEl.innerHTML = "";
+  for (const [id, icon, name] of [["decor", "🛋️", "Decorar"], ["style", "🎨", "Piso y paredes"], ["size", "🏡", "Agrandar casa"]]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "sh-mode" + (id === houseMode ? " active" : "");
+    b.innerHTML = `<span>${icon}</span> ${name}`;
+    b.addEventListener("click", () => { houseMode = id; houseBuying = null; houseTrial = {}; if (id !== "decor") selectPiece(null); renderHouse(); house3d && house3d.setPlaced(housePlaced()); });
+    houseModesEl.appendChild(b);
+  }
+  renderHouseTools();
   houseTabsEl.innerHTML = "";
-  HOUSE_SPOTS.forEach((s) => {
+  houseGridEl.innerHTML = "";
+  houseBarEl.innerHTML = "";
+  if (houseMode === "decor") renderHouseDecor();
+  else if (houseMode === "style") renderHouseStyle();
+  else renderHouseSize();
+}
+
+function renderHouseDecor() {
+  FURN_CATEGORIES.forEach((c) => {
+    const btn = document.createElement("button");
+    btn.className = "sh-tab" + (c.id === houseCat ? " active" : "");
+    btn.innerHTML = `<span>${c.icon}</span><b>${c.name}</b>`;
+    btn.addEventListener("click", () => { houseCat = c.id; houseBuying = null; renderHouse(); });
+    houseTabsEl.appendChild(btn);
+  });
+  furnitureOf(houseCat).forEach((item) => {
+    const owned = ownsHouseItem(progress, item.id);
+    const count = houseLayout(progress).filter((f) => f.id === item.id).length;
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "sh-card" + (!owned ? " locked" : "") + (houseBuying === item.id ? " trying" : "");
+    card.style.setProperty("--rar", RARITIES[item.rarity].color);
+    card.innerHTML = `<span class="sh-ico">${item.icon}</span><span class="sh-name">${item.name}</span>` +
+      `<span class="sh-price">${owned ? `＋ Poner${count ? ` (${count} puesto${count > 1 ? "s" : ""})` : ""}` : `🍫✨ ${item.price}`}</span>`;
+    card.addEventListener("click", () => {
+      if (card.dataset.dragged) { delete card.dataset.dragged; return; }
+      if (owned) { placeFurniture(item.id); renderHouse(); } else { houseBuying = item.id; renderHouse(); }
+    });
+    if (owned) bindCardDrag(card, item.id);
+    houseGridEl.appendChild(card);
+  });
+  const bi = houseBuying && getHouseItem(houseBuying);
+  if (bi) {
+    const need = bi.price - progress.coins;
+    const txt = document.createElement("div");
+    txt.className = "sh-bar-txt";
+    txt.innerHTML = `<b>${bi.icon} ${bi.name}</b> <i style="color:${RARITIES[bi.rarity].color}">${RARITIES[bi.rarity].name}</i>`;
+    const buy = document.createElement("button");
+    buy.className = "btn-primary";
+    buy.textContent = need > 0 ? `Te faltan ${need} Matipuntos` : `Comprar y poner · 🍫✨ ${bi.price}`;
+    buy.disabled = need > 0;
+    buy.addEventListener("click", () => {
+      if (!buyFurniture(progress, bi.id)) return;
+      audio.playPurchase();
+      showToast(`¡Compraste ${bi.name}! 🎉`);
+      houseBuying = null;
+      placeFurniture(bi.id);
+      renderHouse();
+      refreshHubStats();
+    });
+    const cancel = document.createElement("button");
+    cancel.className = "btn-secondary";
+    cancel.textContent = "Cancelar";
+    cancel.addEventListener("click", () => { houseBuying = null; renderHouse(); });
+    houseBarEl.append(txt, buy, cancel);
+  } else {
+    houseBarEl.innerHTML = `<div class="sh-bar-txt">Toca un mueble para ponerlo, o <b>arrástralo</b> hasta el cuarto. Toca uno puesto para moverlo, girarlo o cambiarle el tamaño. ¡Agranda la casa para tener más espacio!</div>`;
+  }
+}
+
+function renderHouseStyle() {
+  STYLE_SPOTS.forEach((s) => {
     const btn = document.createElement("button");
     btn.className = "sh-tab" + (s.id === houseSpot ? " active" : "");
     btn.innerHTML = `<span>${s.icon}</span><b>${s.name}</b>`;
     btn.addEventListener("click", () => { houseSpot = s.id; renderHouse(); });
     houseTabsEl.appendChild(btn);
   });
+  if (!STYLE_SPOTS.some((s) => s.id === houseSpot)) houseSpot = "floor";
   const placed = placedWithDefaults(progress);
-  houseGridEl.innerHTML = "";
   const addCard = (item) => {
     const id = item ? item.id : "";
     const owned = !item || ownsHouseItem(progress, id);
@@ -404,7 +619,6 @@ function renderHouse() {
   if (houseSpot !== "floor" && houseSpot !== "wall") addCard(null);
   houseItemsOfSpot(houseSpot).forEach(addCard);
 
-  houseBarEl.innerHTML = "";
   const tid = houseTrial[houseSpot];
   const titem = tid ? getHouseItem(tid) : null;
   if (titem) {
@@ -431,8 +645,34 @@ function renderHouse() {
     cancel.addEventListener("click", () => { delete houseTrial[houseSpot]; renderHouse(); house3d && house3d.setPlaced(housePlaced()); });
     houseBarEl.append(txt, buy, cancel);
   } else {
-    houseBarEl.innerHTML = `<div class="sh-bar-txt">Elige un lugar del cuarto y toca un objeto para verlo puesto. Si es tuyo se queda; si no, lo compras con Matipuntos.</div>`;
+    houseBarEl.innerHTML = `<div class="sh-bar-txt">Elige el piso, las paredes o el techo y toca uno para verlo puesto. Si es tuyo se queda; si no, lo compras con Matipuntos.</div>`;
   }
+}
+
+function renderHouseSize() {
+  const cur = houseSize(progress);
+  HOUSE_SIZES.forEach((sz) => {
+    const owned = sz.level <= cur.level;
+    const next = sz.level === cur.level + 1;
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "sh-card sh-size" + (sz.level === cur.level ? " equipped" : "") + (!owned ? " locked" : "");
+    card.innerHTML = `<span class="sh-ico">${sz.icon}</span><span class="sh-name">${sz.name}</span><small>${sz.size} × ${sz.size}</small>` +
+      `<span class="sh-price">${sz.level === cur.level ? "✓ Tu casa" : owned ? "Tuya" : next ? `🍫✨ ${sz.price}` : "🔒 Primero la anterior"}</span>`;
+    card.addEventListener("click", () => {
+      if (!next) return;
+      if (progress.coins < sz.price) { showToast(`Te faltan ${sz.price - progress.coins} Matipuntos`); return; }
+      if (!buyHouseSize(progress, sz.level)) return;
+      audio.playPurchase();
+      showToast(`¡Ahora tienes una ${sz.name.toLowerCase()}! 🎉`);
+      house3d && house3d.setSize(sz.size);
+      houseMode = "decor";
+      renderHouse();
+      refreshHubStats();
+    });
+    houseGridEl.appendChild(card);
+  });
+  houseBarEl.innerHTML = `<div class="sh-bar-txt">${cur.level >= HOUSE_SIZES.length - 1 ? "¡Ya tienes la casa más grande! Llénala de muebles." : `Agrandar tu casa te da más espacio para muebles. Próxima: <b>${HOUSE_SIZES[cur.level + 1].name}</b> por 🍫✨ ${HOUSE_SIZES[cur.level + 1].price}.`}</div>`;
 }
 
 // ---------- MI AVENTURA: nivel, misiones, racha y álbum ----------
@@ -900,7 +1140,7 @@ function shopLook() {
 async function openShopPreview() {
   try {
     if (!shopLobby) {
-      const { Lobby3D } = await import("./lobby3d.js?v=12a3a39f99");
+      const { Lobby3D } = await import("./lobby3d.js?v=64b04a2636");
       shopLobby = new Lobby3D(document.getElementById("shop-canvas"));
       shopLobby.init();
     }
@@ -1108,7 +1348,7 @@ async function launchOrResumeFps() {
   try {
     if (!instances.fps) {
       showToast("Cargando el mundo 3D…");
-      const { FpsGame } = await import("./fps-game.js?v=12a3a39f99");
+      const { FpsGame } = await import("./fps-game.js?v=64b04a2636");
       const q = (id) => document.getElementById(id);
       const els = {
         wrap: q("fps-canvas-wrap"),
@@ -1179,16 +1419,16 @@ function errDetail(err) {
 // "<prefijo>-canvas", "-hud-<nombre>", "-overlay-<intro|win|gameover>", "-btn-*".
 
 const GAMES_3D = {
-  town: { module: "./town-game.js?v=12a3a39f99", cls: "TownGame", hud: [] },
-  recolecta: { module: "./recolecta-game.js?v=12a3a39f99", cls: "RecolectaGame", hud: [] },
-  basquet_tiros: { module: "./basquet3d-game.js?v=12a3a39f99", cls: "Basquet3DGame", hud: [], prefix: "basquet" },
-  porristas: { module: "./porristas3d-game.js?v=12a3a39f99", cls: "Porristas3DGame", hud: ["score", "combo", "coins"] },
-  parkour: { module: "./parkour-game.js?v=12a3a39f99", cls: "ParkourGame", hud: [] },
-  tetris: { module: "./tetris3d-game.js?v=12a3a39f99", cls: "Tetris3DGame", hud: ["score", "lines", "level", "combo", "coins"] },
-  salto: { module: "./salto-game.js?v=12a3a39f99", cls: "SaltoGame", hud: ["score", "height", "hearts", "combo", "coins"] },
-  autos: { module: "./autos-game.js?v=12a3a39f99", cls: "AutosGame", hud: ["score", "speed", "hearts", "combo", "power", "coins"] },
-  memoria: { module: "./memoria-game.js?v=12a3a39f99", cls: "MemoriaGame", hud: ["level", "moves", "time", "score", "coins"] },
-  creador: { module: "./creador-game.js?v=12a3a39f99", cls: "CreadorGame", hud: ["score", "count", "coins"] },
+  town: { module: "./town-game.js?v=64b04a2636", cls: "TownGame", hud: [] },
+  recolecta: { module: "./recolecta-game.js?v=64b04a2636", cls: "RecolectaGame", hud: [] },
+  basquet_tiros: { module: "./basquet3d-game.js?v=64b04a2636", cls: "Basquet3DGame", hud: [], prefix: "basquet" },
+  porristas: { module: "./porristas3d-game.js?v=64b04a2636", cls: "Porristas3DGame", hud: ["score", "combo", "coins"] },
+  parkour: { module: "./parkour-game.js?v=64b04a2636", cls: "ParkourGame", hud: [] },
+  tetris: { module: "./tetris3d-game.js?v=64b04a2636", cls: "Tetris3DGame", hud: ["score", "lines", "level", "combo", "coins"] },
+  salto: { module: "./salto-game.js?v=64b04a2636", cls: "SaltoGame", hud: ["score", "height", "hearts", "combo", "coins"] },
+  autos: { module: "./autos-game.js?v=64b04a2636", cls: "AutosGame", hud: ["score", "speed", "hearts", "combo", "power", "coins"] },
+  memoria: { module: "./memoria-game.js?v=64b04a2636", cls: "MemoriaGame", hud: ["level", "moves", "time", "score", "coins"] },
+  creador: { module: "./creador-game.js?v=64b04a2636", cls: "CreadorGame", hud: ["score", "count", "coins"] },
 };
 
 async function launchOrResume3d(key) {

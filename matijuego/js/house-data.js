@@ -4,7 +4,7 @@
 //
 // Objeto: { id, spot, name, icon, rarity, price, params }   (price 0 = viene con la casa)
 
-import { spendCoins, saveProgress } from "./storage.js?v=12a3a39f99";
+import { spendCoins, saveProgress } from "./storage.js?v=64b04a2636";
 
 export const HOUSE_SPOTS = [
   { id: "floor", name: "Piso", icon: "🟫" },
@@ -17,6 +17,7 @@ export const HOUSE_SPOTS = [
   { id: "wallC", name: "Pared centro", icon: "📺" },
   { id: "wallR", name: "Pared der.", icon: "🪟" },
   { id: "ceiling", name: "Techo", icon: "🎈" },
+  { id: "free", name: "Muebles", icon: "🛋️" }, // muebles nuevos que se ponen donde quieras
 ];
 
 const P = { comun: 30, raro: 110, epico: 260, legendario: 520 };
@@ -84,6 +85,17 @@ export const HOUSE_ITEMS = [
   it("wallR", "wr_corazones", "Corazones", "💕", "raro", { kind: "corazones" }),
   it("wallR", "wr_repisa", "Repisa de plantas", "🌱", "raro", { kind: "repisa" }),
   it("wallR", "wr_luces", "Guirnalda de luces", "💫", "epico", { kind: "luces" }),
+  // ---- Muebles nuevos (se colocan donde quieras) ----
+  it("free", "fr_sofa", "Sillón rosado", "🛋️", "comun", { kind: "sofa", a: "#ff7aa8", b: "#ffd1e3" }),
+  it("free", "fr_sofa_azul", "Sillón azul", "🛋️", "comun", { kind: "sofa", a: "#6ab0ff", b: "#d7ebff" }),
+  it("free", "fr_mesa", "Mesa de golosinas", "🍬", "comun", { kind: "mesa", a: "#e0b070", b: "#ff7aa8" }),
+  it("free", "fr_silla", "Silla de chocolate", "🪑", "comun", { kind: "silla", a: "#8a4b2c", b: "#ffd34d" }),
+  it("free", "fr_comoda", "Cómoda de cajones", "🗄️", "raro", { kind: "comoda", a: "#fff1d6", b: "#d4216c" }),
+  it("free", "fr_pelotero", "Pelotero", "🔴", "raro", { kind: "pelotero" }),
+  it("free", "fr_tipi", "Carpa tipi", "⛺", "raro", { kind: "tipi", a: "#ff9ec6", b: "#fff6e6" }),
+  it("free", "fr_piano", "Piano de cola", "🎹", "epico", { kind: "piano" }),
+  it("free", "fr_pastel", "Mesa con pastel gigante", "🎂", "epico", { kind: "pastel" }),
+  it("free", "fr_trampolin", "Cama elástica", "🤸", "epico", { kind: "trampolin" }),
   // ---- Techo ----
   it("ceiling", "ce_lampara", "Lámpara colgante", "💡", "comun", { kind: "lampara" }),
   it("ceiling", "ce_globos", "Globos", "🎈", "comun", { kind: "globos" }),
@@ -126,6 +138,98 @@ export function placeHouseItem(progress, spot, id) {
   if (id) progress.house.placed[spot] = id;
   else if (spot === "floor" || spot === "wall") progress.house.placed[spot] = DEFAULT_PLACED[spot];
   else delete progress.house.placed[spot];
+  saveProgress(progress);
+  return true;
+}
+
+
+// ---------- decorar libre (estilo "Avatar World") ----------
+// Cada mueble que compras se puede poner varias veces, en cualquier lugar del cuarto, girado y
+// de otro tamaño. `progress.house.layout` guarda cada pieza: { uid, id, x, z, rot, s } en el piso,
+// o { uid, id, wall: "back" | "left", u, y, s } si es de pared.
+
+/** Muebles que se pueden poner donde quieras (todo menos piso, paredes y techo). */
+export const FURNITURE_SPOTS = ["rug", "bed", "left", "right", "free", "wallL", "wallC", "wallR"];
+export const FURN_CATEGORIES = [
+  { id: "sit", name: "Sillones y mesas", icon: "🛋️", test: (i) => i.spot === "free" && ["sofa", "mesa", "silla", "comoda"].includes(i.params.kind) },
+  { id: "fun", name: "Juegos", icon: "🎪", test: (i) => i.spot === "free" && !["sofa", "mesa", "silla", "comoda"].includes(i.params.kind) || ["lf_arcade", "lf_oso"].includes(i.id) },
+  { id: "bed", name: "Camas", icon: "🛏️", test: (i) => i.spot === "bed" },
+  { id: "plants", name: "Plantas y luces", icon: "🪴", test: (i) => (i.spot === "left" || i.spot === "right") && !["lf_arcade", "lf_oso"].includes(i.id) },
+  { id: "rug", name: "Alfombras", icon: "🟣", test: (i) => i.spot === "rug" },
+  { id: "wall", name: "Para la pared", icon: "🖼️", test: (i) => i.spot.startsWith("wall") && i.spot.length === 5 },
+];
+export const isWallItem = (item) => !!item && item.spot.startsWith("wall") && item.spot.length === 5;
+export const furnitureOf = (catId) => {
+  const c = FURN_CATEGORIES.find((x) => x.id === catId);
+  return HOUSE_ITEMS.filter((i) => FURNITURE_SPOTS.includes(i.spot) && c.test(i));
+};
+
+/** Posiciones de siempre de cada lugar (para pasar lo que ya tenías puesto al modo libre). */
+const OLD_ANCHORS = {
+  rug: { x: 0.2, z: 1.0 }, bed: { x: -3.4, z: -2.2 }, left: { x: -4.0, z: 2.8 }, right: { x: 3.7, z: -3.8 },
+  wallL: { wall: "left", u: 0.4, y: 2.7 }, wallC: { wall: "back", u: 0.3, y: 2.8 }, wallR: { wall: "back", u: 3.4, y: 2.7 },
+};
+let uidCounter = 0;
+const newUid = () => `f${Date.now().toString(36)}${(uidCounter++).toString(36)}`;
+
+/** El cuarto libre de este perfil; la primera vez convierte lo que ya había puesto. */
+export function houseLayout(progress) {
+  const h = progress.house;
+  if (!h.layout) {
+    h.layout = [];
+    for (const [spot, a] of Object.entries(OLD_ANCHORS)) {
+      const id = h.placed[spot];
+      const item = id && getHouseItem(id);
+      if (item && item.spot === spot) {
+        h.layout.push({ uid: newUid(), id, rot: 0, s: 1, ...a });
+        delete h.placed[spot];
+      }
+    }
+    saveProgress(progress);
+  }
+  return h.layout;
+}
+
+export function layoutAdd(progress, id, x = 0, z = 1.5) {
+  const item = getHouseItem(id);
+  if (!item || !ownsHouseItem(progress, id)) return null;
+  const piece = isWallItem(item) ? { uid: newUid(), id, wall: "back", u: 0, y: 2.8, s: 1 } : { uid: newUid(), id, x, z, rot: 0, s: 1 };
+  houseLayout(progress).push(piece);
+  saveProgress(progress);
+  return piece;
+}
+
+export function layoutRemove(progress, uid) {
+  const l = houseLayout(progress);
+  const i = l.findIndex((f) => f.uid === uid);
+  if (i >= 0) l.splice(i, 1);
+  saveProgress(progress);
+}
+
+/** Compra un mueble sin ponerlo (se agrega con un toque). */
+export function buyFurniture(progress, id) {
+  const item = getHouseItem(id);
+  if (!item || ownsHouseItem(progress, id)) return false;
+  if (!spendCoins(progress, item.price)) return false;
+  progress.house.owned.push(id);
+  saveProgress(progress);
+  return true;
+}
+
+// ---------- agrandar la casa ----------
+
+export const HOUSE_SIZES = [
+  { level: 0, size: 10, name: "Cuarto", icon: "🏠", price: 0, blurb: "Tu cuartito de siempre." },
+  { level: 1, size: 14, name: "Casa mediana", icon: "🏡", price: 300, blurb: "¡Mucho más espacio para muebles!" },
+  { level: 2, size: 18, name: "Casa grande", icon: "🏰", price: 900, blurb: "Una mansión de chocolate para decorar." },
+];
+export const houseSize = (progress) => HOUSE_SIZES[Math.min(HOUSE_SIZES.length - 1, progress.house.size || 0)];
+
+export function buyHouseSize(progress, level) {
+  const next = HOUSE_SIZES[level];
+  if (!next || level !== (progress.house.size || 0) + 1) return false;
+  if (!spendCoins(progress, next.price)) return false;
+  progress.house.size = level;
   saveProgress(progress);
   return true;
 }

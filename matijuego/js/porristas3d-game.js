@@ -3,10 +3,11 @@
 // cae; rebotar centrado suma combo (¡y hace volteretas!), los pompones dan puntos extra.
 // Si cae fuera de la rebotadora, se acaba la partida. Las reglas son las de siempre.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=12a3a39f99";
-import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
-import { saveProgress, earnCoins } from "./storage.js?v=12a3a39f99";
-import * as audio from "./audio.js?v=12a3a39f99";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=64b04a2636";
+import { createMatichico } from "./matichico3d.js?v=64b04a2636";
+import { saveProgress, earnCoins } from "./storage.js?v=64b04a2636";
+import * as audio from "./audio.js?v=64b04a2636";
+import { campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=64b04a2636";
 
 const GAME_ID = "porristas";
 const PX_W = 800;
@@ -295,6 +296,11 @@ export class Porristas3DGame extends Game3D {
     this.score = 0;
     this.combo = 0;
     this.coinsEarned = 0;
+    this.mode = campaignMode(this.progress, GAME_ID);
+    this.level = this.mode === "levels" ? campaignLevel(this.progress, GAME_ID) : 0;
+    this.goal = this.level ? 8 + 3 * this.level : 0; // rebotes que hay que dar en el nivel
+    this.bounces = 0;
+    this.centered = 0;
     this.paddle = { x: PX_W / 2, w: PADDLE_BASE_W };
     this.pompom = null;
     this.pompomTimer = rand(3, 5);
@@ -318,8 +324,8 @@ export class Porristas3DGame extends Game3D {
     this._sync(0);
   }
 
-  _driftRange() { return Math.min(200, 60 + this.score * 4); }
-  _bounceStrength() { return Math.min(720, BASE_BOUNCE + this.score * 4); }
+  _driftRange() { return this.level ? Math.min(230, 60 + this.level * 9 + this.bounces * 2) : Math.min(200, 60 + this.score * 4); }
+  _bounceStrength() { return this.level ? Math.min(720, BASE_BOUNCE + this.level * 6 + this.bounces * 2) : Math.min(720, BASE_BOUNCE + this.score * 4); }
 
   update(dt) {
     this.cheer = Math.max(0, this.cheer - dt * 0.8);
@@ -329,7 +335,8 @@ export class Porristas3DGame extends Game3D {
 
     if (this.state === "playing") {
       this.wideT = Math.max(0, this.wideT - dt);
-      this.paddle.w = Math.max(PADDLE_MIN_W, PADDLE_BASE_W - this.score * 1.2) * (this.wideT > 0 ? 1.55 : 1);
+      const baseW = this.level ? Math.max(62, PADDLE_BASE_W - this.level * 1.6 - this.bounces * 0.4) : Math.max(PADDLE_MIN_W, PADDLE_BASE_W - this.score * 1.2);
+      this.paddle.w = baseW * (this.wideT > 0 ? 1.55 : 1);
       const halfW = this.paddle.w / 2;
       if (this.keys.left) this.paddle.x -= PADDLE_SPEED * dt;
       if (this.keys.right) this.paddle.x += PADDLE_SPEED * dt;
@@ -347,7 +354,7 @@ export class Porristas3DGame extends Game3D {
         c.vx += this.windDir * 260 * dt;
         c.vx = clamp(c.vx, -240, 240);
         if (this.windT <= 0) this.windNext = rand(14, 22);
-      } else if (this.score >= 40) {
+      } else if (this.level ? this.level >= 5 : this.score >= 40) {
         this.windNext -= dt;
         if (this.windNext <= 0) {
           this.windDir = Math.random() < 0.5 ? -1 : 1;
@@ -423,6 +430,8 @@ export class Porristas3DGame extends Game3D {
     c.vy = -this._bounceStrength();
     const centered = Math.abs(c.x - this.paddle.x) <= this.paddle.w * 0.3;
     this.combo = centered ? this.combo + 1 : 0;
+    this.bounces++;
+    if (centered) this.centered++;
     const gained = 10 + (centered ? Math.min(this.combo * 2, 20) : 0);
     this.score += gained;
     c.vx = rand(-this._driftRange(), this._driftRange());
@@ -445,6 +454,35 @@ export class Porristas3DGame extends Game3D {
       this.cheer = 1;
     }
     this._updateHud();
+    if (this.level && this.bounces >= this.goal) this._levelDone();
+  }
+
+  /** En la tarjeta de inicio se elige entre "Infinito" y los 20 niveles. */
+  onIntro() {
+    renderModePicker(this.els.q("lvlpick"), { id: GAME_ID, progress: this.progress, onChange: () => this.reset() });
+  }
+
+  nextLevel() {
+    campaign(this.progress, GAME_ID).selected = Math.min(LEVELS_PER_GAME, this.level + 1);
+    this.particles.clear();
+    this.popups.clear();
+    this.state = "intro";
+    this.reset();
+    this.beginPlaying();
+  }
+
+  _levelDone() {
+    const ratio = this.centered / Math.max(1, this.bounces);
+    const stars = ratio >= 0.8 ? 3 : ratio >= 0.55 ? 2 : 1;
+    this.cheer = 1;
+    if (this.level >= LEVELS_PER_GAME) {
+      const t = this.els.q("gameover-title");
+      if (t) t.textContent = `¡Completaste los ${LEVELS_PER_GAME} niveles! 🏆`;
+      audio.playVictory();
+      this.finish(`Superaste el nivel final con ${this.score} puntos.`);
+      return;
+    }
+    this.levelWin({ level: this.level, stars, text: `${this.bounces} rebotes (${Math.round(ratio * 100)}% bien centrados) y ${this.score} puntos.` });
   }
 
   _onMiss() {
@@ -466,11 +504,13 @@ export class Porristas3DGame extends Game3D {
     }
     audio.playLose();
     this.cheer = 0;
-    this.finish(`Llegaste a ${this.score} puntos rebotando` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."));
+    const t = this.els.q("gameover-title");
+    if (t) t.textContent = "¡Se cayó!";
+    this.finish(`${this.level ? `Nivel ${this.level}: ` : ""}Llegaste a ${this.score} puntos rebotando` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."));
   }
 
   _updateHud() {
-    this.els.hudScore.textContent = String(this.score);
+    this.els.hudScore.textContent = this.goal ? `${Math.min(this.bounces, this.goal)}/${this.goal} 🤸` : String(this.score);
     this.els.hudCombo.textContent = String(this.combo);
     this.els.hudCoins.textContent = String(this.progress.coins);
   }

@@ -2,21 +2,31 @@
 // Cartas 3D con las fotos de los alfajores, bombas y cuchuflíes sobre la mesa de
 // la feria; tu Matichico te anima. 4 niveles (6 a 12 parejas) con estrellas.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=12a3a39f99";
-import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
-import { earnCoins, saveProgress } from "./storage.js?v=12a3a39f99";
-import * as audio from "./audio.js?v=12a3a39f99";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=64b04a2636";
+import { createMatichico } from "./matichico3d.js?v=64b04a2636";
+import { earnCoins, saveProgress } from "./storage.js?v=64b04a2636";
+import * as audio from "./audio.js?v=64b04a2636";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=64b04a2636";
 
 const CARD_W = 0.95;
 const CARD_H = 1.3;
 const GAP_X = 1.2;
 const GAP_Z = 1.6;
-const LEVELS = [
-  { pairs: 6, cols: 4, rows: 3 },
-  { pairs: 8, cols: 4, rows: 4 },
-  { pairs: 10, cols: 5, rows: 4 },
-  { pairs: 12, cols: 6, rows: 4 },
-];
+// 20 niveles: más parejas, vistazo cada vez más corto, cartas traviesas y, desde el 7, tiempo límite.
+const GRID = { 4: [4, 2], 5: [5, 2], 6: [4, 3], 8: [4, 4], 9: [6, 3], 10: [5, 4], 12: [6, 4] };
+const PAIRS = [4, 5, 6, 6, 8, 8, 9, 9, 10, 10, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12];
+function levelSpec(i) {
+  const pairs = PAIRS[i];
+  const [cols, rows] = GRID[pairs];
+  return {
+    pairs, cols, rows,
+    peek: Math.max(0.8, 3.2 - i * 0.13),
+    gold: i >= 1,
+    mischiefEvery: i < 4 ? 0 : i < 9 ? 3 : i < 15 ? 2 : 1, // cada cuántos errores se cambian dos cartas (0 = nunca)
+    limit: i >= 6 ? Math.round(pairs * (i < 12 ? 14 : i < 16 ? 11 : 9)) : 0, // segundos (0 = sin límite)
+  };
+}
+const LEVELS = { length: LEVELS_PER_GAME };
 
 const PRODUCTS = [
   { id: "alf-capuchino", name: "Capuchino", color: "#6b3d22" },
@@ -245,7 +255,7 @@ export class MemoriaGame extends Game3D {
   // ---------- partida ----------
 
   reset() {
-    this.levelIndex = 0;
+    this.levelIndex = Math.max(0, Math.min(LEVELS_PER_GAME, this.startLevel || 1) - 1);
     this.totalScore = 0;
     this.score = 0;
     this.coinsEarned = 0;
@@ -258,6 +268,17 @@ export class MemoriaGame extends Game3D {
     this.timeRunning = false;
   }
 
+  /** En la tarjeta de inicio se elige con qué nivel empezar (solo los desbloqueados). */
+  onIntro() {
+    const c = campaign(this.progress, "memoria");
+    if (!this.startLevel || this.startLevel > c.unlocked) this.startLevel = Math.min(c.unlocked, this.startLevel || c.unlocked);
+    const mount = () => renderLevelPicker(this.els.q("lvlpick"), {
+      id: "memoria", progress: this.progress, selected: this.startLevel,
+      onSelect: (n) => { this.startLevel = n; this.reset(); },
+    });
+    mount();
+  }
+
   nextLevel() {
     this.levelIndex++;
     this.state = "playing";
@@ -266,7 +287,7 @@ export class MemoriaGame extends Game3D {
   }
 
   _layout() {
-    const lv = LEVELS[this.levelIndex];
+    const lv = this.spec;
     const portrait = this.camera.aspect < 0.95;
     return portrait ? { cols: lv.rows, rows: lv.cols } : { cols: lv.cols, rows: lv.rows };
   }
@@ -275,7 +296,8 @@ export class MemoriaGame extends Game3D {
     for (const c of this.cards) this.scene.remove(c.mesh);
     this.cards = [];
     this.hover = null;
-    const lv = LEVELS[this.levelIndex];
+    const lv = (this.spec = levelSpec(this.levelIndex));
+    this.startLevel = this.levelIndex + 1; // "Intentar de nuevo" repite este mismo nivel
     this.pairsTotal = lv.pairs;
     this.matched = 0;
     this.moves = 0;
@@ -295,7 +317,7 @@ export class MemoriaGame extends Game3D {
 
     const picks = shuffle(PRODUCTS.map((_, i) => i)).slice(0, lv.pairs);
     // desde el nivel 2 hay una pareja dorada: vale mucho más
-    if (this.levelIndex >= 1) this.goldPi = picks[Math.floor(Math.random() * picks.length)];
+    if (lv.gold) this.goldPi = picks[Math.floor(Math.random() * picks.length)];
     const deck = shuffle([...picks, ...picks]);
     deck.forEach((pi, idx) => {
       const mats = [this.sideMat, this.sideMat, new THREE.MeshStandardMaterial({ map: this.backTex, roughness: 0.5 }), new THREE.MeshStandardMaterial({ map: this.frontTex[pi], roughness: 0.5 }), this.sideMat, this.sideMat];
@@ -316,7 +338,7 @@ export class MemoriaGame extends Game3D {
     this._updateHud();
     // ¡memoriza! las cartas se muestran un momento al empezar el nivel (menos tiempo en los difíciles)
     this.peekAt = this.cards.length * 0.05 + 0.5;
-    this.peekLen = Math.max(1.2, 3 - this.levelIndex * 0.6);
+    this.peekLen = lv.peek;
     this.peekPending = true;
   }
 
@@ -425,6 +447,7 @@ export class MemoriaGame extends Game3D {
     if (playing && this.timeRunning) {
       this.seconds += dt;
       this._updateHud();
+      if (this.spec.limit && this.seconds >= this.spec.limit) { this._timeUp(); return; }
     }
     if (this.busy > 0) this.busy -= dt;
     // vistazo inicial
@@ -529,9 +552,8 @@ export class MemoriaGame extends Game3D {
 
   /** Desde el nivel 3, cada ciertos errores dos cartas boca abajo se cambian de lugar. */
   _maybeMischief() {
-    if (this.levelIndex < 2) return;
-    const every = this.levelIndex >= 3 ? 2 : 3;
-    if (this.misses % every !== 0) return;
+    const every = this.spec.mischiefEvery;
+    if (!every || this.misses % every !== 0) return;
     const down = this.cards.filter((c) => c.state === "down");
     if (down.length < 4) return;
     shuffle(down);
@@ -546,6 +568,15 @@ export class MemoriaGame extends Game3D {
     audio.playWhoosh();
   }
 
+  /** Se acabó el tiempo del nivel: se puede intentar de nuevo desde ese mismo nivel. */
+  _timeUp() {
+    this.timeRunning = false;
+    audio.playLose();
+    const t = this.els.q("gameover-title");
+    if (t) t.textContent = "¡Se acabó el tiempo! ⏰";
+    this.finish(`No alcanzaste a encontrar todas las parejas del nivel ${this.levelIndex + 1} (${this.matched} de ${this.pairsTotal}). ¡Inténtalo otra vez!`);
+  }
+
   _levelDone() {
     this.timeRunning = false;
     const pairs = this.pairsTotal;
@@ -555,6 +586,7 @@ export class MemoriaGame extends Game3D {
     this.totalScore += gained;
     this.score = this.totalScore;
     this.stars.push(stars);
+    campaignWin(this.progress, "memoria", this.levelIndex + 1, stars);
     let coins = 0;
     if (stars === 3) {
       coins = 2;
@@ -570,6 +602,8 @@ export class MemoriaGame extends Game3D {
     }
     if (all) {
       audio.playVictory();
+      const t = this.els.q("gameover-title");
+      if (t) t.textContent = `¡Terminaste los ${LEVELS_PER_GAME} niveles! 🏆`;
       this.finish(
         `Completaste los ${LEVELS.length} niveles con ${this.stars.reduce((a, b) => a + b, 0)} estrellas y ${this.score} puntos` +
           (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : ".")
@@ -589,7 +623,7 @@ export class MemoriaGame extends Game3D {
     if (this.state !== "win") this.score = this.totalScore + this.levelScore;
     e.hudLevel.textContent = String(this.levelIndex + 1);
     e.hudMoves.textContent = String(this.moves);
-    const s = Math.floor(this.seconds);
+    const s = this.spec && this.spec.limit ? Math.max(0, Math.ceil(this.spec.limit - this.seconds)) : Math.floor(this.seconds);
     e.hudTime.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
     e.hudScore.textContent = String(this.totalScore + (this.state === "win" ? 0 : this.levelScore));
     e.hudCoins.textContent = String(this.progress.coins);
