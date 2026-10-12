@@ -212,11 +212,11 @@ export class Tetris3DGame extends Game3D {
 
   _ensureHero() {
     if (this.hero && this.heroId === this.character.id) {
-      this.hero.setOutfit(this.outfit);
+      this.hero.setLook(this.look);
       return;
     }
     if (this.hero) this.scene.remove(this.hero.group);
-    this.hero = createMatichico(this.character, this.outfit);
+    this.hero = createMatichico(this.character, this.outfit, this.look);
     this.heroId = this.character.id;
     this.hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.hero.group.scale.setScalar(2.1);
@@ -481,7 +481,7 @@ export class Tetris3DGame extends Game3D {
     this._setHero("sad", 99);
     audio.playLose();
     this.finish(
-      `Hiciste ${this.score} puntos y ${this.lines} líneas` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : "."),
+      `Hiciste ${this.score} puntos y ${this.lines} líneas` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."),
     );
   }
 

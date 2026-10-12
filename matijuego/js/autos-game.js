@@ -287,11 +287,11 @@ export class AutosGame extends Game3D {
 
   _ensureDriver() {
     if (this.driver && this.driverId === this.character.id) {
-      this.driver.setOutfit(this.outfit);
+      this.driver.setLook(this.look);
       return;
     }
     if (this.driver) this.car.remove(this.driver.group);
-    this.driver = createMatichico(this.character, this.outfit);
+    this.driver = createMatichico(this.character, this.outfit, this.look);
     this.driverId = this.character.id;
     this.driver.group.scale.setScalar(0.62);
     this.driver.group.position.set(0, 0.72, 0.4);
@@ -664,7 +664,7 @@ export class AutosGame extends Game3D {
     audio.playLose();
     this.finish(
       `Recorriste ${Math.floor(this.dist)} metros, juntaste ${this.items} alfajores y sumaste ${this.score} puntos` +
-        (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : ".")
+        (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : ".")
     );
   }
 

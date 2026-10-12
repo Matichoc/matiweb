@@ -4,7 +4,9 @@
 
 import { getBestScore } from "./storage.js";
 
-export const ACHIEVEMENTS = [
+const IN_APP = typeof document !== "undefined" && document.documentElement.dataset.app === "1";
+
+const ALL_ACHIEVEMENTS = [
   {
     id: "primeros_pasos",
     name: "Primeros pasos",
@@ -42,7 +44,7 @@ export const ACHIEVEMENTS = [
     name: "Ahorrista de Cacao",
     icon: "💰",
     reward: 30,
-    desc: "Gana 200 monedas Chocolate Dubai en total.",
+    desc: "Gana 200 Matipuntos en total.",
     isDone: (p) => (p.stats.totalCoinsEarned || 0) >= 200,
   },
   {
@@ -59,7 +61,32 @@ export const ACHIEVEMENTS = [
     icon: "🎯",
     reward: 25,
     desc: "Consigue 1500 puntos en Choco Blaster 3D.",
+    appHidden: true, // Choco Blaster no va en la app infantil
     isDone: (p) => getBestScore(p, "fps3d") >= 1500,
+  },
+  {
+    id: "explorador",
+    name: "Explorador Infinito",
+    icon: "♾️",
+    reward: 30,
+    desc: "Recorre 300 m en el Mundo infinito de Parkour Choco.",
+    isDone: (p) => (p.stats.parkourInfBest || 0) >= 300,
+  },
+  {
+    id: "maratonista",
+    name: "Maratonista del Cacao",
+    icon: "🏃",
+    reward: 60,
+    desc: "Recorre 1000 m en el Mundo infinito de Parkour Choco.",
+    isDone: (p) => (p.stats.parkourInfBest || 0) >= 1000,
+  },
+  {
+    id: "viajero",
+    name: "Viajera de Mundos",
+    icon: "🌎",
+    reward: 40,
+    desc: "Llega al Mundo 5 en el Mundo infinito de Parkour Choco.",
+    isDone: (p) => (p.stats.parkourInfWorlds || 0) >= 5,
   },
   {
     id: "escalador",
@@ -118,3 +145,5 @@ export const ACHIEVEMENTS = [
     isDone: (p) => getBestScore(p, "porristas") >= 80,
   },
 ];
+
+export const ACHIEVEMENTS = ALL_ACHIEVEMENTS.filter((a) => !(IN_APP && a.appHidden));

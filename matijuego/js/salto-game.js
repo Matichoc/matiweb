@@ -153,11 +153,11 @@ export class SaltoGame extends Game3D {
 
   _ensureHero() {
     if (this.hero && this.heroId === this.character.id) {
-      this.hero.setOutfit(this.outfit);
+      this.hero.setLook(this.look);
       return;
     }
     if (this.hero) this.scene.remove(this.hero.group);
-    this.hero = createMatichico(this.character, this.outfit);
+    this.hero = createMatichico(this.character, this.outfit, this.look);
     this.heroId = this.character.id;
     this.hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.scene.add(this.hero.group);
@@ -538,7 +538,7 @@ export class SaltoGame extends Game3D {
     audio.playLose();
     this.finish(
       `Subiste ${Math.floor(this.maxY)} metros, juntaste ${this.items} alfajores y sumaste ${this.score} puntos` +
-        (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : ".")
+        (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : ".")
     );
   }
 

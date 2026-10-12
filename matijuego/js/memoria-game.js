@@ -230,11 +230,11 @@ export class MemoriaGame extends Game3D {
 
   _ensureMascot() {
     if (this.mascot && this.mascotId === this.character.id) {
-      this.mascot.setOutfit(this.outfit);
+      this.mascot.setLook(this.look);
       return;
     }
     if (this.mascot) this.mascotRoot.remove(this.mascot.group);
-    this.mascot = createMatichico(this.character, this.outfit);
+    this.mascot = createMatichico(this.character, this.outfit, this.look);
     this.mascotId = this.character.id;
     this.mascot.group.scale.setScalar(1.5);
     this.mascot.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
@@ -504,7 +504,7 @@ export class MemoriaGame extends Game3D {
       audio.playVictory();
       this.finish(
         `Completaste los ${LEVELS.length} niveles con ${this.stars.reduce((a, b) => a + b, 0)} estrellas y ${this.score} puntos` +
-          (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : ".")
+          (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : ".")
       );
       return;
     }
@@ -512,7 +512,7 @@ export class MemoriaGame extends Game3D {
     this.els.stars.innerHTML = [1, 2, 3].map((n) => `<span class="${n <= stars ? "on" : "off"}">★</span>`).join("");
     this.els.winTitle.textContent = `¡Nivel ${this.levelIndex + 1} completado!`;
     this.els.winText.textContent =
-      `${this.moves} intentos en ${Math.round(this.seconds)} s: +${gained} puntos` + (coins ? ` y +${coins} monedas Dubai 🍫✨.` : ".");
+      `${this.moves} intentos en ${Math.round(this.seconds)} s: +${gained} puntos` + (coins ? ` y +${coins} Matipuntos 🍫✨.` : ".");
     this.showOverlay("win");
   }
 
