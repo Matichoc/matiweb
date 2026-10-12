@@ -42,8 +42,8 @@ export const CHARACTERS = [
 ];
 
 // Los atuendos y todo el guardarropa viven en js/wardrobe-data.js
-import { getOutfit } from "./wardrobe-data.js?v=17c07b4194";
-export { OUTFITS, getOutfit } from "./wardrobe-data.js?v=17c07b4194";
+import { getOutfit } from "./wardrobe-data.js?v=b4d08bea31";
+export { OUTFITS, getOutfit } from "./wardrobe-data.js?v=b4d08bea31";
 
 /**
  * Dibuja un Matichico dentro de un cuadro size x size, centrado en (cx, cy).

@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=17c07b4194">
+<link rel="stylesheet" href="css/style.css?v=b4d08bea31">
 </head>
 <body>
 <div id="toast" class="toast hidden"></div>
@@ -115,7 +115,8 @@
       </header>
       <div class="sh-body">
         <aside class="sh-preview">
-          <div class="sh-stage"><canvas id="house-canvas"></canvas><div id="house-tools" class="house-tools hidden"></div></div>
+          <div class="sh-stage"><canvas id="house-canvas"></canvas></div>
+          <div id="house-tools" class="house-tools hidden"></div>
           <div class="shop-character-name">Tu casa</div>
         </aside>
         <section class="sh-panel">
@@ -503,7 +504,8 @@
     </div>
 
     <div id="porristas-touch-controls">
-      <div class="pk-joy" id="porristas-joy" aria-label="Joystick"><div class="pk-knob"></div></div>
+      <button class="tetris-btn" id="porristas-btn-left">◀</button>
+      <button class="tetris-btn" id="porristas-btn-right">▶</button>
     </div>
   </section>
 
@@ -735,7 +737,8 @@
       <div id="salto-banner" class="fps-banner" aria-live="polite"></div>
       <div id="salto-popups" class="fps-popups" aria-hidden="true"></div>
       <div class="g3d-touch" id="salto-touch">
-        <div class="pk-joy" id="salto-joy" aria-label="Joystick"><div class="pk-knob"></div></div>
+        <button class="g3d-tbtn" id="salto-btn-left" aria-label="Izquierda">◀</button>
+        <button class="g3d-tbtn" id="salto-btn-right" aria-label="Derecha">▶</button>
       </div>
 
       <div id="salto-overlay-intro" class="overlay hidden">
@@ -799,7 +802,8 @@
       <div id="autos-banner" class="fps-banner" aria-live="polite"></div>
       <div id="autos-popups" class="fps-popups" aria-hidden="true"></div>
       <div class="g3d-touch" id="autos-touch">
-        <div class="pk-joy" id="autos-joy" aria-label="Joystick"><div class="pk-knob"></div></div>
+        <button class="g3d-tbtn" id="autos-btn-left" aria-label="Carril izquierdo">◀</button>
+        <button class="g3d-tbtn" id="autos-btn-right" aria-label="Carril derecho">▶</button>
       </div>
 
       <div id="autos-overlay-intro" class="overlay hidden">
@@ -955,6 +959,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=17c07b4194"></script>
+<script type="module" src="js/main.js?v=b4d08bea31"></script>
 </body>
 </html>

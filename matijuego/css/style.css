@@ -1397,10 +1397,10 @@ html[data-app] .game-screen:not(.cr-screen) {
 .sh-mode.active { background: linear-gradient(180deg, #ff4f9a, #d4216c); color: #fff; border-color: #fff; }
 .sh-stage { position: relative; }
 #house-canvas { touch-action: none; }
-.house-tools { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 6px 8px; border-radius: 14px; background: rgba(28,15,7,0.82); border: 2px solid var(--dorado); z-index: 4; }
+.house-tools { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 5px 8px; border-radius: 14px; background: rgba(28,15,7,0.82); border: 2px solid var(--dorado); margin-top: 6px; }
 .house-tools.hidden { display: none; }
 .house-tools .ht-name { font-weight: 800; font-size: 0.8rem; color: var(--crema); margin-right: 4px; }
-.house-tools button { min-width: 40px; height: 40px; border-radius: 12px; border: 2px solid #fff; background: linear-gradient(180deg, #ff4f9a, #d4216c); color: #fff; font-size: 1.15rem; cursor: pointer; touch-action: manipulation; }
+.house-tools button { min-width: 38px; height: 36px; border-radius: 10px; border: 2px solid #fff; background: linear-gradient(180deg, #ff4f9a, #d4216c); color: #fff; font-size: 1.05rem; cursor: pointer; touch-action: manipulation; padding: 0 6px; }
 .house-tools button:active { transform: translateY(1px); }
 .sh-card.sh-size small { opacity: 0.8; font-size: 0.75rem; }
 
@@ -1469,3 +1469,53 @@ details.how > :not(summary) { font-size: 0.85rem; margin: 6px 0 0; }
 .lvl-toggle span { margin-left: auto; color: var(--dorado); }
 .ach-body .achievement-card { padding: 7px 9px; gap: 8px; }
 .ach-body .achievement-card .aicon { font-size: 1.3rem; }
+
+/* ---------- celular: menos espacio perdido, nada se corta ---------- */
+.overlay { padding: 6px; overflow: hidden; }
+.overlay-card { max-height: 100%; overflow-y: auto; }
+@media (pointer: coarse) {
+  .game-screen:not(.cr-screen) .hud { flex-wrap: wrap; gap: 4px 8px; }
+  .game-screen:not(.cr-screen) .hud-mission { display: none; }
+  .game-screen:not(.cr-screen) .hud-level { font-size: 0.8rem; line-height: 1.1; }
+  .game-screen:not(.cr-screen) .hud-avatar { width: 30px; height: 30px; }
+  .game-screen:not(.cr-screen) .hud-chip { padding: 2px 8px; font-size: 0.78rem; }
+  .game-screen:not(.cr-screen) .btn-icon { width: 30px; height: 30px; }
+  .game-screen:not(.cr-screen) .hud-right { gap: 4px 6px; }
+  [id$="-hud-goal"] { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  /* botones ◀ ▶ grandes en cada esquina (Salto, Autos y Porristas se juegan mejor así que con joystick) */
+  .g3d-touch { padding: 0 10px; bottom: 8px; }
+  .g3d-touch .g3d-tbtn { width: 84px; height: 84px; font-size: 2.1rem; background: rgba(212,33,108,0.5); }
+}
+@media (pointer: coarse) and (orientation: portrait) {
+  .game-screen:not(.cr-screen) .hud { flex-direction: column; align-items: stretch; }
+  .game-screen:not(.cr-screen) .hud-right { justify-content: flex-start; }
+}
+@media (max-width: 760px) {
+  #screen-house .sh-stage { height: 38vh; min-height: 220px; flex: none; }
+  .sh-bar.hint { position: static; border: 0; background: transparent; padding: 0; }
+  .sh-bar.hint .sh-bar-txt { font-size: 0.78rem; opacity: 0.85; }
+}
+@media (max-width: 760px) {
+  #screen-house .shop-character-name { display: none; }
+  #screen-house .sh-preview { gap: 2px; padding: 6px; }
+  .house-tools { flex-wrap: nowrap; gap: 4px; padding: 4px 6px; }
+  .house-tools .ht-name { font-size: 0.68rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .house-tools button { min-width: 34px; height: 32px; font-size: 0.95rem; padding: 0 4px; }
+}
+
+/* ---------- celular acostado (poca altura): Tienda y Mi Casa se deslizan en vez de quedar apretadas ---------- */
+@media (pointer: coarse) and (max-height: 520px) and (min-width: 761px) {
+  #screen-shop, #screen-house { overflow-y: auto; align-items: flex-start; -webkit-overflow-scrolling: touch; padding: 6px; }
+  .shop2 { height: auto; min-height: 100%; gap: 6px; }
+  .sh-top { padding: 4px 10px; }
+  .sh-title { font-size: 1.1rem; }
+  .sh-body { flex: none; align-items: start; grid-template-columns: minmax(240px, 38%) 1fr; }
+  .sh-preview { position: sticky; top: 0; padding: 6px; gap: 4px; }
+  .sh-stage { flex: none; height: calc(100vh - 92px); min-height: 150px; }
+  .shop-character-name { display: none; }
+  .sh-panel { padding: 6px; }
+  .sh-grid { overflow: visible; max-height: none; flex: none; }
+  .sh-bar { position: sticky; bottom: 4px; background: rgba(40,22,10,0.96); border: 2px solid var(--dorado); min-height: 0; padding: 4px 8px; }
+  .sh-bar.hint { position: static; background: transparent; border: 0; }
+  .house-tools { margin-top: 4px; }
+}
