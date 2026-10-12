@@ -6,11 +6,11 @@
 // Versión "Gran Vitrina": guardar una pieza (C / Shift), combos y back-to-back, cubos de poder
 // (bomba que limpia 3x3 y rayo que limpia la fila), subida de nivel con cambio de ambiente y música.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js";
-import { createMatichico } from "./matichico3d.js";
-import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js";
-import { saveProgress, earnCoins } from "./storage.js";
-import * as audio from "./audio.js";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=12a3a39f99";
+import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
+import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=12a3a39f99";
+import { saveProgress, earnCoins } from "./storage.js?v=12a3a39f99";
+import * as audio from "./audio.js?v=12a3a39f99";
 
 const COLS = 8;
 const ROWS = 14;

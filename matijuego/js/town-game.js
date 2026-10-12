@@ -6,18 +6,25 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js";
-import { createMatichico } from "./matichico3d.js";
-import { CHARACTERS, getOutfit } from "./characters.js";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js";
-import { GAMES_CATALOG } from "./games-catalog.js";
-import { earnCoins, saveProgress, todayKey } from "./storage.js";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js";
-import { levelInfo } from "./progression.js";
-import * as audio from "./audio.js";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=12a3a39f99";
+import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
+import { CHARACTERS, getOutfit } from "./characters.js?v=12a3a39f99";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=12a3a39f99";
+import { GAMES_CATALOG } from "./games-catalog.js?v=12a3a39f99";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=12a3a39f99";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=12a3a39f99";
+import { levelInfo } from "./progression.js?v=12a3a39f99";
+import * as audio from "./audio.js?v=12a3a39f99";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
+// Formas de moverse: se desbloquean subiendo de nivel (el botón 🛼 cambia entre las que ya tienes).
+const MOVES = [
+  { id: "walk", name: "Caminar", icon: "🚶", speed: SPEED, level: 1 },
+  { id: "run", name: "Correr", icon: "🏃", speed: 10.5, level: 1 },
+  { id: "skates", name: "Patines", icon: "🛼", speed: 15, level: 4 },
+  { id: "board", name: "Monopatín cohete", icon: "🛹", speed: 21, level: 9 },
+];
 const HERO_R = 0.45;
 const WORLD_R = 52; // hasta dónde se puede caminar
 const DAY_SECS = 300;
@@ -60,6 +67,7 @@ export class TownGame extends Game3D {
     this.q = els.q;
     this.keys = {};
     this.joy = { x: 0, y: 0 };
+    this.moveIdx = 1; // empieza corriendo
     this.camYaw = 0;
     this.camPitch = 0.46;
     this.pos = new THREE.Vector3(0, 0, 16);
@@ -687,6 +695,7 @@ export class TownGame extends Game3D {
     el.classList.remove("show");
     void el.offsetWidth;
     el.classList.add("show");
+    this._updateMoveBtn(MOVES.find((m) => m.level > levelInfo(this.progress.xp).level));
   }
 
   /** El pueblo no tiene puntaje: al salir solo se pausa. */
@@ -736,15 +745,100 @@ export class TownGame extends Game3D {
 
   _move(dt) {
     const inp = this._input();
-    const acc = 60 * dt;
-    this.vel.x += clamp(inp.x * SPEED - this.vel.x, -acc, acc);
-    this.vel.z += clamp(inp.z * SPEED - this.vel.z, -acc, acc);
+    const mv = this._move_();
+    const top = mv.speed * (this.keys.sprint ? 1.35 : 1);
+    const acc = (mv.id === "skates" || mv.id === "board" ? 34 : 60) * dt;
+    this.vel.x += clamp(inp.x * top - this.vel.x, -acc, acc);
+    this.vel.z += clamp(inp.z * top - this.vel.z, -acc, acc);
     if (inp.mag > 0.1) this.heroYaw = Math.atan2(inp.x, inp.z);
     this.pos.x += this.vel.x * dt;
     this.pos.z += this.vel.z * dt;
     this._collide(this.pos, HERO_R);
     const r = Math.hypot(this.pos.x, this.pos.z);
     if (r > WORLD_R) { this.pos.x *= WORLD_R / r; this.pos.z *= WORLD_R / r; }
+  }
+
+  /** Formas de moverse ya desbloqueadas según el nivel. */
+  _unlockedMoves() {
+    const lv = levelInfo(this.progress.xp).level;
+    return MOVES.filter((m) => lv >= m.level);
+  }
+
+  _move_() {
+    const list = this._unlockedMoves();
+    if (this.moveIdx >= list.length) this.moveIdx = list.length - 1;
+    return list[this.moveIdx];
+  }
+
+  /** Botón 🛼: pasa a la siguiente forma de moverse (y avisa cuál se desbloquea después). */
+  cycleMove() {
+    const list = this._unlockedMoves();
+    this.moveIdx = (this.moveIdx + 1) % list.length;
+    const mv = list[this.moveIdx];
+    this.banner(`${mv.icon} ${mv.name}`);
+    audio.playPowerup();
+    const next = MOVES.find((m) => m.level > levelInfo(this.progress.xp).level);
+    this._updateMoveBtn(next);
+  }
+
+  _updateMoveBtn(next) {
+    const btn = document.getElementById("town-btn-speed");
+    if (!btn) return;
+    const mv = this._move_();
+    btn.textContent = mv.icon;
+    btn.title = `${mv.name}${next ? ` · próximo: ${next.name} (nivel ${next.level})` : ""}`;
+    const lock = document.getElementById("town-speed-hint");
+    if (lock) lock.textContent = next ? `🔒 ${next.icon} ${next.name}: nivel ${next.level}` : "";
+  }
+
+  /** Ruedas / monopatín bajo los pies según cómo te muevas. */
+  _syncRide(dt) {
+    const mv = this._move_();
+    if (!this.ride) {
+      const grp = new THREE.Group();
+      const mat = new THREE.MeshStandardMaterial({ color: 0x2a2a38, roughness: 0.5 });
+      const hot = new THREE.MeshStandardMaterial({ color: 0xff3fa4, roughness: 0.4, emissive: 0xff3fa4, emissiveIntensity: 0.5 });
+      this.rideSkates = new THREE.Group();
+      for (const sx of [-0.2, 0.2]) {
+        for (const sz of [-0.2, 0.2]) {
+          const w = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.08, 10), hot);
+          w.rotation.z = Math.PI / 2;
+          w.position.set(sx, 0.1, sz);
+          this.rideSkates.add(w);
+        }
+        const boot = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.5), mat);
+        boot.position.set(sx, 0.22, 0);
+        this.rideSkates.add(boot);
+      }
+      this.rideBoard = new THREE.Group();
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.08, 1.5), hot);
+      deck.position.y = 0.2;
+      this.rideBoard.add(deck);
+      for (const sz of [-0.5, 0.5]) for (const sx of [-0.22, 0.22]) {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.08, 10), mat);
+        w.rotation.z = Math.PI / 2;
+        w.position.set(sx, 0.11, sz);
+        this.rideBoard.add(w);
+      }
+      this.rideFlame = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.8, 8), new THREE.MeshBasicMaterial({ color: 0xffa21f }));
+      this.rideFlame.rotation.x = -Math.PI / 2;
+      this.rideFlame.position.set(0, 0.2, 1.1);
+      this.rideBoard.add(this.rideFlame);
+      grp.add(this.rideSkates, this.rideBoard);
+      this.ride = grp;
+      this.scene.add(grp);
+    }
+    this.ride.visible = mv.id === "skates" || mv.id === "board";
+    this.rideSkates.visible = mv.id === "skates";
+    this.rideBoard.visible = mv.id === "board";
+    this.ride.position.copy(this.pos);
+    this.ride.rotation.y = this.hero.group.rotation.y;
+    if (this.rideFlame) this.rideFlame.scale.set(1, 0.7 + Math.random() * 0.8, 1);
+    // polvito de velocidad
+    const sp = Math.hypot(this.vel.x, this.vel.z);
+    if (this.ride.visible && sp > 6 && Math.random() < 0.5) {
+      this.particles.burst(new THREE.Vector3(this.pos.x, 0.15, this.pos.z), mv.id === "board" ? [0xffa21f, 0xfff6e6] : [0xfff6e6, 0xff9ac8], 2, 1.5, 0.4, 3);
+    }
   }
 
   /** Saca a `p` de cualquier edificio o adorno sólido. */
@@ -1027,7 +1121,10 @@ export class TownGame extends Game3D {
     g.position.copy(this.pos);
     g.rotation.y = lerp(g.rotation.y, this.heroYaw, 1 - Math.exp(-16 * Math.max(dt, 0.016)));
     const sp = Math.hypot(this.vel.x, this.vel.z);
-    this.hero.animate(this.time, sp > 0.8 ? "run" : "idle", clamp(sp / SPEED, 0.4, 1.2));
+    const mv = this._move_();
+    const riding = mv.id === "skates" || mv.id === "board";
+    this.hero.animate(this.time, sp > 0.8 ? (riding ? "jump" : "run") : "idle", riding ? 0.7 : clamp(sp / SPEED, 0.4, 1.4));
+    this._syncRide(dt);
   }
 
   _placeCamera(snap = false) {
@@ -1086,10 +1183,12 @@ export class TownGame extends Game3D {
         return;
       }
       if (e.key === "q" || e.key === "Q") { this.camYaw += 0.25; return; }
+      if (e.key === "Shift") { this.keys.sprint = true; return; }
+      if (e.key === "r" || e.key === "R") { if (!e.repeat && this.state === "playing") this.cycleMove(); return; }
       const k = map[e.key];
       if (k) { if (this.state === "playing") e.preventDefault(); this.keys[k] = true; }
     });
-    window.addEventListener("keyup", (e) => { const k = map[e.key]; if (k) this.keys[k] = false; });
+    window.addEventListener("keyup", (e) => { const k = map[e.key]; if (k) this.keys[k] = false; if (e.key === "Shift") this.keys.sprint = false; });
     window.addEventListener("blur", () => { this.keys = {}; });
 
     const cv = this.els.canvas;
@@ -1125,6 +1224,8 @@ export class TownGame extends Game3D {
       joy.addEventListener("pointerup", release);
       joy.addEventListener("pointercancel", release);
     }
+    const spd = document.getElementById("town-btn-speed");
+    if (spd) spd.addEventListener("pointerdown", (e) => { e.preventDefault(); this.cycleMove(); });
     const act = document.getElementById("town-btn-action");
     if (act) act.addEventListener("pointerdown", (e) => { e.preventDefault(); this.act(); });
     document.getElementById("town-dialog")?.addEventListener("pointerdown", () => this._closeDialog());

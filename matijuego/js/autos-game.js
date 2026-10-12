@@ -7,10 +7,10 @@
 // volar y juntar alfajores en el aire, charcos de chocolate, poderes (nitro, imán, escudo),
 // combo de alfajores, un hito cada kilómetro y música.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js";
-import { createMatichico } from "./matichico3d.js";
-import { earnCoins, saveProgress } from "./storage.js";
-import * as audio from "./audio.js";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=12a3a39f99";
+import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
+import { earnCoins, saveProgress } from "./storage.js?v=12a3a39f99";
+import * as audio from "./audio.js?v=12a3a39f99";
 
 const LANE_W = 2.7;
 const LANES = [-LANE_W, 0, LANE_W];
@@ -374,6 +374,14 @@ export class AutosGame extends Game3D {
       this.laneIndex = next;
       audio.playJump();
     }
+  }
+
+  /** Joystick táctil: al empujarlo hacia un lado cambia de carril (una vez por empujón). */
+  setStick(x) {
+    const dir = x > 0.55 ? 1 : x < -0.55 ? -1 : 0;
+    if (dir && dir !== this.stickDir) this._changeLane(dir);
+    if (Math.abs(x) < 0.3) this.stickDir = 0;
+    else if (dir) this.stickDir = dir;
   }
 
   _bindInput() {

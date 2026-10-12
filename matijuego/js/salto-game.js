@@ -7,10 +7,10 @@
 // bolas con pinchos, aterrizajes perfectos, combo, poderes (jetpack, imán, burbuja), cuatro
 // zonas con su propia decoración (globos, aves, planetas) y música.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, makeStars, roundedBox } from "./three-kit.js";
-import { createMatichico } from "./matichico3d.js";
-import { earnCoins, saveProgress } from "./storage.js";
-import * as audio from "./audio.js";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, makeStars, roundedBox } from "./three-kit.js?v=12a3a39f99";
+import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
+import { earnCoins, saveProgress } from "./storage.js?v=12a3a39f99";
+import * as audio from "./audio.js?v=12a3a39f99";
 
 const HALF = 4.6;
 const GRAV = -30;
@@ -459,6 +459,8 @@ export class SaltoGame extends Game3D {
 
   // ---------- entrada ----------
 
+  setStick(x) { this.stickX = x; }
+
   _keyHandlers() {
     if (this._keysBound) return;
     this._keysBound = true;
@@ -566,6 +568,7 @@ export class SaltoGame extends Game3D {
   _step(dt) {
     // movimiento horizontal: teclado, o seguir al dedo/mouse
     let target = ((this.keys.right ? 1 : 0) - (this.keys.left ? 1 : 0)) * 7.8;
+    if (this.stickX) target = this.stickX * 9;
     if (this.pointerX != null) target = clamp((this.pointerX - this.x) * 7, -9.5, 9.5);
     this.vx = lerp(this.vx, target, 1 - Math.exp(-13 * dt));
     this.x += this.vx * dt;

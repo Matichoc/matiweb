@@ -2,10 +2,10 @@
 // con tu Matichico y su mascota adentro. Lo que hay en cada lugar viene de
 // js/house-data.js; aquí solo se dibuja. Es liviano y solo corre cuando la pantalla está visible.
 
-import { THREE, canvasTexture, roundedBox } from "./three-kit.js";
-import { createMatichico } from "./matichico3d.js";
-import { getOutfit } from "./wardrobe-data.js";
-import { getHouseItem, houseItemsOfSpot } from "./house-data.js";
+import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=12a3a39f99";
+import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
+import { getOutfit } from "./wardrobe-data.js?v=12a3a39f99";
+import { getHouseItem, houseItemsOfSpot } from "./house-data.js?v=12a3a39f99";
 
 const W = 10; // el cuarto mide 10 x 10 y 5.2 de alto
 const H = 5.2;
@@ -76,13 +76,82 @@ function floorTexture(p) {
   return t;
 }
 
+/** Paredes con diseño: el lienzo tiene la misma proporción que la pared (10 x 5.2) para no deformar los dibujos. */
 function wallTexture(p) {
-  return canvasTexture(256, 256, (g, w, h) => {
-    g.fillStyle = p.a; g.fillRect(0, 0, w, h);
-    if (p.style === "liso") { g.fillStyle = p.b; g.fillRect(0, h - 22, w, 22); }
-    else if (p.style === "rayas") { g.fillStyle = p.b; for (let i = 0; i < 8; i += 2) g.fillRect((i * w) / 8, 0, w / 8, h); }
-    else if (p.style === "lunares") { g.fillStyle = p.b; for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { g.beginPath(); g.arc(x * 64 + 32 + (y % 2) * 32, y * 64 + 32, 10, 0, 6.3); g.fill(); } }
-    else if (p.style === "estrellas") { for (let i = 0; i < 40; i++) { g.fillStyle = p.b; g.globalAlpha = 0.4 + Math.random() * 0.6; g.fillRect(Math.random() * w, Math.random() * h, 2 + Math.random() * 3, 2 + Math.random() * 3); } g.globalAlpha = 1; }
+  const Wd = 1024;
+  const Hd = 512; // casi la proporción de la pared (10 x 5.2) y potencia de 2 para que no brille al verse de lado
+  return canvasTexture(Wd, Hd, (g, w, h) => {
+    const rail = Math.round(h * 0.34); // altura del zócalo decorado
+    const shade = (hex, k) => {
+      const n = parseInt(hex.slice(1), 16);
+      const f = (v) => Math.max(0, Math.min(255, Math.round(v * k)));
+      return `rgb(${f((n >> 16) & 255)},${f((n >> 8) & 255)},${f(n & 255)})`;
+    };
+    // fondo con degradé suave (más claro arriba)
+    const grd = g.createLinearGradient(0, 0, 0, h);
+    grd.addColorStop(0, p.a); grd.addColorStop(1, shade(p.a, 0.93));
+    g.fillStyle = grd; g.fillRect(0, 0, w, h);
+    const tile = (step, draw) => { for (let y = 0, r = 0; y < h - rail + step; y += step, r++) for (let x = (r % 2) * (step / 2); x < w + step; x += step) draw(x, y, r); };
+    const heart = (x, y, s) => { g.beginPath(); g.moveTo(x, y + s * 0.35); g.bezierCurveTo(x - s, y - s * 0.4, x - s * 0.5, y - s, x, y - s * 0.4); g.bezierCurveTo(x + s * 0.5, y - s, x + s, y - s * 0.4, x, y + s * 0.35); g.fill(); };
+    const star = (x, y, s) => { g.beginPath(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 - Math.PI / 2; const r = i % 2 ? s * 0.45 : s; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.closePath(); g.fill(); };
+    const cloud = (x, y, s) => { g.beginPath(); for (const [dx, dy, r] of [[0, 0, 1], [-1, 0.25, 0.7], [1, 0.25, 0.75], [0.5, -0.4, 0.7], [-0.5, -0.35, 0.65]]) g.arc(x + dx * s, y + dy * s, r * s, 0, 6.3); g.fill(); };
+    let wainscot = true;
+    if (p.style === "liso") {
+      // papel tapiz sutil de rombos + florcitas
+      g.strokeStyle = shade(p.a, 0.9); g.lineWidth = 2; g.globalAlpha = 0.7;
+      for (let i = -h; i < w + h; i += 64) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + h, h); g.stroke(); g.beginPath(); g.moveTo(i, h); g.lineTo(i + h, 0); g.stroke(); }
+      g.globalAlpha = 1; g.fillStyle = p.b;
+      tile(128, (x, y) => { g.globalAlpha = 0.55; for (let k = 0; k < 5; k++) { const a = (k / 5) * 6.283; g.beginPath(); g.arc(x + Math.cos(a) * 9, y + Math.sin(a) * 9, 6, 0, 6.3); g.fill(); } g.globalAlpha = 0.9; g.beginPath(); g.arc(x, y, 5, 0, 6.3); g.fill(); });
+      g.globalAlpha = 1;
+    } else if (p.style === "rayas") {
+      const n = 14, sw = w / n;
+      for (let i = 0; i < n; i += 2) { g.fillStyle = p.b; g.fillRect(i * sw, 0, sw, h); g.fillStyle = "rgba(255,255,255,0.25)"; g.fillRect(i * sw + sw * 0.1, 0, 4, h); }
+    } else if (p.style === "lunares") {
+      g.fillStyle = p.b;
+      tile(96, (x, y, r) => { g.beginPath(); g.arc(x, y, r % 2 ? 14 : 22, 0, 6.3); g.fill(); });
+    } else if (p.style === "corazones") {
+      g.fillStyle = p.b;
+      tile(110, (x, y, r) => { g.globalAlpha = 0.9; heart(x, y, r % 2 ? 22 : 30); });
+      g.globalAlpha = 1;
+    } else if (p.style === "nubes") {
+      g.fillStyle = "rgba(255,255,255,0.9)";
+      [[180, 140, 50], [520, 90, 40], [820, 190, 55], [330, 300, 38], [700, 330, 45], [960, 70, 30], [80, 330, 34]].forEach(([x, y, s]) => cloud(x, y, s));
+      wainscot = false;
+    } else if (p.style === "ladrillos") {
+      const bw = 128, bh = 52;
+      for (let y = 0, r = 0; y < h; y += bh, r++) for (let x = -(r % 2) * (bw / 2); x < w; x += bw) {
+        g.fillStyle = (x / bw + r) % 3 ? p.a : shade(p.a, 0.88);
+        g.fillRect(x + 3, y + 3, bw - 6, bh - 6);
+        g.fillStyle = "rgba(255,255,255,0.1)"; g.fillRect(x + 3, y + 3, bw - 6, 6);
+      }
+      wainscot = false;
+    } else if (p.style === "flores") {
+      for (let i = 0; i < 26; i++) {
+        const x = (i * 197) % w, y = ((i * 89) % (h - rail - 40)) + 30, r = 12 + (i % 3) * 5;
+        g.fillStyle = ["#ff7aa8", "#ffd34d", "#fff6e6", "#b69cff"][i % 4];
+        for (let k = 0; k < 5; k++) { const a = (k / 5) * 6.283; g.beginPath(); g.arc(x + Math.cos(a) * r, y + Math.sin(a) * r, r * 0.8, 0, 6.3); g.fill(); }
+        g.fillStyle = "#ffb000"; g.beginPath(); g.arc(x, y, r * 0.6, 0, 6.3); g.fill();
+      }
+      g.strokeStyle = p.b; g.lineWidth = 5; g.globalAlpha = 0.6;
+      for (let x = 40; x < w; x += 120) { g.beginPath(); g.moveTo(x, 0); g.bezierCurveTo(x + 30, h * 0.2, x - 30, h * 0.4, x, h - rail); g.stroke(); }
+      g.globalAlpha = 1;
+    } else if (p.style === "estrellas") {
+      g.fillStyle = "#fff8d0"; g.beginPath(); g.arc(w * 0.82, h * 0.25, 52, 0, 6.3); g.fill();
+      g.fillStyle = p.a; g.beginPath(); g.arc(w * 0.82 + 22, h * 0.25 - 8, 46, 0, 6.3); g.fill();
+      for (let i = 0; i < 90; i++) { g.fillStyle = p.b; g.globalAlpha = 0.35 + Math.random() * 0.65; star(Math.random() * w, Math.random() * (h - 20), 3 + Math.random() * 9); }
+      g.globalAlpha = 1;
+      wainscot = false;
+    }
+    if (wainscot) {
+      // zócalo con paneles y moldura
+      g.fillStyle = shade(p.a, 0.86); g.fillRect(0, h - rail, w, rail);
+      g.fillStyle = "rgba(255,255,255,0.55)"; g.fillRect(0, h - rail - 6, w, 14);
+      g.fillStyle = "rgba(0,0,0,0.12)"; g.fillRect(0, h - rail + 8, w, 4);
+      for (let x = 24; x < w - 60; x += 168) {
+        g.strokeStyle = "rgba(255,255,255,0.6)"; g.lineWidth = 5; g.strokeRect(x, h - rail + 34, 144, rail - 64);
+        g.strokeStyle = "rgba(0,0,0,0.12)"; g.lineWidth = 2; g.strokeRect(x + 8, h - rail + 42, 128, rail - 80);
+      }
+    }
   });
 }
 
@@ -371,8 +440,8 @@ export class House3D {
     const base1 = box(W, 0.3, 0.2, trim, 0, 0.15, -W / 2 + 0.1);
     const base2 = box(0.2, 0.3, W, trim, -W / 2 + 0.1, 0.15, 0);
     const slab = box(W + 0.6, 0.5, W + 0.6, std(0x8a5a36, 0.7), 0, -0.26, 0);
-    const edge1 = box(W + 0.6, H + 0.5, 0.3, std(0xd4216c, 0.5), 0, H / 2 - 0.01, -W / 2 - 0.15);
-    const edge2 = box(0.3, H + 0.5, W + 0.6, std(0xd4216c, 0.5), -W / 2 - 0.15, H / 2 - 0.01, 0);
+    const edge1 = box(W + 0.6, H + 0.5, 0.3, std(0xd4216c, 0.5), 0, H / 2 - 0.01, -W / 2 - 0.19);
+    const edge2 = box(0.3, H + 0.5, W + 0.6, std(0xd4216c, 0.5), -W / 2 - 0.19, H / 2 - 0.01, 0);
     this.scene.add(this.floor, this.back, this.left, base1, base2, slab, edge1, edge2);
 
     this._resize = () => {

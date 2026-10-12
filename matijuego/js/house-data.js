@@ -4,7 +4,7 @@
 //
 // Objeto: { id, spot, name, icon, rarity, price, params }   (price 0 = viene con la casa)
 
-import { spendCoins, saveProgress } from "./storage.js";
+import { spendCoins, saveProgress } from "./storage.js?v=12a3a39f99";
 
 export const HOUSE_SPOTS = [
   { id: "floor", name: "Piso", icon: "🟫" },
@@ -37,6 +37,10 @@ export const HOUSE_ITEMS = [
   it("wall", "wl_cielo", "Cielo", "💙", "comun", { style: "liso", a: "#c8e6ff", b: "#9fd0ff" }),
   it("wall", "wl_rayas", "Rayas dulces", "🍬", "raro", { style: "rayas", a: "#ffb3d1", b: "#fff6e6" }),
   it("wall", "wl_lunares", "Lunares", "🔴", "raro", { style: "lunares", a: "#fff6e6", b: "#d4216c" }),
+  it("wall", "wl_flores", "Jardín de flores", "🌸", "comun", { style: "flores", a: "#e9f7d8", b: "#7cc65a" }),
+  it("wall", "wl_corazones", "Corazones", "💕", "raro", { style: "corazones", a: "#ffd9e8", b: "#ff6f9f" }),
+  it("wall", "wl_nubes", "Cielo con nubes", "⛅", "raro", { style: "nubes", a: "#9fd6ff", b: "#ffffff" }),
+  it("wall", "wl_ladrillos", "Ladrillos de chocolate", "🧱", "raro", { style: "ladrillos", a: "#8a4b2c", b: "#5a2d16" }),
   it("wall", "wl_estrellas", "Noche estrellada", "🌙", "epico", { style: "estrellas", a: "#1c1a4a", b: "#ffd34d" }),
   // ---- Alfombra ----
   it("rug", "rg_redonda", "Alfombra rosa", "🟣", "comun", { kind: "redonda", a: "#ff7aa8", b: "#ffd1e3" }),

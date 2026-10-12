@@ -4,12 +4,12 @@
 // checkpoints y llega a la cumbre. Al avanzar, tu Matichico desbloquea accesorios
 // (capa, gafas brillantes y corona) además del atuendo que compraste en la tienda.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js";
-import { createMatichico } from "./matichico3d.js";
-import { earnCoins, saveProgress } from "./storage.js";
-import { trailColors } from "./wardrobe-data.js";
-import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js";
-import * as audio from "./audio.js";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=12a3a39f99";
+import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
+import { earnCoins, saveProgress } from "./storage.js?v=12a3a39f99";
+import { trailColors } from "./wardrobe-data.js?v=12a3a39f99";
+import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=12a3a39f99";
+import * as audio from "./audio.js?v=12a3a39f99";
 
 const GAME_ID = "parkour";
 const R = 0.34; // radio del héroe
@@ -986,6 +986,7 @@ export class ParkourGame extends Game3D {
         this.banner(`¡Ups! Te quedan ${this.inf.lives} ❤️`);
       }
     } else this.banner("¡Ups! Vuelves al checkpoint");
+    this._safeSpawn();
     this.pos.copy(this.spawn);
     this.vel.set(0, 0, 0);
     this.grounded = false;
@@ -997,6 +998,21 @@ export class ParkourGame extends Game3D {
     this.els.wrap.classList.add("pk-flash");
     setTimeout(() => this.els.wrap.classList.remove("pk-flash"), 450);
     this._snapCamera();
+  }
+
+  /** Si bajo el punto de reaparición ya no hay plataforma (nunca debería), usa la más cercana que exista. */
+  _safeSpawn() {
+    const sp = this.spawn;
+    const under = this.platforms.some((p) => p.active && sp.x >= p.box.minX - 0.3 && sp.x <= p.box.maxX + 0.3 && sp.z >= p.box.minZ - 0.3 && sp.z <= p.box.maxZ + 0.3 && Math.abs(sp.y - p.box.maxY) < 1.5);
+    if (under) return;
+    let best = null;
+    let bd = Infinity;
+    for (const p of this.platforms) {
+      if (!p.active || p.state === "falling" || p.type !== "normal") continue;
+      const d = Math.hypot(p.c.x - sp.x, p.c.z - sp.z);
+      if (d < bd) { bd = d; best = p; }
+    }
+    if (best) sp.set(best.c.x, best.box.maxY, best.c.z);
   }
 
   _updateHud(force = false) {

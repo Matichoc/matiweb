@@ -7,12 +7,12 @@
 // cintas transportadoras, combo de golosinas, poderes (reloj, botas turbo, imán), impulso
 // con Shift, estrellas por nivel y música. Ahora son 8 canchas.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js";
-import { createMatichico } from "./matichico3d.js";
-import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js";
-import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js";
-import { recordRun } from "./progression.js";
-import * as audio from "./audio.js";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=12a3a39f99";
+import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
+import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=12a3a39f99";
+import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=12a3a39f99";
+import { recordRun } from "./progression.js?v=12a3a39f99";
+import * as audio from "./audio.js?v=12a3a39f99";
 
 const GAME_ID = "recolecta";
 const S = 0.04; // píxeles del nivel -> unidades 3D
@@ -657,19 +657,19 @@ export class RecolectaGame extends Game3D {
     window.addEventListener("keyup", (e) => { if (map[e.code]) this.keys[map[e.code]] = false; });
     const root = document.getElementById("recolecta-touch");
     if (root) {
-      root.querySelectorAll(".dpad-btn[data-dir]").forEach((btn) => {
-        const dir = btn.dataset.dir;
-        btn.addEventListener("pointerdown", (e) => { e.preventDefault(); this.keys[dir] = true; });
-        const up = (e) => { e.preventDefault(); this.keys[dir] = false; };
-        btn.addEventListener("pointerup", up);
-        btn.addEventListener("pointerleave", up);
-        btn.addEventListener("pointercancel", up);
-      });
       const j = root.querySelector("#recolecta-btn-jump");
       if (j) j.addEventListener("pointerdown", (e) => { e.preventDefault(); this._tryJump(); });
       const d = root.querySelector("#recolecta-btn-dash");
       if (d) d.addEventListener("pointerdown", (e) => { e.preventDefault(); this._tryDash(); });
     }
+  }
+
+  /** Joystick táctil compartido (js/stick.js). */
+  setStick(x, y) {
+    this.keys.left = x < -0.3;
+    this.keys.right = x > 0.3;
+    this.keys.up = y > 0.3;
+    this.keys.down = y < -0.3;
   }
 
   _tryDash() {
