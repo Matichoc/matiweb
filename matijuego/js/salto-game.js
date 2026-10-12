@@ -7,11 +7,11 @@
 // bolas con pinchos, aterrizajes perfectos, combo, poderes (jetpack, imán, burbuja), cuatro
 // zonas con su propia decoración (globos, aves, planetas) y música.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, makeStars, roundedBox } from "./three-kit.js?v=b4d08bea31";
-import { createMatichico } from "./matichico3d.js?v=b4d08bea31";
-import { earnCoins, saveProgress } from "./storage.js?v=b4d08bea31";
-import * as audio from "./audio.js?v=b4d08bea31";
-import { renderModePicker } from "./campaign.js?v=b4d08bea31";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, makeStars, roundedBox } from "./three-kit.js?v=1140a83fef";
+import { createMatichico } from "./matichico3d.js?v=1140a83fef";
+import { earnCoins, saveProgress } from "./storage.js?v=1140a83fef";
+import * as audio from "./audio.js?v=1140a83fef";
+import { renderModePicker } from "./campaign.js?v=1140a83fef";
 
 const HALF = 4.6;
 const GRAV = -30;

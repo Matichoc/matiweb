@@ -7,11 +7,11 @@
 // volar y juntar alfajores en el aire, charcos de chocolate, poderes (nitro, imán, escudo),
 // combo de alfajores, un hito cada kilómetro y música.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=b4d08bea31";
-import { createMatichico } from "./matichico3d.js?v=b4d08bea31";
-import { earnCoins, saveProgress } from "./storage.js?v=b4d08bea31";
-import * as audio from "./audio.js?v=b4d08bea31";
-import { renderModePicker } from "./campaign.js?v=b4d08bea31";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=1140a83fef";
+import { createMatichico } from "./matichico3d.js?v=1140a83fef";
+import { earnCoins, saveProgress } from "./storage.js?v=1140a83fef";
+import * as audio from "./audio.js?v=1140a83fef";
+import { renderModePicker } from "./campaign.js?v=1140a83fef";
 
 const LANE_W = 2.7;
 const LANES = [-LANE_W, 0, LANE_W];
@@ -79,10 +79,14 @@ export class AutosGame extends Game3D {
     this.m = {
       grassA: std(0x8fc152, 1),
       grassB: std(0x84b84a, 1),
-      road: std(0x4a3a36, 0.95),
+      road: std(0x6b7185, 0.95),
+      roadLane: std(0x646a7e, 0.95),
       curbA: std(0xd4216c, 0.6),
       curbB: std(0xfff6e6, 0.6),
-      dash: std(0xfff6e6, 0.7),
+      dash: new THREE.MeshBasicMaterial({ color: 0xffffff }),
+      edgeLine: new THREE.MeshBasicMaterial({ color: 0xffe14a }),
+      chevron: new THREE.MeshBasicMaterial({ color: 0xffe14a, transparent: true, opacity: 0.8, depthWrite: false }),
+      danger: new THREE.MeshBasicMaterial({ map: this._dangerTex(), transparent: true, depthWrite: false }),
       brown: std(0x64321b, 0.5),
       brownLight: std(0x8a5a36, 0.5),
       pink: std(0xd4216c, 0.4),
@@ -125,14 +129,48 @@ export class AutosGame extends Game3D {
     this.pickups = [];
   }
 
+  /** Mancha roja bajo los obstáculos: avisa "aquí no" aunque el color sea parecido al camino. */
+  _dangerTex() {
+    const c = document.createElement("canvas");
+    c.width = c.height = 128;
+    const g = c.getContext("2d");
+    const gr = g.createRadialGradient(64, 64, 8, 64, 64, 62);
+    gr.addColorStop(0, "rgba(255,40,70,0.85)");
+    gr.addColorStop(0.65, "rgba(255,40,70,0.5)");
+    gr.addColorStop(1, "rgba(255,40,70,0)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 128, 128);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+
+  _addDanger(g, w = 2.3, l = 2.3) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, l), this.m.danger);
+    m.rotation.x = -Math.PI / 2;
+    m.position.y = 0.045;
+    m.renderOrder = 2;
+    g.add(m);
+  }
+
   _buildRoad() {
     this.segments = [];
+    const roadW = LANE_W * 3 + 0.6;
     const grassGeo = new THREE.PlaneGeometry(140, SEG_LEN + 1.2);
     grassGeo.rotateX(-Math.PI / 2);
-    const roadGeo = new THREE.PlaneGeometry(LANE_W * 3 + 0.6, SEG_LEN + 1.2);
+    const roadGeo = new THREE.PlaneGeometry(roadW, SEG_LEN + 1.2);
     roadGeo.rotateX(-Math.PI / 2);
-    const curbGeo = new THREE.BoxGeometry(0.55, 0.12, SEG_LEN + 1.2);
-    const dashGeo = new THREE.BoxGeometry(0.16, 0.02, SEG_LEN * 0.45);
+    const laneGeo = new THREE.PlaneGeometry(LANE_W - 0.3, SEG_LEN + 1.2);
+    laneGeo.rotateX(-Math.PI / 2);
+    const curbGeo = new THREE.BoxGeometry(0.8, 0.14, SEG_LEN + 1.2);
+    const dashGeo = new THREE.BoxGeometry(0.3, 0.02, SEG_LEN * 0.55);
+    const edgeGeo = new THREE.BoxGeometry(0.22, 0.02, SEG_LEN + 1.2);
+    // flechas hacia adelante en el centro de cada carril
+    const sh = new THREE.Shape();
+    sh.moveTo(0, 1.1); sh.lineTo(0.95, -0.1); sh.lineTo(0.5, -0.1); sh.lineTo(0, 0.5);
+    sh.lineTo(-0.5, -0.1); sh.lineTo(-0.95, -0.1); sh.closePath();
+    const chevGeo = new THREE.ShapeGeometry(sh);
+    chevGeo.rotateX(-Math.PI / 2);
     for (let i = 0; i < SEG_COUNT; i++) {
       const g = new THREE.Group();
       const grass = new THREE.Mesh(grassGeo, this.m.grassA);
@@ -142,14 +180,29 @@ export class AutosGame extends Game3D {
       road.receiveShadow = true;
       const curbL = new THREE.Mesh(curbGeo, this.m.curbA);
       const curbR = new THREE.Mesh(curbGeo, this.m.curbA);
-      curbL.position.set(-(LANE_W * 1.5 + 0.55), 0.05, 0);
-      curbR.position.set(LANE_W * 1.5 + 0.55, 0.05, 0);
+      curbL.position.set(-(LANE_W * 1.5 + 0.7), 0.06, 0);
+      curbR.position.set(LANE_W * 1.5 + 0.7, 0.06, 0);
       const d1 = new THREE.Mesh(dashGeo, this.m.dash);
       const d2 = new THREE.Mesh(dashGeo, this.m.dash);
-      d1.position.set(-LANE_W / 2 - 0.0, 0.04, 0);
-      d2.position.set(LANE_W / 2, 0.04, 0);
-      g.add(grass, road, curbL, curbR, d1, d2);
-      g.userData = { grass, curbL, curbR, d1, d2, k: -1 };
+      d1.position.set(-LANE_W / 2, 0.045, 0);
+      d2.position.set(LANE_W / 2, 0.045, 0);
+      const eL = new THREE.Mesh(edgeGeo, this.m.edgeLine);
+      const eR = new THREE.Mesh(edgeGeo, this.m.edgeLine);
+      eL.position.set(-(LANE_W * 1.5 + 0.12), 0.045, 0);
+      eR.position.set(LANE_W * 1.5 + 0.12, 0.045, 0);
+      const lanes = [-1, 0, 1].map((l) => {
+        const m = new THREE.Mesh(laneGeo, this.m.roadLane);
+        m.position.set(l * LANE_W, 0.03, 0);
+        return m;
+      });
+      const chev = [-1, 0, 1].map((l) => {
+        const m = new THREE.Mesh(chevGeo, this.m.chevron);
+        m.position.set(l * LANE_W, 0.05, 0.4);
+        m.renderOrder = 1;
+        return m;
+      });
+      g.add(grass, road, lanes[0], lanes[2], curbL, curbR, d1, d2, eL, eR, ...chev);
+      g.userData = { grass, curbL, curbR, d1, d2, chev, k: -1 };
       this.scene.add(g);
       this.segments.push(g);
     }
@@ -580,6 +633,7 @@ export class AutosGame extends Game3D {
         g.userData.grass.material = even ? this.m.grassA : this.m.grassB;
         g.userData.curbL.material = g.userData.curbR.material = even ? this.m.curbA : this.m.curbB;
         g.userData.d1.visible = g.userData.d2.visible = even;
+        for (const c of g.userData.chev) c.visible = k % 3 === 0;
       }
     }
   }
@@ -694,6 +748,7 @@ export class AutosGame extends Game3D {
       tl.position.set(sx * 0.58, 0.62, 1.52);
       g.add(tl);
     }
+    this._addDanger(g, 3, 4.4);
     g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.scene.add(g);
     this.obstacles.push({ mesh: g, lane, d, hit: false, kind: "rival", v: rand(9, 15), prevA: d - this.dist, passed: false });
@@ -713,12 +768,16 @@ export class AutosGame extends Game3D {
   }
 
   _addPuddle(lane, d) {
-    const m = new THREE.Mesh(new THREE.CircleGeometry(1.25, 24), new THREE.MeshStandardMaterial({ color: 0x3a1c0e, roughness: 0.08, metalness: 0.3 }));
+    const m = new THREE.Mesh(new THREE.CircleGeometry(1.25, 24), new THREE.MeshStandardMaterial({ color: 0x2a0f05, roughness: 0.08, metalness: 0.3 }));
     m.rotation.x = -Math.PI / 2;
     m.scale.set(1, 1.5, 1);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.25, 1.5, 24), new THREE.MeshBasicMaterial({ color: 0xffe14a, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2;
+    ring.scale.set(1, 1.5, 1);
     const g = new THREE.Group();
     m.position.y = 0.05;
-    g.add(m);
+    ring.position.y = 0.049;
+    g.add(m, ring);
     this.scene.add(g);
     this.obstacles.push({ mesh: g, lane, d, hit: false, kind: "puddle" });
   }
@@ -753,6 +812,7 @@ export class AutosGame extends Game3D {
       wrapG.add(mesh);
       mesh = wrapG;
     }
+    this._addDanger(mesh, 2.8, 2.8);
     mesh.traverse((o) => { if (o.isMesh) { o.castShadow = true; } });
     this.scene.add(mesh);
     this.obstacles.push({ mesh, lane, d, hit: false });
