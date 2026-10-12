@@ -2,9 +2,9 @@
 // sombreros, anteojos, cuello, espalda, zapatos, ropa y tono de chocolate. Solo usa primitivas
 // de Three.js. `applyLook(hero, look)` deja puesto exactamente lo que dice `look` y quita lo anterior.
 
-import { THREE, roundedBox, canvasTexture } from "./three-kit.js?v=6c0737455c";
-import { getItem, getOutfit, EMPTY_LOOK } from "./wardrobe-data.js?v=6c0737455c";
-import { buildPet } from "./wardrobe-pets.js?v=6c0737455c";
+import { THREE, roundedBox, canvasTexture } from "./three-kit.js?v=17c07b4194";
+import { getItem, getOutfit, EMPTY_LOOK } from "./wardrobe-data.js?v=17c07b4194";
+import { buildPet } from "./wardrobe-pets.js?v=17c07b4194";
 
 export const HEAD_W = 0.78;
 export const HEAD_H = 0.72;
@@ -759,7 +759,7 @@ export function applyLook(hero, look = {}) {
 
   // zapatos
   const shoe = getItem(L.shoes);
-  mats.shoe.color.set(shoe ? shoe.params.color : 0x2a2a2a);
+  mats.shoe.color.set(shoe ? shoe.params.color : defaults.shoe);
   mats.shoe.metalness = shoe && shoe.params.metal ? 0.7 : 0;
   mats.shoe.emissive.set(shoe && shoe.params.glow ? shoe.params.glow : 0x000000);
   mats.shoe.emissiveIntensity = shoe && shoe.params.glow ? 0.7 : 0;

@@ -6,15 +6,15 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=6c0737455c";
-import { createMatichico } from "./matichico3d.js?v=6c0737455c";
-import { CHARACTERS, getOutfit } from "./characters.js?v=6c0737455c";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=6c0737455c";
-import { GAMES_CATALOG } from "./games-catalog.js?v=6c0737455c";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6c0737455c";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=6c0737455c";
-import { levelInfo } from "./progression.js?v=6c0737455c";
-import * as audio from "./audio.js?v=6c0737455c";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=17c07b4194";
+import { createMatichico } from "./matichico3d.js?v=17c07b4194";
+import { CHARACTERS, getOutfit } from "./characters.js?v=17c07b4194";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=17c07b4194";
+import { GAMES_CATALOG } from "./games-catalog.js?v=17c07b4194";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=17c07b4194";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=17c07b4194";
+import { levelInfo } from "./progression.js?v=17c07b4194";
+import * as audio from "./audio.js?v=17c07b4194";
 
 const GAME_ID = "town";
 const SPEED = 6.4;

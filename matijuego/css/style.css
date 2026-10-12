@@ -1449,3 +1449,23 @@ html[data-app] .game-screen:not(.cr-screen) {
 .abar span { position: relative; display: block; text-align: center; font-size: 0.68rem; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.6); line-height: 14px; }
 .adots { font-size: 0.7rem; letter-spacing: 2px; color: var(--dorado); margin-top: 2px; }
 #screen-achievements .menu-card { max-width: 760px; }
+
+/* ---------- secciones plegables (ahorran espacio) ---------- */
+details.how { margin: 4px 0 8px; text-align: left; background: rgba(255,255,255,0.06); border-radius: 12px; padding: 6px 10px; }
+details.how summary, .pg-fold > summary, .ach-group > summary { cursor: pointer; list-style: none; font-weight: 800; color: var(--dorado); display: flex; align-items: center; gap: 8px; user-select: none; }
+details.how summary::-webkit-details-marker, .pg-fold > summary::-webkit-details-marker, .ach-group > summary::-webkit-details-marker { display: none; }
+details.how summary::after, .pg-fold > summary::after, .ach-group > summary::after { content: "▾"; margin-left: auto; transition: transform .15s; }
+details.how[open] summary::after, .pg-fold[open] > summary::after, .ach-group[open] > summary::after { transform: rotate(180deg); }
+details.how > :not(summary) { font-size: 0.85rem; margin: 6px 0 0; }
+.pg-fold > summary h2 { margin: 0; flex: 1; }
+.pg-fold:not([open]) { gap: 0; }
+.pg-body { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.ach-group { margin: 6px 0; background: rgba(255,255,255,0.04); border: 2px solid rgba(255,200,0,0.45); border-radius: 14px; padding: 8px 10px; }
+.ach-group > summary { font-size: 1.05rem; }
+.ach-group > summary .ach-count { font-size: 0.78rem; color: var(--crema); font-weight: 700; }
+.ach-group > summary .ach-ready { font-size: 0.75rem; background: #ffd34d; color: #4a2c24; padding: 1px 8px; border-radius: 999px; }
+.ach-group > .ach-body { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.lvl-toggle { display: flex; width: 100%; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 12px; border: 2px solid rgba(255,200,0,0.55); background: rgba(255,255,255,0.08); color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.lvl-toggle span { margin-left: auto; color: var(--dorado); }
+.ach-body .achievement-card { padding: 7px 9px; gap: 8px; }
+.ach-body .achievement-card .aicon { font-size: 1.3rem; }

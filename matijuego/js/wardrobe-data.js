@@ -36,6 +36,7 @@ const ev = (event, tokens, slot, id, name, icon, rarity, params = {}) => ({ ...i
 
 // Atuendos (colores de camiseta): los 4 primeros ya existían en la tienda original.
 export const OUTFITS = [
+  { id: "polera", slot: "outfit", name: "Polera Matichoc", icon: "👕", rarity: "comun", price: 0, jersey: "#1C1C22", trim: "#E0368A", params: {} },
   { id: "liga", slot: "outfit", name: "Local Matichoc", icon: "👕", rarity: "comun", price: 0, jersey: "#D4216C", trim: "#FFC800", params: {} },
   { id: "visita", slot: "outfit", name: "Visita Cacao", icon: "👕", rarity: "comun", price: 30, jersey: "#CFD767", trim: "#64321B", params: {} },
   { id: "oro", slot: "outfit", name: "Edición Oro", icon: "👕", rarity: "raro", price: 60, jersey: "#FFC800", trim: "#64321B", params: {} },
@@ -204,4 +205,4 @@ export function trailColors(look) {
   return item ? item.params.colors.map((c) => Number.parseInt(c.slice(1), 16)) : [0xffc800, 0xfff6e6];
 }
 
-export const EMPTY_LOOK = { hair: "", hairColor: "", face: "", hat: "", glasses: "", neck: "", back: "", outfit: "liga", shoes: "", skin: "", trail: "", pet: "" };
+export const EMPTY_LOOK = { hair: "", hairColor: "", face: "", hat: "", glasses: "", neck: "", back: "", outfit: "polera", shoes: "", skin: "", trail: "", pet: "" };

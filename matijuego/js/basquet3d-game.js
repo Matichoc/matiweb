@@ -3,15 +3,16 @@
 // ESPACIO / toque; el balón vuela con física real (aro, tablero y piso rebotan) y la red
 // se mueve cuando es un "swish". Cada 5° tiro el aro es dorado (Chocolate Dubai).
 //
-// Torneo: tiras desde 5 lugares distintos de la cancha (más lejos = más puntos), la zona de
+// Torneo: tiras desde 8 lugares distintos (alas, esquinas, cerca del aro y de lejos); el Matichico corre
+// de uno a otro y la cámara lo sigue, y en los niveles difíciles se mueve de lado mientras apuntas. Antes: 5 lugares de la cancha (más lejos = más puntos), la zona de
 // puntería cambia en cada tiro, las rachas te ponen "en llamas" (zonas más grandes y puntos
 // multiplicados), los swish y los aros dorados regalan segundos extra, y suena la hinchada.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=6c0737455c";
-import { createMatichico } from "./matichico3d.js?v=6c0737455c";
-import { saveProgress, earnCoins } from "./storage.js?v=6c0737455c";
-import * as audio from "./audio.js?v=6c0737455c";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=6c0737455c";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=17c07b4194";
+import { createMatichico } from "./matichico3d.js?v=17c07b4194";
+import { saveProgress, earnCoins } from "./storage.js?v=17c07b4194";
+import * as audio from "./audio.js?v=17c07b4194";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=17c07b4194";
 
 const GAME_ID = "basquet_tiros";
 const TIME_LIMIT = 60;
@@ -19,11 +20,15 @@ const AIM_TARGET = 0.5;
 const POWER_TARGET = 0.7;
 const GOLDEN_EVERY = 5;
 
-// lugares de tiro: [nombre, x, z, multiplicador de puntos]
+// lugares de tiro, repartidos por toda la cancha: [nombre, x, z, multiplicador de puntos]
+// El Matichico corre de uno a otro y la cámara lo sigue, así que cada tiro se ve desde un lado distinto.
 const SPOTS = [
   ["Tiro libre", 0, 0, 1],
-  ["Esquina izquierda", -2.5, -1.1, 1.3],
-  ["Esquina derecha", 2.5, -1.1, 1.3],
+  ["Ala izquierda", -4.3, -1.0, 1.3],
+  ["Ala derecha", 4.3, -1.0, 1.3],
+  ["Esquina izquierda", -5.2, -4.4, 1.5],
+  ["Esquina derecha", 5.2, -4.4, 1.5],
+  ["Cerca del aro", 0.9, -3.3, 0.8],
   ["Triple", 0, 2.1, 1.7],
   ["Desde lejos", -1.3, 3.1, 2],
 ];
@@ -354,6 +359,17 @@ export class Basquet3DGame extends Game3D {
     this.hero.group.scale.setScalar(1.35);
     this.hero.group.position.set(0, 0, 0);
     this.scene.add(this.hero.group);
+    this.spotPos = new THREE.Vector3();
+    this.moveFrom = new THREE.Vector3();
+    this.strafeOff = 0;
+    this.faceAngle = Math.PI;
+  }
+
+  /** Dirección del tiro (hacia el aro) y su lado izquierda-derecha, vistos desde un punto. */
+  _shotDir(from, f = new THREE.Vector3(), l = new THREE.Vector3()) {
+    f.set(HOOP.x - from.x, 0, HOOP.z - from.z).normalize();
+    l.set(-f.z, 0, f.x);
+    return { f, l };
   }
 
   onResize(w, h) {
@@ -369,6 +385,8 @@ export class Basquet3DGame extends Game3D {
     this.level = this.mode === "levels" ? campaignLevel(this.progress, "basquet_tiros") : 0;
     this.target = this.level ? 250 + (this.level - 1) * 110 : 0; // puntos que hay que juntar en el nivel
     this.timeLeft = TIME_LIMIT;
+    this.camPos = null;
+    this.strafeT = 0;
     this.score = 0;
     this.made = 0;
     this.attempts = 0;
@@ -415,12 +433,19 @@ export class Basquet3DGame extends Game3D {
       this.spotIdx = next;
     }
     const [name, sx, sz] = SPOTS[this.spotIdx];
-    this.hero.group.position.set(sx, 0, sz);
+    // el Matichico corre al nuevo lugar (el primer tiro empieza ya ahí)
+    this.moveFrom.copy(this.hero.group.position);
+    this.spotPos.set(sx, 0, sz);
+    const run = this.attempts > 0 ? this.moveFrom.distanceTo(this.spotPos) : 0;
+    this.moveDur = run > 0.2 ? clamp(run / 9, 0.35, 0.85) : 0;
+    this.moveT = 0;
+    if (!this.moveDur) this.hero.group.position.copy(this.spotPos);
+    this.strafeOff = 0;
     const dist = Math.hypot(sx - HOOP.x, sz - HOOP.z);
     this.aimTarget = clamp(AIM_TARGET + (this.attempts > 0 ? rand(-0.16, 0.16) : 0), 0.3, 0.7);
     this.powerTarget = clamp(POWER_TARGET + (6.4 - dist) * -0.045 + (this.attempts > 0 ? rand(-0.05, 0.05) : 0), 0.45, 0.88);
     if (this.attempts > 0) this.banner(name);
-    this.stage = "aim";
+    this.stage = this.moveDur ? "move" : "aim";
     this.aimTime = 0;
     this.powerTime = 0;
     this.aimValue = 0;
@@ -440,7 +465,8 @@ export class Basquet3DGame extends Game3D {
 
   _handPos(out) {
     const hp = this.hero.group.position;
-    return out.set(hp.x, 1.55, hp.z - 0.4);
+    const { f } = this._shotDir(hp);
+    return out.set(hp.x + f.x * 0.4, 1.55, hp.z + f.z * 0.4);
   }
 
   _placeBallInHands() {
@@ -496,7 +522,9 @@ export class Basquet3DGame extends Game3D {
       }
     }
     const start = this._handPos(new THREE.Vector3());
-    const target = new THREE.Vector3(HOOP.x + ox, HOOP.y + (made ? 0.0 : 0.05), HOOP.z + oz);
+    // el error de puntería es de lado a lado de la línea del tiro y la potencia, a lo largo de ella
+    const { f, l } = this._shotDir(this.hero.group.position);
+    const target = new THREE.Vector3(HOOP.x + l.x * ox - f.x * oz, HOOP.y + (made ? 0.0 : 0.05), HOOP.z + l.z * ox - f.z * oz);
     // el tiempo de vuelo crece con la distancia para que el balón siempre baje con la misma pendiente
     const D = Math.hypot(target.x - start.x, target.z - start.z);
     const T = Math.sqrt((2 * (0.72 * D + (HOOP.y - start.y))) / -GRAV);
@@ -668,12 +696,21 @@ export class Basquet3DGame extends Game3D {
         return;
       }
 
-      if (this.stage === "aim") {
+      if (this.stage === "move") {
+        // corre hasta el nuevo lugar de tiro
+        this.moveT += dt / this.moveDur;
+        const k = clamp(this.moveT, 0, 1);
+        const e = k * k * (3 - 2 * k);
+        this.hero.group.position.lerpVectors(this.moveFrom, this.spotPos, e);
+        if (k >= 1) { this.stage = "aim"; this.aimTime = 0; }
+      } else if (this.stage === "aim") {
         this.aimTime += dt;
         this.aimValue = oscillate(this.aimTime, this.aimSpeed);
+        this._strafe(dt);
       } else if (this.stage === "power") {
         this.powerTime += dt;
         this.powerValue = oscillate(this.powerTime, this.powerSpeed);
+        this._strafe(dt);
       } else if (this.stage === "flying" || this.stage === "result") {
         const prevY = this.ball.position.y;
         this._stepBall(dt);
@@ -694,6 +731,16 @@ export class Basquet3DGame extends Game3D {
     this._placeCamera(dt);
   }
 
+  /** En los niveles difíciles el Matichico se mueve de lado mientras apuntas: tira desde donde esté. */
+  _strafe(dt) {
+    const amp = clamp((this._difficulty() - 5) * 0.12, 0, 1.5);
+    if (amp <= 0) return;
+    this.strafeT = (this.strafeT || 0) + dt;
+    const off = Math.sin(this.strafeT * 1.5) * amp;
+    const { l } = this._shotDir(this.spotPos);
+    this.hero.group.position.set(this.spotPos.x + l.x * off, 0, this.spotPos.z + l.z * off);
+  }
+
   _updateMeters() {
     const q = this.q;
     const am = q("aim-marker");
@@ -709,7 +756,7 @@ export class Basquet3DGame extends Game3D {
       pm.classList.toggle("locked", this.stage !== "power");
     }
     const meters = q("meters");
-    if (meters) meters.classList.toggle("off", this.stage === "flying" || this.stage === "result");
+    if (meters) meters.classList.toggle("off", this.stage === "flying" || this.stage === "result" || this.stage === "move");
     const hint = q("hint");
     if (hint) hint.textContent = this.stage === "aim" ? "¡Fija la PUNTERÍA!" : this.stage === "power" ? "¡Ahora la POTENCIA!" : "";
   }
@@ -745,13 +792,20 @@ export class Basquet3DGame extends Game3D {
     }
     // el Matichico mira hacia el aro y se inclina según la puntería
     const aim = this.stage === "aim" ? this.aimValue : this.aimLocked ?? 0.5;
-    const target = Math.PI + (aim - 0.5) * 0.7;
-    g.rotation.y = lerp(g.rotation.y || Math.PI, this.state === "gameover" ? 0 : target, 1 - Math.exp(-12 * dt));
+    let face = Math.atan2(HOOP.x - g.position.x, HOOP.z - g.position.z); // mira hacia el aro
+    if (this.stage === "move") face = Math.atan2(this.spotPos.x - this.moveFrom.x, this.spotPos.z - this.moveFrom.z); // o hacia donde corre
+    const target = face + (this.stage === "move" ? 0 : (aim - 0.5) * 0.7);
+    // gira por el camino corto
+    let dA = target - (g.rotation.y || 0);
+    dA = Math.atan2(Math.sin(dA), Math.cos(dA));
+    g.rotation.y = (g.rotation.y || 0) + dA * (1 - Math.exp(-12 * dt));
+    if (this.state === "gameover") g.rotation.y = 0;
     let mode = this.heroMode || "idle";
+    if (this.stage === "move") mode = "run";
     if (this.heroJump > 0) { this.heroJump -= dt; mode = "jump"; }
     if (this.state === "gameover") mode = this.score > 0 ? "cheer" : "sad";
     this.hero.animate(this.time, mode, 1);
-    if (this.stage === "aim" || this.stage === "power") this._placeBallInHands();
+    if (this.stage === "aim" || this.stage === "power" || this.stage === "move") this._placeBallInHands();
     else if (this.stage === "flying" && this.flightClock < 0.04) this.ball.visible = true;
   }
 
@@ -761,8 +815,21 @@ export class Basquet3DGame extends Game3D {
     this.camFollow = lerp(this.camFollow || 0, follow, 1 - Math.exp(-4 * (dt || 0.016)));
     const sk = this.shake * 0.05;
     const portrait = this.portrait;
-    this.camera.position.set(1.9 + sway + rand(-sk, sk), (portrait ? 3.4 : 3.0) + this.camFollow * 0.2, portrait ? 6.4 : 5.4);
-    this.camera.lookAt(0.1, (portrait ? 2.3 : 2.1) + this.camFollow, -4.2);
+    // la cámara va detrás del Matichico, mirando al aro: cada lugar de tiro se ve desde un ángulo distinto
+    const hp = this.hero.group.position;
+    const { f, l } = this._shotDir(hp);
+    const dir = new THREE.Vector3(f.x * 0.6, 0, f.z * 0.6 - 0.4).normalize(); // mezcla con "de frente a la cancha" para no salirse del gimnasio
+    const back = portrait ? 6.4 : 5.6;
+    const want = new THREE.Vector3(hp.x - dir.x * back + l.x * 0.9, (portrait ? 3.5 : 3.25) + this.camFollow * 0.2, hp.z - dir.z * back + l.z * 0.9);
+    want.x = clamp(want.x, -8.5, 8.5);
+    want.z = clamp(want.z, -4.5, 9);
+    const look = new THREE.Vector3(hp.x + (HOOP.x - hp.x) * 0.62, (portrait ? 2.3 : 2.1) + this.camFollow, hp.z + (HOOP.z - hp.z) * 0.62);
+    if (!this.camPos) { this.camPos = want.clone(); this.camLook = look.clone(); }
+    const k = 1 - Math.exp(-5 * (dt || 0.016));
+    this.camPos.lerp(want, k);
+    this.camLook.lerp(look, k);
+    this.camera.position.set(this.camPos.x + sway + rand(-sk, sk), this.camPos.y, this.camPos.z);
+    this.camera.lookAt(this.camLook);
   }
 
   /** En la tarjeta de inicio se elige entre "Infinito" y los 20 niveles. */
