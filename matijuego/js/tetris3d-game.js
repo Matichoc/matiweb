@@ -6,12 +6,12 @@
 // Versión "Gran Vitrina": guardar una pieza (C / Shift), combos y back-to-back, cubos de poder
 // (bomba que limpia 3x3 y rayo que limpia la fila), subida de nivel con cambio de ambiente y música.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=64b04a2636";
-import { createMatichico } from "./matichico3d.js?v=64b04a2636";
-import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=64b04a2636";
-import { saveProgress, earnCoins } from "./storage.js?v=64b04a2636";
-import * as audio from "./audio.js?v=64b04a2636";
-import { campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=64b04a2636";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=6c0737455c";
+import { createMatichico } from "./matichico3d.js?v=6c0737455c";
+import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=6c0737455c";
+import { saveProgress, earnCoins } from "./storage.js?v=6c0737455c";
+import * as audio from "./audio.js?v=6c0737455c";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=6c0737455c";
 
 const COLS = 8;
 const ROWS = 14;
@@ -471,6 +471,7 @@ export class Tetris3DGame extends Game3D {
     const stars = this.pieces <= needed * 1.35 ? 3 : this.pieces <= needed * 1.8 ? 2 : 1;
     this._setHero("cheer", 99);
     if (this.level >= LEVELS_PER_GAME) {
+      campaignWin(this.progress, "tetris", this.level, stars);
       const t = this.els.q("gameover-title");
       if (t) t.textContent = `¡Completaste los ${LEVELS_PER_GAME} niveles! 🏆`;
       audio.playVictory();

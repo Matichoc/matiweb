@@ -3,11 +3,11 @@
 // cae; rebotar centrado suma combo (¡y hace volteretas!), los pompones dan puntos extra.
 // Si cae fuera de la rebotadora, se acaba la partida. Las reglas son las de siempre.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=64b04a2636";
-import { createMatichico } from "./matichico3d.js?v=64b04a2636";
-import { saveProgress, earnCoins } from "./storage.js?v=64b04a2636";
-import * as audio from "./audio.js?v=64b04a2636";
-import { campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=64b04a2636";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=6c0737455c";
+import { createMatichico } from "./matichico3d.js?v=6c0737455c";
+import { saveProgress, earnCoins } from "./storage.js?v=6c0737455c";
+import * as audio from "./audio.js?v=6c0737455c";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=6c0737455c";
 
 const GAME_ID = "porristas";
 const PX_W = 800;
@@ -476,6 +476,7 @@ export class Porristas3DGame extends Game3D {
     const stars = ratio >= 0.8 ? 3 : ratio >= 0.55 ? 2 : 1;
     this.cheer = 1;
     if (this.level >= LEVELS_PER_GAME) {
+      campaignWin(this.progress, GAME_ID, this.level, stars);
       const t = this.els.q("gameover-title");
       if (t) t.textContent = `¡Completaste los ${LEVELS_PER_GAME} niveles! 🏆`;
       audio.playVictory();

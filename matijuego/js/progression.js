@@ -6,9 +6,9 @@
 // Todo se guarda por perfil dentro de `progress` (xp, packs, album, daily) y se paga solo
 // con Matipuntos, sin compras reales.
 
-import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=64b04a2636";
-import { getItem } from "./wardrobe-data.js?v=64b04a2636";
-import { activeEvent, addEventTokens } from "./events.js?v=64b04a2636";
+import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=6c0737455c";
+import { getItem } from "./wardrobe-data.js?v=6c0737455c";
+import { activeEvent, addEventTokens } from "./events.js?v=6c0737455c";
 
 // ---------- partidas ----------
 
@@ -168,6 +168,7 @@ export function claimMission(progress, index) {
   const m = d.missions[index];
   if (!m || m.claimed || !missionDone(progress, m)) return null;
   m.claimed = true;
+  progress.stats.missionsClaimed = (progress.stats.missionsClaimed || 0) + 1;
   earnCoins(progress, m.coins);
   const ups = addXp(progress, m.xp);
   saveProgress(progress);
@@ -222,6 +223,7 @@ export { ALBUM_MILESTONES };
 export function openPack(progress) {
   if ((progress.packs || 0) <= 0) return null;
   progress.packs--;
+  progress.stats.packsOpened = (progress.stats.packsOpened || 0) + 1;
   progress.album = progress.album || {};
   const missing = STICKERS.filter((s) => !(progress.album[s.id] > 0));
   const out = [];
@@ -268,6 +270,11 @@ export function recordRun(progress, gameId, score, info = {}) {
   const first = d.plays === 0;
   d.plays++;
   if (!d.games.includes(gameId)) d.games.push(gameId);
+  // contadores de por vida para los logros (js/achievements.js)
+  const st = progress.stats;
+  st.runsBy = st.runsBy || {};
+  st.runsBy[gameId] = (st.runsBy[gameId] || 0) + 1;
+  if (st.lastPlayDay !== d.date) { st.lastPlayDay = d.date; st.playDays = (st.playDays || 0) + 1; }
   d.best[gameId] = Math.max(d.best[gameId] || 0, Math.round(score || 0));
   if (info.meters) d.meters = Math.max(d.meters, info.meters);
   progress.stats.totalRuns = (progress.stats.totalRuns || 0) + 1;

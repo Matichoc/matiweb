@@ -2,8 +2,8 @@
 // el dibujo 2D), cuerpo con el atuendo comprado en la tienda y accesorios por
 // personaje. Origen en los pies, mira hacia +z. Solo primitivas de Three.js.
 
-import { THREE, roundedBox } from "./three-kit.js?v=64b04a2636";
-import { applyLook, HEAD_W, HEAD_H, HEAD_D } from "./wardrobe3d.js?v=64b04a2636";
+import { THREE, roundedBox } from "./three-kit.js?v=6c0737455c";
+import { applyLook, HEAD_W, HEAD_H, HEAD_D } from "./wardrobe3d.js?v=6c0737455c";
 
 function drawNumber(ctx, text, color) {
   ctx.clearRect(0, 0, 128, 128);

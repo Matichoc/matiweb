@@ -2,9 +2,9 @@
 // girando alrededor y chispas. Se puede arrastrar para girarlo y tocar para que salude.
 // Es liviano (sin sombras pesadas ni efectos) y solo dibuja cuando el menú está visible.
 
-import { THREE, loadTexture } from "./three-kit.js?v=64b04a2636";
-import { createMatichico } from "./matichico3d.js?v=64b04a2636";
-import { getOutfit } from "./wardrobe-data.js?v=64b04a2636";
+import { THREE, loadTexture } from "./three-kit.js?v=6c0737455c";
+import { createMatichico } from "./matichico3d.js?v=6c0737455c";
+import { getOutfit } from "./wardrobe-data.js?v=6c0737455c";
 
 const SPRITES = ["alf-frambuesa", "alf-menta", "alf-naranja", "alf-trufa", "alf-maracuya"];
 
