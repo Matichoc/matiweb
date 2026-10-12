@@ -2,12 +2,12 @@
 // con tu Matichico y su mascota adentro. Lo que hay en cada lugar viene de
 // js/house-data.js; aquí solo se dibuja. Es liviano y solo corre cuando la pantalla está visible.
 
-import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=12a3a39f99";
-import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
-import { getOutfit } from "./wardrobe-data.js?v=12a3a39f99";
-import { getHouseItem, houseItemsOfSpot } from "./house-data.js?v=12a3a39f99";
+import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=64b04a2636";
+import { createMatichico } from "./matichico3d.js?v=64b04a2636";
+import { getOutfit } from "./wardrobe-data.js?v=64b04a2636";
+import { getHouseItem, houseItemsOfSpot, isWallItem } from "./house-data.js?v=64b04a2636";
 
-const W = 10; // el cuarto mide 10 x 10 y 5.2 de alto
+let W = 10; // ancho del cuarto (10, 14 o 18 según cuánto lo agrandes); el alto es siempre 5.2
 const H = 5.2;
 
 const std = (color, rough = 0.6, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: rough, ...extra });
@@ -361,6 +361,71 @@ const BUILD = {
     return g;
   },
 
+  free(p, ticks) {
+    const g = new THREE.Group();
+    const wood = std(p.a || 0xc98a4b, 0.6);
+    if (p.kind === "sofa") {
+      const main = std(p.a, 0.8);
+      g.add(rbox(3.0, 0.6, 1.3, 0.15, main, 0, 0.45, 0));
+      g.add(rbox(3.0, 1.0, 0.4, 0.15, main, 0, 1.0, -0.55));
+      for (const sx of [-1.4, 1.4]) g.add(rbox(0.4, 0.9, 1.3, 0.15, main, sx, 0.75, 0));
+      for (const sx of [-0.7, 0.7]) g.add(rbox(1.2, 0.3, 0.95, 0.12, std(p.b, 0.85), sx, 0.85, 0.12));
+      for (const sx of [-1.15, 1.15]) g.add(rbox(0.55, 0.5, 0.2, 0.1, std(0xffd34d, 0.8), sx, 1.1, 0.2));
+    } else if (p.kind === "mesa") {
+      g.add(cyl(1.1, 1.1, 0.15, wood, 0, 1.05, 0, 28));
+      g.add(cyl(0.18, 0.28, 1.0, wood, 0, 0.5, 0, 12));
+      g.add(cyl(0.7, 0.8, 0.1, wood, 0, 0.05, 0, 20));
+      [0xff3b6b, 0xffe14a, 0x4fd0ff, 0xb9f0a8, 0xff9ac8].forEach((c, i) => { const a = i * 1.25; g.add(ball(0.17, std(c, 0.3), Math.sin(a) * 0.55, 1.3, Math.cos(a) * 0.55)); });
+      g.add(cyl(0.3, 0.3, 0.12, std(p.b, 0.4), 0, 1.18, 0, 16));
+    } else if (p.kind === "silla") {
+      g.add(rbox(0.9, 0.15, 0.9, 0.06, wood, 0, 0.8, 0));
+      g.add(rbox(0.9, 1.0, 0.14, 0.06, wood, 0, 1.3, -0.4));
+      g.add(rbox(0.7, 0.08, 0.12, 0.03, std(p.b, 0.4), 0, 1.6, -0.34));
+      for (const [x, z] of [[-0.38, -0.38], [0.38, -0.38], [-0.38, 0.38], [0.38, 0.38]]) g.add(box(0.1, 0.8, 0.1, wood, x, 0.4, z));
+    } else if (p.kind === "comoda") {
+      g.add(rbox(2.2, 1.5, 1.0, 0.08, std(p.a, 0.7), 0, 0.8, 0));
+      for (let i = 0; i < 3; i++) {
+        g.add(rbox(1.95, 0.4, 0.06, 0.04, std(0xffffff, 0.6), 0, 0.35 + i * 0.45, 0.52));
+        g.add(ball(0.07, std(p.b, 0.3), 0, 0.35 + i * 0.45, 0.58));
+      }
+      g.add(rbox(2.3, 0.1, 1.1, 0.04, std(p.b, 0.5), 0, 1.58, 0));
+    } else if (p.kind === "pelotero") {
+      g.add(cyl(1.6, 1.6, 0.6, std(0x4fd0ff, 0.5), 0, 0.3, 0, 32));
+      g.add(cyl(1.4, 1.4, 0.62, std(0x1f2a44, 0.9), 0, 0.31, 0, 32));
+      const cols = [0xff3b6b, 0xffe14a, 0x4fd0ff, 0x4fd09a, 0x9a5cff];
+      for (let i = 0; i < 46; i++) { const a = i * 2.4, r = Math.sqrt((i + 1) / 46) * 1.25; g.add(ball(0.2, std(cols[i % 5], 0.3), Math.cos(a) * r, 0.55 + (i % 3) * 0.12, Math.sin(a) * r)); }
+    } else if (p.kind === "tipi") {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3.0, 5, 1, true), std(p.a, 0.9, { side: THREE.DoubleSide, flatShading: true }));
+      cone.position.y = 1.5; cone.castShadow = true; g.add(cone);
+      const door = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.6), std(0x3a2218, 0.9, { side: THREE.DoubleSide }));
+      door.position.set(0, 0.8, 0.78); door.rotation.x = -0.28; g.add(door);
+      for (let i = 0; i < 5; i++) { const a = (i / 5) * 6.283; g.add(cyl(0.04, 0.04, 3.4, wood, Math.sin(a) * 0.12, 1.7, Math.cos(a) * 0.12, 6).rotateZ(0)); }
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.97, 1.05, 0.2, 5, 1, true), std(p.b, 0.7, { side: THREE.DoubleSide }));
+      band.position.y = 1.5; g.add(band);
+      g.add(rbox(2.3, 0.08, 2.3, 0.04, std(0xffd34d, 0.9), 0, 0.04, 0.4));
+    } else if (p.kind === "piano") {
+      const black = std(0x1c1c26, 0.25, { metalness: 0.2 });
+      g.add(rbox(2.4, 0.9, 3.0, 0.12, black, 0, 1.0, 0));
+      g.add(rbox(2.0, 0.12, 0.7, 0.03, std(0xffffff, 0.4), 0, 1.5, 1.3));
+      for (let i = 0; i < 7; i++) g.add(box(0.12, 0.1, 0.45, black, -0.8 + i * 0.27, 1.58, 1.15));
+      for (const [x, z] of [[-1.0, -1.2], [1.0, -1.2], [0, 1.2]]) g.add(cyl(0.1, 0.12, 0.9, black, x, 0.45, z, 10));
+      const lid = rbox(2.2, 0.05, 2.0, 0.02, black, 0, 1.55, -0.3); lid.rotation.x = -0.4; lid.position.y = 1.7; g.add(lid);
+      g.add(rbox(0.9, 0.12, 0.5, 0.04, std(0x8a4b2c, 0.5), 0, 0.7, 2.0), cyl(0.04, 0.04, 0.5, black, 0, 0.45, 2.0, 6));
+    } else if (p.kind === "pastel") {
+      g.add(cyl(1.1, 1.1, 0.12, std(0xffffff, 0.5), 0, 1.0, 0, 28), cyl(0.15, 0.2, 1.0, std(0xd9a066, 0.6), 0, 0.5, 0, 12));
+      g.add(cyl(0.95, 0.95, 0.4, std(0xff9ac8, 0.6), 0, 1.3, 0, 24), cyl(0.7, 0.7, 0.35, std(0xfff6e6, 0.6), 0, 1.68, 0, 24), cyl(0.45, 0.45, 0.3, std(0x8a4b2c, 0.6), 0, 2.0, 0, 20));
+      for (let i = 0; i < 8; i++) { const a = (i / 8) * 6.283; g.add(ball(0.1, std(0xff3b6b, 0.3), Math.sin(a) * 0.95, 1.52, Math.cos(a) * 0.95)); }
+      g.add(cyl(0.03, 0.03, 0.35, std(0xffffff), 0, 2.3, 0, 6), ball(0.07, basic(0xffe14a), 0, 2.5, 0));
+      ticks.push((t) => { g.children[g.children.length - 1].scale.setScalar(1 + Math.sin(t * 9) * 0.25); });
+    } else if (p.kind === "trampolin") {
+      g.add(cyl(1.6, 1.6, 0.18, std(0x1c1c26, 0.8), 0, 0.75, 0, 32), cyl(1.35, 1.35, 0.2, std(0xff7aa8, 0.6), 0, 0.77, 0, 32));
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.1, 8, 32), std(0xffc800, 0.4, { metalness: 0.5 }));
+      ring.rotation.x = Math.PI / 2; ring.position.y = 0.8; g.add(ring);
+      for (let i = 0; i < 6; i++) { const a = (i / 6) * 6.283; g.add(cyl(0.07, 0.07, 0.75, std(0xcfcfd4, 0.3, { metalness: 0.8 }), Math.sin(a) * 1.55, 0.38, Math.cos(a) * 1.55, 8)); }
+    }
+    return g;
+  },
+
   ceiling(p, ticks) {
     const g = new THREE.Group();
     if (p.kind === "lampara") {
@@ -403,6 +468,9 @@ export class House3D {
     this.spotObjs = {};
     this.ticks = [];
     this.dragYaw = 0;
+    this.furn = new Map(); // uid -> { group, data }
+    this.sel = null;
+    this.size = 10;
   }
 
   init() {
@@ -418,6 +486,7 @@ export class House3D {
     this.hemi = new THREE.HemisphereLight(0xfff0e0, 0x8a5a60, 1.35);
     this.scene.add(this.hemi);
     const sun = new THREE.DirectionalLight(0xfff3dc, 2.4);
+    this.sun = sun;
     sun.position.set(6, 10, 7);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
@@ -425,14 +494,44 @@ export class House3D {
     sun.shadow.bias = -0.0008;
     this.scene.add(sun);
 
-    // paredes (la de atrás y la de la izquierda) y piso
-    this.floor = new THREE.Mesh(new THREE.PlaneGeometry(W, W), std(0xffffff, 0.7));
+    this.shell = null;
+    this._buildShell(10);
+
+    this._resize = () => {
+      const w = Math.max(1, canvas.clientWidth);
+      const h = Math.max(1, canvas.clientHeight);
+      this.renderer.setSize(w, h, false);
+      this.camera.aspect = w / h;
+      const fit = Math.max(1, 1.35 / this.camera.aspect);
+      const d = 17.5 * fit * (this.size / 10);
+      this.camera.position.set(d * 0.62, d * 0.46, d * 0.7);
+      this.camera.lookAt(0, 1.9, 0);
+      this.camera.updateProjectionMatrix();
+    };
+    new ResizeObserver(this._resize).observe(canvas);
+    this._resize();
+    this._loop = this._loop.bind(this);
+    this.ready = true;
+  }
+
+  /** Arma (o rearma) piso, paredes y marcos para un cuarto de `size` x `size`. */
+  _buildShell(size) {
+    if (this.shell) {
+      this.scene.remove(this.shell);
+      this.shell.traverse((o) => { o.geometry?.dispose?.(); });
+    }
+    this.size = size;
+    W = size;
+    const shell = new THREE.Group();
+    const keepFloor = this.floor?.material;
+    const keepWall = this.back?.material;
+    this.floor = new THREE.Mesh(new THREE.PlaneGeometry(W, W), keepFloor || std(0xffffff, 0.7));
     this.floor.rotation.x = -Math.PI / 2;
     this.floor.receiveShadow = true;
-    this.back = new THREE.Mesh(new THREE.PlaneGeometry(W, H), std(0xffffff, 0.9));
+    this.back = new THREE.Mesh(new THREE.PlaneGeometry(W, H), keepWall || std(0xffffff, 0.9));
     this.back.position.set(0, H / 2, -W / 2);
     this.back.receiveShadow = true;
-    this.left = new THREE.Mesh(new THREE.PlaneGeometry(W, H), std(0xffffff, 0.9));
+    this.left = new THREE.Mesh(new THREE.PlaneGeometry(W, H), this.left?.material || std(0xffffff, 0.9));
     this.left.position.set(-W / 2, H / 2, 0);
     this.left.rotation.y = Math.PI / 2;
     this.left.receiveShadow = true;
@@ -442,23 +541,33 @@ export class House3D {
     const slab = box(W + 0.6, 0.5, W + 0.6, std(0x8a5a36, 0.7), 0, -0.26, 0);
     const edge1 = box(W + 0.6, H + 0.5, 0.3, std(0xd4216c, 0.5), 0, H / 2 - 0.01, -W / 2 - 0.19);
     const edge2 = box(0.3, H + 0.5, W + 0.6, std(0xd4216c, 0.5), -W / 2 - 0.19, H / 2 - 0.01, 0);
-    this.scene.add(this.floor, this.back, this.left, base1, base2, slab, edge1, edge2);
+    shell.add(this.floor, this.back, this.left, base1, base2, slab, edge1, edge2);
+    this.shell = shell;
+    this.scene.add(shell);
+    // las texturas se repiten según el tamaño para que los dibujos no se estiren
+    for (const m of [this.floor.material, this.back.material, this.left.material]) if (m.map) { m.map.wrapS = THREE.RepeatWrapping; }
+    this._fitTextures();
+    this.sun && Object.assign(this.sun.shadow.camera, { left: -W * 0.9, right: W * 0.9, top: W * 0.9, bottom: -W * 0.9 });
+    this.sun && this.sun.shadow.camera.updateProjectionMatrix();
+    this._resize && this._resize();
+  }
 
-    this._resize = () => {
-      const w = Math.max(1, canvas.clientWidth);
-      const h = Math.max(1, canvas.clientHeight);
-      this.renderer.setSize(w, h, false);
-      this.camera.aspect = w / h;
-      const fit = Math.max(1, 1.35 / this.camera.aspect);
-      const d = 17.5 * fit;
-      this.camera.position.set(d * 0.62, d * 0.46, d * 0.7);
-      this.camera.lookAt(0, 1.9, 0);
-      this.camera.updateProjectionMatrix();
+  _fitTextures() {
+    const k = W / 10;
+    const fit = (map, kx, ky) => {
+      if (!map) return;
+      map.userData.base = map.userData.base || map.repeat.clone();
+      map.wrapS = map.wrapT = THREE.RepeatWrapping;
+      map.repeat.set(map.userData.base.x * kx, map.userData.base.y * ky);
     };
-    new ResizeObserver(this._resize).observe(canvas);
-    this._resize();
-    this._loop = this._loop.bind(this);
-    this.ready = true;
+    fit(this.floor.material.map, k, k);
+    for (const m of [this.back, this.left]) fit(m.material.map, k, 1);
+  }
+
+  /** Cambia el tamaño del cuarto (10, 14 o 18). */
+  setSize(size) {
+    if (!this.ready || size === this.size) return;
+    this._buildShell(size);
   }
 
   /** Dibuja el Matichico (con su mascota) dentro del cuarto. */
@@ -494,6 +603,7 @@ export class House3D {
         m.material.needsUpdate = true;
       }
     }
+    this._fitTextures();
     for (const [spot, obj] of Object.entries(this.spotObjs)) { this.scene.remove(obj); obj.traverse((o) => { o.geometry?.dispose?.(); }); delete this.spotObjs[spot]; }
     const anchors = {
       rug: [0.2, 0.0, 1.0, 0],
@@ -516,6 +626,132 @@ export class House3D {
       this.scene.add(holder);
       this.spotObjs[spot] = holder;
     }
+    if (this.layoutData) this.setLayout(this.layoutData); // las piezas libres vuelven a armarse (sus animaciones usan `ticks`)
+  }
+
+  // ---------- decorar libre ----------
+
+  _buildFurn(item) {
+    const kind = item.spot.startsWith("wall") && item.spot.length === 5 ? "wall" : item.spot;
+    return BUILD[kind](item.params, this.ticks);
+  }
+
+  /** Pone en el cuarto todas las piezas del `layout` (ver houseLayout en house-data.js). */
+  setLayout(layout) {
+    if (!this.ready) return;
+    this.layoutData = layout;
+    for (const { group } of this.furn.values()) { this.scene.remove(group); group.traverse((o) => { o.geometry?.dispose?.(); }); }
+    this.furn.clear();
+    for (const d of layout) this._addFurn(d);
+  }
+
+  _addFurn(d) {
+    const item = getHouseItem(d.id);
+    if (!item) return;
+    const holder = new THREE.Group();
+    const inner = this._buildFurn(item);
+    holder.add(inner);
+    holder.userData.uid = d.uid;
+    this.scene.add(holder);
+    this.furn.set(d.uid, { group: holder, data: d, item });
+    this.updateFurn(d);
+  }
+
+  /** Vuelve a ubicar una pieza según sus datos (posición, giro, tamaño). */
+  updateFurn(d) {
+    const f = this.furn.get(d.uid);
+    if (!f) return;
+    const g = f.group;
+    const half = W / 2 - 0.5;
+    if (d.wall) {
+      const u = Math.max(-half, Math.min(half, d.u));
+      const y = Math.max(1.4, Math.min(4.2, d.y));
+      d.u = u; d.y = y;
+      if (d.wall === "back") { g.position.set(u, y, -W / 2 + 0.1); g.rotation.y = 0; }
+      else { g.position.set(-W / 2 + 0.1, y, u); g.rotation.y = Math.PI / 2; }
+    } else {
+      d.x = Math.max(-half, Math.min(half, d.x));
+      d.z = Math.max(-half, Math.min(half, d.z));
+      g.position.set(d.x, 0, d.z);
+      g.rotation.y = d.rot || 0;
+    }
+    g.scale.setScalar(d.s || 1);
+  }
+
+  removeFurn(uid) {
+    const f = this.furn.get(uid);
+    if (!f) return;
+    this.scene.remove(f.group);
+    f.group.traverse((o) => { o.geometry?.dispose?.(); });
+    this.furn.delete(uid);
+    if (this.sel === uid) this.setSelected(null);
+  }
+
+  addFurn(d) { this._addFurn(d); }
+
+  _ray(clientX, clientY) {
+    const r = this.canvas.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(ndc, this.camera);
+    return ray;
+  }
+
+  /** ¿Qué pieza hay bajo el dedo? (devuelve su uid o null) */
+  pick(clientX, clientY) {
+    if (!this.ready) return null;
+    const hit = this._ray(clientX, clientY).intersectObjects([...this.furn.values()].map((f) => f.group), true)[0];
+    if (!hit) return null;
+    let o = hit.object;
+    while (o && !o.userData.uid) o = o.parent;
+    return o ? o.userData.uid : null;
+  }
+
+  /** Punto del piso bajo el dedo: { x, z } o null si apunta fuera. */
+  floorPoint(clientX, clientY) {
+    const p = new THREE.Vector3();
+    const ok = this._ray(clientX, clientY).ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), p);
+    return ok ? { x: p.x, z: p.z } : null;
+  }
+
+  /** Punto de pared bajo el dedo: { wall, u, y } (la más cercana de las dos paredes visibles). */
+  wallPoint(clientX, clientY) {
+    const ray = this._ray(clientX, clientY).ray;
+    const back = new THREE.Vector3();
+    const left = new THREE.Vector3();
+    const okB = ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), W / 2), back);
+    const okL = ray.intersectPlane(new THREE.Plane(new THREE.Vector3(1, 0, 0), W / 2), left);
+    const inB = okB && Math.abs(back.x) <= W / 2 && back.y >= 0 && back.y <= H;
+    const inL = okL && Math.abs(left.z) <= W / 2 && left.y >= 0 && left.y <= H;
+    if (inB && (!inL || back.y >= 0)) return { wall: "back", u: back.x, y: back.y };
+    if (inL) return { wall: "left", u: left.z, y: left.y };
+    return null;
+  }
+
+  /** Marca una pieza (aro dorado en el piso); `null` quita la marca. */
+  setSelected(uid) {
+    this.sel = uid;
+    if (!this.selRing) {
+      this.selRing = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.05, 40), new THREE.MeshBasicMaterial({ color: 0xffc800, side: THREE.DoubleSide, transparent: true, opacity: 0.95, depthTest: false }));
+      this.selRing.rotation.x = -Math.PI / 2;
+      this.selRing.renderOrder = 10;
+      this.scene.add(this.selRing);
+    }
+    this.selRing.visible = !!uid && this.furn.has(uid);
+  }
+
+  _syncSelRing() {
+    if (!this.selRing || !this.sel) return;
+    const f = this.furn.get(this.sel);
+    if (!f) { this.selRing.visible = false; return; }
+    const g = f.group;
+    const box3 = new THREE.Box3().setFromObject(g);
+    const sz = box3.getSize(new THREE.Vector3());
+    const c = box3.getCenter(new THREE.Vector3());
+    const r = Math.max(sz.x, sz.z) / 2 + 0.25;
+    this.selRing.position.set(c.x, f.data.wall ? 0.05 : 0.06, c.z);
+    this.selRing.scale.setScalar(r / 0.97 * (1 + Math.sin(this.time * 6) * 0.03));
+    this.selRing.visible = !f.data.wall;
   }
 
   setActive(on) {
@@ -538,6 +774,7 @@ export class House3D {
       this.hero.group.rotation.y = 0.5 + Math.sin(this.time * 0.6) * 0.3;
     }
     for (const f of this.ticks) f(this.time, dt);
+    this._syncSelRing();
     this.renderer.render(this.scene, this.camera);
     requestAnimationFrame(this._loop);
   }

@@ -7,12 +7,13 @@
 // cintas transportadoras, combo de golosinas, poderes (reloj, botas turbo, imán), impulso
 // con Shift, estrellas por nivel y música. Ahora son 8 canchas.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=12a3a39f99";
-import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
-import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=12a3a39f99";
-import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=12a3a39f99";
-import { recordRun } from "./progression.js?v=12a3a39f99";
-import * as audio from "./audio.js?v=12a3a39f99";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=64b04a2636";
+import { createMatichico } from "./matichico3d.js?v=64b04a2636";
+import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=64b04a2636";
+import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=64b04a2636";
+import { recordRun } from "./progression.js?v=64b04a2636";
+import * as audio from "./audio.js?v=64b04a2636";
+import { campaign, campaignWin, renderLevelPicker } from "./campaign.js?v=64b04a2636";
 
 const GAME_ID = "recolecta";
 const S = 0.04; // píxeles del nivel -> unidades 3D
@@ -560,6 +561,7 @@ export class RecolectaGame extends Game3D {
 
   loadLevel(index) {
     this.levelIndex = index;
+    this.startLevel = index + 1;
     const level = LEVELS[index];
     this.level = level;
     this._ensureHero();
@@ -611,7 +613,17 @@ export class RecolectaGame extends Game3D {
 
   reset() {
     this.score = 0;
-    this.loadLevel(0);
+    this.loadLevel(Math.max(0, (this.startLevel || 1) - 1));
+  }
+
+  /** En la tarjeta de inicio se elige el nivel (de los 20) con el que empezar. */
+  onIntro() {
+    const c = campaign(this.progress, "recolecta");
+    c.unlocked = Math.max(c.unlocked, Math.min(20, (this.progress.unlockedLevel || 0) + 1));
+    renderLevelPicker(this.q("lvlpick"), {
+      id: "recolecta", progress: this.progress, selected: this.levelIndex + 1,
+      onSelect: (n) => { this.score = 0; this.loadLevel(n - 1); },
+    });
   }
 
   retry() {
@@ -621,6 +633,7 @@ export class RecolectaGame extends Game3D {
 
   restart() {
     this.score = 0;
+    this.startLevel = 1;
     this.loadLevel(0);
     this.beginPlaying();
   }
@@ -1020,6 +1033,7 @@ export class RecolectaGame extends Game3D {
     this.score += timeBonus;
     this.progress.recolectaStars = this.progress.recolectaStars || {};
     this.progress.recolectaStars[this.level.id] = Math.max(this.progress.recolectaStars[this.level.id] || 0, stars);
+    campaignWin(this.progress, "recolecta", this.levelIndex + 1, stars);
     const starText = "⭐".repeat(stars) + "☆".repeat(3 - stars);
     reportScore(this.progress, GAME_ID, this.score);
     saveProgress(this.progress);

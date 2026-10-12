@@ -1390,3 +1390,51 @@ html[data-app] .game-screen:not(.cr-screen) {
 .gorient { position: absolute; left: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px; font-size: 0.66rem; font-weight: 800; background: rgba(28,15,7,0.78); color: #fff6e6; border: 1px solid rgba(255,255,255,0.35); }
 .gorient.land { background: rgba(212,33,108,0.9); border-color: #fff; }
 .g3d-touch { align-items: flex-end; }
+
+/* Mi Casa: decorar libre, modos y barra de herramientas del mueble elegido */
+.house-modes { display: flex; gap: 6px; margin-bottom: 8px; }
+.sh-mode { flex: 1; padding: 9px 6px; border-radius: 12px; border: 2px solid var(--dorado); background: rgba(255,255,255,0.06); color: var(--crema); font: inherit; font-weight: 800; font-size: 0.85rem; cursor: pointer; touch-action: manipulation; }
+.sh-mode.active { background: linear-gradient(180deg, #ff4f9a, #d4216c); color: #fff; border-color: #fff; }
+.sh-stage { position: relative; }
+#house-canvas { touch-action: none; }
+.house-tools { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 6px 8px; border-radius: 14px; background: rgba(28,15,7,0.82); border: 2px solid var(--dorado); z-index: 4; }
+.house-tools.hidden { display: none; }
+.house-tools .ht-name { font-weight: 800; font-size: 0.8rem; color: var(--crema); margin-right: 4px; }
+.house-tools button { min-width: 40px; height: 40px; border-radius: 12px; border: 2px solid #fff; background: linear-gradient(180deg, #ff4f9a, #d4216c); color: #fff; font-size: 1.15rem; cursor: pointer; touch-action: manipulation; }
+.house-tools button:active { transform: translateY(1px); }
+.sh-card.sh-size small { opacity: 0.8; font-size: 0.75rem; }
+
+/* Mi Casa bien a la vista en el menú */
+.lb-house { background: linear-gradient(180deg, #ffd34d, #ffa800); color: #4a2c24; border: 3px solid #fff; border-radius: 14px; font-family: inherit; font-weight: 900; cursor: pointer; box-shadow: 0 4px 0 #b36b00; }
+.house-banner { display: flex; align-items: center; gap: 14px; width: 100%; margin: 0 0 10px; padding: 10px 16px; border-radius: 18px; border: 3px solid #fff; background: linear-gradient(100deg, #ff4f9a 0%, #d4216c 55%, #8a1648 100%); color: #fff; font-family: inherit; text-align: left; cursor: pointer; box-shadow: 0 6px 0 #6a0f38, 0 0 22px rgba(255,79,154,0.45); position: relative; overflow: hidden; touch-action: manipulation; }
+.house-banner::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 40%, rgba(255,255,255,0.28) 50%, transparent 60%); transform: translateX(-120%); animation: hb-shine 3.6s ease-in-out infinite; pointer-events: none; }
+@keyframes hb-shine { 60%, 100% { transform: translateX(120%); } }
+.house-banner:active { transform: translateY(2px); }
+.hb-art { font-size: 2.4rem; line-height: 1; display: flex; align-items: flex-end; gap: 2px; }
+.hb-art i { font-style: normal; font-size: 1.5rem; }
+.hb-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.hb-text b { font-size: 1.3rem; }
+.hb-text em { font-style: normal; font-size: 0.7rem; background: #ffd34d; color: #4a2c24; padding: 2px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+.hb-text span { font-size: 0.85rem; opacity: 0.95; }
+.hb-go { font-weight: 900; background: #fff; color: #d4216c; padding: 8px 14px; border-radius: 999px; white-space: nowrap; }
+@media (max-width: 520px) { .hb-go { display: none; } .hb-text b { font-size: 1.1rem; } }
+
+/* Selector de niveles (campaña de 20 niveles) */
+.lvl-pick { margin: 6px 0 10px; }
+.lvl-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--crema); margin-bottom: 4px; }
+.lvl-head span { color: var(--dorado); font-weight: 800; }
+.lvl-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.lvl-btn { padding: 3px 0 2px; border-radius: 8px; border: 2px solid rgba(255,200,0,0.55); background: rgba(255,255,255,0.08); color: #fff; font: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; line-height: 1.05; touch-action: manipulation; }
+.lvl-btn b { font-size: 0.95rem; }
+.lvl-btn i { font-style: normal; font-size: 0.5rem; color: var(--dorado); letter-spacing: -1px; }
+.lvl-btn.sel { background: linear-gradient(180deg, #ff4f9a, #d4216c); border-color: #fff; }
+.lvl-btn.locked { opacity: 0.45; cursor: default; }
+@media (max-width: 520px) { .lvl-grid { grid-template-columns: repeat(5, 1fr); } .lvl-btn b { font-size: 1.05rem; } .lvl-btn i { font-size: 0.6rem; } }
+
+.mode-row { display: flex; gap: 6px; justify-content: center; margin: 6px 0; }
+.mode-btn { flex: 1; max-width: 190px; padding: 7px 10px; border-radius: 999px; border: 2px solid var(--dorado); background: rgba(255,255,255,0.08); color: #fff; font: inherit; font-weight: 800; font-size: 0.85rem; cursor: pointer; touch-action: manipulation; }
+.mode-btn.sel { background: linear-gradient(180deg, #ff4f9a, #d4216c); border-color: #fff; }
+
+/* Pantallas largas (Mi aventura, Logros, Puntajes, Mi Casa): se pueden deslizar con el dedo */
+#screen-progress, #screen-achievements, #screen-leaderboard { overflow-y: auto; align-items: flex-start; -webkit-overflow-scrolling: touch; }
+@media (max-width: 760px) { #screen-house { overflow-y: auto; align-items: flex-start; -webkit-overflow-scrolling: touch; } }

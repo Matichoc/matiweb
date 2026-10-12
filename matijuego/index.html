@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=12a3a39f99">
+<link rel="stylesheet" href="css/style.css?v=64b04a2636">
 </head>
 <body>
 <div id="toast" class="toast hidden"></div>
@@ -79,7 +79,7 @@
           <div id="character-grid" class="character-grid lb-chars"></div>
           <div class="lb-stage-actions">
             <button id="btn-open-shop" class="btn-primary lb-shop">👕 Vestuario y Tienda</button>
-            <button id="btn-open-house" class="btn-secondary lb-shop">🏠 Mi Casa</button>
+            <button id="btn-open-house" class="lb-shop lb-house">🏠 Mi Casa</button>
           </div>
           <label class="field-label" for="input-name">Tu apodo en los puntajes</label>
           <input id="input-name" class="text-input lb-name" type="text" maxlength="16" placeholder="Jugador">
@@ -87,6 +87,11 @@
 
         <main class="lb-games">
           <div id="event-banner" class="event-banner hidden"></div>
+          <button id="btn-house-banner" class="house-banner" type="button">
+            <span class="hb-art" aria-hidden="true">🏠<i>🛋️</i><i>🧸</i></span>
+            <span class="hb-text"><b>Mi Casa <em>¡Nuevo!</em></b><span id="house-banner-sub">Arrastra muebles, decora y agranda tu casa</span></span>
+            <span class="hb-go">Entrar ▶</span>
+          </button>
           <h2 class="lb-title">Elige un juego</h2>
           <div id="game-feature" class="lb-feature"></div>
           <div id="game-grid" class="game-grid lb-grid"></div>
@@ -110,10 +115,11 @@
       </header>
       <div class="sh-body">
         <aside class="sh-preview">
-          <div class="sh-stage"><canvas id="house-canvas"></canvas></div>
-          <div class="shop-character-name">Tu cuarto</div>
+          <div class="sh-stage"><canvas id="house-canvas"></canvas><div id="house-tools" class="house-tools hidden"></div></div>
+          <div class="shop-character-name">Tu casa</div>
         </aside>
         <section class="sh-panel">
+          <div id="house-modes" class="house-modes"></div>
           <div id="house-tabs" class="sh-tabs"></div>
           <div id="house-grid" class="sh-grid"></div>
           <div id="house-bar" class="sh-bar"></div>
@@ -243,7 +249,8 @@
           <h2 id="recolecta-intro-title">Nivel</h2>
           <p class="fps-tag">Ahora en 3D</p>
           <p id="recolecta-intro-text"></p>
-          <p class="fps-hint">Mueve con ← ↑ ↓ → (o W A S D). Salta con Espacio. Impulso rápido con Shift (¡te hace inmune!). Cuidado con los guardias malvaviscos: quitan 4 segundos. Junta golosinas seguidas para hacer combo y toma ⏱ el reloj, 👟 las botas y 🧲 el imán.</p>
+          <p class="fps-hint">Mueve con el joystick (o ← ↑ ↓ → / W A S D). Salta con Espacio. Impulso rápido con Shift (¡te hace inmune!). Cuidado con los guardias malvaviscos: quitan 4 segundos. Junta golosinas seguidas para hacer combo y toma ⏱ el reloj, 👟 las botas y 🧲 el imán. ¡Son 20 niveles!</p>
+          <div id="recolecta-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" data-action="begin">¡Vamos!</button>
         </div>
       </div>
@@ -316,13 +323,24 @@
             ↑ para rotar, ↓ para bajar rápido y ESPACIO para caída instantánea.
             En el celular: arrastra para mover, toca para girar y desliza hacia abajo para caer.
             Las piezas doradas son Chocolate Dubai: ¡dan Matipuntos extra! Guarda una pieza con C o Shift (📥 en el celular). ¡Cuidado, hay cubos de poder: 💣 la bomba limpia un cuadro de 3x3 y ⚡ el rayo limpia toda su fila! Los combos de líneas seguidas dan puntos extra.</p>
+          <div id="tetris-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="tetris-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="tetris-overlay-win" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="tetris-win-title">¡Nivel completado!</h2>
+          <div id="tetris-stars" class="g3d-stars" aria-label="Estrellas">★★★</div>
+          <p id="tetris-win-text"></p>
+          <button class="btn-primary" id="tetris-btn-next">Siguiente nivel</button>
+          <button class="btn-secondary overlay-secondary-btn" id="tetris-btn-win-menu">Volver al menú</button>
         </div>
       </div>
 
       <div id="tetris-overlay-gameover" class="overlay hidden">
         <div class="overlay-card">
-          <h2>¡Se apilaron las golosinas!</h2>
+          <h2 id="tetris-gameover-title">¡Se apilaron las golosinas!</h2>
           <p id="tetris-gameover-text"></p>
           <button class="btn-primary" id="tetris-btn-retry">Reintentar</button>
           <button class="btn-secondary overlay-secondary-btn" id="tetris-btn-gameover-menu">Volver al menú</button>
@@ -384,14 +402,25 @@
           <p class="fps-tag">Ahora en 3D</p>
           <p>ESPACIO (o toca la pantalla) para fijar la barra de puntería, y de nuevo para
             fijar la de potencia. Encesta antes de que se acabe el tiempo —
-            cada 5° tiro es un aro dorado Chocolate Dubai, ¡vale Matipuntos extra! Tiras desde distintos lugares (más lejos, más puntos), los swish y el aro dorado te regalan segundos, y con 3 aciertos seguidos ¡te pones EN LLAMAS!</p>
+            cada 5° tiro es un aro dorado Chocolate Dubai, ¡vale Matipuntos extra! Tiras desde distintos lugares (más lejos, más puntos), los swish y el aro dorado te regalan segundos, y con 3 aciertos seguidos ¡te pones EN LLAMAS! En los 20 niveles hay que juntar una meta de puntos.</p>
+          <div id="basquet-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="basquet-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="basquet-overlay-win" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="basquet-win-title">¡Nivel completado!</h2>
+          <div id="basquet-stars" class="g3d-stars" aria-label="Estrellas">★★★</div>
+          <p id="basquet-win-text"></p>
+          <button class="btn-primary" id="basquet-btn-next">Siguiente nivel</button>
+          <button class="btn-secondary overlay-secondary-btn" id="basquet-btn-win-menu">Volver al menú</button>
         </div>
       </div>
 
       <div id="basquet-overlay-gameover" class="overlay hidden">
         <div class="overlay-card">
-          <h2>¡Se acabó el tiempo!</h2>
+          <h2 id="basquet-gameover-title">¡Se acabó el tiempo!</h2>
           <p id="basquet-gameover-text"></p>
           <button class="btn-primary" id="basquet-btn-retry">Reintentar</button>
           <button class="btn-secondary overlay-secondary-btn" id="basquet-btn-gameover-menu">Volver al menú</button>
@@ -435,14 +464,25 @@
           <p>Mueve la rebotadora con ← → (o arrastra el dedo / mouse) para que
             quede justo debajo de tu Matichica cada vez que cae. Rebotar
             centrado suma combo; recoge los pompones para puntos extra.
-            ¡Si cae fuera de la rebotadora, se acaba la partida!</p>
+            ¡Si cae fuera de la rebotadora, se acaba la partida! En los 20 niveles hay que dar cierta cantidad de rebotes.</p>
+          <div id="porristas-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="porristas-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="porristas-overlay-win" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="porristas-win-title">¡Nivel completado!</h2>
+          <div id="porristas-stars" class="g3d-stars" aria-label="Estrellas">★★★</div>
+          <p id="porristas-win-text"></p>
+          <button class="btn-primary" id="porristas-btn-next">Siguiente nivel</button>
+          <button class="btn-secondary overlay-secondary-btn" id="porristas-btn-win-menu">Volver al menú</button>
         </div>
       </div>
 
       <div id="porristas-overlay-gameover" class="overlay hidden">
         <div class="overlay-card">
-          <h2>¡Se cayó!</h2>
+          <h2 id="porristas-gameover-title">¡Se cayó!</h2>
           <p id="porristas-gameover-text"></p>
           <button class="btn-primary" id="porristas-btn-retry">Reintentar</button>
           <button class="btn-secondary overlay-secondary-btn" id="porristas-btn-gameover-menu">Volver al menú</button>
@@ -480,6 +520,7 @@
       <div id="parkour-banner" class="fps-banner" aria-live="polite"></div>
       <div id="parkour-popups" class="fps-popups" aria-hidden="true"></div>
       <div class="pk-status">
+        <div class="hud-chip hidden" id="parkour-hud-goal">🎯 <span></span></div>
         <div class="hud-chip hidden"><span id="parkour-hud-lives"></span></div>
         <div class="hud-chip hidden"><span id="parkour-hud-power"></span></div>
       </div>
@@ -496,9 +537,21 @@
           <p class="fps-hint">Mover: WASD o flechas · Saltar (¡dos veces en el aire!): Espacio · Cámara: arrastra el mouse o Q / E.</p>
           <div class="pk-modes">
             <button class="btn-primary" id="parkour-btn-infinite">♾️ Mundo infinito<small>Nunca termina: 10 mundos que se repiten cada vez más difíciles. Tienes 5 vidas, poderes 🧲🛡️⚡🦘 y un récord que batir.</small></button>
+            <button class="btn-primary" id="parkour-btn-missions">🎯 Misiones<small>20 misiones en el Mundo infinito: elige una abajo y cúmplela para desbloquear la siguiente.</small></button>
             <button class="btn-secondary" id="parkour-btn-campaign">🏁 Aventura<small>6 etapas con capa, gafas y corona de premio.</small></button>
           </div>
+          <div id="parkour-lvlpick" class="lvl-pick"></div>
           <p class="fps-hint" id="parkour-record"></p>
+        </div>
+      </div>
+
+      <div id="parkour-overlay-win" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="parkour-win-title">¡Misión cumplida!</h2>
+          <div id="parkour-stars" class="g3d-stars" aria-label="Estrellas">★★★</div>
+          <p id="parkour-win-text"></p>
+          <button class="btn-primary" id="parkour-btn-next">Siguiente misión</button>
+          <button class="btn-secondary overlay-secondary-btn" id="parkour-btn-win-menu">Volver al menú</button>
         </div>
       </div>
 
@@ -649,6 +702,7 @@
         </div>
       </div>
       <div class="hud-right">
+        <div class="hud-chip hidden" id="salto-hud-goal">🎯 <span></span></div>
         <div class="hud-chip">⭐ <span id="salto-hud-score">0</span></div>
         <div class="hud-chip">⛰️ <span id="salto-hud-height">0 m</span></div>
         <div class="hud-chip">❤ <span id="salto-hud-hearts">❤❤❤</span></div>
@@ -670,14 +724,25 @@
         <div class="overlay-card">
           <h2>Salto Choco 3D</h2>
           <p class="fps-tag">Nuevo · en 3D</p>
-          <p>Tu Matichico rebota solo: ¡tú lo mueves! Usa ← → (o A / D), o arrastra el dedo o el mouse. Sube por las plataformas de chocolate, junta alfajores y busca el jetpack Matidubai, el imán 🧲 y la burbuja 🫧. ¡Pisa a los malvaviscos enojados desde arriba para ganar puntos! Los pinchos y los golpes de costado te quitan un corazón, y las plataformas blancas se rompen. Aterriza justo en el centro para un ¡Perfecto!</p>
+          <p>Tu Matichico rebota solo: ¡tú lo mueves! Usa ← → (o A / D), o arrastra el dedo o el mouse. Sube por las plataformas de chocolate, junta alfajores y busca el jetpack Matidubai, el imán 🧲 y la burbuja 🫧. ¡Pisa a los malvaviscos enojados desde arriba para ganar puntos! Los pinchos y los golpes de costado te quitan un corazón, y las plataformas blancas se rompen. Aterriza justo en el centro para un ¡Perfecto! Elige entre el modo infinito o las 20 misiones.</p>
+          <div id="salto-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="salto-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="salto-overlay-win" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="salto-win-title">¡Misión cumplida!</h2>
+          <div id="salto-stars" class="g3d-stars" aria-label="Estrellas">★★★</div>
+          <p id="salto-win-text"></p>
+          <button class="btn-primary" id="salto-btn-next">Siguiente misión</button>
+          <button class="btn-secondary overlay-secondary-btn" id="salto-btn-win-menu">Volver al menú</button>
         </div>
       </div>
 
       <div id="salto-overlay-gameover" class="overlay hidden">
         <div class="overlay-card">
-          <h2>¡Se cayó el Matichico!</h2>
+          <h2 id="salto-gameover-title">¡Se cayó el Matichico!</h2>
           <p id="salto-gameover-text"></p>
           <button class="btn-primary" id="salto-btn-retry">Jugar de nuevo</button>
           <button class="btn-secondary overlay-secondary-btn" id="salto-btn-gameover-menu">Volver al menú</button>
@@ -698,6 +763,7 @@
         </div>
       </div>
       <div class="hud-right">
+        <div class="hud-chip hidden" id="autos-hud-goal">🎯 <span></span></div>
         <div class="hud-chip">⭐ <span id="autos-hud-score">0</span></div>
         <div class="hud-chip">🏁 <span id="autos-hud-speed">0</span></div>
         <div class="hud-chip">❤ <span id="autos-hud-hearts">❤❤❤</span></div>
@@ -720,14 +786,25 @@
         <div class="overlay-card">
           <h2>Autos de Chocolate 3D</h2>
           <p class="fps-tag">Nuevo · en 3D</p>
-          <p>Maneja tu auto de chocolate por la ruta de Matichoc. Cambia de carril con ← → (o A / D), toca/desliza a los lados en el celular. Esquiva conos, barriles y charcos, adelanta autos rivales (¡los roces dan puntos y combo!), vuela con las rampas para juntar alfajores en el aire y toma el nitro 🔥, el imán 🧲 y el escudo 🛡️. ¡Tienes 3 vidas!</p>
+          <p>Maneja tu auto de chocolate por la ruta de Matichoc. Cambia de carril con ← → (o A / D), toca/desliza a los lados en el celular. Esquiva conos, barriles y charcos, adelanta autos rivales (¡los roces dan puntos y combo!), vuela con las rampas para juntar alfajores en el aire y toma el nitro 🔥, el imán 🧲 y el escudo 🛡️. ¡Tienes 3 vidas! Elige entre la carrera infinita o las 20 misiones.</p>
+          <div id="autos-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="autos-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="autos-overlay-win" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="autos-win-title">¡Misión cumplida!</h2>
+          <div id="autos-stars" class="g3d-stars" aria-label="Estrellas">★★★</div>
+          <p id="autos-win-text"></p>
+          <button class="btn-primary" id="autos-btn-next">Siguiente misión</button>
+          <button class="btn-secondary overlay-secondary-btn" id="autos-btn-win-menu">Volver al menú</button>
         </div>
       </div>
 
       <div id="autos-overlay-gameover" class="overlay hidden">
         <div class="overlay-card">
-          <h2>¡Fin de la carrera!</h2>
+          <h2 id="autos-gameover-title">¡Fin de la carrera!</h2>
           <p id="autos-gameover-text"></p>
           <button class="btn-primary" id="autos-btn-retry">Jugar de nuevo</button>
           <button class="btn-secondary overlay-secondary-btn" id="autos-btn-gameover-menu">Volver al menú</button>
@@ -766,7 +843,8 @@
         <div class="overlay-card">
           <h2>Memoria Matichoc 3D</h2>
           <p class="fps-tag">Nuevo · en 3D</p>
-          <p>Toca las cartas para darlas vuelta y encuentra las parejas de productos Matichoc. Menos intentos y menos tiempo dan más estrellas. ¡Tu Matichico te anima desde la mesa!</p>
+          <p>Toca las cartas para darlas vuelta y encuentra las parejas de productos Matichoc. Menos intentos y menos tiempo dan más estrellas. 20 niveles: ¡al avanzar hay cartas traviesas y tiempo límite!</p>
+          <div id="memoria-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="memoria-btn-start">¡Vamos!</button>
         </div>
       </div>
@@ -782,9 +860,9 @@
 
       <div id="memoria-overlay-gameover" class="overlay hidden">
         <div class="overlay-card">
-          <h2>¡Terminaste todos los niveles!</h2>
+          <h2 id="memoria-gameover-title">¡Terminaste todos los niveles!</h2>
           <p id="memoria-gameover-text"></p>
-          <button class="btn-primary" id="memoria-btn-retry">Jugar de nuevo</button>
+          <button class="btn-primary" id="memoria-btn-retry">Intentar de nuevo</button>
           <button class="btn-secondary overlay-secondary-btn" id="memoria-btn-gameover-menu">Volver al menú</button>
         </div>
       </div>
@@ -853,6 +931,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=12a3a39f99"></script>
+<script type="module" src="js/main.js?v=64b04a2636"></script>
 </body>
 </html>

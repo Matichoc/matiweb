@@ -4,12 +4,13 @@
 // checkpoints y llega a la cumbre. Al avanzar, tu Matichico desbloquea accesorios
 // (capa, gafas brillantes y corona) además del atuendo que compraste en la tienda.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=12a3a39f99";
-import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
-import { earnCoins, saveProgress } from "./storage.js?v=12a3a39f99";
-import { trailColors } from "./wardrobe-data.js?v=12a3a39f99";
-import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=12a3a39f99";
-import * as audio from "./audio.js?v=12a3a39f99";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=64b04a2636";
+import { createMatichico } from "./matichico3d.js?v=64b04a2636";
+import { earnCoins, saveProgress } from "./storage.js?v=64b04a2636";
+import { trailColors } from "./wardrobe-data.js?v=64b04a2636";
+import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=64b04a2636";
+import * as audio from "./audio.js?v=64b04a2636";
+import { campaign, renderLevelPicker } from "./campaign.js?v=64b04a2636";
 
 const GAME_ID = "parkour";
 const R = 0.34; // radio del héroe
@@ -596,10 +597,28 @@ export class ParkourGame extends Game3D {
 
   // ---------- partida ----------
 
+  // modo misiones del Mundo infinito (js/missions.js)
+  getMetric(m) {
+    return { meters: this.metersRun(), items: this.itemsGot, worlds: (this.inf.zoneReached || 0) + 1, gold: this.goldGot, score: this.score }[m];
+  }
+
+  /** En la tarjeta de inicio se elige la misión (la partida empieza con los botones de modo). */
+  onIntro() {
+    const c = campaign(this.progress, "parkour");
+    renderLevelPicker(this.els.q("lvlpick"), {
+      id: "parkour", progress: this.progress, selected: Math.min(c.selected || c.unlocked, c.unlocked),
+      onSelect: (n) => { c.selected = n; saveProgress(this.progress); },
+    });
+  }
+
+  nextLevel() { this.nextMission(); }
+
   reset() {
     this._ensureHero();
     if (this.mode === "inf") this._resetInfinite();
     else if (this.worldMode !== "campaign") this._buildCourse();
+    if (this.mode === "inf") this.setupMission();
+    else { this.mission = null; const chip = this.els.q("hud-goal"); if (chip) chip.classList.add("hidden"); }
     this.power = null;
     this.aura.visible = false;
     this.stageReached = 0;
@@ -1305,7 +1324,14 @@ export class ParkourGame extends Game3D {
       joy.addEventListener("pointercancel", release);
     }
     document.getElementById("parkour-btn-campaign")?.addEventListener("click", () => this.startMode("campaign"));
-    document.getElementById("parkour-btn-infinite")?.addEventListener("click", () => this.startMode("inf"));
+    document.getElementById("parkour-btn-infinite")?.addEventListener("click", () => { campaign(this.progress, "parkour").mode = "inf"; this.startMode("inf"); });
+    document.getElementById("parkour-btn-missions")?.addEventListener("click", () => {
+      const c = campaign(this.progress, "parkour");
+      c.mode = "missions";
+      c.selected = Math.min(c.selected || c.unlocked, c.unlocked);
+      saveProgress(this.progress);
+      this.startMode("inf");
+    });
     const jb = document.getElementById("parkour-btn-jump");
     if (jb) jb.addEventListener("pointerdown", (e) => { e.preventDefault(); if (this.state === "playing") this.buffer = BUFFER; });
   }

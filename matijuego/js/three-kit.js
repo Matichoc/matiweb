@@ -4,10 +4,12 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=12a3a39f99";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=12a3a39f99";
-import * as audio from "./audio.js?v=12a3a39f99";
-import { recordRun, runBonus } from "./progression.js?v=12a3a39f99";
+import { getOutfit } from "./characters.js?v=64b04a2636";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=64b04a2636";
+import * as audio from "./audio.js?v=64b04a2636";
+import { recordRun, runBonus } from "./progression.js?v=64b04a2636";
+import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=64b04a2636";
+import { missionFor } from "./missions.js?v=64b04a2636";
 
 export { THREE };
 
@@ -345,6 +347,7 @@ export class Game3D {
     this.state = "intro";
     this.reset();
     this.showOverlay("intro");
+    this.onIntro?.();
     this.running = true;
     this.lastTs = null;
     requestAnimationFrame(this._loop);
@@ -356,6 +359,54 @@ export class Game3D {
     this.showOverlay(null);
     if (this.musicTheme) audio.startMusic(this.musicTheme);
     this.onBegin?.();
+    if (this.mission) this.banner(`🎯 Misión ${this.mission.n}: ${this.mission.text}`);
+  }
+
+  // ---------- modo misiones (juegos sin fin) ----------
+  // Cada juego trae `missionId` (clave en js/missions.js) y `getMetric(nombre)`; aquí se revisa la meta.
+
+  /** Llamar desde reset(): deja lista la misión elegida (o ninguna, en modo infinito). */
+  setupMission() {
+    const id = this.missionId || this.gameId;
+    this.mission = campaignMode(this.progress, id, "missions") === "missions" ? missionFor(id, campaignLevel(this.progress, id)) : null;
+    this._missionWon = false;
+    this._mt = 0;
+    const chip = this.els.q && this.els.q("hud-goal");
+    if (chip) {
+      chip.classList.toggle("hidden", !this.mission);
+      this._goalText = chip.querySelector("span");
+      if (this.mission && this._goalText) this._goalText.textContent = `${this.mission.text} · 0/${this.mission.target}`;
+    }
+  }
+
+  _missionTick(dt) {
+    if (!this.mission || this.state !== "playing" || !this.getMetric) return;
+    this._mt -= dt;
+    if (this._mt > 0) return;
+    this._mt = 0.2;
+    const v = Math.floor(this.getMetric(this.mission.metric) || 0);
+    if (this._goalText) this._goalText.textContent = `${this.mission.text} · ${Math.min(v, this.mission.target)}/${this.mission.target}`;
+    if (v >= this.mission.target) {
+      this._missionWon = true;
+      const n = this.mission.n;
+      if (n >= LEVELS_PER_GAME) {
+        const t = this.els.q("gameover-title");
+        if (t) t.textContent = `¡Completaste las ${LEVELS_PER_GAME} misiones! 🏆`;
+        audio.playVictory();
+        this.finish(`Cumpliste la misión final: ${this.mission.text.toLowerCase()}.`);
+      } else this.levelWin({ level: n, stars: 3, text: `¡Misión cumplida: ${this.mission.text.toLowerCase()}!`, title: `¡Misión ${n} cumplida!` });
+    }
+  }
+
+  /** Pasa a la siguiente misión (botón "Siguiente" de la tarjeta de misión cumplida). */
+  nextMission() {
+    const id = this.missionId || this.gameId;
+    campaign(this.progress, id).selected = Math.min(LEVELS_PER_GAME, (this.mission ? this.mission.n : 1) + 1);
+    this.particles.clear();
+    this.popups.clear();
+    this.state = "intro";
+    this.reset();
+    this.beginPlaying();
   }
 
   /** Cartel grande en el centro del escenario ("¡Zona 2!", "¡Combo x5!"...). */
@@ -393,10 +444,34 @@ export class Game3D {
     if (!name) Object.values(this.els.overlays).forEach((el) => el.classList.add("hidden"));
   }
 
+  /**
+   * Nivel de la campaña ganado (no es el final de la partida): desbloquea el siguiente, guarda
+   * estrellas, da puntos/XP y muestra la tarjeta "¡Nivel completado!" (overlay "win").
+   */
+  levelWin({ level, stars, text, title }) {
+    audio.stopMusic();
+    audio.playMissionComplete();
+    this.state = "win";
+    campaignWin(this.progress, this.missionId || this.gameId, level, stars);
+    reportScore(this.progress, this.gameId, this.score || 0);
+    const bonus = runBonus(this.gameId, this.score || 0) + stars;
+    earnCoins(this.progress, bonus);
+    const run = recordRun(this.progress, this.gameId, this.score || 0, this.runInfo || {});
+    this.runInfo = null;
+    saveProgress(this.progress);
+    const e = this.els;
+    if (e.stars) e.stars.innerHTML = [1, 2, 3].map((n) => `<span class="${n <= stars ? "on" : "off"}">★</span>`).join("");
+    if (e.winTitle) e.winTitle.textContent = title || `¡Nivel ${level} completado!`;
+    if (e.winText) e.winText.textContent = `${text} +${bonus} Matipuntos 🍫✨ +${run.xp} XP ⭐`;
+    this.haptic(60);
+    this.showOverlay("win");
+  }
+
   /** Cierra la partida: guarda puntaje/ranking y muestra el resumen. */
   finish(text) {
     audio.stopMusic();
     this.state = "gameover";
+    if (this.mission && !this._missionWon) text = `🎯 Misión ${this.mission.n} (${this.mission.text.toLowerCase()}): ¡todavía no! ${text}`;
     reportScore(this.progress, this.gameId, this.score);
     addToLeaderboard(this.progress, this.gameId, this.progress.playerName, this.score);
     // Matipuntos por terminar la partida, según el puntaje (cada juego puntúa distinto)
@@ -422,6 +497,7 @@ export class Game3D {
     this.time += dt;
     this._adaptQuality(dt);
     this.update(dt);
+    this._missionTick(dt);
     this.particles.update(dt);
     this.popups.update(dt);
     if (this.composer) this.composer.render(dt);

@@ -7,10 +7,11 @@
 // puntería cambia en cada tiro, las rachas te ponen "en llamas" (zonas más grandes y puntos
 // multiplicados), los swish y los aros dorados regalan segundos extra, y suena la hinchada.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=12a3a39f99";
-import { createMatichico } from "./matichico3d.js?v=12a3a39f99";
-import { saveProgress, earnCoins } from "./storage.js?v=12a3a39f99";
-import * as audio from "./audio.js?v=12a3a39f99";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=64b04a2636";
+import { createMatichico } from "./matichico3d.js?v=64b04a2636";
+import { saveProgress, earnCoins } from "./storage.js?v=64b04a2636";
+import * as audio from "./audio.js?v=64b04a2636";
+import { campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=64b04a2636";
 
 const GAME_ID = "basquet_tiros";
 const TIME_LIMIT = 60;
@@ -364,6 +365,9 @@ export class Basquet3DGame extends Game3D {
   // ---------- partida ----------
 
   reset() {
+    this.mode = campaignMode(this.progress, "basquet_tiros");
+    this.level = this.mode === "levels" ? campaignLevel(this.progress, "basquet_tiros") : 0;
+    this.target = this.level ? 250 + (this.level - 1) * 110 : 0; // puntos que hay que juntar en el nivel
     this.timeLeft = TIME_LIMIT;
     this.score = 0;
     this.made = 0;
@@ -384,7 +388,7 @@ export class Basquet3DGame extends Game3D {
     this._setZones();
   }
 
-  _difficulty() { return this.attempts; }
+  _difficulty() { return this.attempts + (this.level ? (this.level - 1) * 0.9 : 0); }
   _fire() { return this.streak >= 3; }
   _accTol() { return Math.max(0.05, 0.16 - this._difficulty() * 0.006) * (this._fire() ? 1.3 : 1); }
   _powTol() { return Math.max(0.045, 0.14 - this._difficulty() * 0.006) * (this._fire() ? 1.3 : 1); }
@@ -555,7 +559,7 @@ export class Basquet3DGame extends Game3D {
 
   _updateHud() {
     const q = this.q;
-    q("hud-score").textContent = String(this.score);
+    q("hud-score").textContent = this.target ? `${this.score}/${this.target}` : String(this.score);
     q("hud-made").textContent = String(this.made);
     q("hud-attempts").textContent = String(this.attempts);
     q("hud-coins").textContent = String(this.progress.coins);
@@ -761,7 +765,42 @@ export class Basquet3DGame extends Game3D {
     this.camera.lookAt(0.1, (portrait ? 2.3 : 2.1) + this.camFollow, -4.2);
   }
 
+  /** En la tarjeta de inicio se elige entre "Infinito" y los 20 niveles. */
+  onIntro() {
+    renderModePicker(this.els.q("lvlpick"), { id: "basquet_tiros", progress: this.progress, onChange: () => this.reset() });
+  }
+
+  nextLevel() {
+    campaign(this.progress, "basquet_tiros").selected = Math.min(LEVELS_PER_GAME, this.level + 1);
+    this.particles.clear();
+    this.popups.clear();
+    this.state = "intro";
+    this.reset();
+    this.beginPlaying();
+  }
+
   _onGameOver() {
+    if (this.level) {
+      // modo niveles: se gana si se juntó la meta de puntos
+      const ratio = this.score / this.target;
+      if (ratio >= 1) {
+        const stars = ratio >= 1.7 ? 3 : ratio >= 1.3 ? 2 : 1;
+        if (this.level >= LEVELS_PER_GAME) {
+          const t = this.els.q("gameover-title");
+          if (t) t.textContent = `¡Completaste los ${LEVELS_PER_GAME} niveles! 🏆`;
+          audio.playVictory();
+          this.finish(`Cerraste con ${this.score} puntos y ${this.made} tiros encestados.`);
+        } else this.levelWin({ level: this.level, stars, text: `${this.score} puntos (la meta era ${this.target}) con ${this.made} de ${this.attempts} tiros.` });
+        return;
+      }
+      audio.playLose();
+      const t = this.els.q("gameover-title");
+      if (t) t.textContent = "¡Casi! Se acabó el tiempo";
+      this.finish(`Nivel ${this.level}: sumaste ${this.score} de ${this.target} puntos (${this.made} de ${this.attempts} tiros). ¡Inténtalo otra vez!`);
+      return;
+    }
+    const t = this.els.q("gameover-title");
+    if (t) t.textContent = "¡Se acabó el tiempo!";
     audio.playLose();
     this.finish(
       `Encestaste ${this.made} de ${this.attempts} tiros (mejor racha: ${this.bestStreak}) y sumaste ${this.score} puntos` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."),

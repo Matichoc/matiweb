@@ -2,7 +2,7 @@
 // progreso guardado (sin necesidad de rastrear eventos en tiempo real) y se
 // puede reclamar una sola vez por perfil.
 
-import { getBestScore } from "./storage.js?v=12a3a39f99";
+import { getBestScore } from "./storage.js?v=64b04a2636";
 
 const IN_APP = typeof document !== "undefined" && document.documentElement.dataset.app === "1";
 
@@ -38,6 +38,14 @@ const ALL_ACHIEVEMENTS = [
     reward: 40,
     desc: "Completa las 8 canchas de Recolecta y Corre.",
     isDone: (p) => (p.unlockedLevel || 0) >= 8,
+  },
+  {
+    id: "leyenda_liga",
+    name: "Leyenda de La Liga",
+    icon: "👑",
+    reward: 80,
+    desc: "Completa los 20 niveles de Recolecta y Corre.",
+    isDone: (p) => (p.unlockedLevel || 0) >= 20,
   },
   {
     id: "ahorrista",

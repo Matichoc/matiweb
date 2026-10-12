@@ -17,7 +17,7 @@ const BORDER = [
   { x: 776, y: 0, w: 24, h: 480 },
 ];
 
-export const LEVELS = [
+const BASE_LEVELS = [
   {
     id: "liga",
     name: "Nivel 1 · Cancha La Liga",
@@ -259,6 +259,48 @@ export const LEVELS = [
     ],
   },
 ];
+
+// ---------- NIVELES 9 A 20 ----------
+// Las 8 canchas originales vuelven "de revancha": en espejo, con menos tiempo, guardias más rápidos
+// (y uno más), pasillos un poco más angostos y más golosinas que juntar. Cada una sube la dificultad.
+
+const VARIANT_TAGS = ["en espejo", "turbo", "doble guardia", "contrarreloj", "extremo", "modo experto", "veloz", "sin descanso", "leyenda", "supremo", "campeonato", "gran maestro"];
+
+function pathPointAt(path, frac) {
+  let total = 0;
+  for (let i = 0; i < path.length - 1; i++) total += Math.hypot(path[i + 1].x - path[i].x, path[i + 1].y - path[i].y);
+  let left = total * frac;
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i], b = path[i + 1];
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (left <= len) return { x: a.x + ((b.x - a.x) * left) / len, y: a.y + ((b.y - a.y) * left) / len };
+    left -= len;
+  }
+  return { ...path[path.length - 1] };
+}
+
+function makeVariant(base, n, k) {
+  const mirror = k % 2 === 1; // 1, 3, 5...: espejo; 2, 4, 6...: mismo sentido pero más difícil
+  const mx = (x, w = 0) => (mirror ? CANVAS_W - x - w : x);
+  const L = JSON.parse(JSON.stringify(base));
+  L.id = `${base.id}_v${k}`;
+  L.name = `Nivel ${n} · ${base.name.replace(/^Nivel \d+ · /, "")} (${VARIANT_TAGS[k - 1]})`;
+  L.path = L.path.map((p) => ({ x: mx(p.x), y: p.y }));
+  if (L.flag) L.flag.x = mx(L.flag.x, L.flag.w);
+  for (const key of ["obstacles", "movingObstacles", "conveyors"]) for (const o of L[key] || []) o.x = mx(o.x, o.w);
+  L.timeLimit = Math.round(base.timeLimit * Math.max(0.78, 1 - 0.03 * k));
+  L.target = Math.min(base.target + Math.floor(k / 3), base.chocoCount + 2);
+  L.chocoCount = Math.max(base.chocoCount, L.target + 2);
+  L.corridorWidth = Math.max(78, base.corridorWidth - Math.min(14, k * 1.3));
+  L.guards = (L.guards || []).map((g) => ({ ...g, speed: Math.round(g.speed * (1 + 0.04 * k)) }));
+  if (k >= 3 && L.guards.length < 3) L.guards.push({ t0: ((L.guards[0] ? L.guards[0].t0 : 0.3) + 0.45) % 1, speed: Math.round(66 * (1 + 0.04 * k)) });
+  for (const m of L.movingObstacles || []) m.speed = Math.round(m.speed * (1 + 0.04 * k));
+  L.missionText = `${base.missionText.replace(/ ?¡Usa el impulso.*$/, "")} ¡Revancha más difícil!`;
+  return L;
+}
+
+export const LEVELS = [...BASE_LEVELS];
+for (let n = BASE_LEVELS.length + 1; n <= 20; n++) LEVELS.push(makeVariant(BASE_LEVELS[(n - BASE_LEVELS.length - 1) % BASE_LEVELS.length], n, n - BASE_LEVELS.length));
 
 // ---------- CAMINO / CORREDOR ----------
 
