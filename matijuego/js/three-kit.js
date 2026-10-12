@@ -4,14 +4,64 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=1140a83fef";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=1140a83fef";
-import * as audio from "./audio.js?v=1140a83fef";
-import { recordRun, runBonus } from "./progression.js?v=1140a83fef";
-import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=1140a83fef";
-import { missionFor } from "./missions.js?v=1140a83fef";
+import { getOutfit } from "./characters.js?v=6a6ce838a4";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=6a6ce838a4";
+import * as audio from "./audio.js?v=6a6ce838a4";
+import { recordRun, runBonus } from "./progression.js?v=6a6ce838a4";
+import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=6a6ce838a4";
+import { missionFor } from "./missions.js?v=6a6ce838a4";
 
 export { THREE };
+
+
+// ---------- contextos WebGL ----------
+// Cada pantalla 3D (menú, tienda, casa, pueblo y cada juego) tiene su propio contexto WebGL, y los celulares
+// (sobre todo el WebView de la app) solo aguantan unos pocos a la vez: al pasar el límite, las pantallas
+// quedan en blanco o "no se pudo mostrar el 3D". Aquí se mantienen vivos pocos contextos; el que hace
+// más tiempo que no se usa se suelta (forceContextLoss) y se recupera solo al volver a esa pantalla.
+
+const GL_MAX_LIVE = 3;
+const glRenderers = new Set();
+const glLost = (r) => { try { return r.getContext().isContextLost(); } catch (e) { return true; } };
+
+function glEvict(keep) {
+  const live = [...glRenderers].filter((r) => r === keep || !glLost(r));
+  if (live.length <= GL_MAX_LIVE) return;
+  live.sort((a, b) => (b.__glUse || 0) - (a.__glUse || 0));
+  for (const r of live) {
+    if (r === keep || live.indexOf(r) < GL_MAX_LIVE) continue;
+    try { r.forceContextLoss(); } catch (e) { /* ya estaba suelto */ }
+  }
+}
+
+/** Crea un renderer y lo anota; si el equipo ya no da más contextos, suelta los otros y reintenta. */
+export function createRenderer(opts) {
+  let r;
+  try {
+    r = new THREE.WebGLRenderer(opts);
+  } catch (e) {
+    for (const o of glRenderers) { try { o.forceContextLoss(); } catch (e2) { /* nada */ } }
+    r = new THREE.WebGLRenderer(opts);
+  }
+  r.__glUse = performance.now();
+  r.__glExt = r.getContext().getExtension("WEBGL_lose_context"); // en un contexto suelto ya no se puede pedir
+  glRenderers.add(r);
+  glEvict(r);
+  return r;
+}
+
+/** Llamar al mostrar una pantalla 3D: recupera su contexto si se había soltado y suelta los más viejos. */
+export function glAcquire(renderer) {
+  if (!renderer) return;
+  renderer.__glUse = performance.now();
+  glRenderers.add(renderer);
+  if (glLost(renderer)) {
+    try { (renderer.__glExt || renderer.getContext().getExtension("WEBGL_lose_context"))?.restoreContext(); } catch (e) { /* se reintenta en el próximo cuadro */ }
+  }
+  glEvict(renderer);
+}
+export const glLiveCount = () => [...glRenderers].filter((r) => !glLost(r)).length;
+if (typeof location !== "undefined" && location.search.includes("debug3d")) window.__glLive = glLiveCount; // solo para pruebas
 
 export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const lerp = (a, b, t) => a + (b - a) * t;
@@ -274,7 +324,7 @@ export class Game3D {
   async init() {
     if (this.ready) return;
     const { canvas, wrap } = this.els;
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !this.coarse, powerPreference: "high-performance" });
+    this.renderer = createRenderer({ canvas, antialias: !this.coarse, powerPreference: "high-performance" });
     this.pixelRatio = Math.min(window.devicePixelRatio || 1, this.coarse ? 1.25 : 1.75);
     this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.shadowMap.enabled = true;
@@ -342,6 +392,7 @@ export class Game3D {
     this.character = character;
     if (progress) this.progress = progress;
     await this.init();
+    glAcquire(this.renderer);
     this.particles.clear();
     this.popups.clear();
     this.state = "intro";

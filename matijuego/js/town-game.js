@@ -6,15 +6,16 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=1140a83fef";
-import { createMatichico } from "./matichico3d.js?v=1140a83fef";
-import { CHARACTERS, getOutfit } from "./characters.js?v=1140a83fef";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=1140a83fef";
-import { GAMES_CATALOG } from "./games-catalog.js?v=1140a83fef";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=1140a83fef";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=1140a83fef";
-import { levelInfo } from "./progression.js?v=1140a83fef";
-import * as audio from "./audio.js?v=1140a83fef";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=6a6ce838a4";
+import { createMatichico } from "./matichico3d.js?v=6a6ce838a4";
+import { CHARACTERS, getOutfit } from "./characters.js?v=6a6ce838a4";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=6a6ce838a4";
+import { GAMES_CATALOG } from "./games-catalog.js?v=6a6ce838a4";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6a6ce838a4";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=6a6ce838a4";
+import { levelInfo } from "./progression.js?v=6a6ce838a4";
+import { bindStick } from "./stick.js?v=6a6ce838a4";
+import * as audio from "./audio.js?v=6a6ce838a4";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -1207,25 +1208,7 @@ export class TownGame extends Game3D {
     cv.addEventListener("pointercancel", end);
 
     const joy = document.getElementById("town-joy");
-    const knob = document.getElementById("town-knob");
-    if (joy) {
-      let id = null;
-      const upd = (e) => {
-        const r = joy.getBoundingClientRect();
-        let dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
-        let dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
-        const m = Math.hypot(dx, dy);
-        if (m > 1) { dx /= m; dy /= m; }
-        this.joy.x = Math.abs(dx) < 0.15 ? 0 : dx;
-        this.joy.y = Math.abs(dy) < 0.15 ? 0 : -dy;
-        knob.style.transform = `translate(${dx * 34}px, ${dy * 34}px)`;
-      };
-      joy.addEventListener("pointerdown", (e) => { e.preventDefault(); id = e.pointerId; joy.setPointerCapture(id); upd(e); });
-      joy.addEventListener("pointermove", (e) => { if (e.pointerId === id) upd(e); });
-      const release = (e) => { if (e.pointerId !== id) return; id = null; this.joy.x = 0; this.joy.y = 0; knob.style.transform = ""; };
-      joy.addEventListener("pointerup", release);
-      joy.addEventListener("pointercancel", release);
-    }
+    if (joy) bindStick(joy, (x, y) => { this.joy.x = x; this.joy.y = y; });
     const spd = document.getElementById("town-btn-speed");
     if (spd) spd.addEventListener("pointerdown", (e) => { e.preventDefault(); this.cycleMove(); });
     const act = document.getElementById("town-btn-action");
