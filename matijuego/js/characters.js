@@ -5,45 +5,45 @@
 export const CHARACTERS = [
   {
     id: "capitan",
-    name: "Choco Capitán",
+    name: "Matichico",
     type: "futbol_chico",
     gender: "boy",
     number: "10",
-    choco: "#6b3d22",
-    chocoDark: "#4a2a17",
+    choco: "#b8662b",
+    chocoDark: "#8d4a1f",
   },
   {
     id: "estrella",
-    name: "Choco Estrella",
+    name: "Chocolatina",
     type: "futbol_chica",
     gender: "girl",
     number: "7",
-    choco: "#6b3d22",
-    chocoDark: "#4a2a17",
+    choco: "#a9582a",
+    chocoDark: "#7f4020",
   },
   {
     id: "baller",
-    name: "Choco Baller",
+    name: "Matichico Baller",
     type: "basket",
     gender: "boy",
     number: "12",
-    choco: "#7a4a2a",
-    chocoDark: "#54331c",
+    choco: "#b8662b",
+    chocoDark: "#8d4a1f",
   },
   {
     id: "cheer",
-    name: "Choco Cheer",
+    name: "Chocolatina Cheer",
     type: "cheer",
     gender: "girl",
     number: "",
-    choco: "#8a5a36",
-    chocoDark: "#5e3c22",
+    choco: "#a9582a",
+    chocoDark: "#7f4020",
   },
 ];
 
 // Los atuendos y todo el guardarropa viven en js/wardrobe-data.js
-import { getOutfit } from "./wardrobe-data.js?v=6c0737455c";
-export { OUTFITS, getOutfit } from "./wardrobe-data.js?v=6c0737455c";
+import { getOutfit } from "./wardrobe-data.js?v=b4d08bea31";
+export { OUTFITS, getOutfit } from "./wardrobe-data.js?v=b4d08bea31";
 
 /**
  * Dibuja un Matichico dentro de un cuadro size x size, centrado en (cx, cy).
@@ -330,7 +330,7 @@ function roundRect(ctx, x, y, w, h, r) {
 }
 
 /** Dibuja una miniatura de personaje en un canvas pequeño (para el selector/tienda). */
-export function renderCharacterThumb(canvas, char, outfit = getOutfit("liga")) {
+export function renderCharacterThumb(canvas, char, outfit = getOutfit("polera")) {
   const ctx = canvas.getContext("2d");
   const size = canvas.width;
   ctx.clearRect(0, 0, size, size);

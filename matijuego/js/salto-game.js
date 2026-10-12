@@ -7,11 +7,11 @@
 // bolas con pinchos, aterrizajes perfectos, combo, poderes (jetpack, imán, burbuja), cuatro
 // zonas con su propia decoración (globos, aves, planetas) y música.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, makeStars, roundedBox } from "./three-kit.js?v=6c0737455c";
-import { createMatichico } from "./matichico3d.js?v=6c0737455c";
-import { earnCoins, saveProgress } from "./storage.js?v=6c0737455c";
-import * as audio from "./audio.js?v=6c0737455c";
-import { renderModePicker } from "./campaign.js?v=6c0737455c";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, makeStars, roundedBox } from "./three-kit.js?v=b4d08bea31";
+import { createMatichico } from "./matichico3d.js?v=b4d08bea31";
+import { earnCoins, saveProgress } from "./storage.js?v=b4d08bea31";
+import * as audio from "./audio.js?v=b4d08bea31";
+import { renderModePicker } from "./campaign.js?v=b4d08bea31";
 
 const HALF = 4.6;
 const GRAV = -30;
@@ -476,6 +476,17 @@ export class SaltoGame extends Game3D {
     window.addEventListener("keyup", (e) => {
       if (map[e.code]) this.keys[map[e.code]] = false;
     });
+    // botones táctiles ◀ ▶ (uno a cada lado): se mantienen apretados para mover al Matichico
+    for (const [id, dir] of [["salto-btn-left", "left"], ["salto-btn-right", "right"]]) {
+      const btn = document.getElementById(id);
+      if (!btn) continue;
+      const press = (e) => { e.preventDefault(); this.keys[dir] = true; };
+      const release = (e) => { e.preventDefault(); this.keys[dir] = false; };
+      btn.addEventListener("pointerdown", press);
+      btn.addEventListener("pointerup", release);
+      btn.addEventListener("pointerleave", release);
+      btn.addEventListener("pointercancel", release);
+    }
     const wrap = this.els.wrap;
     const setPointer = (e) => {
       if (e.pointerType === "mouse" && e.buttons === 0) return;

@@ -2,7 +2,7 @@
 // guarda sus estrellas (1 a 3). Los juegos "infinitos" no usan niveles: tienen su modo misiones
 // (ver js/missions.js). Todo vive en `progress.campaign[idJuego] = { unlocked, stars: { nivel: n } }`.
 
-import { saveProgress } from "./storage.js?v=6c0737455c";
+import { saveProgress } from "./storage.js?v=b4d08bea31";
 
 export const LEVELS_PER_GAME = 20;
 
@@ -26,25 +26,30 @@ export const campaignStars = (progress, id) => Object.values(campaign(progress, 
  * Dibuja la grilla de niveles (1 a 20) en `el`. Los que aún no se desbloquean salen con candado.
  * `onSelect(n)` se llama al tocar uno disponible.
  */
-export function renderLevelPicker(el, { id, progress, selected, onSelect, total = LEVELS_PER_GAME }) {
+export function renderLevelPicker(el, { id, progress, selected, onSelect, total = LEVELS_PER_GAME, open = false }) {
   if (!el) return;
   const c = campaign(progress, id);
   el.innerHTML = "";
-  const head = document.createElement("div");
-  head.className = "lvl-head";
-  head.innerHTML = `<b>Elige tu nivel</b><span>⭐ ${campaignStars(progress, id)} / ${total * 3}</span>`;
-  el.appendChild(head);
+  const stars = campaignStars(progress, id);
+  // plegado: una sola línea con el nivel elegido (ahorra espacio); se despliega para elegir otro
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "lvl-toggle";
+  toggle.innerHTML = `<b>Nivel ${selected} de ${total}</b><span>⭐ ${stars} / ${total * 3} · ${open ? "Cerrar ▴" : "Cambiar ▾"}</span>`;
+  toggle.addEventListener("click", () => renderLevelPicker(el, { id, progress, selected, onSelect, total, open: !open }));
+  el.appendChild(toggle);
+  if (!open) return;
   const grid = document.createElement("div");
   grid.className = "lvl-grid";
   for (let n = 1; n <= total; n++) {
-    const open = n <= c.unlocked;
+    const ok = n <= c.unlocked;
     const b = document.createElement("button");
     b.type = "button";
-    b.className = `lvl-btn${n === selected ? " sel" : ""}${open ? "" : " locked"}`;
+    b.className = `lvl-btn${n === selected ? " sel" : ""}${ok ? "" : " locked"}`;
     const st = c.stars[n] || 0;
-    b.innerHTML = open ? `<b>${n}</b><i>${"★".repeat(st)}${"☆".repeat(3 - st)}</i>` : `<b>🔒</b><i>${n}</i>`;
-    b.disabled = !open;
-    b.addEventListener("click", () => { onSelect(n); renderLevelPicker(el, { id, progress, selected: n, onSelect, total }); });
+    b.innerHTML = ok ? `<b>${n}</b><i>${"★".repeat(st)}${"☆".repeat(3 - st)}</i>` : `<b>🔒</b><i>${n}</i>`;
+    b.disabled = !ok;
+    b.addEventListener("click", () => { onSelect(n); renderLevelPicker(el, { id, progress, selected: n, onSelect, total, open: false }); });
     grid.appendChild(b);
   }
   el.appendChild(grid);

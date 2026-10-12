@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=6c0737455c">
+<link rel="stylesheet" href="css/style.css?v=b4d08bea31">
 </head>
 <body>
 <div id="toast" class="toast hidden"></div>
@@ -115,7 +115,8 @@
       </header>
       <div class="sh-body">
         <aside class="sh-preview">
-          <div class="sh-stage"><canvas id="house-canvas"></canvas><div id="house-tools" class="house-tools hidden"></div></div>
+          <div class="sh-stage"><canvas id="house-canvas"></canvas></div>
+          <div id="house-tools" class="house-tools hidden"></div>
           <div class="shop-character-name">Tu casa</div>
         </aside>
         <section class="sh-panel">
@@ -145,22 +146,26 @@
         </div>
       </div>
       <div class="pg-cols">
-        <section class="pg-card">
-          <h2>🎯 Misiones de hoy</h2>
-          <div id="pg-missions" class="pg-missions"></div>
-          <button id="pg-chest" class="btn-primary pg-chest" disabled>🎁 Cofre del día</button>
-          <div class="pg-streak"><span id="pg-streak-text"></span><div id="pg-streak-days" class="pg-days"></div></div>
-          <button id="pg-daily" class="btn-secondary">🎁 Recompensa diaria</button>
-        </section>
-        <section class="pg-card">
-          <h2>📖 Álbum de Chocolates <small id="pg-album-count"></small></h2>
-          <div class="pg-packbar">
-            <button id="pg-open-pack" class="btn-primary" disabled>📦 Abrir sobre</button>
-            <span id="pg-packs-text" class="pg-hint"></span>
+        <details class="pg-card pg-fold" open>
+          <summary><h2>🎯 Misiones de hoy</h2></summary>
+          <div class="pg-body">
+            <div id="pg-missions" class="pg-missions"></div>
+            <button id="pg-chest" class="btn-primary pg-chest" disabled>🎁 Cofre del día</button>
+            <div class="pg-streak"><span id="pg-streak-text"></span><div id="pg-streak-days" class="pg-days"></div></div>
+            <button id="pg-daily" class="btn-secondary">🎁 Recompensa diaria</button>
           </div>
-          <div id="pg-album" class="pg-album"></div>
-          <div id="pg-milestones" class="pg-milestones"></div>
-        </section>
+        </details>
+        <details class="pg-card pg-fold" id="pg-album-fold">
+          <summary><h2>📖 Álbum de Chocolates <small id="pg-album-count"></small></h2></summary>
+          <div class="pg-body">
+            <div class="pg-packbar">
+              <button id="pg-open-pack" class="btn-primary" disabled>📦 Abrir sobre</button>
+              <span id="pg-packs-text" class="pg-hint"></span>
+            </div>
+            <div id="pg-album" class="pg-album"></div>
+            <div id="pg-milestones" class="pg-milestones"></div>
+          </div>
+        </details>
       </div>
     </div>
     <div id="pack-overlay" class="pk-reveal hidden">
@@ -249,7 +254,9 @@
           <h2 id="recolecta-intro-title">Nivel</h2>
           <p class="fps-tag">Ahora en 3D</p>
           <p id="recolecta-intro-text"></p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
           <p class="fps-hint">Mueve con el joystick (o ← ↑ ↓ → / W A S D). Salta con Espacio. Impulso rápido con Shift (¡te hace inmune!). Cuidado con los guardias malvaviscos: quitan 4 segundos. Junta golosinas seguidas para hacer combo y toma ⏱ el reloj, 👟 las botas y 🧲 el imán. ¡Son 20 niveles!</p>
+          </details>
           <div id="recolecta-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" data-action="begin">¡Vamos!</button>
         </div>
@@ -319,10 +326,12 @@
         <div class="overlay-card">
           <h2>Tetris de Productos 3D</h2>
           <p class="fps-tag">Ahora en 3D</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
           <p>Encaja las golosinas cayendo y completa líneas. ← → para mover,
             ↑ para rotar, ↓ para bajar rápido y ESPACIO para caída instantánea.
             En el celular: arrastra para mover, toca para girar y desliza hacia abajo para caer.
             Las piezas doradas son Chocolate Dubai: ¡dan Matipuntos extra! Guarda una pieza con C o Shift (📥 en el celular). ¡Cuidado, hay cubos de poder: 💣 la bomba limpia un cuadro de 3x3 y ⚡ el rayo limpia toda su fila! Los combos de líneas seguidas dan puntos extra.</p>
+          </details>
           <div id="tetris-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="tetris-btn-start">¡Vamos!</button>
         </div>
@@ -400,9 +409,11 @@
         <div class="overlay-card">
           <h2>Lanzamientos de Básquet 3D</h2>
           <p class="fps-tag">Ahora en 3D</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
           <p>ESPACIO (o toca la pantalla) para fijar la barra de puntería, y de nuevo para
             fijar la de potencia. Encesta antes de que se acabe el tiempo —
             cada 5° tiro es un aro dorado Chocolate Dubai, ¡vale Matipuntos extra! Tiras desde distintos lugares (más lejos, más puntos), los swish y el aro dorado te regalan segundos, y con 3 aciertos seguidos ¡te pones EN LLAMAS! En los 20 niveles hay que juntar una meta de puntos.</p>
+          </details>
           <div id="basquet-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="basquet-btn-start">¡Vamos!</button>
         </div>
@@ -461,10 +472,12 @@
         <div class="overlay-card">
           <h2>Saltos de Porristas 3D</h2>
           <p class="fps-tag">Ahora en 3D</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
           <p>Mueve la rebotadora con ← → (o arrastra el dedo / mouse) para que
             quede justo debajo de tu Matichica cada vez que cae. Rebotar
             centrado suma combo; recoge los pompones para puntos extra.
             ¡Si cae fuera de la rebotadora, se acaba la partida! En los 20 niveles hay que dar cierta cantidad de rebotes.</p>
+          </details>
           <div id="porristas-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="porristas-btn-start">¡Vamos!</button>
         </div>
@@ -491,7 +504,8 @@
     </div>
 
     <div id="porristas-touch-controls">
-      <div class="pk-joy" id="porristas-joy" aria-label="Joystick"><div class="pk-knob"></div></div>
+      <button class="tetris-btn" id="porristas-btn-left">◀</button>
+      <button class="tetris-btn" id="porristas-btn-right">▶</button>
     </div>
   </section>
 
@@ -533,8 +547,10 @@
         <div class="overlay-card">
           <h2>Parkour Choco 3D</h2>
           <p class="fps-tag">Nuevo · en 3D</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
           <p>Corre y salta por plataformas que se mueven, se rompen o parpadean, con trampolines y molinos giratorios. Junta alfajores y barras Matidubai para ganar Matipuntos y activa los checkpoints.</p>
           <p class="fps-hint">Mover: WASD o flechas · Saltar (¡dos veces en el aire!): Espacio · Cámara: arrastra el mouse o Q / E.</p>
+          </details>
           <div class="pk-modes">
             <button class="btn-primary" id="parkour-btn-infinite">♾️ Mundo infinito<small>Nunca termina: 10 mundos que se repiten cada vez más difíciles. Tienes 5 vidas, poderes 🧲🛡️⚡🦘 y un récord que batir.</small></button>
             <button class="btn-primary" id="parkour-btn-missions">🎯 Misiones<small>20 misiones en el Mundo infinito: elige una abajo y cúmplela para desbloquear la siguiente.</small></button>
@@ -604,8 +620,10 @@
         <div class="overlay-card">
           <h2>Pueblo Matichoc 🏘️</h2>
           <p class="fps-tag">Nuevo · mundo abierto</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
           <p>Pasea por el pueblo con tu Matichico: prueba la fuente de chocolate, visita la Boutique y la Fábrica, saluda a los vecinos (¡te regalan Matipuntos!), junta alfajores dorados y entra a los juegos por las puertas brillantes del Arcade.</p>
           <p class="fps-hint">Mover: WASD o flechas · Usar / hablar: E o Espacio · Cámara: arrastra el mouse o Q. En el celular, joystick y botón de acción.</p>
+          </details>
           <button class="btn-primary" id="town-btn-start">¡A explorar!</button>
         </div>
       </div>
@@ -660,12 +678,14 @@
         <div class="overlay-card">
           <h2>Choco Blaster 3D</h2>
           <p class="fps-tag">Propuesta jugable · primera persona</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
           <p>Los malvaviscos se colaron a la feria de Matichoc. ¡Báñalos de chocolate
             con tu Choco Blaster antes de que te abracen! Apunta a la cabeza para
             un cabezazo (daño doble) y encadena baños para subir el combo.</p>
           <p class="fps-controls-hint fps-pc-hint"><b>PC:</b> mouse para apuntar · click para disparar · WASD moverse ·
             ESPACIO saltar · SHIFT correr · R recargar · ESC pausa.</p>
           <p class="fps-controls-hint fps-mobile-hint"><b>Celular:</b> joystick a la izquierda para moverte, arrastra a la derecha para mirar, 🍫 para disparar.</p>
+          </details>
           <button class="btn-primary" id="fps-btn-start">¡A la feria!</button>
         </div>
       </div>
@@ -717,14 +737,17 @@
       <div id="salto-banner" class="fps-banner" aria-live="polite"></div>
       <div id="salto-popups" class="fps-popups" aria-hidden="true"></div>
       <div class="g3d-touch" id="salto-touch">
-        <div class="pk-joy" id="salto-joy" aria-label="Joystick"><div class="pk-knob"></div></div>
+        <button class="g3d-tbtn" id="salto-btn-left" aria-label="Izquierda">◀</button>
+        <button class="g3d-tbtn" id="salto-btn-right" aria-label="Derecha">▶</button>
       </div>
 
       <div id="salto-overlay-intro" class="overlay hidden">
         <div class="overlay-card">
           <h2>Salto Choco 3D</h2>
           <p class="fps-tag">Nuevo · en 3D</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
           <p>Tu Matichico rebota solo: ¡tú lo mueves! Usa ← → (o A / D), o arrastra el dedo o el mouse. Sube por las plataformas de chocolate, junta alfajores y busca el jetpack Matidubai, el imán 🧲 y la burbuja 🫧. ¡Pisa a los malvaviscos enojados desde arriba para ganar puntos! Los pinchos y los golpes de costado te quitan un corazón, y las plataformas blancas se rompen. Aterriza justo en el centro para un ¡Perfecto! Elige entre el modo infinito o las 20 misiones.</p>
+          </details>
           <div id="salto-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="salto-btn-start">¡Vamos!</button>
         </div>
@@ -779,14 +802,17 @@
       <div id="autos-banner" class="fps-banner" aria-live="polite"></div>
       <div id="autos-popups" class="fps-popups" aria-hidden="true"></div>
       <div class="g3d-touch" id="autos-touch">
-        <div class="pk-joy" id="autos-joy" aria-label="Joystick"><div class="pk-knob"></div></div>
+        <button class="g3d-tbtn" id="autos-btn-left" aria-label="Carril izquierdo">◀</button>
+        <button class="g3d-tbtn" id="autos-btn-right" aria-label="Carril derecho">▶</button>
       </div>
 
       <div id="autos-overlay-intro" class="overlay hidden">
         <div class="overlay-card">
           <h2>Autos de Chocolate 3D</h2>
           <p class="fps-tag">Nuevo · en 3D</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
           <p>Maneja tu auto de chocolate por la ruta de Matichoc. Cambia de carril con ← → (o A / D), toca/desliza a los lados en el celular. Esquiva conos, barriles y charcos, adelanta autos rivales (¡los roces dan puntos y combo!), vuela con las rampas para juntar alfajores en el aire y toma el nitro 🔥, el imán 🧲 y el escudo 🛡️. ¡Tienes 3 vidas! Elige entre la carrera infinita o las 20 misiones.</p>
+          </details>
           <div id="autos-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="autos-btn-start">¡Vamos!</button>
         </div>
@@ -843,7 +869,9 @@
         <div class="overlay-card">
           <h2>Memoria Matichoc 3D</h2>
           <p class="fps-tag">Nuevo · en 3D</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
           <p>Toca las cartas para darlas vuelta y encuentra las parejas de productos Matichoc. Menos intentos y menos tiempo dan más estrellas. 20 niveles: ¡al avanzar hay cartas traviesas y tiempo límite!</p>
+          </details>
           <div id="memoria-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="memoria-btn-start">¡Vamos!</button>
         </div>
@@ -931,6 +959,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=6c0737455c"></script>
+<script type="module" src="js/main.js?v=b4d08bea31"></script>
 </body>
 </html>

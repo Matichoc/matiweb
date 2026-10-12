@@ -6,12 +6,12 @@
 // Versión "Gran Vitrina": guardar una pieza (C / Shift), combos y back-to-back, cubos de poder
 // (bomba que limpia 3x3 y rayo que limpia la fila), subida de nivel con cambio de ambiente y música.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=6c0737455c";
-import { createMatichico } from "./matichico3d.js?v=6c0737455c";
-import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=6c0737455c";
-import { saveProgress, earnCoins } from "./storage.js?v=6c0737455c";
-import * as audio from "./audio.js?v=6c0737455c";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=6c0737455c";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=b4d08bea31";
+import { createMatichico } from "./matichico3d.js?v=b4d08bea31";
+import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=b4d08bea31";
+import { saveProgress, earnCoins } from "./storage.js?v=b4d08bea31";
+import * as audio from "./audio.js?v=b4d08bea31";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=b4d08bea31";
 
 const COLS = 8;
 const ROWS = 14;
@@ -205,13 +205,13 @@ export class Tetris3DGame extends Game3D {
 
     // pedestal para la siguiente pieza
     this.nextHolder = new THREE.Group();
-    const ped = new THREE.Mesh(roundedBox(3.4, 3.4, 0.5, 0.3, 0.08), new THREE.MeshStandardMaterial({ color: 0x3d1f10, roughness: 0.4 }));
-    ped.position.z = -0.5;
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.09, 8, 36), gold);
-    ring.position.z = -0.2;
-    ring.scale.set(1, 1, 1);
+    const ped = new THREE.Mesh(roundedBox(3.6, 3.6, 0.4, 0.3, 0.08), new THREE.MeshStandardMaterial({ color: 0x2a140b, roughness: 0.5 }));
+    ped.position.z = -0.3;
+    // marco dorado cuadrado (en vez de un círculo que no combinaba con el cuadro)
+    const ring = new THREE.Mesh(roundedBox(4.0, 4.0, 0.3, 0.34, 0.08), gold);
+    ring.position.z = -0.5;
     this.nextLabel = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.6, 0.7),
+      new THREE.PlaneGeometry(3.4, 0.95),
       new THREE.MeshBasicMaterial({
         transparent: true,
         map: canvasTexture(512, 140, (g, w, h) => {
@@ -220,18 +220,18 @@ export class Tetris3DGame extends Game3D {
         }),
       }),
     );
-    this.nextLabel.position.set(0, 2.2, 0);
+    this.nextLabel.position.set(0, 2.7, 0);
     this.nextHolder.add(ped, ring, this.nextLabel);
     s.add(this.nextHolder);
 
     // pedestal para la pieza guardada
     this.holdHolder = new THREE.Group();
-    const ped2 = new THREE.Mesh(roundedBox(3.4, 3.4, 0.5, 0.3, 0.08), new THREE.MeshStandardMaterial({ color: 0x3d1f10, roughness: 0.4 }));
-    ped2.position.z = -0.5;
-    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.09, 8, 36), new THREE.MeshStandardMaterial({ color: 0x35f0ff, roughness: 0.25, metalness: 0.6, emissive: 0x1a8a9a, emissiveIntensity: 0.5 }));
-    ring2.position.z = -0.2;
+    const ped2 = new THREE.Mesh(roundedBox(3.6, 3.6, 0.4, 0.3, 0.08), new THREE.MeshStandardMaterial({ color: 0x2a140b, roughness: 0.5 }));
+    ped2.position.z = -0.3;
+    const ring2 = new THREE.Mesh(roundedBox(4.0, 4.0, 0.3, 0.34, 0.08), new THREE.MeshStandardMaterial({ color: 0x35f0ff, roughness: 0.25, metalness: 0.6, emissive: 0x1a8a9a, emissiveIntensity: 0.5 }));
+    ring2.position.z = -0.5;
     const holdLabel = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.6, 0.7),
+      new THREE.PlaneGeometry(3.4, 0.95),
       new THREE.MeshBasicMaterial({
         transparent: true,
         map: canvasTexture(512, 140, (g, w, h) => {
@@ -240,8 +240,22 @@ export class Tetris3DGame extends Game3D {
         }),
       }),
     );
-    holdLabel.position.set(0, 2.2, 0);
-    this.holdHolder.add(ped2, ring2, holdLabel);
+    holdLabel.position.set(0, 2.7, 0);
+    // ayuda mientras no hay nada guardado
+    this.holdHint = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.8, 1.3),
+      new THREE.MeshBasicMaterial({
+        transparent: true,
+        map: canvasTexture(512, 240, (g, w, h) => {
+          g.font = '70px "Baby Chipmunk", sans-serif'; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "rgba(126,224,255,0.75)";
+          g.fillText("📥 C", w / 2, h / 2 - 28);
+          g.font = '44px "Baby Chipmunk", sans-serif';
+          g.fillText("guarda una pieza", w / 2, h / 2 + 50);
+        }),
+      }),
+    );
+    this.holdHint.position.set(0, -0.1, 0.05);
+    this.holdHolder.add(ped2, ring2, holdLabel, this.holdHint);
     s.add(this.holdHolder);
     this.holdMeshes = [];
 
@@ -298,7 +312,7 @@ export class Tetris3DGame extends Game3D {
     const aspect = w / h;
     // encuadre: alto del tablero (+ marco) o ancho del tablero, el que mande
     const needH = (this.portrait ? ROWS + 7.4 : ROWS + 5.2) / 2;
-    const needW = (this.portrait ? COLS + 2.2 : COLS + 11.5) / 2;
+    const needW = (this.portrait ? COLS + 2.2 : COLS + 13.4) / 2;
     const dist = Math.max(needH / Math.tan(vfov), needW / (Math.tan(vfov) * aspect));
     this.camDist = dist;
     this.camCenterY = this.portrait ? ROWS / 2 + 1.6 : ROWS / 2 + 0.9;
@@ -306,8 +320,10 @@ export class Tetris3DGame extends Game3D {
     if (this.portrait) {
       this.nextHolder.position.set(3.1, ROWS + 3.1, 0);
       this.nextHolder.scale.setScalar(0.75);
+      this.nextHolder.rotation.y = 0;
       this.holdHolder.position.set(-0.1, ROWS + 3.1, 0);
       this.holdHolder.scale.setScalar(0.75);
+      this.holdHolder.rotation.y = 0;
       this.hero.group.position.set(-3.4, ROWS + 1.3, 0.6);
       this.hero.group.scale.setScalar(1.15);
       this.heroPlatform.position.set(-3.4, ROWS + 1.05, 0.6);
@@ -315,10 +331,12 @@ export class Tetris3DGame extends Game3D {
       this.sign.position.set(0, ROWS + 5.6, -2.9);
       this.sign.visible = false;
     } else {
-      this.nextHolder.position.set(COLS / 2 + 3.6, ROWS - 3.2, 0);
-      this.nextHolder.scale.setScalar(1);
-      this.holdHolder.position.set(COLS / 2 + 3.6, ROWS - 7.4, 0);
-      this.holdHolder.scale.setScalar(1);
+      this.nextHolder.position.set(COLS / 2 + 4.1, ROWS - 3.6, 0);
+      this.nextHolder.scale.setScalar(1.12);
+      this.nextHolder.rotation.y = -0.22; // de cara a la cámara, sin torcerse en el borde
+      this.holdHolder.position.set(COLS / 2 + 4.1, ROWS - 9.0, 0);
+      this.holdHolder.scale.setScalar(1.12);
+      this.holdHolder.rotation.y = -0.22;
       this.hero.group.position.set(-COLS / 2 - 3.6, 2.2, 1);
       this.hero.group.scale.setScalar(2.1);
       this.heroPlatform.position.set(-COLS / 2 - 3.6, 1.95, 1);
@@ -359,6 +377,7 @@ export class Tetris3DGame extends Game3D {
     this.hold = null;
     this.holdUsed = false;
     this.bombs = 0;
+    if (this.holdHint) this.holdHint.visible = true;
     for (const m of this.holdMeshes || []) this.holdHolder.remove(m);
     this.holdMeshes = [];
     if (this.mode === "levels") this._addGarbage(levelGarbage(this.level));
@@ -404,6 +423,7 @@ export class Tetris3DGame extends Game3D {
   _rebuildHold() {
     for (const m of this.holdMeshes) this.holdHolder.remove(m);
     this.holdMeshes = [];
+    if (this.holdHint) this.holdHint.visible = !this.hold;
     if (!this.hold) return;
     const piece = { type: this.hold, rotation: 0, x: 0, y: 0 };
     const cells = pieceCells(piece);
@@ -417,8 +437,8 @@ export class Tetris3DGame extends Game3D {
       m.position.set(ox + 0.5 - mx, -(oy + 0.5 - my), 0);
       holder.add(m);
     }
-    holder.scale.setScalar(0.62);
-    holder.position.set(0, -0.15, 0.2);
+    holder.scale.setScalar(0.8);
+    holder.position.set(0, -0.1, 0.2);
     this.holdHolder.add(holder);
     this.holdMeshes.push(holder);
   }
@@ -777,8 +797,8 @@ export class Tetris3DGame extends Game3D {
       m.position.set(ox + 0.5 - mx, -(oy + 0.5 - my), 0);
       holder.add(m);
     }
-    holder.scale.setScalar(0.62);
-    holder.position.set(0, -0.15, 0.2);
+    holder.scale.setScalar(0.8);
+    holder.position.set(0, -0.1, 0.2);
     this.nextHolder.add(holder);
     this.nextMeshes.push(holder);
   }
