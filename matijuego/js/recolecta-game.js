@@ -7,13 +7,13 @@
 // cintas transportadoras, combo de golosinas, poderes (reloj, botas turbo, imán), impulso
 // con Shift, estrellas por nivel y música. Ahora son 8 canchas.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=6a6ce838a4";
-import { createMatichico } from "./matichico3d.js?v=6a6ce838a4";
-import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=6a6ce838a4";
-import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=6a6ce838a4";
-import { recordRun } from "./progression.js?v=6a6ce838a4";
-import * as audio from "./audio.js?v=6a6ce838a4";
-import { campaign, campaignWin, renderLevelPicker } from "./campaign.js?v=6a6ce838a4";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=f909fd82db";
+import { createMatichico } from "./matichico3d.js?v=f909fd82db";
+import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=f909fd82db";
+import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=f909fd82db";
+import { recordRun } from "./progression.js?v=f909fd82db";
+import * as audio from "./audio.js?v=f909fd82db";
+import { campaign, campaignWin, renderLevelPicker } from "./campaign.js?v=f909fd82db";
 
 const GAME_ID = "recolecta";
 const S = 0.04; // píxeles del nivel -> unidades 3D
@@ -664,7 +664,7 @@ export class RecolectaGame extends Game3D {
     window.addEventListener("keydown", (e) => {
       if (!this.running) return;
       if (map[e.code]) { this.keys[map[e.code]] = true; e.preventDefault(); }
-      if (e.code === "Space") { this._tryJump(); e.preventDefault(); }
+      if (e.code === "Space" || e.code === "KeyK" || e.code === "KeyJ") { this._tryJump(); e.preventDefault(); } // K o J: alternativa a Espacio
       if (e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "KeyE") { this._tryDash(); e.preventDefault(); }
     });
     window.addEventListener("keyup", (e) => { if (map[e.code]) this.keys[map[e.code]] = false; });
