@@ -1,26 +1,26 @@
-import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=b4d08bea31";
-import { SLOTS, RARITIES, getItem, itemsOfSlot } from "./wardrobe-data.js?v=b4d08bea31";
-import * as audio from "./audio.js?v=b4d08bea31";
-import { bindStick } from "./stick.js?v=b4d08bea31";
-import { GAMES_CATALOG } from "./games-catalog.js?v=b4d08bea31";
+import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=f2916d806a";
+import { SLOTS, RARITIES, getItem, itemsOfSlot } from "./wardrobe-data.js?v=f2916d806a";
+import * as audio from "./audio.js?v=f2916d806a";
+import { bindStick } from "./stick.js?v=f2916d806a";
+import { GAMES_CATALOG } from "./games-catalog.js?v=f2916d806a";
 import {
   loadProgress, saveProgress, ownsItem, getLook, equipItem, buyItem, equippedOutfitId,
   getBestScore, getLeaderboard, canClaimDailyReward, claimDailyReward, claimAchievement,
-} from "./storage.js?v=b4d08bea31";
+} from "./storage.js?v=f2916d806a";
 import {
   listProfiles, createProfile, deleteProfile, updateProfileMeta,
   getLastActiveProfileId, setLastActiveProfileId, MAX_PROFILES,
-} from "./profiles.js?v=b4d08bea31";
-import { ACHIEVEMENTS, ACHIEVEMENT_CHAINS, CATEGORIES as ACH_CATEGORIES, achievementProgress } from "./achievements.js?v=b4d08bea31";
-import { activeEvent, eventById, eventEnd, nextEvent, eventTokens, eventItemAvailable, buyEventItem } from "./events.js?v=b4d08bea31";
+} from "./profiles.js?v=f2916d806a";
+import { ACHIEVEMENTS, ACHIEVEMENT_CHAINS, CATEGORIES as ACH_CATEGORIES, achievementProgress } from "./achievements.js?v=f2916d806a";
+import { activeEvent, eventById, eventEnd, nextEvent, eventTokens, eventItemAvailable, buyEventItem } from "./events.js?v=f2916d806a";
 import {
   HOUSE_SPOTS, houseItemsOfSpot, getHouseItem, ownsHouseItem, buyHouseItem, placeHouseItem, placedWithDefaults,
   FURN_CATEGORIES, furnitureOf, isWallItem, houseLayout, layoutAdd, layoutRemove, buyFurniture, HOUSE_SIZES, houseSize, buyHouseSize,
-} from "./house-data.js?v=b4d08bea31";
+} from "./house-data.js?v=f2916d806a";
 import {
   levelInfo, xpForLevel, LEVEL_GIFTS, ensureDaily, missionLabel, missionProgress, missionDone, claimMission,
   canClaimChest, claimChest, hasPending, STICKERS, albumCount, ALBUM_MILESTONES, openPack, onProgressEvent,
-} from "./progression.js?v=b4d08bea31";
+} from "./progression.js?v=f2916d806a";
 
 let progress = null;
 let selectedCharacter = null;
@@ -74,7 +74,7 @@ function showToast(message, ms = 2600) {
 function paintAvatar(canvas, char, lookOverride = null, prog = progress) {
   const look = lookOverride || getLook(prog, char.id);
   renderCharacterThumb(canvas, char, getOutfit(look.outfit));
-  import("./thumb3d.js?v=b4d08bea31")
+  import("./thumb3d.js?v=f2916d806a")
     .then((m) => {
       m.renderHeroThumb(canvas, char, look);
       canvas.dispatchEvent(new Event("repainted"));
@@ -133,7 +133,7 @@ async function syncLobby(visible) {
   try {
     if (lobbyFailed) { useFallback(); return; }
     if (!lobby) {
-      const { Lobby3D } = await import("./lobby3d.js?v=b4d08bea31");
+      const { Lobby3D } = await import("./lobby3d.js?v=f2916d806a");
       lobby = new Lobby3D(cv);
       lobby.init();
     }
@@ -346,6 +346,8 @@ let houseCat = FURN_CATEGORIES[0].id;
 let houseTrial = {}; // objetos de estilo que se están probando y todavía no son tuyos: { [lugar]: idObjeto }
 let houseBuying = null; // mueble que se está mirando para comprar
 let houseSel = null; // uid de la pieza seleccionada
+let housePreview = null; // vista previa de un mueble que todavía no es tuyo (no se guarda): se puede mover, girar y agrandar
+let housePreviewSize = null; // tamaño de casa que se está mirando antes de comprarlo
 let house3d = null;
 
 document.getElementById("btn-house-banner").addEventListener("click", () => document.getElementById("btn-open-house").click());
@@ -353,12 +355,17 @@ document.getElementById("btn-open-house").addEventListener("click", () => {
   houseTrial = {};
   houseBuying = null;
   houseSel = null;
+  housePreview = null;
+  housePreviewSize = null;
   showScreen(screenHouse);
   renderHouse();
   openHousePreview();
 });
 document.getElementById("btn-house-back").addEventListener("click", () => {
   houseTrial = {};
+  houseBuying = null;
+  clearFurniturePreview();
+  clearSizePreview();
   if (house3d) house3d.setActive(false);
   refreshHubStats();
   if (fromTown) goToHub();
@@ -372,7 +379,7 @@ function housePlaced() {
 async function openHousePreview() {
   try {
     if (!house3d) {
-      const { House3D } = await import("./house3d.js?v=b4d08bea31");
+      const { House3D } = await import("./house3d.js?v=f2916d806a");
       house3d = new House3D(document.getElementById("house-canvas"));
       house3d.init();
       bindHouseDrag();
@@ -392,6 +399,37 @@ async function openHousePreview() {
   }
 }
 
+/** La pieza (puesta o de vista previa) con ese uid. */
+function pieceById(uid) {
+  if (uid === "preview") return housePreview;
+  return houseLayout(progress).find((f) => f.uid === uid);
+}
+
+/** Muestra el mueble en el cuarto ANTES de comprarlo, para tentar: se puede mover y girar. */
+function startFurniturePreview(id) {
+  clearFurniturePreview();
+  const item = getHouseItem(id);
+  housePreview = isWallItem(item) ? { uid: "preview", id, wall: "back", u: 0, y: 2.8, s: 1 } : { uid: "preview", id, x: 0, z: 1.5, rot: 0, s: 1 };
+  house3d && house3d.addFurn(housePreview);
+  house3d && house3d.updateFurn(housePreview);
+  selectPiece("preview");
+  showToast(`👀 Vista previa de ${item.name}: muévelo, gíralo y, si te gusta, ¡cómpralo!`);
+}
+
+function clearFurniturePreview() {
+  if (!housePreview) return;
+  house3d && house3d.removeFurn("preview");
+  housePreview = null;
+  if (houseSel === "preview") selectPiece(null);
+}
+
+/** Vuelve a mostrar la casa con el tamaño que de verdad tienes. */
+function clearSizePreview() {
+  if (housePreviewSize === null) return;
+  housePreviewSize = null;
+  house3d && house3d.setSize(houseSize(progress).size);
+}
+
 function selectPiece(uid) {
   houseSel = uid;
   house3d && house3d.setSelected(uid);
@@ -400,26 +438,36 @@ function selectPiece(uid) {
 
 function renderHouseTools() {
   houseToolsEl.innerHTML = "";
-  const d = houseSel && houseLayout(progress).find((f) => f.uid === houseSel);
+  const d = houseSel && pieceById(houseSel);
   houseToolsEl.classList.toggle("hidden", !d || houseMode !== "decor");
   if (!d) return;
   const item = getHouseItem(d.id);
+  const isPreview = d.uid === "preview";
   const add = (label, title, fn) => {
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = label;
     b.title = title;
-    b.addEventListener("click", () => { fn(); house3d && house3d.updateFurn(d); saveProgress(progress); });
+    b.addEventListener("click", () => { fn(); house3d && house3d.updateFurn(d); if (!isPreview) saveProgress(progress); });
     houseToolsEl.appendChild(b);
   };
   const name = document.createElement("span");
   name.className = "ht-name";
-  name.textContent = `${item.icon} ${item.name}`;
+  name.textContent = isPreview ? `👀 Vista previa: ${item.name}` : `${item.icon} ${item.name}`;
   houseToolsEl.appendChild(name);
   if (d.wall) add("↔", "Cambiar de pared", () => { d.wall = d.wall === "back" ? "left" : "back"; });
   else add("⟳", "Girar", () => { d.rot = ((d.rot || 0) + Math.PI / 4) % (Math.PI * 2); });
   add("➖", "Más chico", () => { d.s = Math.max(0.5, Math.round(((d.s || 1) - 0.15) * 100) / 100); });
   add("➕", "Más grande", () => { d.s = Math.min(2.2, Math.round(((d.s || 1) + 0.15) * 100) / 100); });
+  if (isPreview) {
+    const no = document.createElement("button");
+    no.type = "button";
+    no.textContent = "✖";
+    no.title = "Quitar la vista previa";
+    no.addEventListener("click", () => { houseBuying = null; clearFurniturePreview(); renderHouse(); });
+    houseToolsEl.appendChild(no);
+    return;
+  }
   const del = document.createElement("button");
   del.type = "button";
   del.textContent = "🗑";
@@ -444,7 +492,7 @@ function bindHouseDrag() {
     if (houseMode !== "decor") return;
     const uid = house3d.pick(e.clientX, e.clientY);
     if (!uid) { if (houseSel) selectPiece(null); return; }
-    const d = houseLayout(progress).find((f) => f.uid === uid);
+    const d = pieceById(uid);
     if (!d) return;
     selectPiece(uid);
     const p = point(e, d);
@@ -468,18 +516,24 @@ function bindHouseDrag() {
   });
   const end = (e) => {
     if (!drag || e.pointerId !== drag.id) return;
+    const wasPreview = drag.d.uid === "preview";
     drag = null;
-    saveProgress(progress);
+    if (!wasPreview) saveProgress(progress);
   };
   cv.addEventListener("pointerup", end);
   cv.addEventListener("pointercancel", end);
 }
 
 /** Pone una copia de un mueble que ya es tuyo (en el centro, o donde lo soltaste). */
-function placeFurniture(id, at = null) {
+function placeFurniture(id, at = null, base = null) {
   const item = getHouseItem(id);
   const piece = layoutAdd(progress, id);
   if (!piece) return;
+  if (base) {
+    // viene de la vista previa: queda justo como lo habías puesto
+    for (const k of ["x", "z", "rot", "s", "wall", "u", "y"]) if (base[k] !== undefined) piece[k] = base[k];
+    saveProgress(progress);
+  }
   if (at && !piece.wall) { piece.x = at.x; piece.z = at.z; }
   if (at && piece.wall && at.wall) { piece.wall = at.wall; piece.u = at.u; piece.y = at.y; }
   house3d && house3d.addFurn(piece);
@@ -519,7 +573,7 @@ function renderHouse() {
     b.type = "button";
     b.className = "sh-mode" + (id === houseMode ? " active" : "");
     b.innerHTML = `<span>${icon}</span> ${name}`;
-    b.addEventListener("click", () => { houseMode = id; houseBuying = null; houseTrial = {}; if (id !== "decor") selectPiece(null); renderHouse(); house3d && house3d.setPlaced(housePlaced()); });
+    b.addEventListener("click", () => { houseMode = id; houseBuying = null; houseTrial = {}; clearFurniturePreview(); clearSizePreview(); if (id !== "decor") selectPiece(null); renderHouse(); house3d && house3d.setPlaced(housePlaced()); });
     houseModesEl.appendChild(b);
   }
   renderHouseTools();
@@ -537,7 +591,7 @@ function renderHouseDecor() {
     const btn = document.createElement("button");
     btn.className = "sh-tab" + (c.id === houseCat ? " active" : "");
     btn.innerHTML = `<span>${c.icon}</span><b>${c.name}</b>`;
-    btn.addEventListener("click", () => { houseCat = c.id; houseBuying = null; renderHouse(); });
+    btn.addEventListener("click", () => { houseCat = c.id; houseBuying = null; clearFurniturePreview(); renderHouse(); });
     houseTabsEl.appendChild(btn);
   });
   furnitureOf(houseCat).forEach((item) => {
@@ -551,7 +605,7 @@ function renderHouseDecor() {
       `<span class="sh-price">${owned ? `＋ Poner${count ? ` (${count} puesto${count > 1 ? "s" : ""})` : ""}` : `🍫✨ ${item.price}`}</span>`;
     card.addEventListener("click", () => {
       if (card.dataset.dragged) { delete card.dataset.dragged; return; }
-      if (owned) { placeFurniture(item.id); renderHouse(); } else { houseBuying = item.id; renderHouse(); }
+      if (owned) { clearFurniturePreview(); houseBuying = null; placeFurniture(item.id); renderHouse(); } else { houseBuying = item.id; startFurniturePreview(item.id); renderHouse(); }
     });
     if (owned) bindCardDrag(card, item.id);
     houseGridEl.appendChild(card);
@@ -564,21 +618,23 @@ function renderHouseDecor() {
     txt.innerHTML = `<b>${bi.icon} ${bi.name}</b> <i style="color:${RARITIES[bi.rarity].color}">${RARITIES[bi.rarity].name}</i>`;
     const buy = document.createElement("button");
     buy.className = "btn-primary";
-    buy.textContent = need > 0 ? `Te faltan ${need} Matipuntos` : `Comprar y poner · 🍫✨ ${bi.price}`;
+    buy.textContent = need > 0 ? `Te faltan ${need} 🍫✨ para comprarlo` : `Comprar · 🍫✨ ${bi.price}`;
     buy.disabled = need > 0;
     buy.addEventListener("click", () => {
       if (!buyFurniture(progress, bi.id)) return;
       audio.playPurchase();
       showToast(`¡Compraste ${bi.name}! 🎉`);
+      const where = housePreview ? { ...housePreview } : null;
       houseBuying = null;
-      placeFurniture(bi.id);
+      clearFurniturePreview();
+      placeFurniture(bi.id, null, where);
       renderHouse();
       refreshHubStats();
     });
     const cancel = document.createElement("button");
     cancel.className = "btn-secondary";
     cancel.textContent = "Cancelar";
-    cancel.addEventListener("click", () => { houseBuying = null; renderHouse(); });
+    cancel.addEventListener("click", () => { houseBuying = null; clearFurniturePreview(); renderHouse(); });
     houseBarEl.append(txt, buy, cancel);
   } else {
     houseBarEl.className = "sh-bar hint";
@@ -656,25 +712,49 @@ function renderHouseSize() {
   HOUSE_SIZES.forEach((sz) => {
     const owned = sz.level <= cur.level;
     const next = sz.level === cur.level + 1;
+    const looking = housePreviewSize === sz.size;
     const card = document.createElement("button");
     card.type = "button";
-    card.className = "sh-card sh-size" + (sz.level === cur.level ? " equipped" : "") + (!owned ? " locked" : "");
+    card.className = "sh-card sh-size" + (sz.level === cur.level ? " equipped" : "") + (looking ? " trying" : "") + (!owned ? " locked" : "");
     card.innerHTML = `<span class="sh-ico">${sz.icon}</span><span class="sh-name">${sz.name}</span><small>${sz.size} × ${sz.size}</small>` +
-      `<span class="sh-price">${sz.level === cur.level ? "✓ Tu casa" : owned ? "Tuya" : next ? `🍫✨ ${sz.price}` : "🔒 Primero la anterior"}</span>`;
+      `<span class="sh-price">${sz.level === cur.level ? "✓ Tu casa" : owned ? "Tuya" : `🍫✨ ${sz.price}`}</span>`;
     card.addEventListener("click", () => {
-      if (!next) return;
-      if (progress.coins < sz.price) { showToast(`Te faltan ${sz.price - progress.coins} Matipuntos`); return; }
-      if (!buyHouseSize(progress, sz.level)) return;
+      // siempre se puede mirar cómo se vería (aunque todavía no alcance para comprarla)
+      housePreviewSize = owned ? null : sz.size;
+      house3d && house3d.setSize(owned ? cur.size : sz.size); // tocar una que ya tienes vuelve a tu casa
+      renderHouse();
+    });
+    houseGridEl.appendChild(card);
+  });
+  const look = housePreviewSize && HOUSE_SIZES.find((z) => z.size === housePreviewSize);
+  if (look) {
+    const next = look.level === cur.level + 1;
+    const need = look.price - progress.coins;
+    const txt = document.createElement("div");
+    txt.className = "sh-bar-txt";
+    txt.innerHTML = `<b>${look.icon} ${look.name}</b> · ${look.size} × ${look.size} — ${look.blurb}`;
+    const buy = document.createElement("button");
+    buy.className = "btn-primary";
+    buy.textContent = !next ? "🔒 Compra primero la anterior" : need > 0 ? `Te faltan ${need} 🍫✨` : `Comprar · 🍫✨ ${look.price}`;
+    buy.disabled = !next || need > 0;
+    buy.addEventListener("click", () => {
+      if (!buyHouseSize(progress, look.level)) return;
       audio.playPurchase();
-      showToast(`¡Ahora tienes una ${sz.name.toLowerCase()}! 🎉`);
-      house3d && house3d.setSize(sz.size);
+      showToast(`¡Ahora tienes una ${look.name.toLowerCase()}! 🎉`);
+      housePreviewSize = null;
       houseMode = "decor";
       renderHouse();
       refreshHubStats();
     });
-    houseGridEl.appendChild(card);
-  });
-  houseBarEl.innerHTML = `<div class="sh-bar-txt">${cur.level >= HOUSE_SIZES.length - 1 ? "¡Ya tienes la casa más grande! Llénala de muebles." : `Agrandar tu casa te da más espacio para muebles. Próxima: <b>${HOUSE_SIZES[cur.level + 1].name}</b> por 🍫✨ ${HOUSE_SIZES[cur.level + 1].price}.`}</div>`;
+    const cancel = document.createElement("button");
+    cancel.className = "btn-secondary";
+    cancel.textContent = "Volver a mi casa";
+    cancel.addEventListener("click", () => { clearSizePreview(); renderHouse(); });
+    houseBarEl.append(txt, buy, cancel);
+  } else {
+    houseBarEl.className = "sh-bar hint";
+    houseBarEl.innerHTML = `<div class="sh-bar-txt">Toca una casa para <b>verla</b> antes de comprarla. ${cur.level >= HOUSE_SIZES.length - 1 ? "¡Ya tienes la más grande!" : `Próxima: <b>${HOUSE_SIZES[cur.level + 1].name}</b> por 🍫✨ ${HOUSE_SIZES[cur.level + 1].price}.`}</div>`;
+  }
 }
 
 // ---------- MI AVENTURA: nivel, misiones, racha y álbum ----------
@@ -1198,7 +1278,7 @@ function shopLook() {
 async function openShopPreview() {
   try {
     if (!shopLobby) {
-      const { Lobby3D } = await import("./lobby3d.js?v=b4d08bea31");
+      const { Lobby3D } = await import("./lobby3d.js?v=f2916d806a");
       shopLobby = new Lobby3D(document.getElementById("shop-canvas"));
       shopLobby.init();
     }
@@ -1406,7 +1486,7 @@ async function launchOrResumeFps() {
   try {
     if (!instances.fps) {
       showToast("Cargando el mundo 3D…");
-      const { FpsGame } = await import("./fps-game.js?v=b4d08bea31");
+      const { FpsGame } = await import("./fps-game.js?v=f2916d806a");
       const q = (id) => document.getElementById(id);
       const els = {
         wrap: q("fps-canvas-wrap"),
@@ -1477,16 +1557,16 @@ function errDetail(err) {
 // "<prefijo>-canvas", "-hud-<nombre>", "-overlay-<intro|win|gameover>", "-btn-*".
 
 const GAMES_3D = {
-  town: { module: "./town-game.js?v=b4d08bea31", cls: "TownGame", hud: [] },
-  recolecta: { module: "./recolecta-game.js?v=b4d08bea31", cls: "RecolectaGame", hud: [] },
-  basquet_tiros: { module: "./basquet3d-game.js?v=b4d08bea31", cls: "Basquet3DGame", hud: [], prefix: "basquet" },
-  porristas: { module: "./porristas3d-game.js?v=b4d08bea31", cls: "Porristas3DGame", hud: ["score", "combo", "coins"] },
-  parkour: { module: "./parkour-game.js?v=b4d08bea31", cls: "ParkourGame", hud: [] },
-  tetris: { module: "./tetris3d-game.js?v=b4d08bea31", cls: "Tetris3DGame", hud: ["score", "lines", "level", "combo", "coins"] },
-  salto: { module: "./salto-game.js?v=b4d08bea31", cls: "SaltoGame", hud: ["score", "height", "hearts", "combo", "coins"] },
-  autos: { module: "./autos-game.js?v=b4d08bea31", cls: "AutosGame", hud: ["score", "speed", "hearts", "combo", "power", "coins"] },
-  memoria: { module: "./memoria-game.js?v=b4d08bea31", cls: "MemoriaGame", hud: ["level", "moves", "time", "score", "coins"] },
-  creador: { module: "./creador-game.js?v=b4d08bea31", cls: "CreadorGame", hud: ["score", "count", "coins"] },
+  town: { module: "./town-game.js?v=f2916d806a", cls: "TownGame", hud: [] },
+  recolecta: { module: "./recolecta-game.js?v=f2916d806a", cls: "RecolectaGame", hud: [] },
+  basquet_tiros: { module: "./basquet3d-game.js?v=f2916d806a", cls: "Basquet3DGame", hud: [], prefix: "basquet" },
+  porristas: { module: "./porristas3d-game.js?v=f2916d806a", cls: "Porristas3DGame", hud: ["score", "combo", "coins"] },
+  parkour: { module: "./parkour-game.js?v=f2916d806a", cls: "ParkourGame", hud: [] },
+  tetris: { module: "./tetris3d-game.js?v=f2916d806a", cls: "Tetris3DGame", hud: ["score", "lines", "level", "combo", "coins"] },
+  salto: { module: "./salto-game.js?v=f2916d806a", cls: "SaltoGame", hud: ["score", "height", "hearts", "combo", "coins"] },
+  autos: { module: "./autos-game.js?v=f2916d806a", cls: "AutosGame", hud: ["score", "speed", "hearts", "combo", "power", "coins"] },
+  memoria: { module: "./memoria-game.js?v=f2916d806a", cls: "MemoriaGame", hud: ["level", "moves", "time", "score", "coins"] },
+  creador: { module: "./creador-game.js?v=f2916d806a", cls: "CreadorGame", hud: ["score", "count", "coins"] },
 };
 
 async function launchOrResume3d(key) {

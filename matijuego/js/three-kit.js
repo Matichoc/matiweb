@@ -4,12 +4,12 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=b4d08bea31";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=b4d08bea31";
-import * as audio from "./audio.js?v=b4d08bea31";
-import { recordRun, runBonus } from "./progression.js?v=b4d08bea31";
-import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=b4d08bea31";
-import { missionFor } from "./missions.js?v=b4d08bea31";
+import { getOutfit } from "./characters.js?v=f2916d806a";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=f2916d806a";
+import * as audio from "./audio.js?v=f2916d806a";
+import { recordRun, runBonus } from "./progression.js?v=f2916d806a";
+import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=f2916d806a";
+import { missionFor } from "./missions.js?v=f2916d806a";
 
 export { THREE };
 
