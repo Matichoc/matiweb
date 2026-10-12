@@ -8,7 +8,6 @@ import { buildWorld, rayAabb, ARENA_HALF } from "./fps-world.js";
 import { createEnemy, applyChocolate, hitSpheres, animateEnemy } from "./fps-enemies.js";
 import { getOutfit } from "./characters.js";
 import { saveProgress, addToLeaderboard, equippedOutfitId, reportScore, earnCoins } from "./storage.js";
-import { recordRun } from "./progression.js";
 import * as audio from "./audio.js";
 
 const GAME_ID = "fps3d";
@@ -908,11 +907,10 @@ export class FpsGame {
     this.els.vignette.style.opacity = "0";
     audio.playLose();
     reportScore(this.progress, GAME_ID, this.score);
-    recordRun(this.progress, GAME_ID, this.score);
     addToLeaderboard(this.progress, GAME_ID, this.progress.playerName, this.score);
     this.els.gameoverText.textContent =
       `Llegaste a la oleada ${this.wave}, bañaste ${this.kills} malvaviscos (${this.heads} cabezazos) y sumaste ${this.score} puntos` +
-      (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : ".");
+      (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : ".");
     this._showOverlay("gameover");
   }
 

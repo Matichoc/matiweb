@@ -41,9 +41,20 @@ export const CHARACTERS = [
   },
 ];
 
-// Los atuendos y todo el guardarropa viven en js/wardrobe-data.js
-import { getOutfit } from "./wardrobe-data.js";
-export { OUTFITS, getOutfit } from "./wardrobe-data.js";
+/**
+ * Atuendos (recolores de uniforme) comprables en la tienda con monedas
+ * Chocolate Dubai. Colores tomados de la paleta de marca de Matichoc.
+ */
+export const OUTFITS = [
+  { id: "liga", name: "Local Matichoc", price: 0, jersey: "#D4216C", trim: "#FFC800" },
+  { id: "visita", name: "Visita Cacao", price: 30, jersey: "#CFD767", trim: "#64321B" },
+  { id: "oro", name: "Edición Oro", price: 60, jersey: "#FFC800", trim: "#64321B" },
+  { id: "noche", name: "Edición Choco Oscuro", price: 90, jersey: "#3d1f10", trim: "#D4216C" },
+];
+
+export function getOutfit(id) {
+  return OUTFITS.find((o) => o.id === id) || OUTFITS[0];
+}
 
 /**
  * Dibuja un Matichico dentro de un cuadro size x size, centrado en (cx, cy).

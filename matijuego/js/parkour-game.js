@@ -7,8 +7,6 @@
 import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js";
 import { createMatichico } from "./matichico3d.js";
 import { earnCoins, saveProgress } from "./storage.js";
-import { trailColors } from "./wardrobe-data.js";
-import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js";
 import * as audio from "./audio.js";
 
 const GAME_ID = "parkour";
@@ -55,9 +53,6 @@ export class ParkourGame extends Game3D {
     this.tmpColor = new THREE.Color();
     this.tmpColor2 = new THREE.Color();
     this.hudCache = "";
-    this.mode = "campaign"; // lo que eligió la jugadora: "campaign" (6 etapas) o "inf" (mundo infinito)
-    this.worldMode = null; // lo que hay construido en la escena ahora
-    this.power = null;
   }
 
   // ---------- escena ----------
@@ -109,13 +104,6 @@ export class ParkourGame extends Game3D {
     for (const n of SPRITES) this.sprites[n] = loadTexture(`assets/products/${n}.jpg`);
     this.discGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.1, 24);
     this.rimGeo = new THREE.TorusGeometry(0.43, 0.05, 8, 24);
-    // cosas compartidas por muchos objetos: no se liberan al borrar el recorrido
-    this._shared = new Set([...Object.values(this.m), ...Object.values(this.sprites), this.discGeo, this.rimGeo, this.studTex]);
-    this.studCache = new Map();
-    // aro de color alrededor del héroe mientras tiene un poder
-    this.aura = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 12), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, depthWrite: false }));
-    this.aura.visible = false;
-    s.add(this.aura);
 
     // río de chocolate bajo el recorrido
     const riverTex = canvasTexture(256, 256, (g, w, h) => {
@@ -149,10 +137,15 @@ export class ParkourGame extends Game3D {
   // ---------- recorrido ----------
 
   _buildCourse() {
-    this._clearCourse();
-    this.worldMode = "campaign";
     const rnd = mulberry32(2025);
     const rr = (a, b) => a + rnd() * (b - a);
+    this.platforms = [];
+    this.spinners = [];
+    this.items = [];
+    this.checkpoints = [];
+    this.stageStarts = [];
+    this.course = new THREE.Group();
+    this.scene.add(this.course);
     let cur = null;
 
     const place = (stage, type, o) => {
@@ -293,7 +286,8 @@ export class ParkourGame extends Game3D {
     this.courseEndZ = fin.base.z;
   }
 
-  _platformColors(th, type) {
+  _platformColors(stage, type) {
+    const th = STAGES[stage];
     let top = th.top;
     let side = th.side;
     if (type === "beam") { top = 0xd9a45f; side = 0x8a5a36; }
@@ -306,19 +300,12 @@ export class ParkourGame extends Game3D {
   }
 
   _makePlatform(stage, type, o) {
-    const th = o.theme || STAGES[stage];
+    const th = STAGES[stage];
     const hy = type === "beam" ? 0.3 : 0.4;
-    const col = this._platformColors(th, type);
-    // la textura de tachas se comparte entre plataformas del mismo tamaño
-    const texKey = `${o.sx}x${o.sz}`;
-    let tex = this.studCache.get(texKey);
-    if (!tex) {
-      tex = this.studTex.clone();
-      tex.needsUpdate = true;
-      tex.repeat.set(o.sx / 2, o.sz / 2);
-      this.studCache.set(texKey, tex);
-      this._shared.add(tex);
-    }
+    const col = this._platformColors(stage, type);
+    const tex = this.studTex.clone();
+    tex.needsUpdate = true;
+    tex.repeat.set(o.sx / 2, o.sz / 2);
     const topMat = new THREE.MeshStandardMaterial({ color: col.top, map: tex, roughness: 0.42, metalness: 0.02, transparent: type === "blink", opacity: 1 });
     const sideMat = new THREE.MeshStandardMaterial({ color: col.side, roughness: 0.6, transparent: type === "blink", opacity: 1 });
     const body = new THREE.Mesh(new THREE.BoxGeometry(o.sx, hy * 2, o.sz), [sideMat, sideMat, topMat, sideMat, sideMat, sideMat]);
@@ -397,8 +384,8 @@ export class ParkourGame extends Game3D {
     this.spinners.push({ platform: p, group: g, bar, len, speed, angle: 0, x: p.base.x, z: p.base.z, top });
   }
 
-  _makeFlag(stage, p, theme) {
-    const th = theme || STAGES[stage];
+  _makeFlag(stage, p) {
+    const th = STAGES[stage];
     const g = new THREE.Group();
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.2, 8), this.m.white);
     pole.position.y = 1.6;
@@ -416,22 +403,14 @@ export class ParkourGame extends Game3D {
     return g;
   }
 
-  _makeItem(x, y, z, kind, power) {
+  _makeItem(x, y, z, kind) {
     const g = new THREE.Group();
-    if (kind === "power") {
-      const def = POWERS[power];
-      const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(0.46, 1), new THREE.MeshStandardMaterial({ color: def.color, roughness: 0.2, emissive: def.color, emissiveIntensity: 0.9 }));
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.06, 8, 28), this.m.white);
-      ring.rotation.x = Math.PI / 2.4;
-      g.add(orb, ring);
-      g.userData.spin = ring;
-    } else if (kind === "gold") {
+    if (kind === "gold") {
       const bar = new THREE.Mesh(roundedBox(0.95, 0.55, 0.28, 0.1, 0.04), this.m.gold);
       const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.3), new THREE.MeshBasicMaterial({ map: canvasTexture(128, 64, (c, w, h) => { c.fillStyle = "#fff6e6"; c.font = '46px "Baby Chipmunk", sans-serif'; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("DUBAI", w / 2, h / 2); }), transparent: true }));
       stripe.position.z = 0.15;
-      g.add(bar, stripe);
-      // la luz solo en la aventura: en el infinito aparecen y desaparecen muchas barras y cambiar la cantidad de luces es caro
-      if (this.worldMode !== "inf") g.add(new THREE.PointLight(0xffc800, 8, 6));
+      const light = new THREE.PointLight(0xffc800, 8, 6);
+      g.add(bar, stripe, light);
     } else {
       const tex = this.sprites[SPRITES[Math.floor(Math.random() * SPRITES.length)]];
       const disc = new THREE.Mesh(this.discGeo, [this.m.cream, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 }), this.m.cream]);
@@ -443,7 +422,7 @@ export class ParkourGame extends Game3D {
     g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     g.position.set(x, y, z);
     this.course.add(g);
-    return { kind, power, mesh: g, x, y, z, taken: false, phase: Math.random() * 6.28 };
+    return { kind, mesh: g, x, y, z, taken: false, phase: Math.random() * 6.28 };
   }
 
   _makeFinish(p) {
@@ -504,7 +483,6 @@ export class ParkourGame extends Game3D {
     // islas flotantes al fondo
     const rock = new THREE.MeshStandardMaterial({ color: 0x8a5a36, roughness: 0.9, flatShading: true });
     const grass = new THREE.MeshStandardMaterial({ color: 0x6cc04a, roughness: 0.9, flatShading: true });
-    this.islands = [];
     for (let i = 0; i < 18; i++) {
       const isl = new THREE.Group();
       const base = new THREE.Mesh(new THREE.ConeGeometry(rand(4, 8), rand(6, 11), 7), rock);
@@ -515,7 +493,6 @@ export class ParkourGame extends Game3D {
       isl.add(base, topM);
       isl.position.set((i % 2 ? 1 : -1) * rand(28, 60), rand(-6, 14), -i * 18 - 10);
       s.add(isl);
-      this.islands.push(isl);
     }
   }
 
@@ -523,11 +500,11 @@ export class ParkourGame extends Game3D {
 
   _ensureHero() {
     if (this.hero && this.heroId === this.character.id) {
-      this.hero.setLook(this.look);
+      this.hero.setOutfit(this.outfit);
       return;
     }
     if (this.hero) this.scene.remove(this.hero.group);
-    this.hero = createMatichico(this.character, this.outfit, this.look);
+    this.hero = createMatichico(this.character, this.outfit);
     this.heroId = this.character.id;
     this.hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.hero.group.scale.setScalar(1.08);
@@ -577,30 +554,18 @@ export class ParkourGame extends Game3D {
     this._applyAccessories();
   }
 
-  /** Colores de la estela: la que compraste, o la del mundo en que vas. */
-  _trail() {
-    if (this.look && this.look.trail) return trailColors(this.look);
-    return this.worldMode === "inf" ? this.biomeAt(this.inf.zoneReached || 0).trail : STAGES[this.stageReached].trail;
-  }
-
   _applyAccessories() {
     const st = this.stageReached || 0;
     if (!this.cape) return;
-    // los premios de etapa solo aparecen si el vestuario elegido no ocupa ese lugar
-    const L = this.look || {};
-    this.cape.visible = st >= 1 && !L.back;
-    this.shades.visible = st >= 2 && !L.glasses;
-    this.crown.visible = st >= 4 && !L.hat;
+    this.cape.visible = st >= 1;
+    this.shades.visible = st >= 2;
+    this.crown.visible = st >= 4;
   }
 
   // ---------- partida ----------
 
   reset() {
     this._ensureHero();
-    if (this.mode === "inf") this._resetInfinite();
-    else if (this.worldMode !== "campaign") this._buildCourse();
-    this.power = null;
-    this.aura.visible = false;
     this.stageReached = 0;
     this.itemsGot = 0;
     this.goldGot = 0;
@@ -639,40 +604,13 @@ export class ParkourGame extends Game3D {
     this._applyAccessories();
     this._snapCamera();
     this.river.visible = true;
-    this._showRecord();
     this._updateHud(true);
     this._syncHero(0);
   }
 
-  /** Empieza una partida en el modo elegido ("campaign" o "inf"). */
-  startMode(mode) {
-    this.mode = mode;
-    this.particles.clear();
-    this.popups.clear();
-    this.state = "intro";
-    this.reset();
-    this.beginPlaying();
-  }
-
-  _showRecord() {
-    const el = this.q("record");
-    if (!el) return;
-    const best = this.progress.stats.parkourInfBest || 0;
-    el.textContent = best > 0 ? `Tu récord en el mundo infinito: ${best} m` : "";
-  }
-
   onBegin() {
     this.runTime = 0;
-    if (this.worldMode === "inf") this.banner(`Mundo 1 · ${this.biomeAt(0).name}`);
-    else this.banner(`Etapa 1 · ${STAGES[0].name}`);
-  }
-
-  /** Suma Matipuntos ganados en esta partida y guarda. */
-  cashIn(amount, text, at) {
-    earnCoins(this.progress, amount);
-    this.coinsEarned += amount;
-    saveProgress(this.progress);
-    if (text) this.popups.add(at, text, "coin");
+    this.banner(`Etapa 1 · ${STAGES[0].name}`);
   }
 
   banner(text) {
@@ -709,20 +647,15 @@ export class ParkourGame extends Game3D {
       }
       for (let i = 0; i < n; i++) this._physics(h);
       this._spinnerHits();
-      this._collect(dt);
-      if (this.worldMode === "inf") {
-        this._checkpointsInf();
-        this._infTick(dt);
-      } else {
-        this._checkpoints();
-        this._checkFinish();
-        if (this.finishTimer > 0) {
-          this.finishTimer -= dt;
-          if (this.finishTimer <= 0) this.finish(this.finishText);
-        }
+      this._collect();
+      this._checkpoints();
+      this._checkFinish();
+      if (this.finishTimer > 0) {
+        this.finishTimer -= dt;
+        if (this.finishTimer <= 0) this.finish(this.finishText);
       }
-      if (this.state === "playing" && this.pos.y < FALL_Y) this._respawn();
-      this.score = this.worldMode === "inf" ? this._calcScoreInf() : this._calcScore(false);
+      if (this.pos.y < FALL_Y) this._respawn();
+      this.score = this._calcScore(false);
       this._updateHud();
     }
     this._syncHero(dt);
@@ -748,11 +681,8 @@ export class ParkourGame extends Game3D {
     const P = this.pos;
     const V = this.vel;
     const inp = this.stun > 0 ? { x: 0, z: 0, mag: 0 } : this._input();
-    const kind = this.power && this.power.kind;
-    const speedMul = kind === "turbo" ? 1.5 : 1;
-    const jumpMul = kind === "jump" ? 1.28 : 1;
-    const tx = inp.x * RUN * speedMul;
-    const tz = inp.z * RUN * speedMul;
+    const tx = inp.x * RUN;
+    const tz = inp.z * RUN;
     const acc = (this.grounded ? 75 : 30) * dt;
     V.x += clamp(tx - V.x, -acc, acc);
     V.z += clamp(tz - V.z, -acc, acc);
@@ -762,13 +692,13 @@ export class ParkourGame extends Game3D {
     this.coyote = this.grounded ? COYOTE : Math.max(0, this.coyote - dt);
     if (this.buffer > 0 && this.stun <= 0) {
       if (this.coyote > 0) {
-        V.y = JUMP_V * jumpMul; this.coyote = 0; this.buffer = 0; this.doubleAvail = true; this.grounded = false; this.ground = null;
+        V.y = JUMP_V; this.coyote = 0; this.buffer = 0; this.doubleAvail = true; this.grounded = false; this.ground = null;
         audio.playJump();
         this.particles.burst(new THREE.Vector3(P.x, P.y + 0.1, P.z), [0xfff6e6, 0xffc800], 5, 2, 0.35, 4, 0.8);
       } else if (this.doubleAvail) {
-        V.y = DOUBLE_V * jumpMul; this.doubleAvail = false; this.buffer = 0;
+        V.y = DOUBLE_V; this.doubleAvail = false; this.buffer = 0;
         audio.playJump();
-        this.particles.burst(new THREE.Vector3(P.x, P.y + 0.2, P.z), this._trail(), 14, 3.4, 0.5, 2, 1);
+        this.particles.burst(new THREE.Vector3(P.x, P.y + 0.2, P.z), STAGES[this.stageReached].trail, 14, 3.4, 0.5, 2, 1);
       }
     }
 
@@ -882,34 +812,24 @@ export class ParkourGame extends Game3D {
     }
   }
 
-  _collect(dt = 0) {
+  _collect() {
     const P = this.pos;
     const cy = P.y + 0.8;
-    const magnet = this.power && this.power.kind === "magnet";
     for (const it of this.items) {
       if (it.taken) continue;
-      const pull = magnet && it.kind !== "power";
-      if (Math.abs(it.z - P.z) > (pull ? 6 : 1.4)) continue;
-      let d = Math.hypot(it.x - P.x, it.y - cy, it.z - P.z);
-      if (pull && d < 6 && d > 1.15) {
-        // el imán atrae los alfajores y las barras
-        const k = Math.min(1, dt * 9);
-        it.x += (P.x - it.x) * k;
-        it.y += (cy - it.y) * k;
-        it.z += (P.z - it.z) * k;
-        d = Math.hypot(it.x - P.x, it.y - cy, it.z - P.z);
-      }
+      if (Math.abs(it.z - P.z) > 1.4) continue;
+      const d = Math.hypot(it.x - P.x, it.y - cy, it.z - P.z);
       if (d > 1.15) continue;
       it.taken = true;
       it.mesh.visible = false;
       const at = new THREE.Vector3(it.x, it.y + 0.4, it.z);
-      if (it.kind === "power") {
-        audio.playBonusCollect();
-        this._givePower(it.power, at);
-      } else if (it.kind === "gold") {
+      if (it.kind === "gold") {
         this.goldGot++;
+        earnCoins(this.progress, 3);
+        this.coinsEarned += 3;
+        saveProgress(this.progress);
         audio.playBonusCollect();
-        this.cashIn(3, "+3 🍫✨", at);
+        this.popups.add(at, "+3 🍫✨", "coin");
         this.particles.burst(at, [0xffc800, 0xfff6e6, 0xff3fa4], 26, 5.5, 1, 5, 1.2);
       } else {
         this.itemsGot++;
@@ -958,7 +878,7 @@ export class ParkourGame extends Game3D {
       this.heroModeT = 99;
       const mm = Math.floor(this.runTime / 60);
       const ss = String(Math.floor(this.runTime % 60)).padStart(2, "0");
-      this.finishText = `Llegaste a la cima en ${mm}:${ss}, con ${this.itemsGot} alfajores, ${this.goldGot} barras Matidubai y ${this.falls} caídas. ¡${this.score} puntos y ${this.coinsEarned} Matipuntos!`;
+      this.finishText = `Llegaste a la cima en ${mm}:${ss}, con ${this.itemsGot} alfajores, ${this.goldGot} barras Matidubai y ${this.falls} caídas. ¡${this.score} puntos y ${this.coinsEarned} monedas Dubai!`;
       this.finishTimer = 1.6;
     }
   }
@@ -972,19 +892,6 @@ export class ParkourGame extends Game3D {
   _respawn() {
     this.falls++;
     audio.playBump();
-    if (this.worldMode === "inf") {
-      if (this.power && this.power.kind === "shield") {
-        this.power = null;
-        this.banner("¡El escudo te salvó! 🛡️");
-      } else {
-        this.inf.lives--;
-        if (this.inf.lives <= 0) {
-          this._infGameOver();
-          return;
-        }
-        this.banner(`¡Ups! Te quedan ${this.inf.lives} ❤️`);
-      }
-    } else this.banner("¡Ups! Vuelves al checkpoint");
     this.pos.copy(this.spawn);
     this.vel.set(0, 0, 0);
     this.grounded = false;
@@ -993,19 +900,17 @@ export class ParkourGame extends Game3D {
     this.stun = 0;
     this.heroMode = "sad";
     this.heroModeT = 0.7;
+    this.banner("¡Ups! Vuelves al checkpoint");
     this.els.wrap.classList.add("pk-flash");
     setTimeout(() => this.els.wrap.classList.remove("pk-flash"), 450);
     this._snapCamera();
   }
 
   _updateHud(force = false) {
-    const inf = this.worldMode === "inf";
-    const stage = inf ? `Mundo ${(this.inf.zoneReached || 0) + 1} · ${this.metersRun()} m` : `Etapa ${this.stageReached + 1}/6`;
+    const stage = `Etapa ${this.stageReached + 1}/6`;
     const mm = Math.floor(this.runTime / 60);
     const ss = String(Math.floor(this.runTime % 60)).padStart(2, "0");
-    const pw = this.power ? `${POWERS[this.power.kind].icon} ${Math.ceil(this.power.t)}` : "";
-    const lives = inf ? this.inf.lives : 0;
-    const key = `${stage}|${this.itemsGot}|${mm}:${ss}|${this.progress.coins}|${pw}|${lives}`;
+    const key = `${stage}|${this.itemsGot}|${mm}:${ss}|${this.progress.coins}`;
     if (!force && key === this.hudCache) return;
     this.hudCache = key;
     const q = this.q;
@@ -1013,16 +918,6 @@ export class ParkourGame extends Game3D {
     q("hud-items").textContent = String(this.itemsGot);
     q("hud-time").textContent = `${mm}:${ss}`;
     q("hud-coins").textContent = String(this.progress.coins);
-    const livesEl = q("hud-lives");
-    if (livesEl) {
-      livesEl.parentElement.classList.toggle("hidden", !inf || lives <= 0);
-      livesEl.textContent = "❤️".repeat(Math.max(0, lives));
-    }
-    const powerEl = q("hud-power");
-    if (powerEl) {
-      powerEl.parentElement.classList.toggle("hidden", !pw);
-      powerEl.textContent = pw;
-    }
   }
 
   // ---------- animación del mundo ----------
@@ -1084,9 +979,8 @@ export class ParkourGame extends Game3D {
     for (const it of this.items) {
       if (it.taken) continue;
       const m = it.mesh;
-      m.position.set(it.x, it.y + Math.sin(t * 2.4 + it.phase) * 0.12, it.z);
-      if (it.kind === "power") { m.rotation.y = t * 1.8; m.userData.spin.rotation.z = t * 3; }
-      else if (it.kind === "gold") m.rotation.y = t * 1.8 + it.phase;
+      m.position.y = it.y + Math.sin(t * 2.4 + it.phase) * 0.12;
+      if (it.kind === "gold") m.rotation.y = t * 1.8 + it.phase;
       else m.rotation.y = Math.sin(t * 1.6 + it.phase) * 0.7;
     }
     for (const c of this.checkpoints) {
@@ -1102,12 +996,6 @@ export class ParkourGame extends Game3D {
     }
     this.river.position.z = this.pos.z;
     this.riverTex.offset.y = (t * 0.02) % 1;
-    if (this.worldMode === "inf") {
-      // nubes e islas del fondo: las que quedan atrás pasan a estar adelante
-      const z = this.pos.z;
-      for (const c of this.clouds) if (c.position.z > z + 70) c.position.z -= 26 * 22;
-      for (const isl of this.islands) if (isl.position.z > z + 70) isl.position.z -= 18 * 18;
-    }
   }
 
   _syncHero(dt) {
@@ -1136,20 +1024,12 @@ export class ParkourGame extends Game3D {
       pos.needsUpdate = true;
     }
     if (this.crown && this.crown.visible) this.crown.rotation.y = this.time * 1.5;
-    // aro del poder activo
-    const pw = this.power && this.state === "playing" ? POWERS[this.power.kind] : null;
-    this.aura.visible = !!pw;
-    if (pw) {
-      this.aura.material.color.setHex(pw.color);
-      this.aura.position.set(this.pos.x, this.pos.y + 0.85, this.pos.z);
-      this.aura.scale.setScalar(1.05 + Math.sin(this.time * 6) * 0.06);
-    }
     // estela
     if (this.state === "playing") {
       this.trailT -= dt;
       if (this.trailT <= 0 && sp > 2) {
         this.trailT = this.stageReached >= 4 ? 0.04 : 0.08;
-        this.particles.burst(new THREE.Vector3(this.pos.x, this.pos.y + 0.12, this.pos.z), this._trail(), this.stageReached >= 4 ? 2 : 1, 0.8, 0.5, 1, 0.8);
+        this.particles.burst(new THREE.Vector3(this.pos.x, this.pos.y + 0.12, this.pos.z), STAGES[this.stageReached].trail, this.stageReached >= 4 ? 2 : 1, 0.8, 0.5, 1, 0.8);
       }
     }
   }
@@ -1188,30 +1068,18 @@ export class ParkourGame extends Game3D {
 
   _updateSky() {
     const z = this.pos.z;
-    const inf = this.worldMode === "inf";
     let f = 0;
-    let a;
-    let b;
-    let u;
-    if (inf) {
-      f = Math.max(0, -z / ZONE_LEN);
-      const i0 = Math.floor(f);
-      u = smooth(clamp((f - i0 - 0.55) / 0.45, 0, 1)); // cada mundo conserva su ambiente y cambia al final
-      a = this.biomeAt(i0);
-      b = this.biomeAt(i0 + 1);
-    } else {
-      const st = this.stageStarts;
-      for (let i = 0; i < st.length; i++) {
-        const next = i + 1 < st.length ? st[i + 1] : this.courseEndZ;
-        if (z <= st[i]) f = i + clamp((st[i] - z) / Math.max(1, st[i] - next), 0, 1);
-      }
-      f = clamp(f, 0, STAGES.length - 1);
-      const i0 = Math.floor(f);
-      const i1 = Math.min(i0 + 1, STAGES.length - 1);
-      u = smooth(clamp((f - i0 - 0.55) / 0.45, 0, 1)); // cada etapa conserva su ambiente y cambia al final
-      a = STAGES[i0];
-      b = STAGES[i1];
+    const st = this.stageStarts;
+    for (let i = 0; i < st.length; i++) {
+      const next = i + 1 < st.length ? st[i + 1] : this.courseEndZ;
+      if (z <= st[i]) f = i + clamp((st[i] - z) / Math.max(1, st[i] - next), 0, 1);
     }
+    f = clamp(f, 0, STAGES.length - 1);
+    const i0 = Math.floor(f);
+    const i1 = Math.min(i0 + 1, STAGES.length - 1);
+    const u = smooth(clamp((f - i0 - 0.55) / 0.45, 0, 1)); // cada etapa conserva su ambiente y cambia al final
+    const a = STAGES[i0];
+    const b = STAGES[i1];
     this.tmpColor.setHex(a.sky).lerp(this.tmpColor2.setHex(b.sky), u);
     this.scene.background.copy(this.tmpColor);
     this.scene.fog.color.copy(this.tmpColor);
@@ -1223,7 +1091,7 @@ export class ParkourGame extends Game3D {
     this.sunDisc.visible = lerp(a.night, b.night, u) < 0.6;
     const dark = lerp(a.night, b.night, u);
     this.river.material.color.setRGB(1 - dark * 0.65, 1 - dark * 0.65, 1 - dark * 0.45);
-    if (this.finishGroup) this.finishGroup.visible = f > 4.2;
+    this.finishGroup.visible = f > 4.2;
   }
 
   // ---------- entrada ----------
@@ -1287,8 +1155,6 @@ export class ParkourGame extends Game3D {
       joy.addEventListener("pointerup", release);
       joy.addEventListener("pointercancel", release);
     }
-    document.getElementById("parkour-btn-campaign")?.addEventListener("click", () => this.startMode("campaign"));
-    document.getElementById("parkour-btn-infinite")?.addEventListener("click", () => this.startMode("inf"));
     const jb = document.getElementById("parkour-btn-jump");
     if (jb) jb.addEventListener("pointerdown", (e) => { e.preventDefault(); if (this.state === "playing") this.buffer = BUFFER; });
   }
@@ -1299,5 +1165,3 @@ export class ParkourGame extends Game3D {
     super.pauseForMenu();
   }
 }
-
-installInfinite(ParkourGame, STAGES);

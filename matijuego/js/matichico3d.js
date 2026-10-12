@@ -3,7 +3,10 @@
 // personaje. Origen en los pies, mira hacia +z. Solo primitivas de Three.js.
 
 import { THREE, roundedBox } from "./three-kit.js";
-import { applyLook, HEAD_W, HEAD_H, HEAD_D } from "./wardrobe3d.js";
+
+const HEAD_W = 0.78;
+const HEAD_H = 0.72;
+const HEAD_D = 0.64;
 
 function drawNumber(ctx, text, color) {
   ctx.clearRect(0, 0, 128, 128);
@@ -15,7 +18,7 @@ function drawNumber(ctx, text, color) {
   ctx.fillText(text, 64, 68);
 }
 
-export function createMatichico(character, outfit, look = null) {
+export function createMatichico(character, outfit) {
   const root = new THREE.Group();
   const std = (color, roughness = 0.55) => new THREE.MeshStandardMaterial({ color, roughness });
   const mats = {
@@ -107,7 +110,6 @@ export function createMatichico(character, outfit, look = null) {
   }
 
   const eyes = [];
-  const brows = [];
   const fz = HEAD_D / 2;
   for (const sx of [-1, 1]) {
     const eye = new THREE.Group();
@@ -129,7 +131,6 @@ export function createMatichico(character, outfit, look = null) {
     brow.position.set(sx * 0.17, 0.215, fz + 0.005);
     brow.rotation.z = -sx * 0.14;
     head.add(brow);
-    brows.push(brow);
 
     if (character.gender === "girl") {
       const cheek = new THREE.Mesh(new THREE.CircleGeometry(0.06, 14), mats.cheek);
@@ -147,7 +148,6 @@ export function createMatichico(character, outfit, look = null) {
   head.add(mouth);
 
   // ---------- accesorios por personaje ----------
-  const accStart = head.children.length;
   const top = HEAD_H / 2;
   const cap = (h = 0.12) => {
     const c = shadowed(new THREE.Mesh(roundedBox(HEAD_W + 0.02, h, HEAD_D + 0.02, 0.05, 0.02), mats.hair));
@@ -198,11 +198,7 @@ export function createMatichico(character, outfit, look = null) {
     const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.014, 0.014), glassMat);
     bridge.position.set(0, 0.06, fz + 0.04);
     head.add(bridge);
-    // los anteojos propios de esta personaje se pueden esconder si se elige otro estilo
-    head.children.slice(-3).forEach((o) => (o.userData.defaultGlasses = true));
   }
-  // peinado y accesorios originales del personaje (se ocultan si se elige otro peinado)
-  const defaultStyle = head.children.slice(accStart);
 
   // ---------- animación ----------
   let nextBlink = 2 + Math.random() * 2;
@@ -258,7 +254,6 @@ export function createMatichico(character, outfit, look = null) {
       if (k >= 1) nextBlink = t + 2 + Math.random() * 2.5;
     }
     for (const e of eyes) e.scale.y = blink;
-    if (hero.tick) hero.tick(t, mode, speed);
   }
 
   function setOutfit(next) {
@@ -270,14 +265,5 @@ export function createMatichico(character, outfit, look = null) {
     }
   }
 
-  const hero = {
-    group: root, head, bodyGroup, arms, legs, animate, setOutfit,
-    mats, eyes, brows, mouth, defaultStyle,
-    defaults: { choco: mats.choco.color.getHex(), chocoDark: mats.chocoDark.color.getHex(), hair: mats.hair.color.getHex() },
-    worn: [], tick: null, look: null,
-    /** Viste al Matichico con un "look" completo (peinado, sombrero, ropa, etc.; ver wardrobe-data.js). */
-    setLook(next) { applyLook(hero, next || {}); },
-  };
-  hero.setLook(look || { outfit: outfit && outfit.id });
-  return hero;
+  return { group: root, head, bodyGroup, arms, legs, animate, setOutfit };
 }

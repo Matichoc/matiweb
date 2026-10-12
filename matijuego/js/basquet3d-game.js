@@ -330,11 +330,11 @@ export class Basquet3DGame extends Game3D {
 
   _ensureHero() {
     if (this.hero && this.heroId === this.character.id) {
-      this.hero.setLook(this.look);
+      this.hero.setOutfit(this.outfit);
       return;
     }
     if (this.hero) this.scene.remove(this.hero.group);
-    this.hero = createMatichico(this.character, this.outfit, this.look);
+    this.hero = createMatichico(this.character, this.outfit);
     this.heroId = this.character.id;
     this.hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.hero.group.scale.setScalar(1.35);
@@ -708,7 +708,7 @@ export class Basquet3DGame extends Game3D {
   _onGameOver() {
     audio.playLose();
     this.finish(
-      `Encestaste ${this.made} de ${this.attempts} tiros y sumaste ${this.score} puntos` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."),
+      `Encestaste ${this.made} de ${this.attempts} tiros y sumaste ${this.score} puntos` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} monedas Dubai.` : "."),
     );
   }
 
