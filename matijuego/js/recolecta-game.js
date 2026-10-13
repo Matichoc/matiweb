@@ -7,13 +7,13 @@
 // cintas transportadoras, combo de golosinas, poderes (reloj, botas turbo, imán), impulso
 // con Shift, estrellas por nivel y música. Ahora son 8 canchas.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=f909fd82db";
-import { createMatichico } from "./matichico3d.js?v=f909fd82db";
-import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=f909fd82db";
-import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=f909fd82db";
-import { recordRun } from "./progression.js?v=f909fd82db";
-import * as audio from "./audio.js?v=f909fd82db";
-import { campaign, campaignWin, renderLevelPicker } from "./campaign.js?v=f909fd82db";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=c4a0f25f81";
+import { createMatichico } from "./matichico3d.js?v=c4a0f25f81";
+import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=c4a0f25f81";
+import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=c4a0f25f81";
+import { recordRun } from "./progression.js?v=c4a0f25f81";
+import * as audio from "./audio.js?v=c4a0f25f81";
+import { campaign, campaignWin, renderLevelPicker } from "./campaign.js?v=c4a0f25f81";
 
 const GAME_ID = "recolecta";
 const S = 0.04; // píxeles del nivel -> unidades 3D
@@ -260,6 +260,16 @@ export class RecolectaGame extends Game3D {
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     g.add(floor);
+
+    // el logo de Matichoc pintado en el piso del camino (en un lugar distinto según el nivel)
+    {
+      const total = pathLength(level.path);
+      const at = pointOnPath(level.path, total * (0.3 + 0.2 * ((this.levelIndex || 0) % 3)));
+      const logo = makeLogo(Math.min(3.4, level.corridorWidth * S * 0.8), { lit: false });
+      logo.rotation.x = -Math.PI / 2;
+      logo.position.set(wx(at.x), 0.03, wz(at.y));
+      g.add(logo);
+    }
 
     // muros: celdas del corredor unidas en bloques + borde
     const all = getObstacles(level);

@@ -2,11 +2,11 @@
 // Cartas 3D con las fotos de los alfajores, bombas y cuchuflíes sobre la mesa de
 // la feria; tu Matichico te anima. 4 niveles (6 a 12 parejas) con estrellas.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=f909fd82db";
-import { createMatichico } from "./matichico3d.js?v=f909fd82db";
-import { earnCoins, saveProgress } from "./storage.js?v=f909fd82db";
-import * as audio from "./audio.js?v=f909fd82db";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=f909fd82db";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=c4a0f25f81";
+import { createMatichico } from "./matichico3d.js?v=c4a0f25f81";
+import { earnCoins, saveProgress } from "./storage.js?v=c4a0f25f81";
+import * as audio from "./audio.js?v=c4a0f25f81";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=c4a0f25f81";
 
 const CARD_W = 0.95;
 const CARD_H = 1.3;
@@ -14,16 +14,19 @@ const GAP_X = 1.2;
 const GAP_Z = 1.6;
 // 20 niveles: más parejas, vistazo cada vez más corto, cartas traviesas y, desde el 7, tiempo límite.
 const GRID = { 4: [4, 2], 5: [5, 2], 6: [4, 3], 8: [4, 4], 9: [6, 3], 10: [5, 4], 12: [6, 4] };
-const PAIRS = [4, 5, 6, 6, 8, 8, 9, 9, 10, 10, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12];
+const PAIRS = [4, 5, 6, 6, 6, 8, 8, 8, 9, 9, 10, 10, 10, 12, 12, 12, 12, 12, 12, 12];
 function levelSpec(i) {
   const pairs = PAIRS[i];
   const [cols, rows] = GRID[pairs];
+  const L = i + 1;
   return {
     pairs, cols, rows,
-    peek: Math.max(0.8, 3.2 - i * 0.13),
+    peek: Math.max(0.8, 3.2 - i * 0.125), // vistazo inicial: cada nivel un poco más corto
     gold: i >= 1,
-    mischiefEvery: i < 4 ? 0 : i < 9 ? 3 : i < 15 ? 2 : 1, // cada cuántos errores se cambian dos cartas (0 = nunca)
-    limit: i >= 6 ? Math.round(pairs * (i < 12 ? 14 : i < 16 ? 11 : 9)) : 0, // segundos (0 = sin límite)
+    // cartas traviesas: cada cuántos errores se cambian dos cartas (0 = nunca); baja de a un paso
+    mischiefEvery: L < 4 ? 0 : L < 9 ? 4 : L < 14 ? 3 : L < 18 ? 2 : 1,
+    // tiempo límite: aparece en el nivel 4 con mucha holgura y se aprieta de a poco hasta el 20
+    limit: L >= 4 ? Math.round(pairs * Math.max(8, 24 - (L - 4) * 1.0)) : 0,
   };
 }
 const LEVELS = { length: LEVELS_PER_GAME };

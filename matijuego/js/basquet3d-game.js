@@ -8,11 +8,11 @@
 // puntería cambia en cada tiro, las rachas te ponen "en llamas" (zonas más grandes y puntos
 // multiplicados), los swish y los aros dorados regalan segundos extra, y suena la hinchada.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=f909fd82db";
-import { createMatichico } from "./matichico3d.js?v=f909fd82db";
-import { saveProgress, earnCoins } from "./storage.js?v=f909fd82db";
-import * as audio from "./audio.js?v=f909fd82db";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=f909fd82db";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=c4a0f25f81";
+import { createMatichico } from "./matichico3d.js?v=c4a0f25f81";
+import { saveProgress, earnCoins } from "./storage.js?v=c4a0f25f81";
+import * as audio from "./audio.js?v=c4a0f25f81";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=c4a0f25f81";
 
 const GAME_ID = "basquet_tiros";
 const TIME_LIMIT = 60;
@@ -192,6 +192,16 @@ export class Basquet3DGame extends Game3D {
     mkBanner(-8, "MATICHOC", "#D4216C");
     mkBanner(0, "LA LIGA", "#3d1f10");
     mkBanner(8, "MATICHOC", "#D4216C");
+    // el logo de Matichoc: dos medallones en la pared y uno grande en el piso de la cancha
+    for (const lx of [-4, 4]) {
+      const lg = makeLogo(2.4);
+      lg.position.set(lx, 6.2, -12.88);
+      s.add(lg);
+    }
+    const floorLogo = makeLogo(3.6, { lit: false });
+    floorLogo.rotation.x = -Math.PI / 2;
+    floorLogo.position.set(0, 0.03, 1.8);
+    s.add(floorLogo);
     s.add(makeBunting(new THREE.Vector3(-13, 9.5, -12.5), new THREE.Vector3(13, 9.5, -12.5), { count: 30, sag: 1.4, size: 0.6 }));
 
     // luces del techo (emisivas: el bloom las hace brillar)

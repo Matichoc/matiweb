@@ -11,8 +11,8 @@
 // `progress.bestScores`…) y se reclama una sola vez. Para agregar uno basta sumar una línea abajo.
 // La lista completa en texto está en docs/LOGROS.md (se genera con `node scripts/logros-doc.mjs`).
 
-import { getBestScore } from "./storage.js?v=f909fd82db";
-import { levelInfo } from "./progression.js?v=f909fd82db";
+import { getBestScore } from "./storage.js?v=c4a0f25f81";
+import { levelInfo } from "./progression.js?v=c4a0f25f81";
 
 const IN_APP = typeof document !== "undefined" && document.documentElement.dataset.app === "1";
 
@@ -176,7 +176,7 @@ const stat = (k) => (p) => (p.stats && p.stats[k]) || 0;
 const LEVEL_GAMES = ["recolecta", "tetris", "basquet_tiros", "porristas", "memoria"];
 const MISSION_GAMES = ["salto", "autos", "parkour"];
 const sum = (fns) => (p) => fns.reduce((a, f) => a + f(p), 0);
-const playedGames = (p) => ["recolecta", "tetris", "basquet_tiros", "porristas", "memoria", "salto", "autos", "parkour", "creador"].filter((g) => ((p.stats.runsBy || {})[g] || 0) > 0 || getBestScore(p, g) > 0).length;
+const playedGames = (p) => ["recolecta", "tetris", "basquet_tiros", "porristas", "memoria", "salto", "autos", "parkour", "creador", "futbol", "dulces", "aventura", "ciudad"].filter((g) => ((p.stats.runsBy || {})[g] || 0) > 0 || getBestScore(p, g) > 0).length;
 const eventTokensTotal = (p) => Object.values(p.eventTokens || {}).reduce((a, b) => a + b, 0);
 const albumUnique = (p) => Object.values(p.album || {}).filter((n) => n > 0).length;
 
@@ -227,7 +227,7 @@ chain("constancia", "dias", "Jugador fiel", "📅", stat("playDays"), "Juega en 
 chain("constancia", "racha", "Racha de fuego", "🔥", stat("bestStreak"), "Reclama la recompensa diaria {n} días seguidos.", [[3, 20], [7, 60], [14, 150], [30, 400]]);
 chain("constancia", "horas", "Horas de diversión", "⏱️", (p) => Math.floor(((p.stats && p.stats.playSecs) || 0) / 60), "Juega {n} minutos en total.", [[30, 20], [120, 60], [360, 150], [900, 350], [1800, 700]]);
 chain("constancia", "partidas", "Partidas jugadas", "🎮", stat("totalRuns"), "Termina {n} partidas.", [[10, 15], [50, 40], [150, 100], [400, 250], [1000, 600]]);
-chain("constancia", "todoterreno", "Todoterreno", "🧭", playedGames, "Juega {n} juegos distintos.", [[3, 15], [6, 50], [9, 120]]);
+chain("constancia", "todoterreno", "Todoterreno", "🧭", playedGames, "Juega {n} juegos distintos.", [[3, 15], [6, 50], [9, 120], [12, 200]]);
 
 // Niveles de cada juego por niveles (20) y misiones de los juegos sin fin (20)
 const LEVEL_NAMES = {
@@ -235,6 +235,18 @@ const LEVEL_NAMES = {
   porristas: ["Capitana Cheer", "🤸"], memoria: ["Memoria de Elefante", "🧠"],
 };
 for (const g of LEVEL_GAMES) chain("campana", `niv_${g}`, LEVEL_NAMES[g][0], LEVEL_NAMES[g][1], levelsDone(g), "Completa {n} niveles.", [[5, 20], [10, 50], [15, 100], [20, 200]]);
+// Juegos que se canjean con Matipuntos: Fútbol (dos modos), Dulces y Aventura, 20 niveles cada uno
+chain("campana", "niv_futbol_pen", "Rey de los Penales", "🥅", levelsDone("futbol_pen"), "Supera {n} niveles de Penales.", [[5, 25], [10, 60], [15, 120], [20, 250]]);
+chain("campana", "niv_futbol_tl", "Maestro del Tiro Libre", "🎯", levelsDone("futbol_tl"), "Supera {n} niveles de Tiros libres.", [[5, 25], [10, 60], [15, 120], [20, 250]]);
+chain("campana", "niv_futbol_ata", "Manos de Oro", "🧤", levelsDone("futbol_ata"), "Supera {n} niveles de Atajapenales.", [[5, 25], [10, 60], [15, 120], [20, 250]]);
+const CUP_MODES = ["futbol_pen", "futbol_tl", "futbol_ata"];
+const cupsWon = (p) => CUP_MODES.reduce((a, g) => a + [5, 10, 15, 20].filter((n) => (camp(p, g).stars[n] || 0) > 0).length, 0);
+chain("campana", "copas", "Campeón de Copas", "🏆", cupsWon, "Gana {n} copas de Fútbol Choco (hay 12: 4 por modo).", [[1, 25], [4, 70], [8, 160], [12, 400]]);
+chain("campana", "niv_dulces", "Maestro del Choco Match", "🍫", levelsDone("dulces"), "Supera {n} niveles de Choco Match.", [[5, 25], [10, 60], [15, 120], [20, 250]]);
+chain("campana", "niv_aventura", "Aventurero de Mundos", "🍄", levelsDone("aventura"), "Supera {n} niveles de Aventura Choco.", [[5, 25], [10, 60], [15, 120], [20, 250]]);
+const BOSS_LEVELS = { dulces: [5, 10, 15, 20], aventura: [4, 8, 12, 16, 20] };
+const bossesBeaten = (p) => Object.entries(BOSS_LEVELS).reduce((a, [g, lv]) => a + lv.filter((n) => (camp(p, g).stars[n] || 0) > 0).length, 0);
+chain("campana", "jefes", "Cazajefes", "👑", bossesBeaten, "Derrota a {n} jefes (en Dulces y en Aventura hay 9).", [[1, 25], [3, 70], [6, 160], [9, 400]]);
 const MISSION_NAMES = { salto: ["Misionero del Cielo", "🦘"], autos: ["Misionero del Asfalto", "🏎️"], parkour: ["Misionero del Parkour", "🧗"] };
 for (const g of MISSION_GAMES) chain("campana", `mis_${g}`, MISSION_NAMES[g][0], MISSION_NAMES[g][1], levelsDone(g), "Cumple {n} misiones.", [[5, 20], [10, 50], [15, 100], [20, 200]]);
 chain("campana", "estrellas", "Perfeccionista", "⭐", sum(LEVEL_GAMES.map(starsOf)), "Junta {n} estrellas en los niveles (hay 300).", [[25, 25], [75, 70], [150, 160], [250, 350], [300, 700]]);
@@ -251,6 +263,21 @@ REC("rec_salto", "Récord Salto Choco", "🦘", best("salto"), "Consigue {n} pun
 REC("rec_autos", "Récord Autos", "🏎️", best("autos"), "Consigue {n} puntos en Autos de Chocolate.", [[4000, 30], [9000, 70], [18000, 160], [35000, 350]]);
 REC("rec_parkour", "Récord Parkour", "🧗", stat("parkourInfBest"), "Recorre {n} metros en el Mundo infinito.", [[2500, 70], [5000, 160], [8000, 350]]);
 REC("rec_mundos", "Viajero de mundos", "🌎", stat("parkourInfWorlds"), "Llega al Mundo {n} en el Parkour infinito.", [[8, 40], [12, 100], [20, 250]]);
+
+REC("rec_futbol", "Récord Fútbol", "⚽", best("futbol"), "Consigue {n} puntos en una partida de Fútbol Choco.", [[400, 15], [800, 40], [1200, 100], [1800, 250]]);
+REC("rec_dulces", "Récord Choco Match", "🍫", best("dulces"), "Consigue {n} puntos en Choco Match.", [[2500, 15], [5000, 40], [9000, 100], [15000, 250]]);
+REC("rec_aventura", "Récord Aventura", "🍄", best("aventura"), "Consigue {n} puntos en Aventura Choco.", [[800, 15], [1500, 40], [2500, 100], [4000, 250]]);
+chain("puntajes", "goleador", "Goleador", "⚽", stat("goalsTotal"), "Mete {n} goles en Fútbol Choco.", [[10, 15], [50, 50], [150, 120], [400, 300]]);
+chain("puntajes", "dianas", "Francotirador", "🎯", stat("dianasTotal"), "Mete {n} goles en las dianas doradas del arco.", [[3, 15], [15, 50], [50, 120], [150, 300]]);
+chain("puntajes", "atajadas", "Pared de Chocolate", "🧤", stat("ataSaves"), "Ataja {n} penales en Atajapenales.", [[10, 15], [40, 50], [120, 120], [350, 300]]);
+const ciudadMissions = (p) => Object.keys((p.ciudad && p.ciudad.done) || {}).filter((k) => p.ciudad.done[k]).length;
+chain("campana", "ciudad_misiones", "Buen Vecino", "🏙️", ciudadMissions, "Cumple {n} misiones distintas en Ciudad Choco (hay 8).", [[1, 20], [3, 60], [6, 150], [8, 350]]);
+chain("campana", "ciudad_medalla", "Piloto Estrella", "🏁", (p) => (p.ciudad && p.ciudad.medal) || 0, "Gana una medalla en la carrera de Ciudad Choco (1 bronce, 2 plata, 3 oro).", [[1, 25], [2, 60], [3, 150]]);
+chain("puntajes", "chofer", "Chofer Choco", "🚗", (p) => Math.floor(((p.stats && p.stats.ciudadKm) || 0)), "Maneja {n} km por Ciudad Choco.", [[2, 15], [10, 50], [40, 120], [120, 300]]);
+chain("puntajes", "dorados_ciudad", "Cazador de Brillos", "✨", stat("ciudadGold"), "Junta {n} alfajores dorados en Ciudad Choco.", [[20, 15], [100, 50], [300, 120], [800, 300]]);
+chain("puntajes", "pisotones", "Pisotones", "👟", stat("stompsTotal"), "Pisa {n} enemigos en Aventura Choco.", [[20, 15], [100, 50], [300, 120], [800, 300]]);
+chain("puntajes", "alfajores_av", "Alfajorero", "🍫", stat("aventuraCoins"), "Junta {n} alfajores en Aventura Choco.", [[100, 15], [500, 50], [1500, 120], [4000, 300]]);
+chain("puntajes", "especiales", "Piezas especiales", "✨", stat("dulcesSpecials"), "Crea {n} piezas especiales (rayadas, bombas doradas y envueltas).", [[10, 15], [40, 50], [120, 120], [300, 300]]);
 
 // Pueblo y creación
 chain("pueblo", "pueblo_cosas", "Buscador del pueblo", "✨", stat("townItems"), "Junta {n} brillos en el Pueblo Matichoc.", [[25, 15], [100, 40], [300, 100], [800, 250]]);
@@ -276,6 +303,7 @@ const SINGLES = [
   { cat: "maestro", id: "gran_misionero", name: "Gran Misionero", icon: "🎖️", reward: 600, desc: "Cumple las 20 misiones de Salto Choco, Autos y Parkour.", isDone: (p) => MISSION_GAMES.every((g) => levelsDone(g)(p) >= 20), progress: (p) => ({ cur: MISSION_GAMES.reduce((a, g) => a + Math.min(20, levelsDone(g)(p)), 0), max: 60 }) },
   { cat: "maestro", id: "tres_estrellas", name: "Todo tres estrellas", icon: "🌟", reward: 1000, desc: "Consigue las 3 estrellas en los 100 niveles de los juegos por niveles.", isDone: (p) => sum(LEVEL_GAMES.map(starsOf))(p) >= 300, progress: (p) => ({ cur: sum(LEVEL_GAMES.map(starsOf))(p), max: 300 }) },
   { cat: "maestro", id: "doble_leyenda", name: "Leyenda de dos mundos", icon: "🌈", reward: 400, desc: "Llega a 5000 m en el Parkour infinito y a 25000 puntos en Salto Choco el mismo perfil.", isDone: (p) => (p.stats.parkourInfBest || 0) >= 5000 && getBestScore(p, "salto") >= 25000, progress: (p) => ({ cur: Math.min(1, (p.stats.parkourInfBest || 0) / 5000) + Math.min(1, getBestScore(p, "salto") / 25000), max: 2 }) },
+  { cat: "maestro", id: "dueno_arcade", name: "Dueño de la Arcade", icon: "🕹️", reward: 400, desc: "Canjea con Matipuntos los 4 juegos nuevos: Fútbol, Choco Match, Aventura y Ciudad Choco.", isDone: (p) => (p.unlockedGames || []).length >= 4, progress: (p) => ({ cur: Math.min(4, (p.unlockedGames || []).length), max: 4 }) },
   { cat: "maestro", id: "mes_completo", name: "Un mes con Matichoc", icon: "🗓️", reward: 500, desc: "Juega 30 días distintos y llega al nivel 20.", isDone: (p) => (p.stats.playDays || 0) >= 30 && levelInfo(p.xp).level >= 20, progress: (p) => ({ cur: Math.min(30, p.stats.playDays || 0) + Math.min(20, levelInfo(p.xp).level), max: 50 }) },
 ];
 for (const s of SINGLES) CHAINS.push({ id: s.id, cat: s.cat, name: s.name, icon: s.icon, tiers: [{ ...s, reward: scaleReward(s.reward), tier: 0 }] });

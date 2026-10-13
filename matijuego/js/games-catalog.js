@@ -91,6 +91,42 @@ const ALL_GAMES = [
     tag: "3D",
   },
   {
+    id: "futbol",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
+    name: "Fútbol Choco",
+    icon: "⚽",
+    tagline: "Penales, tiros libres con efecto y atajapenales: gana las 4 copas. 20 niveles en cada modo.",
+    status: "available",
+    tag: "Nuevo",
+  },
+  {
+    id: "dulces",
+    orient: "any", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
+    name: "Choco Match",
+    icon: "🍫",
+    tagline: "Junta 3 productos Matichoc iguales, haz combos y derrota a los jefes chocolateros. 20 niveles.",
+    status: "available",
+    tag: "Nuevo",
+  },
+  {
+    id: "ciudad",
+    orient: "landscape", // se maneja mejor con el celular acostado
+    name: "Ciudad Choco",
+    icon: "🏙️",
+    tagline: "Mundo abierto: maneja tu auto, pasea y ayuda a los vecinos con misiones tranquilas.",
+    status: "available",
+    tag: "Nuevo",
+  },
+  {
+    id: "aventura",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
+    name: "Aventura Choco",
+    icon: "🍄",
+    tagline: "Plataformas por 5 mundos: corre, salta, pisa malvaviscos y vence a los jefes. 20 niveles.",
+    status: "available",
+    tag: "Nuevo",
+  },
+  {
     id: "fps3d",
     orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Choco Blaster 3D",

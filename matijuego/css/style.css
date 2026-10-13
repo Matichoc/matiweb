@@ -1533,3 +1533,73 @@ details.how > :not(summary) { font-size: 0.85rem; margin: 6px 0 0; }
   .sh-bar.hint { position: static; background: transparent; border: 0; }
   .house-tools { margin-top: 4px; }
 }
+
+/* Canje de juegos con Matipuntos y cartel de la demo */
+.modal { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(20,10,5,0.78); }
+.modal.hidden { display: none; }
+.modal-card { width: min(380px, 100%); max-height: 92vh; overflow-y: auto; text-align: center; padding: 22px 20px 18px; border-radius: 22px; background: linear-gradient(180deg, #4b2e2e, #2f1c18); border: 3px solid var(--dorado); box-shadow: 0 18px 50px rgba(0,0,0,0.6); color: var(--crema); display: flex; flex-direction: column; gap: 10px; }
+.modal-card h2 { margin: 0; font-size: 1.35rem; color: var(--dorado); }
+.modal-card p { margin: 0; font-size: 0.95rem; line-height: 1.35; }
+.modal-card .um-icon { font-size: 3rem; line-height: 1; }
+.modal-card a.btn-primary { display: block; text-decoration: none; text-align: center; }
+.modal-card a.btn-primary.disabled { opacity: 0.6; pointer-events: none; }
+.game-card.locked .gthumb img { filter: grayscale(0.7) brightness(0.65); }
+.game-card .glock { position: absolute; right: 8px; top: 8px; z-index: 2; padding: 3px 9px; border-radius: 999px; background: rgba(28,15,7,0.88); border: 2px solid var(--dorado); color: var(--dorado); font-size: 0.74rem; font-weight: 900; }
+.game-card .glock.ready { background: linear-gradient(180deg, #ffd34d, #ffa800); color: #4a2c24; border-color: #fff; animation: daily-pulse 1.3s ease-in-out infinite; }
+.game-card .gnew { position: absolute; left: 8px; top: 8px; }
+
+/* Fútbol Choco: ayuda y barra de potencia */
+.fb-hint { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; font-family: var(--font-script); font-size: 1.6rem; color: var(--crema); text-shadow: 0 2px 8px rgba(0,0,0,0.75); pointer-events: none; padding: 0 12px; }
+.fb-power { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 34px; display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
+.fb-power.hidden { display: none; }
+.fb-curl { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; z-index: 6; }
+.fb-curl.hidden { display: none; }
+.fb-curl-row { display: flex; flex-direction: column; gap: 8px; }
+.fb-curl-btn { width: 48px; height: 48px; border-radius: 50%; border: 3px solid #fff; background: rgba(28,15,7,0.72); color: var(--crema); font-size: 1.7rem; font-weight: 900; line-height: 1; cursor: pointer; touch-action: manipulation; }
+.fb-curl-btn.sel { background: var(--amarillo, #ffc800); color: #3d1f10; box-shadow: 0 0 14px rgba(255,200,0,0.9); }
+.canvas-wrap:has(.overlay:not(.hidden)) .fb-curl { display: none; }
+.fb-power-label { font-size: 0.6rem; font-weight: 900; color: var(--crema); text-shadow: 0 1px 4px #000; }
+.fb-power-track { width: 22px; height: 130px; border-radius: 999px; background: rgba(28,15,7,0.7); border: 2px solid #fff; overflow: hidden; position: relative; display: flex; align-items: flex-end; }
+.fb-power-fill { width: 100%; height: 0; background: linear-gradient(0deg, #cfd767, #ffc800 60%, #ff4a3a); }
+@media (max-width: 520px) { .fb-hint { font-size: 1.2rem; bottom: 8px; } }
+.canvas-wrap:has(.overlay:not(.hidden)) .fb-hint { display: none; }
+
+/* Dulces Matichoc: barra del jefe */
+.dl-boss { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: min(420px, 78%); z-index: 3; pointer-events: none; display: flex; flex-direction: column; gap: 3px; }
+.dl-boss.hidden { display: none; }
+.dl-boss-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 0.78rem; font-weight: 900; color: var(--crema); text-shadow: 0 1px 4px #000; }
+.dl-boss-top b { color: var(--dorado); }
+.dl-boss-bar { height: 14px; border-radius: 999px; background: rgba(28,15,7,0.75); border: 2px solid #fff; overflow: hidden; }
+.dl-boss-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff4a3a, #ffc800); transition: width .3s ease; }
+.canvas-wrap:has(.overlay:not(.hidden)) .dl-boss { display: none; }
+
+/* Aventura Choco: ◀ ▶ juntos a la izquierda y saltar a la derecha */
+.av-dir { display: flex; gap: 10px; }
+.av-jump { background: rgba(255,200,0,0.7) !important; color: #3d1f10; border-color: #fff; }
+.canvas-wrap:has(.overlay:not(.hidden)) .av-touch { display: none !important; }
+
+/* Ciudad Choco: mapa, brújula, tarjeta de misión y lista */
+.canvas-wrap canvas.cd-map { position: absolute; right: 10px; top: 10px; left: auto; bottom: auto; width: 112px; height: 112px; border-radius: 14px; border: 3px solid #fff; box-shadow: 0 3px 10px rgba(0,0,0,0.4); z-index: 5; pointer-events: none; background: #6fbf5f; }
+.cd-compass { position: absolute; right: 10px; top: 130px; z-index: 5; display: flex; align-items: center; gap: 6px; background: rgba(40,20,10,0.72); border: 2px solid var(--dorado, #ffc800); border-radius: 999px; padding: 4px 12px 4px 8px; color: #fff6e6; font-weight: 800; font-size: 0.85rem; pointer-events: none; }
+.cd-compass .cp-arrow { font-size: 1.5rem; line-height: 1; color: #ffc800; transition: transform 0.08s linear; text-shadow: 0 0 6px rgba(255,200,0,0.8); }
+.cd-compass.hidden, .cd-quest.hidden, .cd-toast.hidden, .cd-horn.hidden { display: none; }
+.cd-quest { position: absolute; left: 10px; top: 10px; z-index: 5; max-width: min(300px, 46%); background: rgba(40,20,10,0.78); border: 2px solid var(--dorado, #ffc800); border-radius: 14px; padding: 8px 12px; color: #fff6e6; display: flex; flex-direction: column; gap: 2px; pointer-events: none; }
+.cd-quest .qt { color: #ffc800; font-size: 0.95rem; }
+.cd-quest .qs { font-size: 0.82rem; line-height: 1.25; }
+.cd-toast { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 9; width: min(520px, 88%); text-align: center; background: #fff6e6; color: #3d1f10; border: 3px solid var(--dorado, #ffc800); border-radius: 16px; padding: 10px 14px; font-weight: 800; font-size: 0.95rem; box-shadow: 0 6px 18px rgba(0,0,0,0.35); pointer-events: none; }
+.cd-horn { position: absolute; right: 16px; bottom: 150px; z-index: 6; width: 56px; height: 56px; border-radius: 50%; border: 3px solid #fff; background: linear-gradient(180deg, #ffd23a, #e0a800); font-size: 1.6rem; box-shadow: 0 4px 0 #8a6a00; cursor: pointer; touch-action: manipulation; }
+.cl-card { max-height: 92%; overflow: auto; text-align: left; }
+.cl-card h2 { text-align: center; }
+.cl-row { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 12px; background: rgba(255,246,230,0.08); margin-bottom: 6px; }
+.cl-row.on { outline: 2px solid var(--dorado, #ffc800); background: rgba(255,200,0,0.14); }
+.cl-ic { font-size: 1.6rem; }
+.cl-tt { flex: 1; display: flex; flex-direction: column; font-size: 0.92rem; }
+.cl-tt small { opacity: 0.75; font-size: 0.74rem; }
+.cl-st { min-width: 2.2em; text-align: center; }
+.cl-go { padding: 6px 14px; }
+.cl-card > .btn-primary, .cl-card > .btn-secondary { display: block; width: 100%; margin-top: 8px; }
+.cl-card .cl-go { flex: none; width: auto; margin: 0; }
+.cl-tt { min-width: 0; }
+.cl-card { width: min(640px, 94%); }
+@media (max-width: 760px), (max-height: 520px) { .canvas-wrap canvas.cd-map { width: 84px; height: 84px; top: 6px; right: 6px; } .cd-compass { top: 94px; right: 6px; font-size: 0.75rem; } .cd-quest { max-width: 40%; padding: 5px 9px; top: 6px; left: 6px; } .cd-quest .qs { font-size: 0.72rem; } .cd-quest .qt { font-size: 0.8rem; } .cd-toast { bottom: 70px; font-size: 0.82rem; } .cd-horn { bottom: 120px; right: 10px; width: 48px; height: 48px; } }
+.canvas-wrap:has(.overlay:not(.hidden)) :is(.cd-horn, .cd-quest, .cd-compass, .cd-map) { display: none !important; }

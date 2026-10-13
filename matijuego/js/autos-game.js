@@ -7,11 +7,11 @@
 // volar y juntar alfajores en el aire, charcos de chocolate, poderes (nitro, imán, escudo),
 // combo de alfajores, un hito cada kilómetro y música.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=f909fd82db";
-import { createMatichico } from "./matichico3d.js?v=f909fd82db";
-import { earnCoins, saveProgress } from "./storage.js?v=f909fd82db";
-import * as audio from "./audio.js?v=f909fd82db";
-import { renderModePicker } from "./campaign.js?v=f909fd82db";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=c4a0f25f81";
+import { createMatichico } from "./matichico3d.js?v=c4a0f25f81";
+import { earnCoins, saveProgress } from "./storage.js?v=c4a0f25f81";
+import * as audio from "./audio.js?v=c4a0f25f81";
+import { renderModePicker } from "./campaign.js?v=c4a0f25f81";
 
 const LANE_W = 2.7;
 const LANES = [-LANE_W, 0, LANE_W];
@@ -254,6 +254,11 @@ export class AutosGame extends Game3D {
       const banner = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 1.62), new THREE.MeshStandardMaterial({ map: bannerTex, roughness: 0.7, side: THREE.DoubleSide }));
       banner.position.set(0, 4.6, 0.05);
       g.add(banner);
+      for (const sx of [-1, 1]) {
+        const lg = makeLogo(1.7);
+        lg.position.set(sx * 3.45, 4.6, 0.06);
+        g.add(lg);
+      }
       this.scene.add(g);
       this.arches.push({ g, d: 90 + i * 130 });
     }

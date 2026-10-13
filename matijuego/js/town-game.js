@@ -6,16 +6,16 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=f909fd82db";
-import { createMatichico } from "./matichico3d.js?v=f909fd82db";
-import { CHARACTERS, getOutfit } from "./characters.js?v=f909fd82db";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=f909fd82db";
-import { GAMES_CATALOG } from "./games-catalog.js?v=f909fd82db";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=f909fd82db";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=f909fd82db";
-import { levelInfo } from "./progression.js?v=f909fd82db";
-import { bindStick } from "./stick.js?v=f909fd82db";
-import * as audio from "./audio.js?v=f909fd82db";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=c4a0f25f81";
+import { createMatichico } from "./matichico3d.js?v=c4a0f25f81";
+import { CHARACTERS, getOutfit } from "./characters.js?v=c4a0f25f81";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=c4a0f25f81";
+import { GAMES_CATALOG } from "./games-catalog.js?v=c4a0f25f81";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=c4a0f25f81";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=c4a0f25f81";
+import { levelInfo } from "./progression.js?v=c4a0f25f81";
+import { bindStick } from "./stick.js?v=c4a0f25f81";
+import * as audio from "./audio.js?v=c4a0f25f81";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -352,7 +352,7 @@ export class TownGame extends Game3D {
     const n = games.length;
     this.portals = [];
     games.forEach((game, i) => {
-      const deg = 78 + (i * (168 - 78)) / Math.max(1, n - 1);
+      const deg = 70 + (i * (176 - 70)) / Math.max(1, n - 1);
       const p = pol(deg, 44);
       const col = colors[i % colors.length];
       const g = new THREE.Group();

@@ -3,11 +3,11 @@
 // cae; rebotar centrado suma combo (¡y hace volteretas!), los pompones dan puntos extra.
 // Si cae fuera de la rebotadora, se acaba la partida. Las reglas son las de siempre.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeStars } from "./three-kit.js?v=f909fd82db";
-import { createMatichico } from "./matichico3d.js?v=f909fd82db";
-import { saveProgress, earnCoins } from "./storage.js?v=f909fd82db";
-import * as audio from "./audio.js?v=f909fd82db";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=f909fd82db";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=c4a0f25f81";
+import { createMatichico } from "./matichico3d.js?v=c4a0f25f81";
+import { saveProgress, earnCoins } from "./storage.js?v=c4a0f25f81";
+import * as audio from "./audio.js?v=c4a0f25f81";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=c4a0f25f81";
 
 const GAME_ID = "porristas";
 const PX_W = 800;
@@ -82,16 +82,17 @@ export class Porristas3DGame extends Game3D {
         g.fillStyle = i % 2 ? "#4a2414" : "#52291a";
         g.fillRect((i * w) / 16, 0, w / 16 + 1, h);
       }
-      g.fillStyle = "rgba(255,200,0,0.9)";
-      g.font = '70px "Baby Chipmunk", sans-serif';
-      g.textAlign = "center"; g.textBaseline = "middle";
-      g.fillText("MATICHOC", w / 2, h / 2);
     });
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(36, 16), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.28, metalness: 0.25 }));
     floor.rotation.x = -Math.PI / 2;
     floor.position.set(0, 0, 2);
     floor.receiveShadow = true;
     s.add(floor);
+    // el logo de Matichoc en el centro del escenario
+    const floorLogo = makeLogo(7, { lit: false });
+    floorLogo.rotation.x = -Math.PI / 2;
+    floorLogo.position.set(0, 0.02, 3.2);
+    s.add(floorLogo);
     const apron = new THREE.Mesh(new THREE.PlaneGeometry(80, 60), new THREE.MeshStandardMaterial({ color: 0x2a120a, roughness: 0.4, metalness: 0.2 }));
     apron.rotation.x = -Math.PI / 2;
     apron.position.set(0, -0.01, 30);
@@ -132,6 +133,11 @@ export class Porristas3DGame extends Game3D {
     );
     word.position.set(0, 9.3, -4.8);
     s.add(word);
+    for (const lx of [-9.5, 9.5]) {
+      const lg = makeLogo(3.6);
+      lg.position.set(lx, 9.3, -4.75);
+      s.add(lg);
+    }
     s.add(makeBunting(new THREE.Vector3(-16, 13.5, -4.5), new THREE.Vector3(16, 13.5, -4.5), { count: 34, sag: 1.6, size: 0.65 }));
     s.add(makeStars(120, 50));
 
@@ -298,7 +304,7 @@ export class Porristas3DGame extends Game3D {
     this.coinsEarned = 0;
     this.mode = campaignMode(this.progress, GAME_ID);
     this.level = this.mode === "levels" ? campaignLevel(this.progress, GAME_ID) : 0;
-    this.goal = this.level ? 8 + 3 * this.level : 0; // rebotes que hay que dar en el nivel
+    this.goal = this.level ? Math.round(14 + 3.5 * this.level) : 0; // rebotes que hay que dar en el nivel (sube parejo: 18 a 84)
     this.bounces = 0;
     this.centered = 0;
     this.paddle = { x: PX_W / 2, w: PADDLE_BASE_W };
