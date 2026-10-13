@@ -4,8 +4,8 @@
 // Todo el progreso vive dentro de un "perfil" (ver js/profiles.js), para que
 // varias personas puedan jugar desde el mismo navegador sin mezclar su avance.
 
-import { getItem, EMPTY_LOOK } from "./wardrobe-data.js?v=79c60634fa";
-import { queueSync } from "./online.js?v=79c60634fa";
+import { getItem, EMPTY_LOOK } from "./wardrobe-data.js?v=feef607504";
+import { queueSync } from "./online.js?v=feef607504";
 
 const SAVE_PREFIX = "matichoc_save_v3_profile_";
 const DEFAULT_OUTFIT = "polera";
@@ -47,6 +47,22 @@ function defaultProgress() {
 
 export const MAX_CREATIONS = 12;
 
+/** Un guardado dañado o editado a mano no debe dejar números raros (NaN, negativos, textos). */
+function sanitizeNumbers(p) {
+  for (const k of ["coins", "xp", "packs", "unlockedLevel", "dailyStreak"]) {
+    const n = Number(p[k]);
+    p[k] = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+  }
+  for (const k of ["unlockedGames", "claimedAchievements", "albumClaimed"]) if (!Array.isArray(p[k])) p[k] = [];
+  for (const k of ["bestScores", "leaderboards", "album", "eventTokens", "campaign", "missionsDone"]) {
+    if (!p[k] || typeof p[k] !== "object" || Array.isArray(p[k])) p[k] = {};
+  }
+  for (const [id, c] of Object.entries(p.album)) { const v = Math.floor(Number(c)); if (!(v > 0)) delete p.album[id]; else p.album[id] = v; }
+  if (!p.stats || typeof p.stats !== "object") p.stats = { totalCoinsEarned: 0 };
+  const t = Number(p.stats.totalCoinsEarned);
+  p.stats.totalCoinsEarned = Number.isFinite(t) && t > 0 ? Math.floor(t) : 0;
+}
+
 /** Lee el guardarropa guardado; si viene de la versión anterior (atuendos por personaje) lo migra. */
 function normalizeWardrobe(parsed) {
   const w = parsed.wardrobe || {};
@@ -69,7 +85,15 @@ export function loadProgress(profileId) {
   let progress;
   try {
     const raw = localStorage.getItem(storageKeyForProfile(profileId));
-    const parsed = raw ? JSON.parse(raw) : {};
+    let parsed = {};
+    if (raw) {
+      try {
+        parsed = JSON.parse(raw);
+      } catch (e) {
+        try { localStorage.setItem(storageKeyForProfile(profileId) + "_corrupt", raw); } catch (e2) { /* sin espacio */ }
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) parsed = {};
+    }
     progress = {
       ...defaultProgress(),
       ...parsed,
@@ -93,6 +117,7 @@ export function loadProgress(profileId) {
       packs: parsed.packs ?? 1,
       creations: Array.isArray(parsed.creations) ? parsed.creations.slice(0, MAX_CREATIONS) : [],
     };
+    sanitizeNumbers(progress);
   } catch (e) {
     progress = defaultProgress();
   }
@@ -137,7 +162,7 @@ export function equipItem(progress, characterId, slot, itemId) {
 
 /** Gasta Matipuntos. Punto único de pago: aquí se sumarán otras monedas en el futuro. */
 export function spendCoins(progress, amount) {
-  if (progress.coins < amount) return false;
+  if (!Number.isFinite(amount) || amount < 0 || progress.coins < amount) return false;
   progress.coins -= amount;
   return true;
 }
@@ -180,6 +205,7 @@ export function addToLeaderboard(progress, gameId, name, score) {
 
 /** Suma monedas y lleva la cuenta de cuántas se han ganado en total (para logros). */
 export function earnCoins(progress, amount) {
+  if (!Number.isFinite(amount) || amount <= 0) return;
   progress.coins += amount;
   progress.stats.totalCoinsEarned += amount;
 }
@@ -194,8 +220,14 @@ export function claimAchievement(progress, achievement) {
   return true;
 }
 
+/** "YYYY-MM-DD" según la hora local del aparato (con la hora UTC el "día nuevo" empezaba a las 21:00 en Chile). */
+export function dayKey(date = new Date()) {
+  const p = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+}
+
 export function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+  return dayKey();
 }
 
 export function canClaimDailyReward(progress) {
@@ -205,7 +237,7 @@ export function canClaimDailyReward(progress) {
 /** Reclama la recompensa diaria (si corresponde) y devuelve { reward, streak }, o null si ya se reclamó hoy. */
 export function claimDailyReward(progress) {
   if (!canClaimDailyReward(progress)) return null;
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const yesterday = dayKey(new Date(Date.now() - 86400000));
   progress.dailyStreak = progress.lastDailyRewardDate === yesterday ? progress.dailyStreak + 1 : 1;
   progress.stats.bestStreak = Math.max(progress.stats.bestStreak || 0, progress.dailyStreak); // para los logros de constancia
   const reward = Math.min(10 + (progress.dailyStreak - 1) * 5, 50);

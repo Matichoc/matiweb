@@ -1190,7 +1190,7 @@ h1, h2, h3 {
   .overlay-card h2 { font-size: 1.15rem; margin: 0 0 3px; }
   .overlay-card p { font-size: 0.78rem; margin: 0 0 6px; }
   .overlay-card .fps-tag { font-size: 1rem !important; margin: 0 0 3px !important; }
-  .overlay-card .btn-primary { padding: 7px 22px; font-size: 0.95rem; }
+  .overlay-card .btn-primary { padding: 9px 22px; font-size: 0.95rem; min-height: 40px; position: sticky; bottom: 0; z-index: 2; }
   .overlay-card .overlay-secondary-btn { padding: 5px 14px; font-size: 0.8rem; margin-top: 4px; }
 }
 
@@ -1500,7 +1500,8 @@ details.how > :not(summary) { font-size: 0.85rem; margin: 6px 0 0; }
   .game-screen:not(.cr-screen) .hud-level { font-size: 0.8rem; line-height: 1.1; }
   .game-screen:not(.cr-screen) .hud-avatar { width: 30px; height: 30px; }
   .game-screen:not(.cr-screen) .hud-chip { padding: 2px 8px; font-size: 0.78rem; }
-  .game-screen:not(.cr-screen) .btn-icon { width: 30px; height: 30px; }
+  .game-screen:not(.cr-screen) .btn-icon { width: 38px; height: 38px; }
+  .overlay-card .btn-primary { min-height: 42px; }
   .game-screen:not(.cr-screen) .hud-right { gap: 4px 6px; }
   [id$="-hud-goal"] { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
   /* botones ◀ ▶ grandes en cada esquina (Salto, Autos y Porristas se juegan mejor así que con joystick) */
@@ -1635,3 +1636,9 @@ details.how > :not(summary) { font-size: 0.85rem; margin: 6px 0 0; }
 .stk-art::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, rgba(255,255,255,0.07) 0 6px, transparent 6px 12px); pointer-events: none; }
 .pg-sticker .stk-art img.stk-photo, .pk-card .stk-art img.stk-photo { width: 76%; height: 76%; aspect-ratio: 1; border-radius: 50%; border: 3px solid #ffd34d; box-shadow: 0 2px 6px rgba(0,0,0,0.45); object-fit: cover; position: relative; }
 .pk-card .stk-art { font-size: 3rem; }
+
+/* el logo de Matichoc se muestra completo, grande y sin recorte */
+.pg-sticker .stk-art img.stk-logo, .pk-card .stk-art img.stk-logo { width: 92%; height: 92%; border: 0; border-radius: 50%; object-fit: contain; background: #fff6e6; box-shadow: 0 2px 8px rgba(0,0,0,0.45); }
+
+/* pasos del Creador: objetivo táctil más cómodo */
+@media (pointer: coarse) { .cr-step { min-height: 34px; } }

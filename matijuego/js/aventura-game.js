@@ -6,11 +6,11 @@
 //
 // Controles: ← → / A D para moverte, ESPACIO / ↑ / W para saltar. En el celular: ◀ ▶ y ⤴.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=79c60634fa";
-import { createMatichico } from "./matichico3d.js?v=79c60634fa";
-import { saveProgress } from "./storage.js?v=79c60634fa";
-import * as audio from "./audio.js?v=79c60634fa";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=79c60634fa";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeLogo, goldCoinTexture, disposeGeometries } from "./three-kit.js?v=feef607504";
+import { createMatichico } from "./matichico3d.js?v=feef607504";
+import { saveProgress } from "./storage.js?v=feef607504";
+import * as audio from "./audio.js?v=feef607504";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=feef607504";
 
 const GAME_ID = "aventura";
 const H = 18; // alto del mapa en casillas
@@ -282,7 +282,7 @@ export class AventuraGame extends Game3D {
 
   _clearLevel() {
     for (const g of [this.levelGroup, this.bg]) {
-      while (g.children.length) g.remove(g.children[0]);
+      while (g.children.length) { const c = g.children[0]; g.remove(c); disposeGeometries(c); }
     }
   }
 

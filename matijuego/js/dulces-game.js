@@ -6,10 +6,10 @@
 //   · Cada 5 niveles aparece un JEFE: lo derrotas juntando piezas (le duele más su color débil) y él te lanza coberturas.
 // 20 niveles con estrellas por movimientos que te sobran.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=79c60634fa";
-import { saveProgress } from "./storage.js?v=79c60634fa";
-import * as audio from "./audio.js?v=79c60634fa";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=79c60634fa";
+import { THREE, Game3D, lerp, rand, loadTexture, roundedBox, makeBunting, makeLogo, disposeGeometries } from "./three-kit.js?v=feef607504";
+import { saveProgress } from "./storage.js?v=feef607504";
+import * as audio from "./audio.js?v=feef607504";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=feef607504";
 
 const GAME_ID = "dulces";
 const COLS = 7;
@@ -293,13 +293,14 @@ export class DulcesGame extends Game3D {
 
   _removePiece(p) {
     this.scene.remove(p.mesh);
+    disposeGeometries(p.mesh);
     this.pieces.delete(p);
   }
 
   // ---------- partida ----------
 
   reset() {
-    for (const p of this.pieces) this.scene.remove(p.mesh);
+    for (const p of this.pieces) { this.scene.remove(p.mesh); disposeGeometries(p.mesh); }
     this.pieces.clear();
     const c = campaign(this.progress, GAME_ID);
     this.level = Math.min(c.selected || c.unlocked, c.unlocked);
@@ -369,7 +370,7 @@ export class DulcesGame extends Game3D {
   // ---------- jefe ----------
 
   _buildBoss() {
-    if (this.boss) { this.scene.remove(this.boss.group); this.boss = null; }
+    if (this.boss) { this.scene.remove(this.boss.group); disposeGeometries(this.boss.group); this.boss = null; }
     const bar = this.q("boss");
     if (this.spec.kind !== "boss") { if (bar) bar.classList.add("hidden"); return; }
     const info = BOSSES[this.spec.boss];
@@ -811,6 +812,7 @@ export class DulcesGame extends Game3D {
       const m = this._makePieceMesh(p.type, null, false);
       m.position.set(p.x, p.y, p.z);
       this.scene.remove(p.mesh);
+      disposeGeometries(p.mesh);
       this.scene.add(m);
       p.mesh = m;
     }
