@@ -6,10 +6,10 @@
 // Todo se guarda por perfil dentro de `progress` (xp, packs, album, daily) y se paga solo
 // con Matipuntos, sin compras reales.
 
-import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=ffbc2f0677";
-import { getItem } from "./wardrobe-data.js?v=ffbc2f0677";
-import { activeEvent, addEventTokens } from "./events.js?v=ffbc2f0677";
-import { isUnlocked } from "./unlocks.js?v=ffbc2f0677";
+import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=79c60634fa";
+import { getItem } from "./wardrobe-data.js?v=79c60634fa";
+import { activeEvent, addEventTokens } from "./events.js?v=79c60634fa";
+import { isUnlocked } from "./unlocks.js?v=79c60634fa";
 
 // ---------- partidas ----------
 
@@ -201,66 +201,8 @@ export function hasPending(progress) {
 }
 
 // ---------- álbum ----------
-
-const PRODUCTS = [
-  ["alf-tradicional", "Alfajor Tradicional"], ["alf-frambuesa", "Alfajor Frambuesa"], ["alf-menta", "Alfajor Menta"],
-  ["alf-naranja", "Alfajor Naranja"], ["alf-trufa", "Alfajor Trufa"], ["alf-maracuya", "Alfajor Maracuyá"],
-  ["alf-almendra", "Alfajor Almendra"], ["alf-capuchino", "Alfajor Capuchino"], ["alf-pie-limon", "Alfajor Pie de Limón"],
-  ["bomba-choco", "Bomba de Chocolate"], ["bomba-dorada", "Bomba Dorada"], ["cuchufli", "Cuchufli"],
-];
-/** 12 figuritas normales y 12 brillantes (las "*"). */
-export const STICKERS = [
-  ...PRODUCTS.map(([id, name]) => ({ id, name, foil: false, img: `assets/products/${id}.jpg` })),
-  ...PRODUCTS.map(([id, name]) => ({ id: `${id}*`, name: `${name} brillante`, foil: true, img: `assets/products/${id}.jpg` })),
-];
-export const albumCount = (progress) => STICKERS.filter((s) => (progress.album || {})[s.id] > 0).length;
-
-const ALBUM_MILESTONES = [
-  { at: 6, coins: 50, text: "6 figuritas" },
-  { at: 12, coins: 100, item: "hat_chef", text: "12 figuritas" },
-  { at: 18, coins: 150, text: "18 figuritas" },
-  { at: 24, coins: 300, item: "back_cacao", text: "¡Álbum completo!" },
-];
-export { ALBUM_MILESTONES };
-
-/** Abre un sobre: 3 figuritas (siempre al menos una nueva mientras falte alguna). */
-export function openPack(progress) {
-  if ((progress.packs || 0) <= 0) return null;
-  progress.packs--;
-  progress.stats.packsOpened = (progress.stats.packsOpened || 0) + 1;
-  progress.album = progress.album || {};
-  const missing = STICKERS.filter((s) => !(progress.album[s.id] > 0));
-  const out = [];
-  for (let i = 0; i < 3; i++) {
-    const foil = Math.random() < 0.12;
-    let pool = STICKERS.filter((s) => s.foil === foil);
-    if (i === 0 && missing.length) {
-      const pref = missing.filter((s) => s.foil === foil);
-      pool = pref.length ? pref : missing;
-    } else if (missing.length && Math.random() < 0.5) {
-      const pref = missing.filter((s) => s.foil === foil && !out.some((o) => o.id === s.id));
-      if (pref.length) pool = pref;
-    }
-    const s = pool[Math.floor(Math.random() * pool.length)];
-    const isNew = !(progress.album[s.id] > 0);
-    progress.album[s.id] = (progress.album[s.id] || 0) + 1;
-    out.push({ ...s, isNew });
-  }
-  // premios por completar partes del álbum
-  progress.albumClaimed = progress.albumClaimed || [];
-  const have = albumCount(progress);
-  const rewards = [];
-  for (const m of ALBUM_MILESTONES) {
-    if (have >= m.at && !progress.albumClaimed.includes(m.at)) {
-      progress.albumClaimed.push(m.at);
-      earnCoins(progress, m.coins);
-      if (m.item && !progress.wardrobe.owned.includes(m.item)) progress.wardrobe.owned.push(m.item);
-      rewards.push(m);
-    }
-  }
-  saveProgress(progress);
-  return { stickers: out, rewards };
-}
+// Las figuritas, los sobres y las repetidas viven en js/album.js (aquí se re-exportan para el resto de la app).
+export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=79c60634fa";
 
 // ---------- el gancho que se llama al terminar una partida ----------
 

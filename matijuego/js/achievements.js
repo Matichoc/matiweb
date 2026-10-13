@@ -11,8 +11,9 @@
 // `progress.bestScores`…) y se reclama una sola vez. Para agregar uno basta sumar una línea abajo.
 // La lista completa en texto está en docs/LOGROS.md (se genera con `node scripts/logros-doc.mjs`).
 
-import { getBestScore } from "./storage.js?v=ffbc2f0677";
-import { levelInfo } from "./progression.js?v=ffbc2f0677";
+import { getBestScore } from "./storage.js?v=79c60634fa";
+import { levelInfo } from "./progression.js?v=79c60634fa";
+import { PAGES } from "./album.js?v=79c60634fa";
 
 const IN_APP = typeof document !== "undefined" && document.documentElement.dataset.app === "1";
 
@@ -291,8 +292,10 @@ chain("estilo", "muebles", "Decorador", "🛋️", (p) => (p.house && p.house.la
 chain("estilo", "casa", "Dueño de casa", "🏡", (p) => (p.house && p.house.size) || 0, "Agranda tu casa al tamaño {n} (1 = mediana, 2 = grande).", [[1, 60], [2, 200]]);
 
 // Colección y nivel
-chain("coleccion", "album", "Coleccionista", "📖", albumUnique, "Junta {n} figuritas distintas (hay 24).", [[6, 20], [12, 60], [18, 150], [24, 400]]);
-chain("coleccion", "sobres", "Abridor de sobres", "📦", stat("packsOpened"), "Abre {n} sobres.", [[5, 20], [20, 70], [50, 180]]);
+chain("coleccion", "album", "Coleccionista", "📖", albumUnique, "Junta {n} figuritas distintas (hay 96).", [[6, 20], [12, 60], [24, 150], [48, 300], [72, 500], [96, 1000]]);
+chain("coleccion", "paginas", "Páginas completas", "📚", (p) => PAGES.filter((pg) => (p.albumClaimed || []).includes(`page:${pg.id}`)).length, "Completa {n} páginas del álbum (hay 6).", [[1, 40], [3, 120], [6, 400]]);
+chain("coleccion", "vendedor", "Vendedor de repetidas", "💰", stat("albumSold"), "Gana {n} Matipuntos vendiendo repetidas.", [[50, 15], [250, 60], [1000, 200]]);
+chain("coleccion", "sobres", "Abridor de sobres", "📦", stat("packsOpened"), "Abre {n} sobres.", [[5, 20], [20, 70], [50, 180], [100, 400]]);
 chain("coleccion", "misdiarias", "Cumplidor diario", "🎯", stat("missionsClaimed"), "Cumple {n} misiones diarias.", [[5, 20], [25, 90], [100, 300]]);
 chain("coleccion", "nivel", "Subiendo de nivel", "⭐", (p) => levelInfo(p.xp).level, "Llega al nivel {n}.", [[5, 20], [10, 50], [20, 120], [30, 250], [45, 500], [60, 1000]]);
 chain("coleccion", "puntos", "Ahorrista mayor", "💰", stat("totalCoinsEarned"), "Gana {n} Matipuntos en total.", [[500, 25], [2000, 70], [6000, 180], [15000, 450]]);

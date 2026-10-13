@@ -1,28 +1,29 @@
-import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=ffbc2f0677";
-import { SLOTS, RARITIES, getItem, itemsOfSlot } from "./wardrobe-data.js?v=ffbc2f0677";
-import * as audio from "./audio.js?v=ffbc2f0677";
-import { bindStick, joyMode, setJoyMode } from "./stick.js?v=ffbc2f0677";
-import { UNLOCK_COST, needsUnlock, isUnlocked, unlockGame } from "./unlocks.js?v=ffbc2f0677";
-import { GAMES_CATALOG } from "./games-catalog.js?v=ffbc2f0677";
+import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=79c60634fa";
+import { SLOTS, RARITIES, getItem, itemsOfSlot } from "./wardrobe-data.js?v=79c60634fa";
+import * as audio from "./audio.js?v=79c60634fa";
+import { bindStick, joyMode, setJoyMode } from "./stick.js?v=79c60634fa";
+import { UNLOCK_COST, needsUnlock, isUnlocked, unlockGame } from "./unlocks.js?v=79c60634fa";
+import { GAMES_CATALOG } from "./games-catalog.js?v=79c60634fa";
 import {
   loadProgress, saveProgress, ownsItem, getLook, equipItem, buyItem, equippedOutfitId,
   getBestScore, getLeaderboard, canClaimDailyReward, claimDailyReward, claimAchievement,
-} from "./storage.js?v=ffbc2f0677";
+} from "./storage.js?v=79c60634fa";
 import {
   listProfiles, createProfile, deleteProfile, updateProfileMeta,
   getLastActiveProfileId, setLastActiveProfileId, MAX_PROFILES,
-} from "./profiles.js?v=ffbc2f0677";
-import { ACHIEVEMENTS, ACHIEVEMENT_CHAINS, CATEGORIES as ACH_CATEGORIES, achievementProgress } from "./achievements.js?v=ffbc2f0677";
-import { activeEvent, eventById, eventEnd, nextEvent, eventTokens, eventItemAvailable, buyEventItem } from "./events.js?v=ffbc2f0677";
+} from "./profiles.js?v=79c60634fa";
+import { ACHIEVEMENTS, ACHIEVEMENT_CHAINS, CATEGORIES as ACH_CATEGORIES, achievementProgress } from "./achievements.js?v=79c60634fa";
+import { activeEvent, eventById, eventEnd, nextEvent, eventTokens, eventItemAvailable, buyEventItem } from "./events.js?v=79c60634fa";
 import {
   HOUSE_SPOTS, houseItemsOfSpot, getHouseItem, ownsHouseItem, buyHouseItem, placeHouseItem, placedWithDefaults,
   FURN_CATEGORIES, furnitureOf, isWallItem, houseLayout, layoutAdd, layoutRemove, buyFurniture, HOUSE_SIZES, houseSize, buyHouseSize,
-} from "./house-data.js?v=ffbc2f0677";
+} from "./house-data.js?v=79c60634fa";
 import {
   levelInfo, xpForLevel, LEVEL_GIFTS, ensureDaily, missionLabel, missionProgress, missionDone, claimMission,
-  canClaimChest, claimChest, hasPending, STICKERS, albumCount, ALBUM_MILESTONES, openPack, onProgressEvent, GAME_NAMES,
-} from "./progression.js?v=ffbc2f0677";
-import { rankingEnabled, fetchRanking } from "./online.js?v=ffbc2f0677";
+  canClaimChest, claimChest, hasPending, STICKERS, PAGES, ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, onProgressEvent, GAME_NAMES,
+  spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, TRADE_NORMAL, TRADE_FOIL,
+} from "./progression.js?v=79c60634fa";
+import { rankingEnabled, fetchRanking } from "./online.js?v=79c60634fa";
 
 let progress = null;
 let selectedCharacter = null;
@@ -80,7 +81,7 @@ function showToast(message, ms = 2600) {
 function paintAvatar(canvas, char, lookOverride = null, prog = progress) {
   const look = lookOverride || getLook(prog, char.id);
   renderCharacterThumb(canvas, char, getOutfit(look.outfit));
-  import("./thumb3d.js?v=ffbc2f0677")
+  import("./thumb3d.js?v=79c60634fa")
     .then((m) => {
       m.renderHeroThumb(canvas, char, look);
       canvas.dispatchEvent(new Event("repainted"));
@@ -153,7 +154,7 @@ async function syncLobby(visible) {
   try {
     if (lobbyFailed) { useFallback(); return; }
     if (!lobby) {
-      const { Lobby3D } = await import("./lobby3d.js?v=ffbc2f0677");
+      const { Lobby3D } = await import("./lobby3d.js?v=79c60634fa");
       lobby = new Lobby3D(cv);
       lobby.init();
     }
@@ -433,7 +434,7 @@ function housePlaced() {
 async function openHousePreview() {
   try {
     if (!house3d) {
-      const { House3D } = await import("./house3d.js?v=ffbc2f0677");
+      const { House3D } = await import("./house3d.js?v=79c60634fa");
       house3d = new House3D(document.getElementById("house-canvas"));
       house3d.init();
       bindHouseDrag();
@@ -935,26 +936,62 @@ function renderProgress() {
 
   // álbum
   const have = albumCount(progress);
-  document.getElementById("pg-album-count").textContent = `${have} / ${STICKERS.length}`;
+  document.getElementById("pg-album-count").textContent = `${have} / ${ALBUM_TOTAL}`;
   const packs = progress.packs || 0;
   pgOpenPackBtn.disabled = packs <= 0;
   pgOpenPackBtn.textContent = packs > 0 ? `📦 Abrir sobre (${packs})` : "📦 Sin sobres";
-  document.getElementById("pg-packs-text").textContent = "Ganas sobres al subir de nivel, cada 5 partidas y con el cofre del día.";
+  document.getElementById("pg-packs-text").textContent = "Ganas sobres al subir de nivel, cada 5 partidas y con el cofre del día. Cada sobre trae 3 figuritas al azar.";
   const albumEl = document.getElementById("pg-album");
   albumEl.innerHTML = "";
-  STICKERS.forEach((s) => {
-    const n = (progress.album || {})[s.id] || 0;
-    const card = el("div", "pg-sticker" + (n ? " got" : "") + (s.foil ? " foil" : ""));
-    if (n) {
-      const img = document.createElement("img");
-      img.src = s.img;
-      img.alt = s.name;
-      card.appendChild(img);
-      if (n > 1) card.appendChild(el("b", "pg-s-n", `x${n}`));
-    } else card.appendChild(el("span", "pg-s-q", "?"));
-    card.appendChild(el("span", "pg-s-name", n ? s.name : "Sin descubrir"));
-    albumEl.appendChild(card);
-  });
+  const pts = sparePoints(progress);
+  for (const pg of PAGES) {
+    const st = pageStatus(progress, pg);
+    albumEl.appendChild(el("h3", "pg-page-title" + (st.have >= st.total ? " ok" : ""), `${pg.icon} ${pg.title} · ${st.have}/${st.total}${st.have >= st.total ? " ✅" : ` (premio: +${pg.reward} 🍫✨)`}`));
+    const grid = el("div", "pg-album-grid");
+    STICKERS.filter((x) => x.page === pg.id).forEach((st2) => {
+      const n = (progress.album || {})[st2.id] || 0;
+      const canTrade = !n && pts >= tradeCost(st2);
+      const card = el("div", "pg-sticker" + (n ? " got" : "") + (st2.foil ? " foil" : "") + (canTrade ? " tradable" : ""));
+      if (n) {
+        card.appendChild(stickerArt(st2));
+        if (n > 1) card.appendChild(el("b", "pg-s-n", `x${n}`));
+      } else card.appendChild(el("span", "pg-s-q", st2.foil ? "✨?" : "?"));
+      card.appendChild(el("span", "pg-s-name", n ? st2.name : st2.foil ? "Brillante" : "Sin descubrir"));
+      if (canTrade) {
+        card.title = `Cambiar ${tradeCost(st2)} repetidas por esta figurita`;
+        card.addEventListener("click", () => {
+          if (!window.confirm(`¿Cambiar ${tradeCost(st2)} repetidas por «${st2.name}»?`)) return;
+          const r = tradeFor(progress, st2.id);
+          if (!r) return;
+          audio.playBonusCollect();
+          showToast(`🔄 ¡Conseguiste «${st2.name}»!${r.rewards.length ? " " + r.rewards.map((m) => `🏆 ${m.text}: +${m.coins} 🍫✨`).join(" · ") : ""}`);
+          refreshHubStats();
+          renderProgress();
+        });
+      }
+      grid.appendChild(card);
+    });
+    albumEl.appendChild(grid);
+  }
+  const tools = document.getElementById("pg-album-tools");
+  if (tools) {
+    const spare = spareCount(progress);
+    tools.innerHTML = "";
+    tools.appendChild(el("div", "pg-hint", spare ? `♻️ Tienes ${spare} figuritas repetidas (valen ${pts} puntos de cambio). Véndelas por Matipuntos, o toca una figurita que te falte para cambiarla: ${TRADE_NORMAL} repetidas por una normal, ${TRADE_FOIL} por una brillante (una brillante repetida vale 3).` : "♻️ Aquí aparecen tus repetidas: las puedes vender por Matipuntos o cambiarlas por las figuritas que te faltan."));
+    const sell = el("button", "btn-secondary", `💰 Vender repetidas (+${sellValue(progress)} 🍫✨)`);
+    sell.type = "button";
+    sell.disabled = spare <= 0;
+    sell.addEventListener("click", () => {
+      if (!window.confirm(`¿Vender ${spare} repetidas por ${sellValue(progress)} Matipuntos? (Te quedas con una de cada figurita)`)) return;
+      const r = sellSpares(progress);
+      if (!r) return;
+      audio.playPurchase();
+      showToast(`💰 Vendiste ${r.n} repetidas: +${r.coins} Matipuntos`);
+      refreshHubStats();
+      renderProgress();
+    });
+    tools.appendChild(sell);
+  }
   const ms = document.getElementById("pg-milestones");
   ms.innerHTML = "";
   ALBUM_MILESTONES.forEach((m) => {
@@ -982,6 +1019,21 @@ document.getElementById("pg-daily").addEventListener("click", () => {
   renderProgress();
 });
 
+/** Dibujo de una figurita: foto del producto, o un emoji sobre un fondo de color. */
+function stickerArt(s) {
+  const d = el("div", "stk-art");
+  d.style.background = `radial-gradient(circle at 30% 25%, ${s.color}cc, ${s.color})`;
+  if (s.img) {
+    // la foto va en un círculo con marco dorado, sobre un fondo de color (se ve más cuidado que la foto cruda)
+    const img = document.createElement("img");
+    img.src = s.img;
+    img.alt = s.name;
+    img.className = "stk-photo";
+    d.appendChild(img);
+  } else d.textContent = s.emoji || "⭐";
+  return d;
+}
+
 pgOpenPackBtn.addEventListener("click", () => {
   const r = openPack(progress);
   if (!r) return;
@@ -991,10 +1043,7 @@ pgOpenPackBtn.addEventListener("click", () => {
   r.stickers.forEach((s, i) => {
     const card = el("div", "pk-card" + (s.foil ? " foil" : ""));
     card.style.animationDelay = `${i * 0.35}s`;
-    const img = document.createElement("img");
-    img.src = s.img;
-    img.alt = s.name;
-    card.appendChild(img);
+    card.appendChild(stickerArt(s));
     card.appendChild(el("span", "pk-c-name", s.name));
     if (s.isNew) card.appendChild(el("b", "pk-c-new", "¡NUEVA!"));
     wrap.appendChild(card);
@@ -1424,7 +1473,7 @@ function shopLook() {
 async function openShopPreview() {
   try {
     if (!shopLobby) {
-      const { Lobby3D } = await import("./lobby3d.js?v=ffbc2f0677");
+      const { Lobby3D } = await import("./lobby3d.js?v=79c60634fa");
       shopLobby = new Lobby3D(document.getElementById("shop-canvas"));
       shopLobby.init();
     }
@@ -1640,7 +1689,7 @@ async function launchOrResumeFps() {
   try {
     if (!instances.fps) {
       showToast("Cargando el mundo 3D…");
-      const { FpsGame } = await import("./fps-game.js?v=ffbc2f0677");
+      const { FpsGame } = await import("./fps-game.js?v=79c60634fa");
       const q = (id) => document.getElementById(id);
       const els = {
         wrap: q("fps-canvas-wrap"),
@@ -1711,20 +1760,20 @@ function errDetail(err) {
 // "<prefijo>-canvas", "-hud-<nombre>", "-overlay-<intro|win|gameover>", "-btn-*".
 
 const GAMES_3D = {
-  town: { module: "./town-game.js?v=ffbc2f0677", cls: "TownGame", hud: [] },
-  recolecta: { module: "./recolecta-game.js?v=ffbc2f0677", cls: "RecolectaGame", hud: [] },
-  basquet_tiros: { module: "./basquet3d-game.js?v=ffbc2f0677", cls: "Basquet3DGame", hud: [], prefix: "basquet" },
-  porristas: { module: "./porristas3d-game.js?v=ffbc2f0677", cls: "Porristas3DGame", hud: ["score", "combo", "coins"] },
-  parkour: { module: "./parkour-game.js?v=ffbc2f0677", cls: "ParkourGame", hud: [] },
-  tetris: { module: "./tetris3d-game.js?v=ffbc2f0677", cls: "Tetris3DGame", hud: ["score", "lines", "level", "combo", "coins"] },
-  salto: { module: "./salto-game.js?v=ffbc2f0677", cls: "SaltoGame", hud: ["score", "height", "hearts", "combo", "coins"] },
-  autos: { module: "./autos-game.js?v=ffbc2f0677", cls: "AutosGame", hud: ["score", "speed", "hearts", "combo", "power", "coins"] },
-  memoria: { module: "./memoria-game.js?v=ffbc2f0677", cls: "MemoriaGame", hud: ["level", "moves", "time", "score", "coins"] },
-  futbol: { module: "./futbol-game.js?v=ffbc2f0677", cls: "FutbolGame", hud: [] },
-  dulces: { module: "./dulces-game.js?v=ffbc2f0677", cls: "DulcesGame", hud: [] },
-  aventura: { module: "./aventura-game.js?v=ffbc2f0677", cls: "AventuraGame", hud: [] },
-  ciudad: { module: "./ciudad-game.js?v=ffbc2f0677", cls: "CiudadGame", hud: [] },
-  creador: { module: "./creador-game.js?v=ffbc2f0677", cls: "CreadorGame", hud: ["score", "count", "coins"] },
+  town: { module: "./town-game.js?v=79c60634fa", cls: "TownGame", hud: [] },
+  recolecta: { module: "./recolecta-game.js?v=79c60634fa", cls: "RecolectaGame", hud: [] },
+  basquet_tiros: { module: "./basquet3d-game.js?v=79c60634fa", cls: "Basquet3DGame", hud: [], prefix: "basquet" },
+  porristas: { module: "./porristas3d-game.js?v=79c60634fa", cls: "Porristas3DGame", hud: ["score", "combo", "coins"] },
+  parkour: { module: "./parkour-game.js?v=79c60634fa", cls: "ParkourGame", hud: [] },
+  tetris: { module: "./tetris3d-game.js?v=79c60634fa", cls: "Tetris3DGame", hud: ["score", "lines", "level", "combo", "coins"] },
+  salto: { module: "./salto-game.js?v=79c60634fa", cls: "SaltoGame", hud: ["score", "height", "hearts", "combo", "coins"] },
+  autos: { module: "./autos-game.js?v=79c60634fa", cls: "AutosGame", hud: ["score", "speed", "hearts", "combo", "power", "coins"] },
+  memoria: { module: "./memoria-game.js?v=79c60634fa", cls: "MemoriaGame", hud: ["level", "moves", "time", "score", "coins"] },
+  futbol: { module: "./futbol-game.js?v=79c60634fa", cls: "FutbolGame", hud: [] },
+  dulces: { module: "./dulces-game.js?v=79c60634fa", cls: "DulcesGame", hud: [] },
+  aventura: { module: "./aventura-game.js?v=79c60634fa", cls: "AventuraGame", hud: [] },
+  ciudad: { module: "./ciudad-game.js?v=79c60634fa", cls: "CiudadGame", hud: [] },
+  creador: { module: "./creador-game.js?v=79c60634fa", cls: "CreadorGame", hud: ["score", "count", "coins"] },
 };
 
 async function launchOrResume3d(key) {

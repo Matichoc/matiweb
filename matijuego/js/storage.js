@@ -4,8 +4,8 @@
 // Todo el progreso vive dentro de un "perfil" (ver js/profiles.js), para que
 // varias personas puedan jugar desde el mismo navegador sin mezclar su avance.
 
-import { getItem, EMPTY_LOOK } from "./wardrobe-data.js?v=ffbc2f0677";
-import { queueSync } from "./online.js?v=ffbc2f0677";
+import { getItem, EMPTY_LOOK } from "./wardrobe-data.js?v=79c60634fa";
+import { queueSync } from "./online.js?v=79c60634fa";
 
 const SAVE_PREFIX = "matichoc_save_v3_profile_";
 const DEFAULT_OUTFIT = "polera";
