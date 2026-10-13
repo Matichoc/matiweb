@@ -7,11 +7,11 @@
 // volar y juntar alfajores en el aire, charcos de chocolate, poderes (nitro, imán, escudo),
 // combo de alfajores, un hito cada kilómetro y música.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=79c60634fa";
-import { createMatichico } from "./matichico3d.js?v=79c60634fa";
-import { earnCoins, saveProgress } from "./storage.js?v=79c60634fa";
-import * as audio from "./audio.js?v=79c60634fa";
-import { renderModePicker } from "./campaign.js?v=79c60634fa";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=d2f30b74ef";
+import { createMatichico } from "./matichico3d.js?v=d2f30b74ef";
+import { earnCoins, saveProgress } from "./storage.js?v=d2f30b74ef";
+import * as audio from "./audio.js?v=d2f30b74ef";
+import { renderModePicker } from "./campaign.js?v=d2f30b74ef";
 
 const LANE_W = 2.7;
 const LANES = [-LANE_W, 0, LANE_W];

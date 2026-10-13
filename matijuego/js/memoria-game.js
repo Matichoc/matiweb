@@ -2,11 +2,11 @@
 // Cartas 3D con las fotos de los alfajores, bombas y cuchuflíes sobre la mesa de
 // la feria; tu Matichico te anima. 4 niveles (6 a 12 parejas) con estrellas.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=79c60634fa";
-import { createMatichico } from "./matichico3d.js?v=79c60634fa";
-import { earnCoins, saveProgress } from "./storage.js?v=79c60634fa";
-import * as audio from "./audio.js?v=79c60634fa";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=79c60634fa";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=d2f30b74ef";
+import { createMatichico } from "./matichico3d.js?v=d2f30b74ef";
+import { earnCoins, saveProgress } from "./storage.js?v=d2f30b74ef";
+import * as audio from "./audio.js?v=d2f30b74ef";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=d2f30b74ef";
 
 const CARD_W = 0.95;
 const CARD_H = 1.3;

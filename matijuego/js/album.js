@@ -2,7 +2,7 @@
 // (sin "siempre una nueva": completar el álbum cuesta). Las repetidas se pueden vender por Matipuntos o juntar en el
 // «taller» para cambiarlas por la figurita que te falta (12 repetidas; una brillante, 36).
 // Los ids de la primera página y de sus brillantes (con "*") son los del álbum anterior: el avance de antes se conserva.
-import { earnCoins, saveProgress } from "./storage.js?v=79c60634fa";
+import { earnCoins, saveProgress } from "./storage.js?v=d2f30b74ef";
 
 const P = (id, name, emoji, color) => ({ id, name, emoji, color });
 const PRODUCT_PAGE = [
@@ -44,7 +44,7 @@ export const PAGES = [
 // brillantes: las 12 de la primera página (como antes) + 12 especiales
 const FOIL_BASE = [...PRODUCT_PAGE.map((s) => s.id), "ch-capitan", "ch-estrella", "lg-fabrica", "lg-cielo", "in-cacao", "in-vainilla", "jg-parkour", "jg-ciudad", "cs-copa", "cs-corona"];
 const SPECIAL_FOILS = [
-  { id: "logo*", name: "Logo de Matichoc brillante", emoji: "🌟", color: "#d4216c", page: "cosas", foil: true },
+  { id: "logo*", name: "Logo de Matichoc brillante", img: "assets/brand/logo-badge.png", logo: true, emoji: "🌟", color: "#d4216c", page: "cosas", foil: true },
   { id: "oro*", name: "Sello de Cacao de Oro", emoji: "🥇", color: "#e0b400", page: "cosas", foil: true },
 ];
 

@@ -1635,3 +1635,6 @@ details.how > :not(summary) { font-size: 0.85rem; margin: 6px 0 0; }
 .stk-art::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, rgba(255,255,255,0.07) 0 6px, transparent 6px 12px); pointer-events: none; }
 .pg-sticker .stk-art img.stk-photo, .pk-card .stk-art img.stk-photo { width: 76%; height: 76%; aspect-ratio: 1; border-radius: 50%; border: 3px solid #ffd34d; box-shadow: 0 2px 6px rgba(0,0,0,0.45); object-fit: cover; position: relative; }
 .pk-card .stk-art { font-size: 3rem; }
+
+/* el logo de Matichoc se muestra completo, grande y sin recorte */
+.pg-sticker .stk-art img.stk-logo, .pk-card .stk-art img.stk-logo { width: 92%; height: 92%; border: 0; border-radius: 50%; object-fit: contain; background: #fff6e6; box-shadow: 0 2px 8px rgba(0,0,0,0.45); }
