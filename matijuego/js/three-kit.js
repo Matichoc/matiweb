@@ -4,12 +4,12 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=d2f30b74ef";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=d2f30b74ef";
-import * as audio from "./audio.js?v=d2f30b74ef";
-import { recordRun, runBonus } from "./progression.js?v=d2f30b74ef";
-import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=d2f30b74ef";
-import { missionFor } from "./missions.js?v=d2f30b74ef";
+import { getOutfit } from "./characters.js?v=feef607504";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=feef607504";
+import * as audio from "./audio.js?v=feef607504";
+import { recordRun, runBonus } from "./progression.js?v=feef607504";
+import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=feef607504";
+import { missionFor } from "./missions.js?v=feef607504";
 
 export { THREE };
 
@@ -398,6 +398,26 @@ export class Game3D {
     new ResizeObserver(this._onResize).observe(wrap);
     this._onResize();
     this._loop = this._loop.bind(this);
+    // App en segundo plano (llamada, cambio de app): se guarda lo jugado y, al volver, hay una pausa corta
+    // para que el niño no pierda la partida de golpe.
+    this._onVis = () => {
+      if (document.visibilityState === "hidden") {
+        if (this.running && this.state === "playing") {
+          audio.stopMusic();
+          if (this.progress) saveProgress(this.progress);
+          this._wasHidden = true;
+        }
+      } else if (this._wasHidden) {
+        this._wasHidden = false;
+        if (this.running && this.state === "playing") {
+          this._freeze = 1.6;
+          this.lastTs = null;
+          this.banner("⏸ ¡Seguimos en un momento!");
+          if (this.musicTheme) audio.startMusic(this.musicTheme);
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", this._onVis);
     this.ready = true;
   }
 
@@ -590,6 +610,13 @@ export class Game3D {
     if (this.lastTs == null) this.lastTs = ts;
     const dt = Math.min(0.05, (ts - this.lastTs) / 1000);
     this.lastTs = ts;
+    if (this._freeze > 0) {
+      this._freeze -= dt;
+      if (this.composer) this.composer.render(dt);
+      else this.renderer.render(this.scene, this.camera);
+      requestAnimationFrame(this._loop);
+      return;
+    }
     this.time += dt;
     this._adaptQuality(dt);
     this.update(dt);
@@ -637,4 +664,22 @@ export class Game3D {
   playSound(name) {
     audio[name]?.();
   }
+}
+
+/** Libera de la GPU todo lo que cuelga de un objeto (geometrías, materiales y sus texturas). Si algo
+ * compartido se vuelve a usar, three.js lo sube de nuevo solo; lo importante es no acumular al reiniciar. */
+export function disposeTree(obj) {
+  obj.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+    for (const m of mats) {
+      for (const k of ["map", "emissiveMap", "alphaMap", "normalMap", "roughnessMap"]) if (m[k]) m[k].dispose();
+      m.dispose();
+    }
+  });
+}
+
+/** Libera solo las geometrías de un objeto (para lo que se crea y se quita todo el rato, con materiales compartidos). */
+export function disposeGeometries(obj) {
+  obj.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
 }
