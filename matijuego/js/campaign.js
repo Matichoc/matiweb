@@ -2,7 +2,8 @@
 // guarda sus estrellas (1 a 3). Los juegos "infinitos" no usan niveles: tienen su modo misiones
 // (ver js/missions.js). Todo vive en `progress.campaign[idJuego] = { unlocked, stars: { nivel: n } }`.
 
-import { saveProgress } from "./storage.js?v=f909fd82db";
+import { saveProgress } from "./storage.js?v=ffbc2f0677";
+import { demoAllows, showDemoWall } from "./demo.js?v=ffbc2f0677";
 
 export const LEVELS_PER_GAME = 20;
 
@@ -42,14 +43,15 @@ export function renderLevelPicker(el, { id, progress, selected, onSelect, total 
   const grid = document.createElement("div");
   grid.className = "lvl-grid";
   for (let n = 1; n <= total; n++) {
+    const demoOk = demoAllows(id, n); // en la demo de la web solo se juegan los primeros niveles
     const ok = n <= c.unlocked;
     const b = document.createElement("button");
     b.type = "button";
-    b.className = `lvl-btn${n === selected ? " sel" : ""}${ok ? "" : " locked"}`;
+    b.className = `lvl-btn${n === selected ? " sel" : ""}${ok && demoOk ? "" : " locked"}`;
     const st = c.stars[n] || 0;
-    b.innerHTML = ok ? `<b>${n}</b><i>${"★".repeat(st)}${"☆".repeat(3 - st)}</i>` : `<b>🔒</b><i>${n}</i>`;
-    b.disabled = !ok;
-    b.addEventListener("click", () => { onSelect(n); renderLevelPicker(el, { id, progress, selected: n, onSelect, total, open: false }); });
+    b.innerHTML = !demoOk ? `<b>📲</b><i>${n}</i>` : ok ? `<b>${n}</b><i>${"★".repeat(st)}${"☆".repeat(3 - st)}</i>` : `<b>🔒</b><i>${n}</i>`;
+    b.disabled = !ok && demoOk;
+    b.addEventListener("click", () => { if (!demoOk) { showDemoWall(); return; } onSelect(n); renderLevelPicker(el, { id, progress, selected: n, onSelect, total, open: false }); });
     grid.appendChild(b);
   }
   el.appendChild(grid);

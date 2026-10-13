@@ -4,12 +4,12 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=f909fd82db";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=f909fd82db";
-import * as audio from "./audio.js?v=f909fd82db";
-import { recordRun, runBonus } from "./progression.js?v=f909fd82db";
-import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=f909fd82db";
-import { missionFor } from "./missions.js?v=f909fd82db";
+import { getOutfit } from "./characters.js?v=ffbc2f0677";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=ffbc2f0677";
+import * as audio from "./audio.js?v=ffbc2f0677";
+import { recordRun, runBonus } from "./progression.js?v=ffbc2f0677";
+import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=ffbc2f0677";
+import { missionFor } from "./missions.js?v=ffbc2f0677";
 
 export { THREE };
 
@@ -94,6 +94,50 @@ export function loadTexture(url, { repeat = 0, anisotropy = 4 } = {}) {
     tex.repeat.set(repeat, repeat);
   }
   return tex;
+}
+
+let logoTex = null;
+/** Textura del logo de Matichoc (medallón redondo). Se comparte entre todos los juegos. */
+export function logoTexture() {
+  if (!logoTex) logoTex = loadTexture("assets/brand/logo-badge.png", { anisotropy: 8 });
+  return logoTex;
+}
+
+/**
+ * Logo de Matichoc como una lámina (para carteles, paredes, pisos y banderas). `size` es el diámetro.
+ * Con `lit` se ve igual de claro en la oscuridad (no recibe luces); si no, se mezcla con la escena.
+ */
+export function makeLogo(size = 2, { lit = true } = {}) {
+  const mat = lit
+    ? new THREE.MeshBasicMaterial({ map: logoTexture(), transparent: true, side: THREE.DoubleSide })
+    : new THREE.MeshStandardMaterial({ map: logoTexture(), transparent: true, side: THREE.DoubleSide, roughness: 0.6 });
+  return new THREE.Mesh(new THREE.PlaneGeometry(size, size), mat);
+}
+
+let coinTex = null;
+/** Moneda dorada con el logo de Matichoc (se dibuja a mano; el logo se agrega cuando carga). */
+export function goldCoinTexture() {
+  if (coinTex) return coinTex;
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = 128;
+  coinTex = new THREE.CanvasTexture(cv);
+  coinTex.colorSpace = THREE.SRGBColorSpace;
+  const draw = (img) => {
+    const g = cv.getContext("2d");
+    g.clearRect(0, 0, 128, 128);
+    const gr = g.createRadialGradient(50, 46, 8, 64, 64, 64);
+    gr.addColorStop(0, "#fff0a0"); gr.addColorStop(0.6, "#ffc800"); gr.addColorStop(1, "#c98a00");
+    g.fillStyle = gr; g.beginPath(); g.arc(64, 64, 62, 0, 6.3); g.fill();
+    g.strokeStyle = "#fff6c8"; g.lineWidth = 5; g.beginPath(); g.arc(64, 64, 55, 0, 6.3); g.stroke();
+    g.strokeStyle = "#b07a00"; g.lineWidth = 2; g.beginPath(); g.arc(64, 64, 49, 0, 6.3); g.stroke();
+    if (img) { g.save(); g.beginPath(); g.arc(64, 64, 45, 0, 6.3); g.clip(); g.drawImage(img, 19, 19, 90, 90); g.restore(); }
+    coinTex.needsUpdate = true;
+  };
+  draw(null);
+  const img = new Image();
+  img.onload = () => draw(img);
+  img.src = "assets/brand/logo-badge.png";
+  return coinTex;
 }
 
 export function canvasTexture(w, h, draw) {

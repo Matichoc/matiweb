@@ -6,14 +6,15 @@
 // Todo se guarda por perfil dentro de `progress` (xp, packs, album, daily) y se paga solo
 // con Matipuntos, sin compras reales.
 
-import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=f909fd82db";
-import { getItem } from "./wardrobe-data.js?v=f909fd82db";
-import { activeEvent, addEventTokens } from "./events.js?v=f909fd82db";
+import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=ffbc2f0677";
+import { getItem } from "./wardrobe-data.js?v=ffbc2f0677";
+import { activeEvent, addEventTokens } from "./events.js?v=ffbc2f0677";
+import { isUnlocked } from "./unlocks.js?v=ffbc2f0677";
 
 // ---------- partidas ----------
 
 /** Puntaje que equivale a 1 Matipunto al terminar una partida (cada juego puntúa distinto). */
-export const RUN_DIVISOR = { tetris: 40, basquet_tiros: 12, porristas: 8, salto: 25, autos: 30, memoria: 10, parkour: 40 };
+export const RUN_DIVISOR = { tetris: 40, basquet_tiros: 12, porristas: 8, salto: 25, autos: 30, memoria: 10, parkour: 40, futbol: 10, dulces: 15, aventura: 20, ciudad: 12 };
 const RUN_BONUS_CAP = 60;
 
 export function runBonus(gameId, score) {
@@ -25,6 +26,7 @@ export const GAME_NAMES = {
   parkour: "Parkour Choco", recolecta: "Recolecta y Corre", salto: "Salto Choco", autos: "Autos de Chocolate",
   tetris: "Tetris de Productos", memoria: "Memoria Matichoc", basquet_tiros: "Lanzamientos de Básquet",
   porristas: "Saltos de Porristas", creador: "Crea tu Chocolate", fps3d: "Choco Blaster",
+  futbol: "Fútbol Choco", dulces: "Choco Match", aventura: "Aventura Choco", ciudad: "Ciudad Choco",
 };
 
 // ---------- niveles ----------
@@ -78,8 +80,8 @@ export function addXp(progress, amount) {
 
 // ---------- misiones diarias ----------
 
-const SCORE_BASE = { tetris: 250, basquet_tiros: 60, salto: 700, autos: 700, parkour: 300, porristas: 60, memoria: 100, recolecta: 80 };
-const PLAY_GAMES = ["parkour", "salto", "autos", "tetris", "memoria", "basquet_tiros", "porristas", "recolecta"];
+const SCORE_BASE = { tetris: 250, basquet_tiros: 60, salto: 700, autos: 700, parkour: 300, porristas: 60, memoria: 100, recolecta: 80, futbol: 400, dulces: 1500, aventura: 800, ciudad: 600 };
+const PLAY_GAMES = ["parkour", "salto", "autos", "tetris", "memoria", "basquet_tiros", "porristas", "recolecta", "futbol", "dulces", "aventura", "ciudad"];
 
 function hashStr(s) {
   let h = 2166136261;
@@ -112,9 +114,11 @@ export const missionLabel = missionText;
 function makeMissions(progress, today) {
   const r = rng(hashStr(`${progress._profileId || "p"}|${today}`));
   const pick = (arr) => arr[Math.floor(r() * arr.length)];
-  const g1 = pick(PLAY_GAMES);
-  let g2 = pick(PLAY_GAMES.filter((g) => g !== g1));
-  const scoreGame = pick(Object.keys(SCORE_BASE));
+  // los juegos que se canjean con Matipuntos solo salen en las misiones si ya los desbloqueaste
+  const playable = PLAY_GAMES.filter((g) => isUnlocked(progress, g));
+  const g1 = pick(playable);
+  let g2 = pick(playable.filter((g) => g !== g1));
+  const scoreGame = pick(Object.keys(SCORE_BASE).filter((g) => isUnlocked(progress, g)));
   const best = getBestScore(progress, scoreGame) || 0;
   const base = SCORE_BASE[scoreGame];
   const target = Math.min(base * 3, Math.max(base, Math.round((best * 0.7) / 10) * 10));
@@ -278,6 +282,13 @@ export function recordRun(progress, gameId, score, info = {}) {
   d.best[gameId] = Math.max(d.best[gameId] || 0, Math.round(score || 0));
   if (info.meters) d.meters = Math.max(d.meters, info.meters);
   progress.stats.totalRuns = (progress.stats.totalRuns || 0) + 1;
+  // contadores de los juegos nuevos (para sus logros)
+  if (info.goals) st.goalsTotal = (st.goalsTotal || 0) + info.goals;
+  if (info.dianas) st.dianasTotal = (st.dianasTotal || 0) + info.dianas;
+  if (info.mode === "ata" && info.saves) st.ataSaves = (st.ataSaves || 0) + info.saves;
+  if (info.stomps) st.stompsTotal = (st.stompsTotal || 0) + info.stomps;
+  if (info.coins && gameId === "aventura") st.aventuraCoins = (st.aventuraCoins || 0) + info.coins;
+  if (info.specials) st.dulcesSpecials = (st.dulcesSpecials || 0) + info.specials;
 
   let xp = 20 + Math.min(40, Math.floor(((score || 0) / (RUN_DIVISOR[gameId] || 20)) * 0.8));
   if (first) xp += 20; // primera partida del día

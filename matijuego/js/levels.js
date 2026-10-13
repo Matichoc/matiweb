@@ -260,34 +260,36 @@ const BASE_LEVELS = [
   },
 ];
 
-// ---------- NIVELES 9 A 20 ----------
-// Las 8 canchas originales vuelven "de revancha": en espejo, con menos tiempo, guardias más rápidos
-// (y uno más), pasillos un poco más angostos y más golosinas que juntar. Cada una sube la dificultad.
+// ---------- LOS 20 NIVELES: UNA CURVA DE DIFICULTAD PAREJA ----------
+// Las 8 canchas originales se pueden usar "de revancha": en espejo, con menos tiempo, guardias más rápidos
+// (y uno más), pasillos más angostos y más golosinas que juntar. Para que la dificultad suba de a poco (y no
+// "difícil, fácil, fácil, fácil, difícil…"), cada nivel de 1 a 20 se elige midiendo qué tan difícil es cada
+// combinación (cancha + revancha) con `difficulty()` y tomando la que más se acerca a la dificultad que toca.
 
-const VARIANT_TAGS = ["en espejo", "turbo", "doble guardia", "contrarreloj", "extremo", "modo experto", "veloz", "sin descanso", "leyenda", "supremo", "campeonato", "gran maestro"];
+const VARIANT_TAGS = ["turbo", "doble guardia", "contrarreloj", "extremo", "modo experto", "veloz", "sin descanso", "leyenda", "supremo", "campeonato", "gran maestro", "imparable"];
 
-function pathPointAt(path, frac) {
-  let total = 0;
-  for (let i = 0; i < path.length - 1; i++) total += Math.hypot(path[i + 1].x - path[i].x, path[i + 1].y - path[i].y);
-  let left = total * frac;
-  for (let i = 0; i < path.length - 1; i++) {
-    const a = path[i], b = path[i + 1];
-    const len = Math.hypot(b.x - a.x, b.y - a.y);
-    if (left <= len) return { x: a.x + ((b.x - a.x) * left) / len, y: a.y + ((b.y - a.y) * left) / len };
-    left -= len;
-  }
-  return { ...path[path.length - 1] };
+/** Qué tan difícil es un nivel (número sin unidad; sirve para ordenar y para igualar los saltos). */
+export function difficulty(L) {
+  const speed = 190; // px/s aprox. del Matichico
+  const tight = pathLength(L.path) / (L.timeLimit * speed); // tiempo que hace falta / tiempo que hay
+  const need = L.target / L.timeLimit; // golosinas por segundo
+  const narrow = 130 / L.corridorWidth;
+  const g = (L.guards || []).reduce((a, x) => a + x.speed / 70, 0);
+  const mo = (L.movingObstacles || []).reduce((a, x) => a + x.speed / 80, 0);
+  const jump = (L.obstacles || []).filter((o) => o.jumpable).length;
+  return 3.2 * tight + 6 * need + 1.6 * narrow + 0.9 * g + 0.45 * mo + 0.22 * jump + 0.5 * (L.conveyors || []).length + (L.requiresFlag ? 0.4 : 0);
 }
 
-function makeVariant(base, n, k) {
-  const mirror = k % 2 === 1; // 1, 3, 5...: espejo; 2, 4, 6...: mismo sentido pero más difícil
+function makeVariant(base, n, k, mirror) {
   const mx = (x, w = 0) => (mirror ? CANVAS_W - x - w : x);
   const L = JSON.parse(JSON.stringify(base));
-  L.id = `${base.id}_v${k}`;
-  L.name = `Nivel ${n} · ${base.name.replace(/^Nivel \d+ · /, "")} (${VARIANT_TAGS[k - 1]})`;
+  L.id = `${base.id}${k ? `_v${k}` : ""}${mirror ? "_m" : ""}`;
+  const tags = [mirror ? "en espejo" : null, k ? VARIANT_TAGS[k - 1] : null].filter(Boolean);
+  L.name = `Nivel ${n} · ${base.name.replace(/^Nivel \d+ · /, "")}${tags.length ? ` (${tags.join(", ")})` : ""}`;
   L.path = L.path.map((p) => ({ x: mx(p.x), y: p.y }));
   if (L.flag) L.flag.x = mx(L.flag.x, L.flag.w);
   for (const key of ["obstacles", "movingObstacles", "conveyors"]) for (const o of L[key] || []) o.x = mx(o.x, o.w);
+  if (!k) return L;
   L.timeLimit = Math.round(base.timeLimit * Math.max(0.78, 1 - 0.03 * k));
   L.target = Math.min(base.target + Math.floor(k / 3), base.chocoCount + 2);
   L.chocoCount = Math.max(base.chocoCount, L.target + 2);
@@ -299,8 +301,39 @@ function makeVariant(base, n, k) {
   return L;
 }
 
-export const LEVELS = [...BASE_LEVELS];
-for (let n = BASE_LEVELS.length + 1; n <= 20; n++) LEVELS.push(makeVariant(BASE_LEVELS[(n - BASE_LEVELS.length - 1) % BASE_LEVELS.length], n, n - BASE_LEVELS.length));
+function buildCurve() {
+  const cands = [];
+  BASE_LEVELS.forEach((b, bi) => {
+    for (let k = 0; k <= 12; k++) for (const mirror of [false, true]) {
+      if (!k && mirror && bi < 0) continue;
+      const L = makeVariant(b, 0, k, mirror);
+      cands.push({ bi, k, mirror, D: difficulty(L) });
+    }
+  });
+  const total = 20;
+  const dMin = Math.min(...BASE_LEVELS.map((b) => difficulty(b)));
+  const dMax = 13.6;
+  const out = [];
+  const used = new Set();
+  let prev = -1;
+  for (let i = 0; i < total; i++) {
+    const target = dMin + ((dMax - dMin) * i) / (total - 1);
+    let best = null;
+    for (const c of cands) {
+      const key = `${c.bi}-${c.k}-${c.mirror}`;
+      if (used.has(key) || c.D < prev - 0.05) continue;
+      const recent = out.slice(-3).some((o) => o.bi === c.bi);
+      const score = Math.abs(c.D - target) + (recent ? 1.2 : 0);
+      if (!best || score < best.score) best = { ...c, key, score };
+    }
+    used.add(best.key);
+    prev = best.D;
+    out.push(best);
+  }
+  return out.map((c, i) => makeVariant(BASE_LEVELS[c.bi], i + 1, c.k, c.mirror));
+}
+
+export const LEVELS = buildCurve();
 
 // ---------- CAMINO / CORREDOR ----------
 

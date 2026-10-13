@@ -154,6 +154,14 @@ export function playPowerup() {
   [392, 523, 659, 880].forEach((f, i) => tone(f, 0.12, "square", 0.1, i * 0.05));
 }
 
+/** Bocina del auto (dos notitas). */
+export function playHorn() {
+  tone(392, 0.18, "square", 0.12);
+  tone(330, 0.18, "square", 0.1, 0.0);
+  tone(392, 0.25, "square", 0.12, 0.22);
+  tone(330, 0.25, "square", 0.1, 0.22);
+}
+
 export function playCountdown(go = false) {
   tone(go ? 880 : 440, go ? 0.3 : 0.12, "square", 0.13);
 }

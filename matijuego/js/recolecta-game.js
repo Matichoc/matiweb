@@ -7,13 +7,13 @@
 // cintas transportadoras, combo de golosinas, poderes (reloj, botas turbo, imán), impulso
 // con Shift, estrellas por nivel y música. Ahora son 8 canchas.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=f909fd82db";
-import { createMatichico } from "./matichico3d.js?v=f909fd82db";
-import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=f909fd82db";
-import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=f909fd82db";
-import { recordRun } from "./progression.js?v=f909fd82db";
-import * as audio from "./audio.js?v=f909fd82db";
-import { campaign, campaignWin, renderLevelPicker } from "./campaign.js?v=f909fd82db";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=ffbc2f0677";
+import { createMatichico } from "./matichico3d.js?v=ffbc2f0677";
+import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=ffbc2f0677";
+import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=ffbc2f0677";
+import { recordRun } from "./progression.js?v=ffbc2f0677";
+import * as audio from "./audio.js?v=ffbc2f0677";
+import { campaign, campaignWin, renderLevelPicker } from "./campaign.js?v=ffbc2f0677";
 
 const GAME_ID = "recolecta";
 const S = 0.04; // píxeles del nivel -> unidades 3D
@@ -144,7 +144,7 @@ export class RecolectaGame extends Game3D {
     this.keys = {};
     this.levelIndex = 0;
     this.q = els.q;
-    this.p = { x: 0, y: 0, radius: 16, speed: 190, facing: 0, isMoving: false, isJumping: false, jumpTimer: 0, jumpDuration: 0.45, jumpCooldown: 0, dash: 0, dashCd: 0, boots: 0, magnet: 0 };
+    this.p = { x: 0, y: 0, radius: 16, speed: 190, facing: 0, isMoving: false, isJumping: false, jumpTimer: 0, jumpDuration: 0.55, jumpCooldown: 0, dash: 0, dashCd: 0, boots: 0, magnet: 0 };
   }
 
   // ---------- escena ----------
@@ -260,6 +260,16 @@ export class RecolectaGame extends Game3D {
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     g.add(floor);
+
+    // el logo de Matichoc pintado en el piso del camino (en un lugar distinto según el nivel)
+    {
+      const total = pathLength(level.path);
+      const at = pointOnPath(level.path, total * (0.3 + 0.2 * ((this.levelIndex || 0) % 3)));
+      const logo = makeLogo(Math.min(3.4, level.corridorWidth * S * 0.8), { lit: false });
+      logo.rotation.x = -Math.PI / 2;
+      logo.position.set(wx(at.x), 0.03, wz(at.y));
+      g.add(logo);
+    }
 
     // muros: celdas del corredor unidas en bloques + borde
     const all = getObstacles(level);
@@ -425,6 +435,23 @@ export class RecolectaGame extends Game3D {
     hat.position.y = 1.55;
     g.add(hat);
     g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    // aviso de peligro: aro rojo en el piso y un "!" cuando te acercas (¡hay que saltar!)
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.28, 28), new THREE.MeshBasicMaterial({ color: 0xff3b3b, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false }));
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.05;
+    ring.visible = false;
+    const bang = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._bangTex || (this._bangTex = canvasTexture(64, 64, (c, w, h) => {
+      c.fillStyle = "#ff3b3b"; c.beginPath(); c.arc(w / 2, h / 2, 28, 0, 6.3); c.fill();
+      c.strokeStyle = "#fff"; c.lineWidth = 4; c.stroke();
+      c.fillStyle = "#fff"; c.font = "bold 44px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("!", w / 2, h / 2 + 3);
+    })), depthTest: false, transparent: true }));
+    bang.scale.set(0.9, 0.9, 1);
+    bang.position.y = 2.4;
+    bang.renderOrder = 10;
+    bang.visible = false;
+    g.add(ring, bang);
+    g.userData.ring = ring;
+    g.userData.bang = bang;
     return g;
   }
 
@@ -777,6 +804,13 @@ export class RecolectaGame extends Game3D {
       const b = 1 + Math.sin(this.time * 6 + gd.s * 0.05) * 0.05;
       gd.mesh.scale.set(2 - b, b, 2 - b);
       gd.mesh.visible = gd.cool <= 0 || Math.floor(this.time * 12) % 2 === 0;
+      const warn = !!gd.warn && gd.cool <= 0;
+      const ud = gd.mesh.userData;
+      if (ud.ring) {
+        ud.ring.visible = warn;
+        ud.bang.visible = warn;
+        if (warn) { const k = 1 + Math.sin(this.time * 12) * 0.12; ud.ring.scale.set(k, k, k); ud.bang.position.y = 2.4 + Math.abs(Math.sin(this.time * 9)) * 0.25; }
+      }
     }
     for (const c of this.conveyors || []) {
       if (c.tex) { c.tex.offset.x -= c.dx * dt * 0.8; c.tex.offset.y += c.dy * dt * 0.8; }
@@ -858,6 +892,7 @@ export class RecolectaGame extends Game3D {
 
   _updateGuards(dt) {
     const p = this.p;
+    let near = false;
     for (const gd of this.guards) {
       gd.s += gd.dir * gd.speed * dt;
       if (gd.s > gd.total) { gd.s = gd.total; gd.dir = -1; }
@@ -866,7 +901,17 @@ export class RecolectaGame extends Game3D {
       gd.x = pt.x;
       gd.y = pt.y;
       gd.cool = Math.max(0, gd.cool - dt);
-      if (gd.cool <= 0 && !p.isJumping && p.dash <= 0 && Math.hypot(gd.x - p.x, gd.y - p.y) < p.radius + 18) this._guardHit(gd);
+      const dist = Math.hypot(gd.x - p.x, gd.y - p.y);
+      gd.warn = dist < 150;
+      if (gd.warn) near = true;
+      if (gd.cool <= 0 && !p.isJumping && p.dash <= 0 && dist < p.radius + 13) this._guardHit(gd);
+    }
+    // pista: el botón de saltar late cuando un guardia está cerca (y la primera vez se explica con un cartel)
+    const jb = this.q("btn-jump");
+    if (jb) jb.classList.toggle("hint", near && !p.isJumping);
+    if (near && !this._guardTip) {
+      this._guardTip = true;
+      this.banner("👻 ¡Guardia! ¡SALTA! ⤴");
     }
   }
 
