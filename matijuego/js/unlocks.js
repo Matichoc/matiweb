@@ -4,8 +4,8 @@
 // PRECIO DE PRUEBA: mientras se prueban los juegos nuevos el costo es bajo para poder canjearlos rápido.
 // Para el lanzamiento se cambia a 20000 (una sola línea: UNLOCK_PRICE).
 
-import { spendCoins, saveProgress } from "./storage.js?v=feef607504";
-import { IS_DEMO } from "./demo.js?v=feef607504";
+import { spendCoins, saveProgress } from "./storage.js?v=64565862c1";
+import { IS_DEMO } from "./demo.js?v=64565862c1";
 
 const UNLOCK_PRICE = 300; // lanzamiento: 20000
 

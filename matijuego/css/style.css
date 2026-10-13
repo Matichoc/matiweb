@@ -1370,9 +1370,13 @@ html[data-app] .game-screen:not(.cr-screen) {
 .town-dialog .td-name { color: var(--rosa); font-family: var(--font-display); font-size: 1.1rem; }
 .town-dialog .td-text { font-size: 0.95rem; line-height: 1.3; }
 .town-dialog small { opacity: 0.55; font-size: 0.65rem; text-align: right; }
-@media (pointer: coarse) { .town-action { bottom: auto; top: 14px; font-size: 0.9rem; padding: 10px 16px; } .town-dialog { bottom: auto; top: 70px; } }
-@media (max-width: 760px) { .town-action { left: auto; right: 12px; transform: none; top: auto; bottom: 28px; max-width: 58%; animation: none; } .town-dialog { top: 14px; } }
-.canvas-wrap:has(.overlay:not(.hidden)) :is(.town-action) { display: none !important; }
+/* en el celular el botón "Hablar con…" va abajo a la derecha (al alcance del pulgar, sin tapar la vista) y el diálogo abajo al centro */
+@media (pointer: coarse) {
+  .town-action { left: auto; right: 12px; top: auto; bottom: 12px; transform: none; max-width: 52%; font-size: 0.9rem; padding: 10px 16px; animation: none; }
+  .town-dialog { top: auto; bottom: 12px; width: min(480px, 56%); }
+}
+@media (pointer: coarse) and (orientation: portrait) { .town-action { bottom: 28px; max-width: 70%; } .town-dialog { width: 92%; bottom: 84px; } }
+.canvas-wrap:has(.overlay:not(.hidden)) :is(.town-action), .canvas-wrap:has(.town-dialog:not(.hidden)) .town-action { display: none !important; }
 
 /* ---------- Eventos de temporada ---------- */
 .event-banner { --ev: #ff8a2a; display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 10px; border-radius: 16px; border: 3px solid var(--ev); background: linear-gradient(90deg, color-mix(in srgb, var(--ev) 35%, #2e1a18), #2e1a18); box-shadow: 0 0 16px color-mix(in srgb, var(--ev) 55%, transparent); }
