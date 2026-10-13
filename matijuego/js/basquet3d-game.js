@@ -8,11 +8,11 @@
 // puntería cambia en cada tiro, las rachas te ponen "en llamas" (zonas más grandes y puntos
 // multiplicados), los swish y los aros dorados regalan segundos extra, y suena la hinchada.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=c4a0f25f81";
-import { createMatichico } from "./matichico3d.js?v=c4a0f25f81";
-import { saveProgress, earnCoins } from "./storage.js?v=c4a0f25f81";
-import * as audio from "./audio.js?v=c4a0f25f81";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=c4a0f25f81";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=ffbc2f0677";
+import { createMatichico } from "./matichico3d.js?v=ffbc2f0677";
+import { saveProgress, earnCoins } from "./storage.js?v=ffbc2f0677";
+import * as audio from "./audio.js?v=ffbc2f0677";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=ffbc2f0677";
 
 const GAME_ID = "basquet_tiros";
 const TIME_LIMIT = 60;

@@ -9,14 +9,14 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=c4a0f25f81";
-import { createMatichico } from "./matichico3d.js?v=c4a0f25f81";
-import { CHARACTERS, getOutfit } from "./characters.js?v=c4a0f25f81";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=c4a0f25f81";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=c4a0f25f81";
-import { recordRun } from "./progression.js?v=c4a0f25f81";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=c4a0f25f81";
-import * as audio from "./audio.js?v=c4a0f25f81";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=ffbc2f0677";
+import { createMatichico } from "./matichico3d.js?v=ffbc2f0677";
+import { CHARACTERS, getOutfit } from "./characters.js?v=ffbc2f0677";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=ffbc2f0677";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=ffbc2f0677";
+import { recordRun } from "./progression.js?v=ffbc2f0677";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=ffbc2f0677";
+import * as audio from "./audio.js?v=ffbc2f0677";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60

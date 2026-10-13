@@ -1603,3 +1603,23 @@ details.how > :not(summary) { font-size: 0.85rem; margin: 6px 0 0; }
 .cl-card { width: min(640px, 94%); }
 @media (max-width: 760px), (max-height: 520px) { .canvas-wrap canvas.cd-map { width: 84px; height: 84px; top: 6px; right: 6px; } .cd-compass { top: 94px; right: 6px; font-size: 0.75rem; } .cd-quest { max-width: 40%; padding: 5px 9px; top: 6px; left: 6px; } .cd-quest .qs { font-size: 0.72rem; } .cd-quest .qt { font-size: 0.8rem; } .cd-toast { bottom: 70px; font-size: 0.82rem; } .cd-horn { bottom: 120px; right: 10px; width: 48px; height: 48px; } }
 .canvas-wrap:has(.overlay:not(.hidden)) :is(.cd-horn, .cd-quest, .cd-compass, .cd-map) { display: none !important; }
+
+/* Corre y Recolecta: joystick a la izquierda y los dos botones juntos, a la derecha (Impulso arriba-izquierda, Saltar grande abajo) */
+.rc-actions { display: flex; align-items: flex-end; gap: 12px; pointer-events: none; }
+.rc-actions > * { pointer-events: auto; }
+.rc-actions .dpad-btn { border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; padding: 0; font-weight: 800; }
+.rc-actions .dpad-btn small { font-size: 0.6rem; font-weight: 800; margin-top: 2px; }
+.rc-jump { width: 88px; height: 88px; font-size: 2.1rem; background: rgba(255,200,0,0.82) !important; color: #3d1f10 !important; border-color: #fff !important; }
+.rc-dash { width: 66px; height: 66px; font-size: 1.5rem; margin-bottom: 30px; background: rgba(53,240,255,0.78) !important; color: #06303a !important; border-color: #fff !important; }
+.rc-jump:active, .rc-dash:active { transform: scale(0.94); }
+#recolecta-touch { justify-content: space-between !important; }
+@media (pointer: coarse) and (orientation: landscape) { #basquet-touch-controls > * { margin-right: 54px; } }
+
+.rc-jump.hint { animation: rc-pulse 0.5s ease-in-out infinite; box-shadow: 0 0 0 4px rgba(255,59,59,0.85), 0 0 22px rgba(255,59,59,0.9); }
+@keyframes rc-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14); } }
+
+.wr-card { width: min(420px, 92vw); max-height: 88vh; overflow: auto; }
+.wr-card select { width: 100%; padding: 8px 10px; border-radius: 10px; border: 2px solid var(--dorado); background: #fff6e6; color: #3d1f10; font-size: 1rem; margin: 6px 0; }
+.wr-list { text-align: left; padding-left: 28px; margin: 8px 0 12px; }
+.wr-list li { padding: 5px 0; border-bottom: 1px dashed rgba(255,246,230,0.25); display: flex; justify-content: space-between; gap: 10px; }
+.wr-list li b { color: var(--dorado); }
