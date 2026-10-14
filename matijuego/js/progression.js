@@ -6,10 +6,10 @@
 // Todo se guarda por perfil dentro de `progress` (xp, packs, album, daily) y se paga solo
 // con Matipuntos, sin compras reales.
 
-import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=feef607504";
-import { getItem } from "./wardrobe-data.js?v=feef607504";
-import { activeEvent, addEventTokens } from "./events.js?v=feef607504";
-import { isUnlocked } from "./unlocks.js?v=feef607504";
+import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=64565862c1";
+import { getItem } from "./wardrobe-data.js?v=64565862c1";
+import { activeEvent, addEventTokens } from "./events.js?v=64565862c1";
+import { isUnlocked } from "./unlocks.js?v=64565862c1";
 
 // ---------- partidas ----------
 
@@ -202,7 +202,7 @@ export function hasPending(progress) {
 
 // ---------- álbum ----------
 // Las figuritas, los sobres y las repetidas viven en js/album.js (aquí se re-exportan para el resto de la app).
-export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=feef607504";
+export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=64565862c1";
 
 // ---------- el gancho que se llama al terminar una partida ----------
 
@@ -220,7 +220,11 @@ export function recordRun(progress, gameId, score, info = {}) {
   const st = progress.stats;
   st.runsBy = st.runsBy || {};
   st.runsBy[gameId] = (st.runsBy[gameId] || 0) + 1;
-  if (st.lastPlayDay !== d.date) { st.lastPlayDay = d.date; st.playDays = (st.playDays || 0) + 1; }
+  if (st.lastPlayDay !== d.date) {
+    st.lastPlayDay = d.date;
+    st.playDays = (st.playDays || 0) + 1;
+    st.playDayList = [...(st.playDayList || []), d.date].slice(-30); // para ver en qué días jugó (panel del creador)
+  }
   d.best[gameId] = Math.max(d.best[gameId] || 0, Math.round(score || 0));
   if (info.meters) d.meters = Math.max(d.meters, info.meters);
   progress.stats.totalRuns = (progress.stats.totalRuns || 0) + 1;

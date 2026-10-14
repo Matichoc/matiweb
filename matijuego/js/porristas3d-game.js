@@ -3,11 +3,11 @@
 // cae; rebotar centrado suma combo (¡y hace volteretas!), los pompones dan puntos extra.
 // Si cae fuera de la rebotadora, se acaba la partida. Las reglas son las de siempre.
 
-import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=feef607504";
-import { createMatichico } from "./matichico3d.js?v=feef607504";
-import { saveProgress, earnCoins } from "./storage.js?v=feef607504";
-import * as audio from "./audio.js?v=feef607504";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=feef607504";
+import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=64565862c1";
+import { createMatichico } from "./matichico3d.js?v=64565862c1";
+import { saveProgress, earnCoins } from "./storage.js?v=64565862c1";
+import * as audio from "./audio.js?v=64565862c1";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=64565862c1";
 
 const GAME_ID = "porristas";
 const PX_W = 800;
@@ -309,6 +309,7 @@ export class Porristas3DGame extends Game3D {
     this.centered = 0;
     this.paddle = { x: PX_W / 2, w: PADDLE_BASE_W };
     this.pompom = null;
+    this._prevC = null;
     this.pompomTimer = rand(3, 5);
     this.net = false;
     this.wideT = 0;
@@ -369,6 +370,7 @@ export class Porristas3DGame extends Game3D {
           audio.playWhoosh();
         }
       }
+      this._prevC = { x: c.x, y: c.y };
       c.vy += GRAVITY * dt;
       c.x += c.vx * dt;
       c.y += c.vy * dt;
@@ -387,8 +389,16 @@ export class Porristas3DGame extends Game3D {
 
   _updatePompom(dt) {
     if (this.pompom) {
-      const d = Math.hypot(this.pompom.x - this.char.x, this.pompom.y - this.char.y);
-      if (d < 30) {
+      // se mide contra el cuerpo de la porrista (no contra los pies) y a lo largo de todo el trayecto del cuadro,
+      // para que pasar por encima del premio, aunque sea rápido, lo tome
+      const c = this.char;
+      const BODY = 50; // px desde los pies hasta el centro del cuerpo
+      const prev = this._prevC || { x: c.x, y: c.y };
+      const ax = prev.x, ay = prev.y - BODY, bx = c.x, by = c.y - BODY;
+      const sx = bx - ax, sy = by - ay, len2 = sx * sx + sy * sy;
+      const k = len2 > 0 ? clamp(((this.pompom.x - ax) * sx + (this.pompom.y - ay) * sy) / len2, 0, 1) : 0;
+      const d = Math.hypot(this.pompom.x - (ax + sx * k), this.pompom.y - (ay + sy * k));
+      if (d < 46) {
         const golden = this.pompom.kind === "golden";
         const kind = this.pompom.kind;
         this.score += golden ? 15 : 5;
