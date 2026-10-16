@@ -6,11 +6,11 @@
 //
 // Controles: ← → / A D para moverte, ESPACIO / ↑ / W para saltar. En el celular: ◀ ▶ y ⤴.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeLogo, goldCoinTexture, disposeGeometries } from "./three-kit.js?v=64565862c1";
-import { createMatichico } from "./matichico3d.js?v=64565862c1";
-import { saveProgress } from "./storage.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=64565862c1";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeLogo, goldCoinTexture, disposeGeometries } from "./three-kit.js?v=71b37ac21d";
+import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
+import { saveProgress } from "./storage.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=71b37ac21d";
 
 const GAME_ID = "aventura";
 const H = 18; // alto del mapa en casillas
@@ -20,6 +20,7 @@ const JUMP_V = 15;
 const RUN_V = 7.4;
 const PW = 0.5; // ancho del Matichico (casillas)
 const PH = 1.05; // alto
+const PH_BIG = 1.55; // alto con el hongo
 const COYOTE = 0.1;
 const BUFFER = 0.13;
 const BIG_V = 6; // rebote al pisar
@@ -53,8 +54,9 @@ export function buildLevel(L) {
   const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
   const chance = (p) => rng() < p;
   const W = (isBoss ? 90 : 150 + L * 4) + 40;
-  const map = Array.from({ length: H }, () => new Array(W + 20).fill("."));
-  const set = (x, y, ch) => { if (x >= 0 && x < W + 20 && y >= 0 && y < H) map[y][x] = ch; };
+  const map = Array.from({ length: H }, () => new Array(W + 60).fill("."));
+  const set = (x, y, ch) => { if (x >= 0 && x < W + 60 && y >= 0 && y < H) map[y][x] = ch; };
+  const warpCandidates = []; // tuberías donde se puede entrar a la sala secreta
   const ground = (x0, x1, h = 2) => { for (let x = x0; x < x1; x++) for (let y = 0; y < h; y++) set(x, y, "#"); };
   const coins = [];
   const enemies = [];
@@ -70,6 +72,27 @@ export function buildLevel(L) {
   x = 10;
 
   const enemy = (ex, ey, type = "E") => enemies.push({ x: ex, y: ey, type });
+
+  /** Ningún bloque flotante queda sobre un hueco o unas púas, ni justo antes ni justo después: así el salto nunca choca con la cabeza. */
+  function clearBlocksNearHazards() {
+    const Wd = map[0].length;
+    const hazard = (xx) => map[0][xx] === "." || map[1][xx] === "." || map.some((row) => row[xx] === "^");
+    const bad = new Array(Wd).fill(false);
+    for (let xx = 0; xx < Wd; xx++) if (hazard(xx)) for (let k = -5; k <= 3; k++) if (xx + k >= 0 && xx + k < Wd) bad[xx + k] = true;
+    for (let yy = 2; yy < H; yy++) for (let xx = 0; xx < Wd; xx++) {
+      const ch = map[yy][xx];
+      if ((ch === "?" || ch === "B") && bad[xx] && map[yy - 1][xx] === ".") map[yy][xx] = "."; // solo los que flotan (las torres de ladrillos salen del suelo)
+    }
+    // que siempre queden unos cuantos bloques ? en lugares despejados (suelo parejo y sin peligros cerca)
+    let count = 0;
+    for (const row of map) for (const ch of row) if (ch === "?") count++;
+    for (let xx = 20; xx < Wd - 30 && count < 4; xx += 3) {
+      let flat = true;
+      for (let k = -3; k <= 3 && flat; k++) flat = !bad[xx + k] && map[1][xx + k] === "#" && map[2][xx + k] === "." && map[3][xx + k] === "." && map[4][xx + k] === ".";
+      const near = map[4].slice(Math.max(0, xx - 14), xx + 14).includes("?") || map[4].slice(Math.max(0, xx - 14), xx + 14).includes("B");
+      if (flat && !near) { map[4][xx] = "?"; count++; }
+    }
+  }
 
   const chunks = {
     flat() {
@@ -115,7 +138,7 @@ export function buildLevel(L) {
     qblocks() {
       const n = ri(8, 11);
       ground(x, x + n, gh);
-      const by = gh + 3;
+      const by = gh + 2; // bajitos: se pueden golpear y subir encima para tomar el premio
       const bx = x + ri(2, 4);
       const cnt = ri(1, 3);
       for (let i = 0; i < cnt; i++) set(bx + i * 2, by, chance(0.5) ? "?" : "B");
@@ -129,6 +152,7 @@ export function buildLevel(L) {
       const h = ri(2, 3);
       const px = x + ri(3, 4);
       for (let y = gh; y < gh + h; y++) set(px, y, "P");
+      warpCandidates.push({ x: px, top: gh + h });
       arc(px - 1, 3, gh + h + 1, 0.8);
       if (chance(0.5 + diff * 0.3) && px + 3 < x + n - 3) enemy(px + 2, gh);
       x += n;
@@ -150,12 +174,12 @@ export function buildLevel(L) {
       x += n;
     },
     tower() {
-      const n = ri(9, 12);
+      const n = ri(12, 14); // con sitio de sobra antes y después de la torre
       ground(x, x + n, gh);
-      const tx = x + 3;
-      for (let i = 0; i < 3; i++) for (let y = gh; y < gh + 3; y++) set(tx + i, y, "B");
-      coin(tx + 1, gh + 4);
-      coin(tx, gh + 4); coin(tx + 2, gh + 4);
+      const tx = x + 4;
+      for (let i = 0; i < 3; i++) for (let y = gh; y < gh + 2; y++) set(tx + i, y, "B"); // de 2 de alto: se salta sin apuros
+      coin(tx + 1, gh + 3);
+      coin(tx, gh + 3); coin(tx + 2, gh + 3);
       x += n;
     },
     flyers() {
@@ -182,7 +206,7 @@ export function buildLevel(L) {
     const ax = x;
     ground(ax, ax + 34, 2);
     for (let y = 2; y < 9; y++) set(ax + 33, y, "#");
-    set(ax + 10, 5, "?"); set(ax + 22, 5, "?"); // dos bloques ? por si necesitas un corazón
+    set(ax + 10, 4, "?"); set(ax + 22, 4, "?"); // dos bloques ? por si necesitas un corazón
     for (let i = 0; i < 3; i++) set(ax + 15 + i, 7, "=");
     for (let y = 2; y < 6; y++) set(ax + 30, y, "."); // salida cerrada por la pared hasta vencer
     x = ax + 34;
@@ -194,8 +218,13 @@ export function buildLevel(L) {
 
   const target = 150 + L * 4;
   let guardN = 0;
+  let lastObstacle = false; // el tramo anterior tenía tubería, torre o escalones
   while (x < target && guardN++ < 80) {
-    chunks[pool[ri(0, pool.length - 1)]]();
+    const name = pool[ri(0, pool.length - 1)];
+    // antes de un hueco o unas púas siempre hay suelo parejo para tomar carrera
+    if ((name === "gap" || name === "spikes") && lastObstacle) { ground(x, x + 5, gh); x += 5; }
+    chunks[name]();
+    lastObstacle = ["pipe", "tower", "steps", "platforms"].includes(name);
     if (x - (checkpoints[checkpoints.length - 1] || 0) > 46 && x < target - 20) {
       checkpoints.push(x);
       ground(x, x + 4, gh);
@@ -204,9 +233,11 @@ export function buildLevel(L) {
     // a veces, bloques de ? sueltos con alfajores
     if (chance(0.25)) {
       const bx = x - ri(4, 8);
-      set(bx, gh + 3, chance(0.5) ? "?" : "B");
+      set(bx, gh + 2, chance(0.5) ? "?" : "B");
     }
   }
+  clearBlocksNearHazards();
+  if (!warpCandidates.length) chunks.pipe(); // que todos los niveles (menos los de jefe) tengan una tubería mágica
   ground(x, x + 14, 2);
   gh = 2;
   const flagX = x + 9;
@@ -215,7 +246,26 @@ export function buildLevel(L) {
   function finish(extra) {
     const maxX = extra.flagX + 8;
     for (let xx = maxX; xx < W + 20; xx++) for (let y = 0; y < 2; y++) set(xx, y, "#");
-    return { map, W: maxX + 4, start, coins, enemies, checkpoints, ...extra, world, isBoss };
+    // sala secreta: se entra por una tubería (⬇ encima de ella) y trae alfajores y un bloque ? especial; se sale por su propia tubería
+    let warp = null;
+    let bonus = null;
+    if (!isBoss && warpCandidates.length) {
+      const wc = warpCandidates[Math.floor(rng() * warpCandidates.length)];
+      const bx0 = maxX + 6;
+      const bw = 24;
+      for (let xx = bx0 - 1; xx <= bx0 + bw; xx++) {
+        for (let y = 0; y < 2; y++) set(xx, y, "#");
+        for (let y = 8; y < 10; y++) set(xx, y, "#");
+      }
+      for (let y = 0; y < H; y++) { set(bx0 - 1, y, "#"); set(bx0 + bw, y, "#"); }
+      for (let xx = bx0 + 3; xx < bx0 + bw - 5; xx++) { coins.push([xx, 3, 1]); set(xx, 3, "o"); if (xx % 2) { coins.push([xx, 5, 1]); set(xx, 5, "o"); } }
+      set(bx0 + 11, 4, "?"); // el premio gordo de la sala
+      const ex = bx0 + bw - 3;
+      for (let y = 2; y < 4; y++) set(ex, y, "P");
+      warp = { x: wc.x, top: wc.top };
+      bonus = { x0: bx0, x1: bx0 + bw, exitX: ex, exitTop: 4, qx: bx0 + 11, qy: 4 };
+    }
+    return { map, W: maxX + 4, start, coins, enemies, checkpoints, ...extra, world, isBoss, warp, bonus };
   }
 }
 
@@ -231,13 +281,19 @@ function questionTexture() {
 export class AventuraGame extends Game3D {
   constructor(character, progress, els) {
     super(GAME_ID, character, progress, els, { fov: 40 });
+    this.kawaii = true; // ambiente kawaii: pastel, sombreado por tonos, pétalos y estrellitas
+    this.ambientOpts = { petals: 28, hearts: 5, stars: 18, radius: 14, height: 9 };
     this.musicTheme = "adventure";
+    this.energyEvery = 20; // 1 ⚡ cada 20 s de juego
     this.q = els.q;
-    this.keys = { left: false, right: false, jump: false };
+    this.keys = { left: false, right: false, jump: false, down: false, fire: false };
     this.level = 1;
     this.camX = 0;
     this.camY = 3;
   }
+
+  /** Alto del Matichico: crece con el hongo. */
+  get ph() { return this.player && this.player.power >= 1 ? PH_BIG : PH; }
 
   // ---------- escena ----------
 
@@ -303,12 +359,16 @@ export class AventuraGame extends Game3D {
     const box = new THREE.BoxGeometry(1, 1, 1.5);
     const cap = new THREE.BoxGeometry(1.02, 0.22, 1.54);
     const map = L.map;
-    const W = L.W + 10;
+    const W = L.bonus ? L.bonus.x1 + 6 : L.W + 10;
     const dirt = [];
     const grass = [];
     const brick = [];
     const pipes = [];
+    const warpPipes = [];
     const plats = [];
+    this.items = [];
+    this.fireballs = [];
+    this.warpSprites = [];
     this.solidMeshes = {};
     this.qBlocks = [];
     this.spikes = [];
@@ -316,7 +376,7 @@ export class AventuraGame extends Game3D {
       const ch = map[y][x];
       if (ch === "#") { dirt.push([x, y]); if (!SOLID.has(map[y + 1] && map[y + 1][x])) grass.push([x, y]); }
       else if (ch === "B") brick.push([x, y]);
-      else if (ch === "P") pipes.push([x, y]);
+      else if (ch === "P") ((L.warp && x === L.warp.x) || (L.bonus && x === L.bonus.exitX) ? warpPipes : pipes).push([x, y]);
       else if (ch === "=") plats.push([x, y]);
       else if (ch === "?") this.qBlocks.push({ x, y, used: false, mesh: null });
       else if (ch === "^") this.spikes.push([x, y]);
@@ -335,10 +395,24 @@ export class AventuraGame extends Game3D {
     inst(cap, grassMat, grass, 1.0 - 0.02, false);
     inst(box, brickMat, brick);
     inst(new THREE.CylinderGeometry(0.5, 0.5, 1, 14), pipeMat, pipes);
+    inst(new THREE.CylinderGeometry(0.5, 0.5, 1, 14), std(0x35c8ff, 0.35, { emissive: 0x0a5a7a, emissiveIntensity: 0.35 }), warpPipes); // tuberías mágicas: ⬇ para entrar
     inst(new THREE.BoxGeometry(1, 0.28, 1.4), std(0xfff6e6, 0.5), plats, 0.86);
     // bloques ?
     const qMat = new THREE.MeshStandardMaterial({ map: this.qTex, roughness: 0.4, emissive: 0x6a4a00, emissiveIntensity: 0.3 });
     this.usedMat = std(0x8a7a6a, 0.8);
+    // qué trae cada bloque ?: el primero siempre un hongo (para aprender), el resto al azar (y el de la sala secreta, una vida extra)
+    const rq = mulberry32(this.level * 31 + 7);
+    let lifeGiven = false;
+    this.qBlocks.sort((a, b) => a.x - b.x);
+    this.qBlocks.forEach((qb, i) => {
+      if (L.bonus && qb.x === L.bonus.qx && qb.y === L.bonus.qy) qb.kind = "life";
+      else if (i === 0) qb.kind = "power";
+      else {
+        const r = rq();
+        qb.kind = r < 0.42 ? "coins" : r < 0.72 ? "power" : r < 0.9 ? "heart" : !lifeGiven ? "life" : "coins";
+        if (qb.kind === "life") lifeGiven = true;
+      }
+    });
     for (const qb of this.qBlocks) {
       const m = new THREE.Mesh(box, qMat);
       m.position.set(qb.x + 0.5, qb.y + 0.5, 0);
@@ -358,13 +432,22 @@ export class AventuraGame extends Game3D {
       }
     }
     // alfajores (monedas)
-    this.coinList = L.coins.map(([x, y]) => ({ x: x + 0.5, y: y + 0.5, got: false }));
+    this.coinList = L.coins.map(([x, y, b]) => ({ x: x + 0.5, y: y + 0.5, got: false, bonus: !!b }));
     const coinGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 18);
     const creamM = std(0xe0a800, 0.3, { metalness: 0.6, emissive: 0x5a3a00, emissiveIntensity: 0.35 });
     const coinMats = [creamM, new THREE.MeshStandardMaterial({ map: this.coinTex, roughness: 0.35, metalness: 0.3 }), creamM];
     this.coinMesh = new THREE.InstancedMesh(coinGeo, coinMats, Math.max(1, this.coinList.length));
     this.coinMesh.frustumCulled = false;
     this.levelGroup.add(this.coinMesh);
+    // flechas ⬇ que invitan a entrar a las tuberías mágicas
+    for (const [wx, wy] of [L.warp && [L.warp.x, L.warp.top], L.bonus && [L.bonus.exitX, L.bonus.exitTop]].filter(Boolean)) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._powTex("⬇", 0x35c8ff), transparent: true, depthTest: false }));
+      sp.scale.set(0.95, 0.95, 1);
+      sp.position.set(wx + 0.5, wy + 0.9, 0.6);
+      sp.renderOrder = 9;
+      this.levelGroup.add(sp);
+      this.warpSprites.push({ sp, y: wy + 0.9 });
+    }
     // bandera de meta y castillo
     this._buildFlag(L.flagX);
     // fondo con paralaje
@@ -522,8 +605,12 @@ export class AventuraGame extends Game3D {
     this._buildScene();
     const p = (this.player = {
       x: this.lv.start.x + 0.5, y: this.lv.start.y, vx: 0, vy: 0, face: 1, ground: false, coyote: 0, buffer: 0, jumpHeld: false,
-      invuln: 0, dead: false, deadT: 0, win: false, winT: 0, anim: "idle",
+      invuln: 0, dead: false, deadT: 0, win: false, winT: 0, anim: "idle", power: 0, fireCd: 0, warpCd: 0, grow: 1,
     });
+    this.lives = 0; // vidas extra (se ganan con los tréboles 🍀 y cada 50 alfajores)
+    this.lifeCoins = 0;
+    this.inBonus = false;
+    this.fireballs = [];
     this.spawn = { x: p.x, y: p.y };
     this.hearts = 3;
     this.maxHearts = 3;
@@ -538,7 +625,7 @@ export class AventuraGame extends Game3D {
     this.camY = 4;
     this.timeLeft = 0;
     this.bossWallOpen = false;
-    this.keys = { left: false, right: false, jump: false };
+    this.keys = { left: false, right: false, jump: false, down: false, fire: false };
     this.hitQ = new Set();
     this._applyBossWall(true);
     this._fit();
@@ -581,21 +668,23 @@ export class AventuraGame extends Game3D {
   }
 
   _bindInput() {
-    const km = { ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right", ArrowUp: "jump", KeyW: "jump", Space: "jump", KeyK: "jump" };
+    const km = { ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right", ArrowUp: "jump", KeyW: "jump", Space: "jump", KeyK: "jump", ArrowDown: "down", KeyS: "down", KeyF: "fire", KeyJ: "fire", ShiftLeft: "fire", ShiftRight: "fire" };
     window.addEventListener("keydown", (e) => {
       if (!this.running) return;
       const k = km[e.code];
       if (!k) return;
       e.preventDefault();
       if (k === "jump" && !this.keys.jump && this.state === "playing") this.player.buffer = BUFFER;
+      if (k === "fire" && !this.keys.fire && this.state === "playing") this._shoot();
+      if (k === "down") this._downLatch = true;
       this.keys[k] = true;
     });
     window.addEventListener("keyup", (e) => { const k = km[e.code]; if (k) this.keys[k] = false; });
-    window.addEventListener("blur", () => { this.keys = { left: false, right: false, jump: false }; });
+    window.addEventListener("blur", () => { this.keys = { left: false, right: false, jump: false, down: false, fire: false }; });
     const hold = (id, k) => {
       const b = this.q(id);
       if (!b) return;
-      const on = (e) => { e.preventDefault(); if (k === "jump" && !this.keys.jump && this.state === "playing") this.player.buffer = BUFFER; this.keys[k] = true; };
+      const on = (e) => { e.preventDefault(); if (k === "jump" && !this.keys.jump && this.state === "playing") this.player.buffer = BUFFER; if (k === "fire" && this.state === "playing") this._shoot(); if (k === "down") this._downLatch = true; this.keys[k] = true; };
       const off = (e) => { e.preventDefault(); this.keys[k] = false; };
       b.addEventListener("pointerdown", on);
       b.addEventListener("pointerup", off);
@@ -605,6 +694,8 @@ export class AventuraGame extends Game3D {
     hold("btn-left", "left");
     hold("btn-right", "right");
     hold("btn-jump", "jump");
+    hold("btn-down", "down");
+    hold("btn-fire", "fire");
   }
 
   // ---------- bucle ----------
@@ -615,6 +706,9 @@ export class AventuraGame extends Game3D {
     const playing = this.state === "playing";
     if (playing) {
       this._updatePlayer(dt);
+      this._updateItems(dt);
+      this._updateFire(dt);
+      this._updateWarp(dt);
       this._updateEnemies(dt);
       this._updateBoss(dt);
       this._collect();
@@ -670,16 +764,16 @@ export class AventuraGame extends Game3D {
     p.y += p.vy * dt;
     p.ground = false;
     this._collideY(p, prevY);
-    p.x = clamp(p.x, 0.4, this.lv.W - 0.4);
+    p.x = clamp(p.x, this.inBonus ? this.lv.bonus.x0 + 0.4 : 0.4, this.inBonus ? this.lv.bonus.x1 - 0.4 : this.lv.W - 0.4);
     // al pie de los pinchos
     for (const [sx, sy] of this.spikes) {
-      if (p.x + PW / 2 > sx + 0.12 && p.x - PW / 2 < sx + 0.88 && p.y < sy + 0.5 && p.y + PH > sy) this._hurt(0, true);
+      if (p.x + PW / 2 > sx + 0.12 && p.x - PW / 2 < sx + 0.88 && p.y < sy + 0.5 && p.y + this.ph > sy) this._hurt(0, true);
     }
     // se cayó a un pozo
-    if (p.y < -2.5) this._fall();
+    if (p.y < -2.5 && !this.inBonus) this._fall();
     p.anim = !p.ground ? "jump" : Math.abs(p.vx) > 0.8 ? "run" : "idle";
     // checkpoints
-    this.lv.checkpoints.forEach((cx, i) => { if (i > this.checkpointIdx && p.x > cx + 1) { this.checkpointIdx = i; this.spawn = { x: cx + 1.5, y: this._groundY(cx + 1.5) }; this.banner("¡Punto de control!"); audio.playPowerup(); } });
+    if (!this.inBonus) this.lv.checkpoints.forEach((cx, i) => { if (i > this.checkpointIdx && p.x > cx + 1) { this.checkpointIdx = i; this.spawn = { x: cx + 1.5, y: this._groundY(cx + 1.5) }; this.banner("¡Punto de control!"); audio.playPowerup(); } });
     // jefe: cuando entras a la arena se cierra la puerta de atrás (ya está) y suena la música
     if (this.lv.isBoss && !this.bossIntro && p.x > this.lv.arenaX + 3) { this.bossIntro = true; this.banner("¡Jefe del mundo!"); }
   }
@@ -691,7 +785,7 @@ export class AventuraGame extends Game3D {
 
   _collideX(p) {
     const hw = PW / 2;
-    for (const yy of [p.y + 0.1, p.y + PH * 0.5, p.y + PH - 0.1]) {
+    for (const yy of [p.y + 0.1, p.y + this.ph * 0.5, p.y + this.ph - 0.1]) {
       const edge = p.vx > 0 ? p.x + hw : p.x - hw;
       if (this._solid(edge, yy)) {
         p.x = p.vx > 0 ? Math.floor(edge) - hw - 0.001 : Math.floor(edge) + 1 + hw + 0.001;
@@ -715,10 +809,10 @@ export class AventuraGame extends Game3D {
     } else {
       // cabeza: golpea bloques
       for (const xx of [p.x - hw, p.x, p.x + hw]) {
-        const ch = this._tile(xx, p.y + PH);
+        const ch = this._tile(xx, p.y + this.ph);
         if (SOLID.has(ch)) {
-          const ty = Math.floor(p.y + PH);
-          p.y = ty - PH - 0.001;
+          const ty = Math.floor(p.y + this.ph);
+          p.y = ty - this.ph - 0.001;
           p.vy = 0;
           this._hitBlock(Math.floor(xx), ty);
           break;
@@ -736,9 +830,12 @@ export class AventuraGame extends Game3D {
       this.lv.map[ty][tx] = "U";
       qb.mesh.material = this.usedMat;
       qb.bump = 0.25;
-      const heart = this.hearts < this.maxHearts && Math.random() < 0.45;
-      if (heart) { this.hearts++; this.popups.add(new THREE.Vector3(tx + 0.5, ty + 1.4, 0.5), "❤ +1", "combo"); audio.playPowerup(); }
-      else { this.coins += 3; this.score += 150; this.popups.add(new THREE.Vector3(tx + 0.5, ty + 1.4, 0.5), "+3 🍫", "combo"); audio.playCollect(); }
+      let kind = qb.kind || "coins";
+      if (kind === "heart" && this.hearts >= this.maxHearts) kind = "coins";
+      if (kind === "power") kind = this.player.power === 0 ? "mush" : "flower";
+      if (kind === "mush" || kind === "flower" || kind === "life") this._spawnItem(kind, tx, ty);
+      else if (kind === "heart") { this.hearts++; this.popups.add(new THREE.Vector3(tx + 0.5, ty + 1.4, 0.5), "❤ +1", "combo"); audio.playPowerup(); }
+      else { this.coins += 3; this.score += 150; this.popups.add(new THREE.Vector3(tx + 0.5, ty + 1.4, 0.5), "+3 🍫", "combo"); audio.playCollect(); this._checkLifeCoins(); }
       this.particles.burst(new THREE.Vector3(tx + 0.5, ty + 1, 0.6), [0xffc800, 0xfff6e6], 12, 4, 0.6, 6);
       this._updateHud();
     } else if (ch === "B") {
@@ -794,7 +891,7 @@ export class AventuraGame extends Game3D {
       e.mesh.position.set(e.x, e.y, 0);
       e.mesh.rotation.y = e.vx > 0 ? 0.5 : -0.5;
       // contacto con el Matichico
-      if (!p.dead && !p.win && Math.abs(p.x - e.x) < (PW + e.w) / 2 && p.y < e.y + e.h && p.y + PH > e.y) {
+      if (!p.dead && !p.win && Math.abs(p.x - e.x) < (PW + e.w) / 2 && p.y < e.y + e.h && p.y + this.ph > e.y) {
         if (p.vy < -1 && p.y > e.y + e.h * 0.45 && e.stompable) {
           e.dead = 0.001;
           p.vy = this.keys.jump ? BIG_V * 2.1 : BIG_V * 1.5;
@@ -849,26 +946,302 @@ export class AventuraGame extends Game3D {
     b.mat.emissive.setHex(b.hurtT > 0 ? 0xff2a2a : 0);
     b.mat.emissiveIntensity = b.hurtT > 0 ? 0.8 : 0;
     // contacto
-    if (!p.dead && !p.win && Math.abs(p.x - b.x) < (PW + b.w) / 2 && p.y < b.y + b.h && p.y + PH > b.y) {
+    if (!p.dead && !p.win && Math.abs(p.x - b.x) < (PW + b.w) / 2 && p.y < b.y + b.h && p.y + this.ph > b.y) {
       if (p.vy < -1 && p.y > b.y + b.h * 0.55 && b.hurtT <= 0) {
-        b.hp--;
-        b.hurtT = 1.2;
-        b.stun = 1.0;
         p.vy = 14;
-        this.score += 300;
-        this.shake = 0.3;
-        this.popups.add(new THREE.Vector3(b.x, b.y + 2.6, 0.5), b.hp > 0 ? `¡Pisotón! ${b.hp} más` : "¡Último!", "combo");
-        this.particles.burst(new THREE.Vector3(b.x, b.y + 2, 0.6), [0xffc800, 0xfff6e6, 0xd4216c], 20, 6, 0.8, 8);
-        audio.playHeadshot();
-        if (b.hp <= 0) { b.dead = 0.001; this.score += 800; audio.playVictory(); }
-        this._updateHud();
+        this._bossHit();
       } else if (p.invuln <= 0 && b.hurtT <= 0 && b.stun <= 0) this._hurt(Math.sign(p.x - b.x) || 1, false);
     }
+  }
+
+
+  // ---------- poderes tipo Mario: hongo, flor de fuego, vida extra y tuberías ----------
+
+  _powTex(glyph, color) {
+    this._pt = this._pt || {};
+    const key = glyph + color;
+    if (this._pt[key]) return this._pt[key];
+    const hex = "#" + new THREE.Color(color).getHexString();
+    this._pt[key] = canvasTexture(96, 96, (g, w, h) => {
+      g.fillStyle = hex; g.beginPath(); g.arc(w / 2, h / 2, 42, 0, Math.PI * 2); g.fill();
+      g.lineWidth = 7; g.strokeStyle = "#fff"; g.stroke();
+      g.fillStyle = "#fff"; g.font = "900 52px system-ui, 'Apple Color Emoji', sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText(glyph, w / 2, h / 2 + 3);
+    });
+    return this._pt[key];
+  }
+
+  _itemMesh(kind) {
+    const g = new THREE.Group();
+    const std = (c, r = 0.5, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: r, ...x });
+    if (kind === "mush" || kind === "life") {
+      const capC = kind === "life" ? 0x35d07a : 0xd4216c;
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.34, 12), std(0xfff6e6));
+      stem.position.y = 0.17;
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), std(capC, 0.4, { emissive: capC, emissiveIntensity: 0.18 }));
+      cap.position.y = 0.32;
+      g.add(stem, cap);
+      for (const [x, y, z] of [[0, 0.72, 0.1], [-0.25, 0.55, 0.25], [0.25, 0.55, 0.25]]) {
+        const dot = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), std(0xffffff));
+        dot.position.set(x, y, z);
+        g.add(dot);
+      }
+      for (const sx of [-0.09, 0.09]) { const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), std(0x1c0f07)); eye.position.set(sx, 0.2, 0.21); g.add(eye); }
+      if (kind === "life") {
+        const t = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._powTex("1UP", 0x35d07a), transparent: true, depthTest: false }));
+        t.scale.set(0.8, 0.8, 1);
+        t.position.y = 1.15;
+        g.add(t);
+      }
+    } else {
+      // flor de cacao (fuego)
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.5, 8), std(0x2fb85a));
+      stem.position.y = 0.25;
+      g.add(stem);
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        const pet = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), std(i % 2 ? 0xff7a3a : 0xffd34d, 0.4, { emissive: 0xff5a1a, emissiveIntensity: 0.3 }));
+        pet.position.set(Math.sin(a) * 0.22, 0.62 + Math.cos(a) * 0.22, 0.05);
+        g.add(pet);
+      }
+      const c = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), std(0x64321b, 0.4));
+      c.position.set(0, 0.62, 0.12);
+      g.add(c);
+    }
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._glowTex(), color: kind === "life" ? 0x7dffb0 : kind === "flower" ? 0xffa040 : 0xff7ab8, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }));
+    halo.scale.set(1.8, 1.8, 1);
+    halo.position.y = 0.5;
+    g.add(halo);
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    return g;
+  }
+
+  _glowTex() {
+    if (this._gt) return this._gt;
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const x = c.getContext("2d");
+    const gr = x.createRadialGradient(32, 32, 2, 32, 32, 31);
+    gr.addColorStop(0, "rgba(255,255,255,1)");
+    gr.addColorStop(0.4, "rgba(255,255,255,0.45)");
+    gr.addColorStop(1, "rgba(255,255,255,0)");
+    x.fillStyle = gr;
+    x.fillRect(0, 0, 64, 64);
+    this._gt = new THREE.CanvasTexture(c);
+    return this._gt;
+  }
+
+  /** Sale un premio del bloque ?: hongo / flor / trébol de vida. */
+  _spawnItem(kind, tx, ty) {
+    const mesh = this._itemMesh(kind);
+    mesh.position.set(tx + 0.5, ty + 0.2, -0.1);
+    this.levelGroup.add(mesh);
+    const dir = this.player && this.player.x > tx + 0.5 ? -1 : 1;
+    // si el bloque queda muy alto para subirse encima, la flor también se desliza y cae al lado, para poder tomarla
+    let g = ty - 1;
+    while (g >= 0 && !this._solid(tx + 0.5, g + 0.5)) g--;
+    const drop = kind === "flower" && ty - g - 1 >= 3;
+    this.items.push({ kind, mesh, drop, x: tx + 0.5, y: ty + 0.2, baseY: ty + 1, vx: kind === "flower" && !drop ? 0 : 2.4 * dir, vy: 0, state: "emerge", t: 0 });
+    audio.playPowerup();
+  }
+
+  _updateItems(dt) {
+    const p = this.player;
+    for (const it of this.items) {
+      if (it.gone) continue;
+      it.t += dt;
+      if (it.state === "emerge") {
+        it.y = lerp(it.baseY - 0.8, it.baseY, Math.min(1, it.t / 0.45));
+        if (it.t >= 0.45) { it.state = "go"; it.y = it.baseY; }
+      } else if (it.kind !== "flower" || it.drop) {
+        it.vy -= GRAV * dt;
+        const front = it.x + Math.sign(it.vx) * 0.3;
+        if (this._solid(front, it.y + 0.25)) it.vx = -it.vx;
+        it.x += it.vx * dt;
+        it.y += it.vy * dt;
+        if (it.vy <= 0 && (this._solid(it.x, it.y) || this._solid(it.x - 0.2, it.y) || this._solid(it.x + 0.2, it.y))) { it.y = Math.floor(it.y) + 1; it.vy = 0; if (it.kind === "flower" && it.y < it.baseY - 0.9) { it.vx = 0; it.drop = false; } }
+        if (it.y < -3) { it.gone = true; this.levelGroup.remove(it.mesh); continue; }
+      }
+      it.mesh.position.set(it.x, it.y, -0.1);
+      it.mesh.rotation.y = it.kind === "flower" ? Math.sin(this.time * 2) * 0.4 : 0;
+      it.mesh.scale.setScalar(1 + Math.sin(this.time * 6 + it.x) * 0.04);
+      if (!p.dead && !p.win && it.state === "go" && Math.abs(p.x - it.x) < 0.6 && p.y < it.y + 0.8 && p.y + this.ph > it.y) {
+        it.gone = true;
+        this.levelGroup.remove(it.mesh);
+        this._gainItem(it.kind, it.x, it.y);
+      }
+    }
+    this.items = this.items.filter((i) => !i.gone);
+  }
+
+  _gainItem(kind, x, y) {
+    const p = this.player;
+    const at = new THREE.Vector3(x, y + 1.3, 0.6);
+    if (kind === "mush") {
+      if (p.power === 0) { p.power = 1; p.grow = 0.7; this.banner("¡Hongo Matichoc! ¡Ahora eres grande! 🍄"); this.popups.add(at, "¡Grande!", "combo"); }
+      else { this.score += 500; this.popups.add(at, "+500", "combo"); }
+    } else if (kind === "flower") {
+      p.power = 2;
+      p.grow = Math.min(p.grow, 0.9);
+      this.banner("¡Flor de fuego! Toca 🔥 (o F) para lanzar bolas");
+      this.popups.add(at, "¡Fuego! 🔥", "combo");
+    } else if (kind === "life") {
+      this.lives++;
+      this.banner("¡Vida extra! 🍀");
+      this.popups.add(at, "1UP", "combo");
+    }
+    this.score += 200;
+    audio.playPowerup();
+    this.particles.burst(new THREE.Vector3(x, y + 0.6, 0.6), [0xffc800, 0xfff6e6, 0xff7ab8, 0x7dffb0], 22, 5, 0.8, 6);
+    this._updateHud();
+  }
+
+  /** Lanza una bola de fuego (solo con la flor). */
+  _shoot() {
+    const p = this.player;
+    if (p.power < 2 || p.fireCd > 0 || this.fireballs.length >= 2 || p.dead || p.win) return;
+    p.fireCd = 0.28;
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff7a2a }));
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._glowTex(), color: 0xffa040, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+    glow.scale.set(0.9, 0.9, 1);
+    m.add(glow);
+    const fb = { mesh: m, x: p.x + p.face * 0.45, y: p.y + this.ph * 0.5, vx: p.face * 11 + p.vx * 0.25, vy: -1, t: 0 };
+    m.position.set(fb.x, fb.y, 0.1);
+    this.levelGroup.add(m);
+    this.fireballs.push(fb);
+    audio.playHitEnemy?.();
+  }
+
+  _updateFire(dt) {
+    const p = this.player;
+    p.fireCd = Math.max(0, p.fireCd - dt);
+    for (const fb of this.fireballs) {
+      fb.t += dt;
+      fb.vy -= 40 * dt;
+      fb.x += fb.vx * dt;
+      fb.y += fb.vy * dt;
+      if (fb.vy < 0 && (this._solid(fb.x, fb.y - 0.12) || this._tile(fb.x, fb.y - 0.12) === "=")) { fb.y = Math.floor(fb.y - 0.12) + 1.12; fb.vy = 8.6; }
+      if (this._solid(fb.x + Math.sign(fb.vx) * 0.2, fb.y) || fb.t > 2.4 || Math.abs(fb.x - p.x) > 22) { fb.dead = true; this.particles.burst(new THREE.Vector3(fb.x, fb.y, 0.5), [0xff7a2a, 0xffd34d], 6, 2.5, 0.4, 3); continue; }
+      fb.mesh.position.set(fb.x, fb.y, 0.1);
+      // quemar enemigos
+      for (const e of this.enemies) {
+        if (e.dead > 0 || e.gone) continue;
+        if (Math.abs(fb.x - e.x) < e.w / 2 + 0.2 && fb.y > e.y - 0.1 && fb.y < e.y + e.h + 0.15) {
+          e.dead = 0.001; fb.dead = true;
+          this.score += 150;
+          this.popups.add(new THREE.Vector3(e.x, e.y + 1, 0.5), "+150 🔥", "combo");
+          this.particles.burst(new THREE.Vector3(e.x, e.y + 0.4, 0.6), [0xff7a2a, 0xffd34d, 0xfff6e6], 14, 4.5, 0.6, 6);
+          audio.playHitEnemy();
+          this._updateHud();
+          break;
+        }
+      }
+      const b = this.boss;
+      if (!fb.dead && b && b.dead <= 0 && Math.abs(fb.x - b.x) < b.w / 2 + 0.2 && fb.y > b.y && fb.y < b.y + b.h) {
+        fb.dead = true;
+        b.fire = (b.fire || 0) + 1;
+        this.particles.burst(new THREE.Vector3(fb.x, fb.y, 0.6), [0xff7a2a, 0xffd34d], 10, 4, 0.5, 5);
+        if (b.fire >= 4 && b.hurtT <= 0) { b.fire = 0; this._bossHit(); }
+      }
+    }
+    for (const fb of this.fireballs) if (fb.dead) this.levelGroup.remove(fb.mesh);
+    this.fireballs = this.fireballs.filter((f) => !f.dead);
+  }
+
+  /** Entra/sale de las tuberías mágicas con ⬇ (arriba de la tubería). */
+  _updateWarp(dt) {
+    const p = this.player;
+    p.warpCd = Math.max(0, p.warpCd - dt);
+    const L = this.lv;
+    const spots = [];
+    if (L.warp && !this.inBonus) spots.push({ x: L.warp.x, top: L.warp.top, to: "bonus" });
+    if (L.bonus && this.inBonus) spots.push({ x: L.bonus.exitX, top: L.bonus.exitTop, to: "back" });
+    this.onWarp = null;
+    for (const w of spots) if (p.ground && Math.abs(p.x - (w.x + 0.5)) < 0.42 && Math.abs(p.y - w.top) < 0.12) this.onWarp = w;
+    const btn = this.q("btn-down");
+    if (btn) btn.classList.toggle("hidden", !this.onWarp);
+    if (this.onWarp && (this.keys.down || this._downLatch) && p.warpCd <= 0) this._warp(this.onWarp.to);
+    this._downLatch = false;
+  }
+
+  _warp(to) {
+    const p = this.player;
+    const L = this.lv;
+    p.warpCd = 1;
+    p.vx = 0;
+    p.vy = 0;
+    audio.playPowerup();
+    this.particles.burst(new THREE.Vector3(p.x, p.y + 0.5, 0.6), [0x35c8ff, 0xffffff], 18, 4, 0.7, 4);
+    if (to === "bonus") {
+      this.inBonus = true;
+      this.retX = L.warp.x + 3.5;
+      p.x = L.bonus.x0 + 2.5;
+      p.y = 2;
+      this.scene.background.setHex(0x2a1a4a);
+      this.scene.fog.color.setHex(0x3a2a5a);
+      this.banner("¡Sala secreta! Junta todo 🍫✨");
+    } else {
+      this.inBonus = false;
+      p.x = this.retX || L.warp.x + 3.5;
+      p.y = this._groundY(p.x);
+      const th = WORLDS[L.world];
+      this.scene.background.setHex(th.sky);
+      this.scene.fog.color.setHex(th.fog);
+      this.banner("¡De vuelta en el camino!");
+    }
+    this.camX = p.x;
+    this.camY = p.y + 2;
+    this.spawn = this.inBonus ? this.spawn : this.spawn;
+  }
+
+  /** Daño al jefe (pisotón o fuego): le quita un punto de vida. */
+  _bossHit() {
+    const b = this.boss;
+    b.hp--;
+    b.hurtT = 1.2;
+    b.stun = 1.0;
+    this.score += 300;
+    this.shake = 0.3;
+    this.popups.add(new THREE.Vector3(b.x, b.y + 2.6, 0.5), b.hp > 0 ? `¡Golpe! ${b.hp} más` : "¡Último!", "combo");
+    this.particles.burst(new THREE.Vector3(b.x, b.y + 2, 0.6), [0xffc800, 0xfff6e6, 0xd4216c], 20, 6, 0.8, 8);
+    audio.playHeadshot();
+    if (b.hp <= 0) { b.dead = 0.001; this.score += 800; audio.playVictory(); }
+    this._updateHud();
+  }
+
+  _useLife() {
+    // si quedan vidas extra, se gasta una y se sigue desde el último punto de control
+    const p = this.player;
+    this.lives--;
+    this.hearts = this.maxHearts;
+    p.power = 0;
+    p.invuln = 2.5;
+    p.x = this.spawn.x; p.y = this.spawn.y + 0.5; p.vx = 0; p.vy = 0;
+    this.inBonus = false;
+    this.scene.background.setHex(WORLDS[this.lv.world].sky);
+    this.camX = p.x + 2;
+    this.banner("¡Usaste una vida extra! 🍀");
+    this._updateHud();
   }
 
   _hurt(dir, spikes) {
     const p = this.player;
     if (p.invuln > 0 || p.dead || p.win) return;
+    if (p.power > 0 && !spikes) {
+      // el hongo / la flor te protegen: pierdes el poder en vez de un corazón
+      p.power--;
+      p.grow = 1.25;
+      p.invuln = 1.6;
+      p.vy = 8;
+      p.vx = dir ? dir * 6 : 0;
+      p.ground = false;
+      this.shake = 0.2;
+      audio.playHurt();
+      this.banner(p.power === 1 ? "¡Perdiste la flor! 🌸" : "¡Te achicaste! 🍄");
+      this._updateHud();
+      return;
+    }
+    p.power = 0;
     this.hearts--;
     this.hurtCount++;
     (this.hurtLog = this.hurtLog || []).push(`${spikes ? "pinchos" : "enemigo"}@${p.x.toFixed(0)}`);
@@ -880,7 +1253,7 @@ export class AventuraGame extends Game3D {
     audio.playHurt();
     this.haptic(40);
     if (spikes) { p.vy = 12; }
-    if (this.hearts <= 0) { this._die(); }
+    if (this.hearts <= 0) { if (this.lives > 0) this._useLife(); else this._die(); }
     this._updateHud();
   }
 
@@ -893,7 +1266,7 @@ export class AventuraGame extends Game3D {
     audio.playHurt();
     this.haptic(40);
     this._updateHud();
-    if (this.hearts <= 0) { this._die(); return; }
+    if (this.hearts <= 0) { if (this.lives > 0) this._useLife(); else this._die(); return; }
     p.x = this.spawn.x; p.y = this.spawn.y + 0.5; p.vx = 0; p.vy = 0; p.invuln = 2;
     this.camX = p.x + 2;
   }
@@ -918,7 +1291,7 @@ export class AventuraGame extends Game3D {
     let changed = false;
     for (const c of this.coinList) {
       if (c.got) continue;
-      if (Math.abs(c.x - p.x) < 0.65 && c.y > p.y - 0.2 && c.y < p.y + PH + 0.3) {
+      if (Math.abs(c.x - p.x) < 0.65 && c.y > p.y - 0.2 && c.y < p.y + this.ph + 0.3) {
         c.got = true;
         this.coins++;
         this.score += 10;
@@ -927,7 +1300,11 @@ export class AventuraGame extends Game3D {
         changed = true;
       }
     }
-    if (changed) { this._refreshCoins(); this._updateHud(); }
+    if (changed) { this._checkLifeCoins(); this._refreshCoins(); this._updateHud(); }
+  }
+
+  _checkLifeCoins() {
+    while (Math.floor(this.coins / 50) > this.lifeCoins) { this.lifeCoins++; this.lives++; this.banner("¡50 alfajores = vida extra! 🍀"); audio.playPowerup(); }
   }
 
   _refreshCoins() {
@@ -942,7 +1319,7 @@ export class AventuraGame extends Game3D {
   _checkGoal(dt) {
     const p = this.player;
     if (p.dead) return;
-    if (!p.win && p.x > this.lv.flagX - 0.3 && (!this.lv.isBoss || this.bossWallOpen)) {
+    if (!p.win && !this.inBonus && p.x > this.lv.flagX - 0.3 && (!this.lv.isBoss || this.bossWallOpen)) {
       p.win = true;
       p.winT = 0;
       this.banner("¡META!");
@@ -953,8 +1330,9 @@ export class AventuraGame extends Game3D {
   }
 
   _win() {
-    const total = this.coinList.length;
-    const ratio = total ? this.coins / total : 1;
+    const main = this.coinList.filter((c) => !c.bonus); // los alfajores de la sala secreta son un extra: no cuentan para las estrellas
+    const total = main.length;
+    const ratio = total ? main.filter((c) => c.got).length / total : 1;
     const stars = 1 + (ratio >= 0.7 ? 1 : 0) + (this.hurtCount === 0 || ratio >= 0.97 ? 1 : 0);
     this.score += this.hearts * 100;
     const txt = `¡Llegaste a la meta! Juntaste ${this.coins} de ${total} alfajores y te quedan ${this.hearts} corazón${this.hearts === 1 ? "" : "es"}.`;
@@ -1016,7 +1394,7 @@ export class AventuraGame extends Game3D {
   _updateCamera(dt) {
     if (!this.player || !this.camDist) return;
     const p = this.player;
-    const tx = clamp(p.x + p.face * 2.2, 5, this.lv.W - 4);
+    const tx = this.inBonus ? clamp(p.x + p.face * 2.2, this.lv.bonus.x0 + 6, this.lv.bonus.x1 - 6) : clamp(p.x + p.face * 2.2, 5, this.lv.W - 4);
     const ty = Math.max(3.4, p.y + 1.8);
     const k = 1 - Math.exp(-5 * dt);
     this.camX = lerp(this.camX, tx, k);
@@ -1031,10 +1409,21 @@ export class AventuraGame extends Game3D {
     this.bg.position.y = (this.camY - 4) * 0.5;
   }
 
-  _placeHero() {
+  _placeHero(dt) {
     const p = this.player;
     if (!p) return;
     const h = this.hero;
+    // tamaño: más grande con el hongo (con un saltito elástico al crecer/achicarse)
+    p.grow = lerp(p.grow, 1, 1 - Math.exp(-8 * (dt || 0.016)));
+    const target = (p.power >= 1 ? 1.32 : 1) * (1 + (p.grow - 1) * 0.35);
+    h.group.scale.setScalar(0.74 * target);
+    if (!this.fireAura) {
+      this.fireAura = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._glowTex(), color: 0xff8a2a, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      this.fireAura.scale.set(2.2, 2.6, 1);
+      this.scene.add(this.fireAura);
+    }
+    this.fireAura.material.opacity = p.power >= 2 ? 0.55 + Math.sin(this.time * 9) * 0.15 : 0;
+    this.fireAura.position.set(p.x, p.y + this.ph * 0.5, -0.2);
     h.group.position.set(p.x, p.y, 0);
     h.group.rotation.y = Math.PI / 2 * p.face + (p.dead ? Math.sin(p.deadT * 10) * 0.3 : 0);
     if (p.win) h.animate(this.time, "cheer", 1);
@@ -1044,6 +1433,7 @@ export class AventuraGame extends Game3D {
   }
 
   _animateWorld(dt) {
+    for (const w of this.warpSprites || []) w.sp.position.y = w.y + Math.sin(this.time * 4) * 0.12;
     // alfajores girando y bloques que rebotan
     const m4 = new THREE.Matrix4();
     const q = new THREE.Quaternion();
@@ -1077,7 +1467,9 @@ export class AventuraGame extends Game3D {
 
   _updateHud() {
     const set = (id, v) => { const el = this.q(id); if (el) el.textContent = v; };
-    set("hud-hearts", "❤".repeat(Math.max(0, this.hearts)) + "🤍".repeat(Math.max(0, this.maxHearts - this.hearts)));
+    set("hud-hearts", "❤".repeat(Math.max(0, this.hearts)) + "🤍".repeat(Math.max(0, this.maxHearts - this.hearts)) + (this.lives > 0 ? ` 🍀×${this.lives}` : "") + (this.player && this.player.power >= 2 ? " 🔥" : this.player && this.player.power === 1 ? " 🍄" : ""));
+    const fb = this.q("btn-fire");
+    if (fb) fb.classList.toggle("hidden", !(this.player && this.player.power >= 2));
     set("hud-coins", this.coins);
     set("hud-score", this.score);
     set("hud-level", `Mundo ${this.lv.world + 1}-${(this.level - 1) % 4 + 1}`);
@@ -1095,7 +1487,7 @@ export class AventuraGame extends Game3D {
   }
 
   pauseForMenu() {
-    this.keys = { left: false, right: false, jump: false };
+    this.keys = { left: false, right: false, jump: false, down: false, fire: false };
     super.pauseForMenu();
   }
 }

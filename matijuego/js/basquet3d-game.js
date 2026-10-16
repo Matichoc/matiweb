@@ -8,11 +8,11 @@
 // puntería cambia en cada tiro, las rachas te ponen "en llamas" (zonas más grandes y puntos
 // multiplicados), los swish y los aros dorados regalan segundos extra, y suena la hinchada.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=64565862c1";
-import { createMatichico } from "./matichico3d.js?v=64565862c1";
-import { saveProgress, earnCoins } from "./storage.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=64565862c1";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=71b37ac21d";
+import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
+import { saveProgress, earnCoins } from "./storage.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=71b37ac21d";
 
 const GAME_ID = "basquet_tiros";
 const TIME_LIMIT = 60;
@@ -99,6 +99,8 @@ function ballTexture() {
 export class Basquet3DGame extends Game3D {
   constructor(character, progress, els) {
     super(GAME_ID, character, progress, els, { fov: 50 });
+    this.kawaii = true; // ambiente kawaii: pastel, sombreado por tonos, pétalos y estrellitas
+    this.ambientOpts = { petals: 18, hearts: 5, stars: 13, radius: 10, height: 9 };
     this.musicTheme = "sport";
     this.q = els.q;
     this.cheer = 0;
@@ -504,6 +506,7 @@ export class Basquet3DGame extends Game3D {
   }
 
   _launchBall() {
+    if (!this.spendAction(1)) return; // cada lanzamiento gasta 1 ⚡
     const accErr = this.aimLocked - this.aimTarget;
     const powErr = this.powerLocked - this.powerTarget;
     const aErr = Math.abs(accErr);

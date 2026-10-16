@@ -7,8 +7,8 @@
 // Se agrega como "mixin" a ParkourGame (ver el final de parkour-game.js) y usa sus
 // métodos de siempre (_makePlatform, _makeItem, _makeFlag, _makeSpinner...).
 
-import { THREE, clamp, lerp } from "./three-kit.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
+import { THREE, clamp, lerp } from "./three-kit.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
 
 export const ZONE_LEN = 140; // metros por mundo
 export const MAX_LIVES = 5;
@@ -114,8 +114,9 @@ export function installInfinite(Cls, STAGES) {
       const maxdx = Math.max(0.2, (cur.sx + sx) / 2 - 0.9);
       x = clamp(cur.x + clamp(o.dx || 0, -maxdx, maxdx), -9, 9);
     }
-    const top = cur ? cur.top + (o.dy || 0) : 0;
-    const z = cur ? cur.z - cur.sz / 2 - (o.gap ?? 2) - sz / 2 : 0;
+    let top = cur ? cur.top + (o.dy || 0) : 0;
+    let z = cur ? cur.z - cur.sz / 2 - (o.gap ?? 2) - sz / 2 : 0;
+    if (o.ax !== undefined) { x = o.ax; top = o.atop; z = o.az; } // posición exacta (figuras)
     const zone = Math.floor(-z / ZONE_LEN);
     const p = this._makePlatform(zone, type, { ...o, x, top, z, theme: this.biomeAt(zone) });
     p.zone = zone;
@@ -123,6 +124,121 @@ export function installInfinite(Cls, STAGES) {
     inf.n = (inf.n || 0) + 1;
     if (inf.n % 2 === 0) this._infProp(p, zone); // un adorno flotante cada dos plataformas
     return p;
+  };
+
+
+  // ---------- figuras: tramos que se van hacia los lados, suben en espiral o bajan ----------
+  // Para que el camino no sea solo "hacia adelante": a veces cruzas en zigzag, corres de lado, subes una torre en espiral
+  // o bajas saltando. La cámara gira sola para mirar hacia donde vas (p.camYaw de cada plataforma).
+  /** ctx = { cur(), put(tipo, opciones con posición absoluta ax/atop/az), onTop(p, n, sep), rnd }. Devuelve la última plataforma. */
+  P._figure = function _figure(kind, ctx, o = {}) {
+    const rnd = ctx.rnd;
+    const size = o.size || 3.6;
+    const gap = o.gap || 2.3;
+    const c0 = ctx.cur();
+    const yawOf = (dx, dz) => Math.atan2(-dx, -dz);
+    const put = (x, top, z, extra = {}) => {
+      const type = extra.type || o.type || "normal";
+      const p = ctx.put(type, { sx: size, sz: size, ax: x, atop: top, az: z, gap: 0, ...extra });
+      return p;
+    };
+    let last = null;
+    const dir = (o.dir || (rnd() < 0.5 ? -1 : 1));
+    if (kind === "sidewalk") {
+      // una fila de plataformas hacia un lado, un giro, y de vuelta por otra fila (una "S")
+      const n = o.n || 4;
+      const step = size + gap;
+      const first = (c0.sx + size) / 2 + gap;
+      let z = c0.z;
+      let top = c0.top;
+      let xEnd = c0.x;
+      for (let i = 0; i < n; i++) {
+        top += i % 2 ? 0.35 : 0;
+        z -= 0.8;
+        xEnd = c0.x + dir * (first + i * step);
+        const p = put(xEnd, top, z, { camYaw: yawOf(dir, 0) });
+        if (i % 2 === 0) ctx.onTop(p);
+        last = p;
+      }
+      // giro: una plataforma un poco más grande, hacia adelante
+      const big = size + 1;
+      z = last.base.z - last.h.z - gap - big / 2;
+      top += 0.3;
+      last = put(xEnd, top, z, { sx: big, sz: big, camYaw: yawOf(-dir, -0.4) });
+      ctx.onTop(last, 2, 1.4);
+      // fila de vuelta (hacia el otro lado), un poco más adelante
+      z = last.base.z - last.h.z - gap - size / 2;
+      for (let i = 0; i < n; i++) {
+        top += i % 2 ? 0 : 0.2;
+        const p = put(xEnd - dir * (i * step), top, z, { camYaw: yawOf(-dir, 0) });
+        if (i % 2 === 1) ctx.onTop(p);
+        last = p;
+        z -= 0.8;
+      }
+      last.camYaw = 0;
+    } else if (kind === "zigzag") {
+      const n = o.n || 6;
+      const A = 3.6;
+      let z = c0.z - c0.sz / 2;
+      let top = c0.top;
+      for (let i = 0; i < n; i++) {
+        z -= size / 2 + 1.1;
+        top += 0.2;
+        const side = i % 2 ? 1 : -1;
+        const p = put(c0.x + side * A * (dir > 0 ? 1 : -1), top, z, { type: o.types ? o.types[i % o.types.length] : "normal", camYaw: 0 });
+        ctx.onTop(p);
+        last = p;
+        z -= size / 2;
+      }
+    } else if (kind === "diag") {
+      // escalera en diagonal: dos hacia un lado y dos de vuelta
+      const n = o.n || 4;
+      let x = c0.x;
+      let z = c0.z - c0.sz / 2;
+      let top = c0.top;
+      for (let i = 0; i < n; i++) {
+        const d = i < n / 2 ? dir : -dir;
+        x += d * (size * 0.9 + 1.3);
+        z -= size + 0.9;
+        top += 0.3;
+        const p = put(x, top, z, { camYaw: yawOf(d * 0.7, -0.7) });
+        ctx.onTop(p);
+        last = p;
+      }
+      last.camYaw = 0;
+    } else if (kind === "spiral") {
+      // arco en espiral: 5 plataformas que dan media vuelta alrededor de un punto, subiendo
+      const n = o.n || 5;
+      const R = 6.2;
+      const climb = o.climb || 1.4;
+      const cz = c0.z - c0.sz / 2 - gap - size / 2 - R;
+      const cx = c0.x;
+      for (let i = 0; i < n; i++) {
+        const a = dir * (i * Math.PI) / 4;
+        const x = cx + R * Math.sin(a);
+        const z = cz + R * Math.cos(a);
+        const tx = dir * Math.cos(a);
+        const tz = -dir * Math.sin(a);
+        const p = put(x, c0.top + 0.4 + i * climb, z, { camYaw: yawOf(tx, tz) });
+        if (i % 2 === 1) ctx.onTop(p);
+        last = p;
+      }
+      last.camYaw = 0;
+      ctx.item?.(last.base.x, last.base.y + last.h.y + 2.8, last.base.z, "gold");
+    } else if (kind === "descent") {
+      const n = o.n || 5;
+      let z = c0.z - c0.sz / 2;
+      let top = c0.top;
+      for (let i = 0; i < n; i++) {
+        z -= 2.0 + size / 2;
+        top -= 1.8;
+        const p = put(c0.x + (i % 2 ? 1 : -1) * 1.2, top, z, { sx: size + 0.8, sz: size + 0.8, camYaw: 0 });
+        ctx.onTop(p);
+        last = p;
+        z -= size / 2;
+      }
+    }
+    return last;
   };
 
   P._infCheckpoint = function _infCheckpoint(p, zone) {
@@ -161,6 +277,26 @@ export function installInfinite(Cls, STAGES) {
       onTop(p, 2, 1.6);
       inf.lastHard = false;
       return;
+    }
+
+    // a veces, una figura: tramo hacia los lados, espiral, zigzag o bajada
+    inf.sinceFig = (inf.sinceFig || 0) + 1;
+    if (inf.count > 6 && !inf.lastHard) {
+      const mustDescend = cur.top > 7;
+      if (mustDescend || (inf.sinceFig >= 9 && rnd() < 0.32)) {
+        const fw = mustDescend ? { descent: 1 } : { sidewalk: 3, zigzag: 2.2, diag: 2.2, spiral: cur.top <= 3 ? 2 : 0 };
+        const fe = Object.entries(fw).filter(([, v]) => v > 0);
+        let rr2 = rnd() * fe.reduce((a, [, v]) => a + v, 0);
+        let kind = fe[0][0];
+        for (const [k, v] of fe) { rr2 -= v; if (rr2 <= 0) { kind = k; break; } }
+        const ctx = { cur: () => this.inf.cur, put: (t, o2) => this._infPlace(t, o2), onTop, rnd, item };
+        const mix = d > 0.35 ? ["normal", "moving", "normal", "crumble"] : null;
+        const pl = this._figure(kind, ctx, { size: Math.round(lerp(3.8, 3.2, d) * 5) / 5, gap: lerp(2.0, 2.7, d), types: kind === "zigzag" ? mix : null });
+        inf.sinceFig = 0;
+        inf.lastHard = false;
+        inf.sinceGold++;
+        return pl;
+      }
     }
 
     // qué plataforma toca

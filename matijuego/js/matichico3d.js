@@ -2,8 +2,8 @@
 // con surcos), ojos azules grandes, sonrisa con dientes, polera negra de Matichoc con cuello rosado y su
 // logo, jeans y zapatillas. Matichico trae un rulo de pelo; Chocolatina, un moño con flores.
 
-import { THREE, roundedBox, loadTexture } from "./three-kit.js?v=64565862c1";
-import { applyLook, HEAD_W, HEAD_H, HEAD_D } from "./wardrobe3d.js?v=64565862c1";
+import { THREE, roundedBox, loadTexture } from "./three-kit.js?v=71b37ac21d";
+import { applyLook, HEAD_W, HEAD_H, HEAD_D } from "./wardrobe3d.js?v=71b37ac21d";
 
 const LIFT = 0.26; // largo extra de las piernas: da las proporciones de los personajes de la web
 
@@ -302,6 +302,55 @@ export function createMatichico(character, outfit, look = null) {
     } else if (mode === "drive") {
       armL = [-1.25, 0, -0.35];
       armR = [-1.25, 0, 0.35];
+    } else if (mode === "walk") {
+      // caminar tranquilo por la casa
+      const w = Math.sin(t * 7.5 * speed);
+      bob = Math.abs(w) * 0.03;
+      legL = w * 0.6;
+      legR = -w * 0.6;
+      armL = [-w * 0.5, 0, -0.1];
+      armR = [w * 0.5, 0, 0.1];
+    } else if (mode === "sit" || mode === "type" || mode === "piano") {
+      // sentado: piernas hacia adelante; escribiendo / tocando mueve las manos
+      legL = -1.5;
+      legR = -1.5;
+      bob = Math.sin(t * 2.4) * 0.008;
+      armL = [-0.35, 0, -0.18];
+      armR = [-0.35, 0, 0.18];
+      if (mode === "type") {
+        armL = [-1.3 + Math.sin(t * 17) * 0.14, 0, -0.22];
+        armR = [-1.3 + Math.sin(t * 17 + 1.7) * 0.14, 0, 0.22];
+        headTilt = Math.sin(t * 1.3) * 0.04;
+      } else if (mode === "piano") {
+        armL = [-1.2 + Math.sin(t * 9) * 0.22, 0, -0.3];
+        armR = [-1.2 + Math.sin(t * 9 + 2.2) * 0.22, 0, 0.3];
+        headTilt = Math.sin(t * 2.2) * 0.1;
+      }
+    } else if (mode === "sleep") {
+      // acostado: respira despacio
+      bob = Math.sin(t * 1.6) * 0.012;
+      armL = [0, 0, -0.18];
+      armR = [0, 0, 0.18];
+    } else if (mode === "arcade") {
+      // de pie, manos en la palanca y los botones
+      armL = [-1.15 + Math.sin(t * 12) * 0.12, 0, -0.28];
+      armR = [-1.2 + Math.sin(t * 15 + 1) * 0.16, 0, 0.28];
+      lean = 0.1;
+      headTilt = Math.sin(t * 3) * 0.05;
+    } else if (mode === "dance") {
+      // ¡a bailar! brazos arriba alternados, pasitos y cadera
+      const b = Math.sin(t * 8);
+      bob = Math.abs(b) * 0.12;
+      armL = [Math.sin(t * 4) * 0.5, 0, -2.0 + b * 0.8];
+      armR = [Math.sin(t * 4 + 3) * 0.5, 0, 2.0 - b * 0.8];
+      legL = b * 0.55;
+      legR = -b * 0.55;
+      headTilt = Math.sin(t * 4) * 0.2;
+      lean = Math.sin(t * 4) * 0.08;
+    } else if (mode === "admire") {
+      // mira y señala con una mano
+      armR = [-0.9 + Math.sin(t * 2.5) * 0.12, 0, 0.5];
+      headTilt = Math.sin(t * 1.8) * 0.1;
     }
     bodyGroup.position.y = LIFT + bob;
     bodyGroup.rotation.x = lean;
@@ -319,6 +368,7 @@ export function createMatichico(character, outfit, look = null) {
       blink = k < 1 ? Math.max(0.1, Math.abs(1 - k * 2)) : 1;
       if (k >= 1) nextBlink = t + 2 + Math.random() * 2.5;
     }
+    if (mode === "sleep") blink = 0.08; // ojitos cerrados
     for (const e of eyes) e.scale.y = blink;
     if (hero.tick) hero.tick(t, mode, speed);
   }
@@ -329,13 +379,15 @@ export function createMatichico(character, outfit, look = null) {
   }
 
   const hero = {
-    group: outer, head, bodyGroup, arms, legs, animate, setOutfit,
+    group: outer, head, bodyGroup, arms, legs, animate, setOutfit, logo,
     mats, eyes, brows, mouth, defaultStyle,
-    defaults: { choco: mats.choco.color.getHex(), chocoDark: mats.chocoDark.color.getHex(), hair: mats.hair.color.getHex(), shoe: mats.shoe.color.getHex() },
+    defaults: { jeans: mats.jeans.color.getHex(), choco: mats.choco.color.getHex(), chocoDark: mats.chocoDark.color.getHex(), hair: mats.hair.color.getHex(), shoe: mats.shoe.color.getHex() },
     worn: [], tick: null, look: null,
     /** Viste al Matichico con un "look" completo (peinado, sombrero, ropa, etc.; ver wardrobe-data.js). */
     setLook(next) { applyLook(hero, next || {}); },
   };
   hero.setLook(look || { outfit: outfit && outfit.id });
+  outer.userData.noToon = true; // los personajes no llevan el estilo de ambiente (sombreado por tonos)
   return hero;
 }
+

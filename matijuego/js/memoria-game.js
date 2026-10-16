@@ -2,11 +2,11 @@
 // Cartas 3D con las fotos de los alfajores, bombas y cuchuflíes sobre la mesa de
 // la feria; tu Matichico te anima. 4 niveles (6 a 12 parejas) con estrellas.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=64565862c1";
-import { createMatichico } from "./matichico3d.js?v=64565862c1";
-import { earnCoins, saveProgress } from "./storage.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=64565862c1";
+import { THREE, Game3D, clamp, lerp, canvasTexture, roundedBox, makeBunting } from "./three-kit.js?v=71b37ac21d";
+import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
+import { earnCoins, saveProgress } from "./storage.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
+import { campaign, campaignWin, campaignComplete, campaignStartOver, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=71b37ac21d";
 
 const CARD_W = 0.95;
 const CARD_H = 1.3;
@@ -66,6 +66,8 @@ function shuffle(arr) {
 export class MemoriaGame extends Game3D {
   constructor(character, progress, els) {
     super("memoria", character, progress, els, { fov: 42 });
+    this.kawaii = true; // ambiente kawaii: pastel, sombreado por tonos, pétalos y estrellitas
+    this.ambientOpts = { petals: 18, hearts: 5, stars: 13, radius: 9, height: 9 };
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
     this.levelIndex = 0;
@@ -274,7 +276,8 @@ export class MemoriaGame extends Game3D {
   /** En la tarjeta de inicio se elige con qué nivel empezar (solo los desbloqueados). */
   onIntro() {
     const c = campaign(this.progress, "memoria");
-    if (!this.startLevel || this.startLevel > c.unlocked) this.startLevel = Math.min(c.unlocked, this.startLevel || c.unlocked);
+    // si ya completaste todo, se parte desde el principio (no desde el último nivel)
+    if (!this.startLevel || this.startLevel > c.unlocked) this.startLevel = Math.min(c.unlocked, this.startLevel || (campaignComplete(this.progress, "memoria") ? 1 : c.unlocked));
     const mount = () => renderLevelPicker(this.els.q("lvlpick"), {
       id: "memoria", progress: this.progress, selected: this.startLevel,
       onSelect: (n) => { this.startLevel = n; this.reset(); },
@@ -430,6 +433,7 @@ export class MemoriaGame extends Game3D {
     } else {
       this.second = card;
       this.moves++;
+      this.countEnergy("intentos", 2); // cada 2 intentos gasta 1 ⚡
       if (this.first.pi === card.pi) {
         this.busy = 0.7;
         this.resolveTimer = 0.55;
@@ -607,6 +611,10 @@ export class MemoriaGame extends Game3D {
       audio.playVictory();
       const t = this.els.q("gameover-title");
       if (t) t.textContent = `¡Terminaste los ${LEVELS_PER_GAME} niveles! 🏆`;
+      // empieza una vuelta nueva sola: premio y los niveles vuelven a empezar desde el 1
+      const lap = campaignStartOver(this.progress, "memoria");
+      this.startLevel = 1;
+      if (lap) { try { window.dispatchEvent(new CustomEvent("lap-start", { detail: lap })); } catch (e) { /* sin ventana */ } }
       this.finish(
         `Completaste los ${LEVELS.length} niveles con ${this.stars.reduce((a, b) => a + b, 0)} estrellas y ${this.score} puntos` +
           (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : ".")

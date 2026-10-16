@@ -3,11 +3,11 @@
 // cae; rebotar centrado suma combo (¡y hace volteretas!), los pompones dan puntos extra.
 // Si cae fuera de la rebotadora, se acaba la partida. Las reglas son las de siempre.
 
-import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=64565862c1";
-import { createMatichico } from "./matichico3d.js?v=64565862c1";
-import { saveProgress, earnCoins } from "./storage.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=64565862c1";
+import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=71b37ac21d";
+import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
+import { saveProgress, earnCoins } from "./storage.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=71b37ac21d";
 
 const GAME_ID = "porristas";
 const PX_W = 800;
@@ -24,6 +24,8 @@ const wy = (py) => (PADDLE_Y - py) * U + 0.62; // 0.62 = altura de la rebotadora
 export class Porristas3DGame extends Game3D {
   constructor(character, progress, els) {
     super(GAME_ID, character, progress, els, { fov: 40 });
+    this.kawaii = true; // ambiente kawaii: pastel, sombreado por tonos, pétalos y estrellitas
+    this.ambientOpts = { petals: 18, hearts: 5, stars: 13, radius: 9, height: 9 };
     this.keys = {};
     this.pointerX = null;
     this.dip = 0;
@@ -447,6 +449,7 @@ export class Porristas3DGame extends Game3D {
     const centered = Math.abs(c.x - this.paddle.x) <= this.paddle.w * 0.3;
     this.combo = centered ? this.combo + 1 : 0;
     this.bounces++;
+    this.countEnergy("reb", 6); // 1 ⚡ cada 6 rebotes
     if (centered) this.centered++;
     const gained = 10 + (centered ? Math.min(this.combo * 2, 20) : 0);
     this.score += gained;

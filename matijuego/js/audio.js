@@ -166,6 +166,20 @@ export function playCountdown(go = false) {
   tone(go ? 880 : 440, go ? 0.3 : 0.12, "square", 0.13);
 }
 
+/** Sonidito suave del sello de inicio (si el aparato todavía no deja sonar, simplemente no suena). */
+export function playIntro() {
+  try {
+    if (muted) return;
+    // en el navegador el sonido solo se permite después de tocar la pantalla; en la app (Capacitor) sí suena de entrada
+    const ua = navigator.userActivation;
+    if (ua && !ua.hasBeenActive && !window.Capacitor) return;
+    const c = getCtx();
+    if (c.state === "suspended") c.resume();
+    [392, 523, 659, 784].forEach((f, i) => tone(f, 0.9, "sine", 0.1, 0.25 + i * 0.16));
+    tone(1046, 1.2, "triangle", 0.06, 1.0);
+  } catch (e) { /* sin audio */ }
+}
+
 export function playStar() {
   [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.18, "triangle", 0.13, i * 0.08));
 }

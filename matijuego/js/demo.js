@@ -13,13 +13,18 @@ export const PLAY_STORE_URL = "";
 // Cuánto se puede jugar en la demo, por juego: cantidad de niveles.
 export const DEMO_LIMITS = { futbol: 3, dulces: 3, aventura: 2, ciudad: 2 };
 
+// Los modos de un juego comparten límite (Fútbol tiene Penales, Tiros libres y Atajapenales: "futbol_pen", "futbol_tl"...).
+const limitKey = (gameId) => (gameId in DEMO_LIMITS ? gameId : String(gameId).split("_")[0]);
+
 /** ¿Se puede jugar este nivel? (fuera de la demo, siempre sí) */
 export function demoAllows(gameId, level) {
-  return !IS_DEMO || !(gameId in DEMO_LIMITS) || level <= DEMO_LIMITS[gameId];
+  const k = limitKey(gameId);
+  return !IS_DEMO || !(k in DEMO_LIMITS) || level <= DEMO_LIMITS[k];
 }
 
 export function demoLimit(gameId) {
-  return IS_DEMO && gameId in DEMO_LIMITS ? DEMO_LIMITS[gameId] : Infinity;
+  const k = limitKey(gameId);
+  return IS_DEMO && k in DEMO_LIMITS ? DEMO_LIMITS[k] : Infinity;
 }
 
 /** Muestra el cartel "sigue en la app de Google Play". */

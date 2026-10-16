@@ -1,34 +1,41 @@
-import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=64565862c1";
-import { SLOTS, RARITIES, getItem, itemsOfSlot } from "./wardrobe-data.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
-import { bindStick, joyMode, setJoyMode } from "./stick.js?v=64565862c1";
-import { UNLOCK_COST, needsUnlock, isUnlocked, unlockGame } from "./unlocks.js?v=64565862c1";
-import { GAMES_CATALOG } from "./games-catalog.js?v=64565862c1";
+import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=71b37ac21d";
+import { SLOTS, RARITIES, getItem, itemsOfSlot, lockReason } from "./wardrobe-data.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
+import { initSplash } from "./splash.js?v=71b37ac21d";
+import { IS_DEMO, demoAllows, showDemoWall } from "./demo.js?v=71b37ac21d";
+import { bindStick, joyMode, setJoyMode } from "./stick.js?v=71b37ac21d";
+import { UNLOCK_COST, needsUnlock, isUnlocked, unlockGame } from "./unlocks.js?v=71b37ac21d";
+import { GAMES_CATALOG } from "./games-catalog.js?v=71b37ac21d";
 import {
-  loadProgress, saveProgress, ownsItem, getLook, equipItem, buyItem,
+  loadProgress, saveProgress, ownsItem, getLook, equipItem, buyItem, wearers, canWear, takeOff, wardrobeCopies,
   getBestScore, getLeaderboard, canClaimDailyReward, claimDailyReward, claimAchievement,
-} from "./storage.js?v=64565862c1";
+} from "./storage.js?v=71b37ac21d";
 import {
   listProfiles, createProfile, deleteProfile, updateProfileMeta,
   getLastActiveProfileId, setLastActiveProfileId, MAX_PROFILES,
-} from "./profiles.js?v=64565862c1";
-import { ACHIEVEMENTS, ACHIEVEMENT_CHAINS, CATEGORIES as ACH_CATEGORIES, achievementProgress } from "./achievements.js?v=64565862c1";
-import { activeEvent, eventById, eventEnd, nextEvent, eventTokens, eventItemAvailable, buyEventItem } from "./events.js?v=64565862c1";
+} from "./profiles.js?v=71b37ac21d";
+import { ACHIEVEMENTS, ACHIEVEMENT_CHAINS, CATEGORIES as ACH_CATEGORIES, achievementProgress } from "./achievements.js?v=71b37ac21d";
+import { activeEvent, eventById, eventEnd, nextEvent, eventTokens, eventItemAvailable, buyEventItem } from "./events.js?v=71b37ac21d";
 import {
   HOUSE_SPOTS, houseItemsOfSpot, getHouseItem, ownsHouseItem, buyHouseItem, placeHouseItem, placedWithDefaults,
-  FURN_CATEGORIES, furnitureOf, isWallItem, houseLayout, layoutAdd, layoutRemove, buyFurniture, HOUSE_SIZES, houseSize, buyHouseSize,
-} from "./house-data.js?v=64565862c1";
+  FURN_CATEGORIES, furnitureOf, isWallItem, houseLayout, layoutAdd, layoutRemove, buyFurniture, copiesOf, placedCount, HOUSE_SIZES, houseSize, roomSizeLevel, houseSizeCost, buyHouseSize, moveRoom,
+  ROOM_TYPES, MAX_ROOMS, roomType, roomsOf, nextRoomOf, roomHasBed, switchRoom, buyRoom,
+} from "./house-data.js?v=71b37ac21d";
 import {
   levelInfo, LEVEL_GIFTS, ensureDaily, missionLabel, missionProgress, missionDone, claimMission,
   canClaimChest, claimChest, hasPending, STICKERS, PAGES, ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, onProgressEvent, GAME_NAMES,
   spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, TRADE_NORMAL, TRADE_FOIL,
-} from "./progression.js?v=64565862c1";
-import { rankingEnabled, fetchRanking } from "./online.js?v=64565862c1";
+} from "./progression.js?v=71b37ac21d";
+import { rankingEnabled, fetchRanking } from "./online.js?v=71b37ac21d";
+import { energyInfo, claimEnergyChest, fmtSecs, ENERGY_COST, ENERGY_RULE, ENERGY_MISSION, startSleep, stopSleep, buyEnergy, buyOffer, BUY_ENERGY, REGEN_SECS, SLEEP_MULT, CHEST_EVERY, CHEST_ENERGY } from "./energy.js?v=71b37ac21d";
+import { monthPlan, rewardInfo, calendarOf, canClaimCalendar, claimCalendar, daysInMonth } from "./calendar.js?v=71b37ac21d";
 
 let progress = null;
 let selectedCharacter = null;
 let shopCharacterId = CHARACTERS[0].id;
 
+initSplash(); // sello de inicio: lo primero que se ve
+if (IS_DEMO) document.getElementById("demo-banner").classList.remove("hidden"); // aviso de la versión de prueba (web)
 const screenProfiles = document.getElementById("screen-profiles");
 const screenHub = document.getElementById("screen-hub");
 const screenShop = document.getElementById("screen-shop");
@@ -49,6 +56,7 @@ const screen3d = {
   memoria: document.getElementById("screen-memoria"),
   futbol: document.getElementById("screen-futbol"),
   dulces: document.getElementById("screen-dulces"),
+  merge: document.getElementById("screen-merge"),
   aventura: document.getElementById("screen-aventura"),
   ciudad: document.getElementById("screen-ciudad"),
   creador: document.getElementById("screen-creador"),
@@ -67,7 +75,15 @@ const toastEl = document.getElementById("toast");
 
 // Instancias únicas de cada motor, creadas recién la primera vez que se juegan
 // y reutilizadas entre partidas y entre perfiles (ver rebind en playGame()).
-const instances = { town: null, parkour: null, recolecta: null, tetris: null, basquet_tiros: null, porristas: null, fps: null, salto: null, autos: null, memoria: null, futbol: null, dulces: null, aventura: null, ciudad: null, creador: null };
+/** "Siguiente nivel": nueva vuelta si se terminó todo; en la demo de la web, el cartel de Google Play cuando el nivel de más adelante es de la app. */
+function goNextLevel(game) {
+  if (game._lapNext) { game.startNewLap(); return; }
+  const cid = game.missionId || game.gameId;
+  if (!demoAllows(cid, (game.level || 0) + 1)) { showDemoWall(); return; }
+  game.nextLevel();
+}
+
+const instances = { town: null, parkour: null, recolecta: null, tetris: null, basquet_tiros: null, porristas: null, fps: null, salto: null, autos: null, memoria: null, futbol: null, dulces: null, merge: null, aventura: null, ciudad: null, creador: null };
 
 let toastTimer = null;
 function showToast(message, ms = 2600) {
@@ -81,7 +97,7 @@ function showToast(message, ms = 2600) {
 function paintAvatar(canvas, char, lookOverride = null, prog = progress) {
   const look = lookOverride || getLook(prog, char.id);
   renderCharacterThumb(canvas, char, getOutfit(look.outfit));
-  import("./thumb3d.js?v=64565862c1")
+  import("./thumb3d.js?v=71b37ac21d")
     .then((m) => {
       m.renderHeroThumb(canvas, char, look);
       canvas.dispatchEvent(new Event("repainted"));
@@ -154,7 +170,7 @@ async function syncLobby(visible) {
   try {
     if (lobbyFailed) { useFallback(); return; }
     if (!lobby) {
-      const { Lobby3D } = await import("./lobby3d.js?v=64565862c1");
+      const { Lobby3D } = await import("./lobby3d.js?v=71b37ac21d");
       lobby = new Lobby3D(cv);
       lobby.init();
     }
@@ -203,12 +219,135 @@ function refreshHubStats() {
   document.getElementById("hub-level").textContent = String(lv.level);
   document.getElementById("hub-xp-fill").style.width = `${Math.round((lv.into / lv.need) * 100)}%`;
   document.getElementById("hub-progress-dot").classList.toggle("hidden", !hasPending(progress));
+  renderEnergy();
   const hs = document.getElementById("house-banner-sub");
   if (hs && progress.house) {
-    const n = (progress.house.layout || []).length;
-    hs.textContent = `${houseSize(progress).name}${n ? ` · ${n} mueble${n > 1 ? "s" : ""}` : ""} — ¡arrastra muebles, decora y agranda tu casa!`;
+    const h = progress.house;
+    const n = (h.layout || []).length + Object.values(h.roomData || {}).reduce((a, d) => a + ((d && d.layout) || []).length, 0);
+    const nr = (h.rooms || []).length || 1;
+    hs.textContent = `${houseSize(progress).name}${nr > 1 ? ` · ${nr} cuartos` : ""}${n ? ` · ${n} mueble${n > 1 ? "s" : ""}` : ""} — ¡decora, agranda y suma cuartos a tu casa!`;
   }
 }
+
+
+// ---------- ENERGÍA ----------
+const ENERGY_FULL = 100;
+const enDlg = document.getElementById("energy-dialog");
+let enOpen = false;
+function renderEnergy() {
+  if (!progress) return;
+  const i = energyInfo(progress);
+  document.getElementById("hub-energy").textContent = String(i.v);
+  const he = document.getElementById("house-energy-v");
+  if (he) he.textContent = String(i.v);
+  document.getElementById("hub-energy-next").textContent = i.v < i.max ? `+1 en ${fmtSecs(i.nextInSecs)}` : "";
+  document.getElementById("hub-energy-dot").classList.toggle("hidden", !i.chestReady);
+  document.getElementById("btn-energy").classList.toggle("low", i.v < 5);
+  if (!enOpen) return;
+  document.getElementById("en-fill").style.width = `${Math.min(100, Math.round((i.v / i.max) * 100))}%`;
+  document.getElementById("en-count").textContent = i.v > i.max ? `${i.v} (¡extra!)` : `${i.v}/${i.max}`;
+  document.getElementById("en-next").textContent = i.v >= i.max ? "¡Energía llena!" : `${i.sleeping ? "😴 Durmiendo: " : ""}+1 ⚡ en ${fmtSecs(i.nextInSecs)} · llena en ${fmtSecs(i.fullInSecs)}`;
+  document.getElementById("en-chest").classList.toggle("hidden", !i.chestReady);
+  renderEnergyWays(i);
+}
+const enWaysEl = document.getElementById("en-ways");
+const enChestResultEl = document.getElementById("en-chest-wait");
+const enMissEl = document.getElementById("en-miss");
+let enNeed = 0;
+let enGame = "";
+/** ¿Estamos en el menú (o en una pantalla fuera de un juego)? Solo ahí se puede "ir" a otro lugar desde el aviso. */
+const enCanGo = () => !screenHub.classList.contains("hidden");
+function renderEnergyWays(i) {
+  // cuánto falta
+  const miss = enNeed ? Math.max(0, enNeed - i.v) : 0;
+  enMissEl.classList.toggle("hidden", !enNeed);
+  if (enNeed) enMissEl.innerHTML = miss > 0 ? `Necesitas <b>${enNeed} ⚡</b> y tienes <b>${i.v}</b>: te faltan <b>${miss} ⚡</b>.` : `¡Ya tienes la energía que necesitas (${enNeed} ⚡)!`;
+  enWaysEl.innerHTML = "";
+  const row = (ico, html, btnText, fn, disabled = false) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="ew-ico">${ico}</span><span class="ew-txt">${html}</span>`;
+    if (btnText) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "ew-go";
+      b.textContent = btnText;
+      b.disabled = disabled;
+      b.addEventListener("click", fn);
+      li.appendChild(b);
+    }
+    enWaysEl.appendChild(li);
+  };
+  const go = (btnId) => () => { closeEnergy(); document.getElementById(btnId).click(); };
+  const hub = enCanGo();
+  const perHour = Math.round(3600 / REGEN_SECS);
+  row("⏳", `<b>Esperar</b> · gratis · +1 ⚡ cada ${REGEN_SECS / 60} min (${perHour} por hora)${i.v < i.max ? ` · llena en ${fmtSecs(i.fullInSecs)}` : ""}`);
+  row("😴", `<b>Dormir en tu cama</b> · gratis · ${SLEEP_MULT} veces más rápido (+1 ⚡ cada ${REGEN_SECS / 60 / SLEEP_MULT} min)`, i.v < i.max && hub ? "Ir a dormir" : "", () => {
+    closeEnergy();
+    window.__sleepOnEnter = true;
+    document.getElementById("btn-open-house").click();
+  });
+  row("🎁", `<b>Cofre del tesoro</b> · gratis · +${CHEST_ENERGY} ⚡ cada ${CHEST_EVERY / 60000} min${i.chestReady ? " · ¡ya está listo!" : ` · en ${fmtSecs(i.chestInSecs)}`}`);
+  row("📋", `<b>Misiones diarias</b> · +5 ⚡ cada una y +15 ⚡ el cofre del día`, hub ? "Ver misiones" : "", go("btn-open-progress"));
+  row("🏅", `<b>Logros</b> · +5 ⚡ (+10 ⚡ los grandes) · y <b>subir de nivel</b> +10 ⚡`, hub ? "Ver logros" : "", go("btn-open-achievements"));
+  row("🏘️", `<b>Actividades del Pueblo</b> (pasear, ayudar a los vecinos) · +10 ⚡`);
+  const offer = buyOffer(progress);
+  const full = offer.n <= 0;
+  row("🍫✨", `<b>Comprar energía</b> · +${BUY_ENERGY.amount} ⚡ por 🍫✨ ${BUY_ENERGY.price}, solo hasta llegar a ${i.max} ⚡ · hasta ${BUY_ENERGY.perDay} veces al día (te quedan <b>${i.buysLeft}</b>)`,
+    i.buysLeft <= 0 ? "Vuelve mañana" : full ? "Ya tienes 100" : progress.coins < offer.price ? `Faltan ${offer.price - progress.coins} 🍫✨` : `+${offer.n} ⚡ · 🍫✨ ${offer.price}`,
+    () => {
+      const n = buyEnergy(progress);
+      if (!n) return;
+      audio.playPurchase();
+      refreshHubStats();
+      renderEnergy();
+    }, !(i.buysLeft > 0 && !full && progress.coins >= offer.price));
+  // lo que gasta cada juego
+  const costs = document.getElementById("en-costs");
+  if (!costs.childElementCount) {
+    for (const g of GAMES_CATALOG) {
+      if (g.status !== "available" || !(g.id in ENERGY_COST)) continue;
+      const li = document.createElement("li");
+      const c = ENERGY_COST[g.id];
+      const rule = ENERGY_RULE[g.id];
+      li.innerHTML = `<span>${g.icon} ${g.name}</span><b>${c ? `${c} ⚡ al entrar` : "gratis al entrar"}${rule ? ` · ${rule}` : g.id === "ciudad" ? ` · misión ${ENERGY_MISSION} ⚡` : ""}</b>`;
+      costs.appendChild(li);
+    }
+  }
+}
+function openEnergy(need = 0, game = "", mid = false) {
+  if (!progress) return;
+  enNeed = need;
+  enGame = game;
+  enChestResultEl.textContent = "";
+  const i = energyInfo(progress);
+  document.getElementById("en-icon").textContent = need ? "😴" : "⚡";
+  document.getElementById("en-title").textContent = need ? "¡Matichico está cansado!" : "Tu energía";
+  document.getElementById("en-text").textContent = need && mid
+    ? `Se acabó la energía en plena partida (tienes ${i.v} ⚡). Tu puntaje quedó guardado. Para recargar:`
+    : need
+    ? `Para jugar ${game ? "esto " : ""}necesitas ${need} ⚡ y tienes ${i.v}. Mientras tanto puedes decorar tu casa, vestir a tu Matichico o pasear por el Pueblo y Ciudad Choco (¡eso no gasta!). Para recargar:`
+    : `Cada juego gasta energía al entrar y mientras juegas (mira abajo cuánto). Pueblo, Ciudad, casa y vestuario no gastan. Para conseguir más:`;
+  enOpen = true;
+  enDlg.classList.remove("hidden");
+  renderEnergy();
+}
+function closeEnergy() { enOpen = false; enDlg.classList.add("hidden"); }
+document.getElementById("btn-energy").addEventListener("click", () => openEnergy());
+document.getElementById("en-close").addEventListener("click", closeEnergy);
+document.getElementById("en-chest").addEventListener("click", () => {
+  const r = claimEnergyChest(progress);
+  if (!r) return;
+  audio.playPurchase();
+  const msg = r.energy ? `🎁 ¡Cofre del tesoro! +${r.energy} ⚡ y +${r.coins} 🍫✨` : `🎁 ¡Cofre! Tu energía ya está en el tope (${energyInfo(progress).cap}), así que te da +${r.coins} 🍫✨`;
+  enChestResultEl.textContent = msg; // queda escrito en el diálogo (el aviso de abajo se tapaba con la ventana)
+  showToast(msg, 3500);
+  refreshHubStats();
+  renderEnergy();
+});
+window.addEventListener("lap-start", (e) => { showToast(`🎉 ¡Vuelta ${e.detail.lap}! +${e.detail.coins} 🍫✨ y ${e.detail.packs} sobre${e.detail.packs > 1 ? "s" : ""} 🎴`, 4200); refreshHubStats(); });
+window.addEventListener("no-energy", (e) => openEnergy(e.detail.need, e.detail.game, !!e.detail.mid));
+window.addEventListener("energy-gain", (e) => { showToast(`⚡ +${e.detail.n} energía${e.detail.reason ? ` (${e.detail.reason})` : ""}`); renderEnergy(); });
+setInterval(renderEnergy, 1000);
 
 // ---------- PERFILES ("¿Quién juega?") ----------
 
@@ -339,22 +478,66 @@ function bootHub() {
 const btnDailyReward = document.getElementById("btn-daily-reward");
 
 function updateDailyRewardButton() {
-  const can = canClaimDailyReward(progress);
-  btnDailyReward.disabled = !can;
+  const can = canClaimDailyReward(progress) || canClaimCalendar(progress);
+  btnDailyReward.disabled = false;
   btnDailyReward.classList.toggle("daily-ready", can); // sin cobrar: dorado, brillando y con puntito rojo
   btnDailyReward.textContent = can
     ? "🎁 ¡Cobra tu recompensa!"
-    : `🎁 Reclamado (racha ${progress.dailyStreak} día${progress.dailyStreak === 1 ? "" : "s"})`;
+    : `🎁 Calendario (racha ${progress.dailyStreak} día${progress.dailyStreak === 1 ? "" : "s"})`;
 }
 
-btnDailyReward.addEventListener("click", () => {
-  const result = claimDailyReward(progress);
-  if (!result) return;
+// ---------- CALENDARIO DE RECOMPENSAS DEL MES ----------
+const calDlg = document.getElementById("calendar-dialog");
+function renderCalendar(lastResult = null) {
+  const now = new Date();
+  const plan = monthPlan(now);
+  const cal = calendarOf(progress, now);
+  const today = now.getDate();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1).getDay(); // 0 = domingo
+  const monthName = now.toLocaleDateString("es-CL", { month: "long", year: "numeric" });
+  document.getElementById("cal-title").textContent = `🎁 Recompensas de ${monthName}`;
+  document.getElementById("cal-sub").textContent = `Racha: ${progress.dailyStreak || 0} día${progress.dailyStreak === 1 ? "" : "s"} 🔥 · Cobraste ${cal.claimed.length} de ${daysInMonth(now)}. ¡Hay días especiales con 100 de energía! 🔋`;
+  const grid = document.getElementById("cal-grid");
+  grid.innerHTML = "";
+  for (const d of ["D", "L", "M", "M", "J", "V", "S"]) { const h = document.createElement("div"); h.className = "cal-dow"; h.textContent = d; grid.appendChild(h); }
+  for (let i = 0; i < first; i++) grid.appendChild(document.createElement("div"));
+  plan.forEach((r, i) => {
+    const day = i + 1;
+    const info = rewardInfo(r.type, progress);
+    const claimed = cal.claimed.includes(day);
+    const cell = document.createElement("div");
+    const state = claimed ? "claimed" : day === today ? "today" : day < today ? "missed" : "future";
+    cell.className = `cal-day ${state}${r.special ? " special" : ""}`;
+    // los días que faltan son sorpresa (solo se ven los especiales); hoy y los pasados se ven
+    const show = day <= today || claimed;
+    cell.innerHTML = `<b>${day}</b><span class="cal-ic">${claimed ? "✅" : show ? info.icon : r.special ? "🔋" : "🎁"}</span><small>${show ? info.short : r.special ? "100" : "?"}</small>`;
+    cell.title = show ? info.label : r.special ? "¡Día especial: 100 de energía!" : "Sorpresa";
+    grid.appendChild(cell);
+  });
+  const can = canClaimCalendar(progress, now);
+  const todayInfo = rewardInfo(plan[today - 1].type, progress);
+  const box = document.getElementById("cal-today");
+  box.innerHTML = lastResult
+    ? `<b>🎉 ¡Hoy te tocó ${lastResult.icon} ${lastResult.label}!</b>`
+    : can ? `Hoy te espera: <b>${todayInfo.icon} ${todayInfo.label}</b>` : `Hoy ya cobraste ✅ · Vuelve mañana por otra sorpresa`;
+  const btn = document.getElementById("cal-claim");
+  btn.disabled = !can && !canClaimDailyReward(progress);
+  btn.classList.toggle("hidden", !can && !canClaimDailyReward(progress));
+}
+function openCalendar() { renderCalendar(); calDlg.classList.remove("hidden"); }
+document.getElementById("cal-close").addEventListener("click", () => calDlg.classList.add("hidden"));
+document.getElementById("cal-claim").addEventListener("click", () => {
+  const streak = claimDailyReward(progress); // racha y Matipuntos base de siempre
+  const cal = claimCalendar(progress); // la sorpresa del día
+  if (!streak && !cal) return;
   audio.playPurchase();
   refreshHubStats();
   updateDailyRewardButton();
-  showToast(`¡+${result.reward} Matipuntos! Racha de ${result.streak} día${result.streak === 1 ? "" : "s"} 🔥`);
+  renderCalendar(cal);
+  showToast(`🎁 ${cal ? `${cal.icon} ${cal.label}` : ""}${streak ? ` · +${streak.reward} Matipuntos (racha de ${streak.streak} día${streak.streak === 1 ? "" : "s"} 🔥)` : ""}`, 4200);
+  try { renderProgress(); } catch (e) { /* la pantalla de progreso aún no está abierta */ }
 });
+btnDailyReward.addEventListener("click", openCalendar);
 
 // ---------- "Tienda" y "Lo que tengo": lo comprado va aparte de lo que falta por comprar ----------
 
@@ -394,7 +577,7 @@ const houseBarEl = document.getElementById("house-bar");
 const houseModesEl = document.getElementById("house-modes");
 const houseToolsEl = document.getElementById("house-tools");
 const STYLE_SPOTS = HOUSE_SPOTS.filter((s) => ["floor", "wall", "ceiling"].includes(s.id));
-let houseMode = "decor";
+let houseMode = "live";
 let houseSpot = "floor";
 let houseCat = FURN_CATEGORIES[0].id;
 let houseView = "buy"; // "buy" = lo que falta por comprar, "own" = lo que ya tengo
@@ -422,7 +605,8 @@ document.getElementById("btn-house-back").addEventListener("click", () => {
   houseBuying = null;
   clearFurniturePreview();
   clearSizePreview();
-  if (house3d) house3d.setActive(false);
+  if (house3d) { house3d.holdAct = false; house3d.wake(); house3d.setActive(false); }
+  if (progress) stopSleep(progress);
   refreshHubStats();
   if (fromTown) goToHub();
   else showScreen(screenHub);
@@ -435,7 +619,7 @@ function housePlaced() {
 async function openHousePreview() {
   try {
     if (!house3d) {
-      const { House3D } = await import("./house3d.js?v=64565862c1");
+      const { House3D } = await import("./house3d.js?v=71b37ac21d");
       house3d = new House3D(document.getElementById("house-canvas"));
       house3d.init();
       bindHouseDrag();
@@ -445,10 +629,37 @@ async function openHousePreview() {
     const key = `${selectedCharacter.id}|${JSON.stringify(look)}`;
     if (house3d.key !== key) house3d.setHero(selectedCharacter, look, key);
     house3d.setSize(houseSize(progress).size);
+    // si venía a dormir y este cuarto no tiene cama, pasa al cuarto que sí la tenga
+    if (window.__sleepOnEnter && !roomHasBed(progress, progress.house.curRoom)) {
+      const r = roomsOf(progress).find((x) => roomHasBed(progress, x.rid));
+      if (r) switchRoom(progress, r.rid);
+    }
     house3d.layoutData = houseLayout(progress);
     house3d.setPlaced(housePlaced());
+    refreshNeighbors();
     house3d.setSelected(houseSel);
+    house3d.freezeOnSel = true;
+    if (!house3d._lifeBound) {
+      house3d._lifeBound = true;
+      house3d.onLife((ev) => {
+        if (!progress) return;
+        if (ev.act !== "sleep") return;
+        if (ev.type === "start" || ev.type === "tick") {
+          startSleep(progress, 90);
+          if (energyInfo(progress).v >= ENERGY_FULL) house3d.holdAct = false;
+          renderEnergy();
+        } else if (ev.type === "end") { stopSleep(progress); house3d.holdAct = false; renderEnergy(); }
+      });
+    }
     house3d.setActive(true);
+    if (houseMode === "live") renderHouse(); // ahora que están los muebles, se arma la lista de cosas para hacer
+    if (window.__sleepOnEnter) {
+      window.__sleepOnEnter = false;
+      houseMode = "live";
+      const bed = [...house3d.furn.values()].find((f) => f.item.spot === "bed");
+      if (bed) { house3d.holdAct = true; house3d.interact(bed.data.uid); }
+      else showToast("Pon una cama en Decorar para poder dormir 🛏️");
+    }
   } catch (err) {
     console.error(err);
     showToast("Tu dispositivo no pudo mostrar la casa en 3D.");
@@ -545,7 +756,19 @@ function bindHouseDrag() {
   const point = (e, d) => (d.wall ? house3d.wallPoint(e.clientX, e.clientY) : house3d.floorPoint(e.clientX, e.clientY));
   const snap = (v) => Math.round(v * 4) / 4;
   cv.addEventListener("pointerdown", (e) => {
+    if (houseMode === "live") {
+      // tocar otro cuarto de la casa (a los lados): pasa a ese cuarto
+      const nb = house3d.pickRoom(e.clientX, e.clientY);
+      if (nb) { openRoom(nb); return; }
+      // tocar un mueble: lo usa; tocar el piso: camina hasta ahí (y se levanta si dormía)
+      const u = house3d.pick(e.clientX, e.clientY);
+      if (u && house3d.interact(u)) return;
+      const fp = house3d.floorPoint(e.clientX, e.clientY);
+      if (fp) house3d.walkTo(fp.x, fp.z);
+      return;
+    }
     if (houseMode !== "decor") return;
+    house3d.wake();
     const uid = house3d.pick(e.clientX, e.clientY);
     if (!uid) { if (houseSel) selectPiece(null); return; }
     const d = pieceById(uid);
@@ -624,17 +847,19 @@ function renderHouse() {
   document.getElementById("house-coins").textContent = String(progress.coins);
   // modos
   houseModesEl.innerHTML = "";
-  for (const [id, icon, name] of [["decor", "🛋️", "Decorar"], ["style", "🎨", "Piso y paredes"], ["size", "🏡", "Agrandar casa"]]) {
+  for (const [id, icon, name] of [["live", "🧸", "Vivir"], ["decor", "🛋️", "Decorar"], ["style", "🎨", "Piso y paredes"], ["size", "🏡", "Agrandar"], ["rooms", "🚪", "Cuartos"]]) {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "sh-mode" + (id === houseMode ? " active" : "");
     b.innerHTML = `<span>${icon}</span> ${name}`;
-    b.addEventListener("click", () => { houseMode = id; houseBuying = null; houseTrial = {}; clearFurniturePreview(); clearSizePreview(); if (id !== "decor") selectPiece(null); renderHouse(); house3d && house3d.setPlaced(housePlaced()); });
+    b.addEventListener("click", () => { houseMode = id; houseBuying = null; houseTrial = {}; houseRoomLook = null; clearFurniturePreview(); clearSizePreview(); if (id !== "decor") selectPiece(null); renderHouse(); house3d && house3d.setPlaced(housePlaced()); });
     houseModesEl.appendChild(b);
   }
   renderHouseTools();
-  houseViewsEl.classList.toggle("hidden", houseMode === "size");
-  if (houseMode !== "size") {
+  renderRoomStrip();
+  const noViews = houseMode === "size" || houseMode === "live" || houseMode === "rooms";
+  houseViewsEl.classList.toggle("hidden", noViews);
+  if (!noViews) {
     const mine = (x) => ownsHouseItem(progress, x.id);
     const pool = houseMode === "decor" ? FURN_CATEGORIES.flatMap((c) => furnitureOf(c.id)) : STYLE_SPOTS.flatMap((sp) => houseItemsOfSpot(sp.id));
     const own = pool.filter(mine).length;
@@ -647,9 +872,195 @@ function renderHouse() {
   houseGridEl.innerHTML = "";
   houseBarEl.innerHTML = "";
   houseBarEl.className = "sh-bar";
-  if (houseMode === "decor") renderHouseDecor();
+  if (houseMode === "live") renderHouseLive();
+  else if (houseMode === "decor") renderHouseDecor();
   else if (houseMode === "style") renderHouseStyle();
+  else if (houseMode === "rooms") renderHouseRooms();
   else renderHouseSize();
+}
+
+// ---------- varios cuartos ----------
+let houseRoomLook = null; // tipo de cuarto que se está mirando para comprar
+const roomsStripEl = document.getElementById("house-rooms");
+
+function renderRoomStrip() {
+  if (!roomsStripEl) return;
+  const rooms = roomsOf(progress);
+  roomsStripEl.innerHTML = "";
+  for (const r of rooms) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "hr-pill" + (r.rid === progress.house.curRoom ? " active" : "");
+    b.innerHTML = `<span>${roomType(r.type).icon}</span> ${r.name}`;
+    b.addEventListener("click", () => openRoom(r.rid));
+    roomsStripEl.appendChild(b);
+  }
+  if (rooms.length < MAX_ROOMS) {
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "hr-pill hr-add";
+    add.textContent = "➕ Cuarto";
+    add.addEventListener("click", () => { houseMode = "rooms"; houseBuying = null; clearFurniturePreview(); selectPiece(null); renderHouse(); });
+    roomsStripEl.appendChild(add);
+  }
+}
+
+/** Los cuartos que no están abiertos se ven a los lados (la casa de lado, como en Avatar World) y las flechas dicen a cuál van. */
+function refreshNeighbors() {
+  if (!house3d) return;
+  const h = progress.house;
+  const rooms = roomsOf(progress);
+  const cur = rooms.findIndex((r) => r.rid === h.curRoom);
+  house3d.setRoomName(`${roomType(rooms[cur].type).icon} ${rooms[cur].name}`);
+  house3d.setNeighbors(rooms.map((r) => {
+    const d = h.roomData[r.rid] || {};
+    return { rid: r.rid, size: HOUSE_SIZES[roomSizeLevel(progress, r.rid)].size, active: r.rid === h.curRoom, name: `${roomType(r.type).icon} ${r.name}`, placed: d.placed || {}, layout: d.layout || [] };
+  }));
+  renderRoomArrows();
+}
+
+const arrowPrev = document.getElementById("house-prev");
+const arrowNext = document.getElementById("house-next");
+function renderRoomArrows() {
+  const rooms = roomsOf(progress);
+  const cur = rooms.findIndex((r) => r.rid === progress.house.curRoom);
+  const prev = rooms[cur - 1];
+  const next = rooms[cur + 1];
+  arrowPrev.classList.toggle("hidden", !prev);
+  if (prev) arrowPrev.innerHTML = `◀ <span>${roomType(prev.type).icon} ${prev.name}</span>`;
+  const canAdd = rooms.length < MAX_ROOMS;
+  arrowNext.classList.toggle("hidden", !next && !canAdd);
+  arrowNext.innerHTML = next ? `<span>${roomType(next.type).icon} ${next.name}</span> ▶` : `<span>➕ Cuarto nuevo</span>`;
+}
+arrowPrev.addEventListener("click", () => { const r = roomsOf(progress); const i = r.findIndex((x) => x.rid === progress.house.curRoom); if (r[i - 1]) openRoom(r[i - 1].rid); });
+arrowNext.addEventListener("click", () => {
+  const r = roomsOf(progress);
+  const i = r.findIndex((x) => x.rid === progress.house.curRoom);
+  if (r[i + 1]) openRoom(r[i + 1].rid);
+  else { houseMode = "rooms"; houseBuying = null; clearFurniturePreview(); selectPiece(null); renderHouse(); }
+});
+
+/** Muestra en 3D el cuarto que está abierto (muebles, piso y paredes) y los vecinos a los lados. */
+function refreshRoom3d(enterSide = 0) {
+  if (!house3d) return;
+  house3d.setSize(houseSize(progress).size);
+  house3d.layoutData = houseLayout(progress);
+  house3d.setPlaced(housePlaced());
+  refreshNeighbors();
+  house3d.setSelected(null);
+  house3d.snapCam();
+  if (enterSide) house3d.enterRoom(enterSide);
+}
+
+/** Pasa a otro cuarto: la cámara se desliza hasta él (los cuartos están uno al lado del otro). */
+let roomMoving = false;
+function openRoom(rid) {
+  if (!progress || roomMoving || rid === progress.house.curRoom) return;
+  const rooms = roomsOf(progress);
+  const from = rooms.findIndex((r) => r.rid === progress.house.curRoom);
+  const to = rooms.findIndex((r) => r.rid === rid);
+  if (to < 0) return;
+  houseSel = null;
+  houseTrial = {};
+  houseBuying = null;
+  clearFurniturePreview();
+  if (house3d) house3d.wake();
+  const go = () => {
+    roomMoving = false;
+    if (!switchRoom(progress, rid)) return;
+    refreshRoom3d(to > from ? 1 : -1);
+    renderHouse();
+  };
+  if (house3d && house3d.ready) { roomMoving = true; house3d.slideTo(rid, go); } else go();
+}
+
+function renderHouseRooms() {
+  const rooms = roomsOf(progress);
+  const full = rooms.length >= MAX_ROOMS;
+  if (rooms.length > 1) {
+    const ord = document.createElement("div");
+    ord.className = "sh-order";
+    ord.innerHTML = `<b>Orden de tus cuartos</b> (de izquierda a derecha)`;
+    rooms.forEach((r, i) => {
+      const chip = document.createElement("div");
+      chip.className = "so-chip" + (r.rid === progress.house.curRoom ? " open" : "");
+      const mv = (dir, txt) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = txt;
+        b.setAttribute("aria-label", dir < 0 ? "Mover a la izquierda" : "Mover a la derecha");
+        b.disabled = dir < 0 ? i === 0 : i === rooms.length - 1;
+        b.addEventListener("click", () => { if (moveRoom(progress, r.rid, dir)) { refreshNeighbors(); renderHouse(); } });
+        return b;
+      };
+      const nm = document.createElement("span");
+      nm.textContent = `${roomType(r.type).icon} ${r.name}`;
+      chip.append(mv(-1, "◀"), nm, mv(1, "▶"));
+      ord.appendChild(chip);
+    });
+    houseGridEl.appendChild(ord);
+  }
+  for (const t of ROOM_TYPES.slice(1)) {
+    const have = rooms.filter((r) => r.type === t.id).length;
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "sh-card sh-size" + (houseRoomLook === t.id ? " trying" : "");
+    card.innerHTML = `<span class="sh-ico">${t.icon}</span><span class="sh-name">${t.name}</span><small>${have ? `Tienes ${have}` : "Nuevo"}</small><span class="sh-price">🍫✨ ${t.price}</span>`;
+    card.addEventListener("click", () => { houseRoomLook = t.id; renderHouse(); });
+    houseGridEl.appendChild(card);
+  }
+  const t = houseRoomLook && roomType(houseRoomLook);
+  if (t) {
+    const need = t.price - progress.coins;
+    const txt = document.createElement("div");
+    txt.className = "sh-bar-txt";
+    txt.innerHTML = `<b>${t.icon} ${t.name}</b> — ${t.blurb} Viene con sus muebles de regalo.`;
+    const buy = document.createElement("button");
+    buy.className = "btn-primary";
+    buy.textContent = full ? "Ya tienes todos los cuartos que caben" : need > 0 ? `Te faltan ${need} 🍫✨` : `Comprar · 🍫✨ ${t.price}`;
+    buy.disabled = full || need > 0;
+    buy.addEventListener("click", () => {
+      const rid = buyRoom(progress, t.id);
+      if (!rid) return;
+      audio.playPurchase();
+      showToast(`¡Nuevo cuarto: ${t.name}! 🎉 Ya viene amoblado.`);
+      houseRoomLook = null;
+      houseMode = "live";
+      openRoom(rid);
+      refreshHubStats();
+    });
+    const cancel = document.createElement("button");
+    cancel.className = "btn-secondary";
+    cancel.textContent = "Cerrar";
+    cancel.addEventListener("click", () => { houseRoomLook = null; renderHouse(); });
+    houseBarEl.append(txt, buy, cancel);
+  } else {
+    houseBarEl.className = "sh-bar hint";
+    houseBarEl.innerHTML = `<div class="sh-bar-txt">Tu casa tiene <b>${rooms.length}</b> cuarto${rooms.length > 1 ? "s" : ""} (máximo ${MAX_ROOMS}). Con ◀ ▶ cambias el <b>orden</b>; pasas de un cuarto a otro con las flechas o las pestañas de arriba.</div>`;
+  }
+}
+
+
+const LIVE_ICONS = { sleep: "😴", sit: "🛋️", type: "💻", arcade: "🕹️", piano: "🎹", hop: "🤸", admire: "👀", fridge: "🧊", cook: "🍳", wash: "🚰", eat: "🍽️", bath: "🛁", wardrobe: "👗", watch: "📺" };
+const LIVE_NAMES = { sleep: "Dormir", sit: "Sentarse", type: "Usar el computador", arcade: "Jugar a la arcade", piano: "Tocar el piano", hop: "Saltar", admire: "Mirar", fridge: "Abrir la heladera", cook: "Cocinar", wash: "Lavar", eat: "Comer", bath: "Darse un baño", wardrobe: "Mirar el ropero", watch: "Ver tele" };
+/** Modo "Vivir": el Matichico camina por la casa y usa los muebles. */
+function renderHouseLive() {
+  const i = energyInfo(progress);
+  houseBarEl.innerHTML = `<div class="sh-bar-txt">Tu Matichico vive aquí: <b>toca un mueble</b> y irá a usarlo, o <b>toca el piso</b> para que camine. ${i.v < i.max ? `Si duerme en su cama, ¡la energía vuelve 3 veces más rápido! (⚡ ${i.v}/${i.max})` : ""}</div>`;
+  const spots = house3d ? house3d._spots() : [];
+  const ACTS = ["sleep", "sit", "type", "arcade", "piano", "hop", "fridge", "cook", "wash", "eat", "bath", "wardrobe", "watch", "admire"];
+  const cats = Object.fromEntries(ACTS.map((a) => [a, []]));
+  for (const { f, i: it } of spots) cats[it.act].push(f);
+  const mk = (act, f) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "sh-card";
+    b.innerHTML = `<span class="sh-ico">${LIVE_ICONS[act]}</span><span class="sh-name">${LIVE_NAMES[act]}</span><span class="sh-price">${f.item.name}</span>`;
+    b.addEventListener("click", () => house3d && house3d.interact(f.data.uid));
+    houseGridEl.appendChild(b);
+  };
+  for (const act of ACTS) for (const f of cats[act]) mk(act, f);
+  if (!spots.length) houseGridEl.innerHTML = `<div class="sh-empty">Aún no hay muebles para usar. ¡Pon una cama, un sillón o un computador en <b>Decorar</b>!</div>`;
 }
 
 function renderHouseDecor() {
@@ -666,18 +1077,23 @@ function renderHouseDecor() {
   if (!shown.length) addEmptyNote(houseGridEl, houseView, "¡Ya tienes todo de esta categoría! 🎉", "Aquí aún no tienes nada. ¡Mira lo que hay por comprar!", () => { houseView = wantOwn ? "buy" : "own"; houseBuying = null; clearFurniturePreview(); renderHouse(); });
   shown.forEach((item) => {
     const owned = ownsHouseItem(progress, item.id);
-    const count = houseLayout(progress).filter((f) => f.id === item.id).length;
+    const total = copiesOf(progress, item.id);
+    const placed = placedCount(progress, item.id);
+    const free = total - placed; // unidades guardadas listas para poner
     const card = document.createElement("button");
     card.type = "button";
     card.className = "sh-card" + (!owned ? " locked" : "") + (houseBuying === item.id ? " trying" : "");
     card.style.setProperty("--rar", RARITIES[item.rarity].color);
     card.innerHTML = `<span class="sh-ico">${item.icon}</span><span class="sh-name">${item.name}</span>` +
-      `<span class="sh-price">${owned ? `＋ Poner${count ? ` (${count} puesto${count > 1 ? "s" : ""})` : ""}` : `🍫✨ ${item.price}`}</span>`;
+      `<span class="sh-price">${!owned ? (item.soon ? "🔜 Próximamente" : `🍫✨ ${item.price}`) : free > 0 ? `＋ Poner${total > 1 ? ` (${free} libre${free > 1 ? "s" : ""})` : ""}` : item.price > 0 ? `✓ Puesto · 🍫✨ ${item.price} otro` : "✓ Puesto"}</span>`;
     card.addEventListener("click", () => {
       if (card.dataset.dragged) { delete card.dataset.dragged; return; }
-      if (owned) { clearFurniturePreview(); houseBuying = null; placeFurniture(item.id); renderHouse(); } else { houseBuying = item.id; startFurniturePreview(item.id); renderHouse(); }
+      if (owned && free > 0) { clearFurniturePreview(); houseBuying = null; placeFurniture(item.id); renderHouse(); }
+      else if (owned && item.price <= 0) showToast(`${item.icon} ${item.name} ya está puesto. Tócalo en el cuarto para moverlo o quitarlo.`);
+      else if (owned) { houseBuying = item.id; startFurniturePreview(item.id); showToast(`Ya tienes puesto ${item.name}. Si quieres otro igual, puedes comprarlo 🍫✨ ${item.price}`); renderHouse(); }
+      else { houseBuying = item.id; startFurniturePreview(item.id); renderHouse(); }
     });
-    if (owned) bindCardDrag(card, item.id);
+    if (owned && free > 0) bindCardDrag(card, item.id);
     houseGridEl.appendChild(card);
   });
   const bi = houseBuying && getHouseItem(houseBuying);
@@ -685,15 +1101,16 @@ function renderHouseDecor() {
     const need = bi.price - progress.coins;
     const txt = document.createElement("div");
     txt.className = "sh-bar-txt";
-    txt.innerHTML = `<b>${bi.icon} ${bi.name}</b> <i style="color:${RARITIES[bi.rarity].color}">${RARITIES[bi.rarity].name}</i>`;
+    txt.innerHTML = `<b>${bi.icon} ${bi.name}</b> <i style="color:${RARITIES[bi.rarity].color}">${RARITIES[bi.rarity].name}</i>` + (bi.soon ? ` · <small>🔜 Próximamente: puedes verlo en tu cuarto, pero todavía no se vende</small>` : "");
     const buy = document.createElement("button");
     buy.className = "btn-primary";
-    buy.textContent = need > 0 ? `Te faltan ${need} 🍫✨ para comprarlo` : `Comprar · 🍫✨ ${bi.price}`;
-    buy.disabled = need > 0;
+    const another = ownsHouseItem(progress, bi.id);
+    buy.textContent = bi.soon ? "🔜 Próximamente" : need > 0 ? `Te faltan ${need} 🍫✨ para comprarlo` : `${another ? "Comprar otro" : "Comprar"} · 🍫✨ ${bi.price}`;
+    buy.disabled = need > 0 || !!bi.soon;
     buy.addEventListener("click", () => {
       if (!buyFurniture(progress, bi.id)) return;
       audio.playPurchase();
-      showToast(`¡Compraste ${bi.name}! 🎉 Ahora está en 🎒 Lo que tengo`);
+      showToast(another ? `¡Compraste otro ${bi.name}! 🎉` : `¡Compraste ${bi.name}! 🎉 Ahora está en 🎒 Lo que tengo`);
       const where = housePreview ? { ...housePreview } : null;
       houseBuying = null;
       clearFurniturePreview();
@@ -708,7 +1125,7 @@ function renderHouseDecor() {
     houseBarEl.append(txt, buy, cancel);
   } else {
     houseBarEl.className = "sh-bar hint";
-    houseBarEl.innerHTML = `<div class="sh-bar-txt">${houseView === "own" ? "Toca un mueble tuyo para ponerlo (o arrástralo al cuarto)." : "Toca un mueble para verlo en tu cuarto antes de comprarlo."} Toca uno puesto para moverlo, girarlo o cambiarle el tamaño.</div>`;
+    houseBarEl.innerHTML = `<div class="sh-bar-txt">${houseView === "own" ? "Toca un mueble tuyo para ponerlo (o arrástralo al cuarto). Cada compra se puede poner una sola vez." : "Toca un mueble para verlo en tu cuarto antes de comprarlo."} Toca uno puesto para moverlo, girarlo, cambiarle el tamaño o quitarlo (🗑 lo guarda en Lo que tengo).</div>`;
   }
 }
 
@@ -766,7 +1183,7 @@ function renderHouseStyle() {
       if (!buyHouseItem(progress, titem.id)) return;
       delete houseTrial[houseSpot];
       audio.playPurchase();
-      showToast(`¡Compraste ${titem.name}! 🎉 Ahora está en 🎒 Lo que tengo`);
+      showToast(had ? `¡Compraste otro ${titem.name}! 🎉` : `¡Compraste ${titem.name}! 🎉 Ahora está en 🎒 Lo que tengo`);
       renderHouse();
       house3d && house3d.setPlaced(housePlaced());
       refreshHubStats();
@@ -783,38 +1200,38 @@ function renderHouseStyle() {
 
 function renderHouseSize() {
   const cur = houseSize(progress);
+  const room = roomsOf(progress).find((r) => r.rid === progress.house.curRoom);
   HOUSE_SIZES.forEach((sz) => {
     const owned = sz.level <= cur.level;
-    const next = sz.level === cur.level + 1;
     const looking = housePreviewSize === sz.size;
     const card = document.createElement("button");
     card.type = "button";
     card.className = "sh-card sh-size" + (sz.level === cur.level ? " equipped" : "") + (looking ? " trying" : "") + (!owned ? " locked" : "");
     card.innerHTML = `<span class="sh-ico">${sz.icon}</span><span class="sh-name">${sz.name}</span><small>${sz.size} × ${sz.size}</small>` +
-      `<span class="sh-price">${sz.level === cur.level ? "✓ Tu casa" : owned ? "Tuya" : `🍫✨ ${sz.price}`}</span>`;
+      `<span class="sh-price">${sz.level === cur.level ? "✓ Este cuarto" : owned ? "Ya lo superó" : `🍫✨ ${houseSizeCost(progress, sz.level)}`}</span>`;
     card.addEventListener("click", () => {
-      // siempre se puede mirar cómo se vería (aunque todavía no alcance para comprarla)
+      // siempre se puede mirar cómo se vería (aunque todavía no alcance para comprarlo)
       housePreviewSize = owned ? null : sz.size;
-      house3d && house3d.setSize(owned ? cur.size : sz.size); // tocar una que ya tienes vuelve a tu casa
+      house3d && house3d.setSize(owned ? cur.size : sz.size); // tocar el que ya tienes vuelve a tu cuarto
       renderHouse();
     });
     houseGridEl.appendChild(card);
   });
   const look = housePreviewSize && HOUSE_SIZES.find((z) => z.size === housePreviewSize);
   if (look) {
-    const next = look.level === cur.level + 1;
-    const need = look.price - progress.coins;
+    const cost = houseSizeCost(progress, look.level);
+    const need = cost - progress.coins;
     const txt = document.createElement("div");
     txt.className = "sh-bar-txt";
-    txt.innerHTML = `<b>${look.icon} ${look.name}</b> · ${look.size} × ${look.size} — ${look.blurb}`;
+    txt.innerHTML = `<b>${look.icon} ${look.name}</b> · ${look.size} × ${look.size} para <b>${room.name}</b> — ${look.blurb}`;
     const buy = document.createElement("button");
     buy.className = "btn-primary";
-    buy.textContent = !next ? "🔒 Compra primero la anterior" : need > 0 ? `Te faltan ${need} 🍫✨` : `Comprar · 🍫✨ ${look.price}`;
-    buy.disabled = !next || need > 0;
+    buy.textContent = need > 0 ? `Te faltan ${need} 🍫✨` : `Comprar · 🍫✨ ${cost}`;
+    buy.disabled = need > 0;
     buy.addEventListener("click", () => {
       if (!buyHouseSize(progress, look.level)) return;
       audio.playPurchase();
-      showToast(`¡Ahora tienes una ${look.name.toLowerCase()}! 🎉`);
+      showToast(`¡${room.name} ahora es ${look.name.toLowerCase()}! 🎉`);
       housePreviewSize = null;
       houseMode = "decor";
       renderHouse();
@@ -822,12 +1239,12 @@ function renderHouseSize() {
     });
     const cancel = document.createElement("button");
     cancel.className = "btn-secondary";
-    cancel.textContent = "Volver a mi casa";
+    cancel.textContent = "Volver a como estaba";
     cancel.addEventListener("click", () => { clearSizePreview(); renderHouse(); });
     houseBarEl.append(txt, buy, cancel);
   } else {
     houseBarEl.className = "sh-bar hint";
-    houseBarEl.innerHTML = `<div class="sh-bar-txt">Toca una casa para <b>verla</b> antes de comprarla. ${cur.level >= HOUSE_SIZES.length - 1 ? "¡Ya tienes la más grande!" : `Próxima: <b>${HOUSE_SIZES[cur.level + 1].name}</b> por 🍫✨ ${HOUSE_SIZES[cur.level + 1].price}.`}</div>`;
+    houseBarEl.innerHTML = `<div class="sh-bar-txt">El tamaño es de <b>cada cuarto</b>: ahora estás en <b>${room.name}</b> (${cur.name.toLowerCase()}). Toca un tamaño para <b>verlo</b> antes de comprarlo; para otro cuarto, ábrelo primero con las flechas.</div>`;
   }
 }
 
@@ -1010,15 +1427,7 @@ document.getElementById("pg-chest").addEventListener("click", () => {
   refreshHubStats();
   renderProgress();
 });
-document.getElementById("pg-daily").addEventListener("click", () => {
-  const result = claimDailyReward(progress);
-  if (!result) return;
-  audio.playPurchase();
-  refreshHubStats();
-  updateDailyRewardButton();
-  showToast(`¡+${result.reward} Matipuntos! Racha de ${result.streak} día${result.streak === 1 ? "" : "s"} 🔥`);
-  renderProgress();
-});
+document.getElementById("pg-daily").addEventListener("click", openCalendar);
 
 /** Dibujo de una figurita: foto del producto, o un emoji sobre un fondo de color. */
 function stickerArt(s) {
@@ -1239,8 +1648,14 @@ function gameThumb(entry) {
   }
   const ori = document.createElement("span");
   ori.className = `gorient ${entry.orient === "landscape" ? "land" : "any"}`;
-  ori.textContent = entry.orient === "landscape" ? "📱 Horizontal" : "📱 Vertical u horizontal";
+  ori.textContent = entry.orient === "landscape" ? "📱 Horizontal" : entry.id === "merge" ? "📱 Mejor vertical" : "📱 Vertical u horizontal";
   wrap.appendChild(ori);
+  if (entry.id in ENERGY_COST && (ENERGY_COST[entry.id] > 0 || ENERGY_RULE[entry.id])) {
+    const en = document.createElement("span");
+    en.className = "gorient gen";
+    en.textContent = `⚡ ${ENERGY_COST[entry.id] > 0 ? ENERGY_COST[entry.id] : ""}${ENERGY_COST[entry.id] > 0 && ENERGY_RULE[entry.id] ? " + " : ""}${ENERGY_RULE[entry.id] || ""}`;
+    wrap.appendChild(en);
+  }
   const play = document.createElement("span");
   play.className = "gplay";
   play.textContent = "▶ Jugar";
@@ -1474,7 +1889,7 @@ function shopLook() {
 async function openShopPreview() {
   try {
     if (!shopLobby) {
-      const { Lobby3D } = await import("./lobby3d.js?v=64565862c1");
+      const { Lobby3D } = await import("./lobby3d.js?v=71b37ac21d");
       shopLobby = new Lobby3D(document.getElementById("shop-canvas"));
       shopLobby.init();
     }
@@ -1552,14 +1967,22 @@ function renderShop() {
     const owned = ownsItem(progress, id);
     const equipped = (look[shopSlot] || "") === id && !shopTrial[shopSlot];
     const trying = shopTrial[shopSlot] === id && id !== "";
+    // una prenda comprada solo la lleva un Matichico a la vez: si otro la tiene, hay que quitársela o comprar otra
+    const busy = owned && item && !canWear(progress, ch.id, id);
+    const usedBy = busy ? wearers(progress, id).map((cid) => (CHARACTERS.find((c) => c.id === cid) || {}).name || "otro").join(", ") : "";
+    const lock = !owned && item ? lockReason(progress, item) : "";
     const card = document.createElement("button");
     card.type = "button";
-    card.className = "sh-card" + (equipped ? " equipped" : "") + (trying ? " trying" : "") + (!owned ? " locked" : "");
+    card.className = "sh-card" + (equipped ? " equipped" : "") + (trying ? " trying" : "") + (!owned ? " locked" : "") + (busy ? " busy" : "");
     if (item) card.style.setProperty("--rar", RARITIES[item.rarity].color);
     card.innerHTML = `<span class="sh-ico">${item ? item.icon : "🚫"}</span><span class="sh-name">${item ? item.name : "Normal"}</span>` +
-      `<span class="sh-price">${equipped ? "✓ Puesto" : owned ? (item && item.price ? "Tuyo" : "Gratis") : priceLabel(item)}</span>`;
+      `<span class="sh-price">${equipped ? (item && item.price > 0 && !item.event ? `✓ Puesto · 🍫✨ ${item.price} otro` : "✓ Puesto") : busy ? `Lo usa ${usedBy}` : owned ? (item && item.price ? "Tuyo" : "Gratis") : lock ? (item.soon ? "🔜 Próximamente" : `🔒 ${lock}`) : priceLabel(item)}</span>`;
     card.addEventListener("click", () => {
-      if (owned) {
+      if (busy) {
+        shopTrial[shopSlot] = id; // se mira puesto y abajo salen las opciones
+      } else if (equipped && item && item.price > 0 && !item.event) {
+        shopTrial[shopSlot] = id; // ya lo lleva puesto: abajo sale la opción de comprar otro igual
+      } else if (owned) {
         equipItem(progress, ch.id, shopSlot, id);
         delete shopTrial[shopSlot];
         audio.playJump();
@@ -1579,32 +2002,78 @@ function renderShop() {
   shopBarEl.innerHTML = "";
   const tid = shopTrial[shopSlot];
   const titem = tid ? getItem(tid) : null;
-  if (titem) {
+  if (titem && ownsItem(progress, titem.id) && !canWear(progress, ch.id, titem.id)) {
+    // ya es tuyo pero lo lleva otro Matichico
+    const who = wearers(progress, titem.id);
+    const names = who.map((cid) => (CHARACTERS.find((c) => c.id === cid) || {}).name || "otro").join(" y ");
+    const txt = document.createElement("div");
+    txt.className = "sh-bar-txt";
+    txt.innerHTML = `<b>${titem.icon} ${titem.name}</b> — lo está usando <b>${names}</b>. Solo uno a la vez: pásalo a ${ch.name} o compra otro.`;
+    const pass = document.createElement("button");
+    pass.className = "btn-primary";
+    pass.textContent = `Pasárselo a ${ch.name}`;
+    pass.addEventListener("click", () => {
+      for (const cid of who) takeOff(progress, cid, titem.id);
+      equipItem(progress, ch.id, shopSlot, titem.id);
+      delete shopTrial[shopSlot];
+      audio.playJump();
+      renderShop();
+      refreshShopPreview();
+    });
+    shopBarEl.append(txt, pass);
+    if (!titem.event && titem.price > 0) {
+      const need = titem.price - progress.coins;
+      const more = document.createElement("button");
+      more.className = "btn-secondary";
+      more.textContent = need > 0 ? `Comprar otro (faltan ${need} 🍫✨)` : `Comprar otro · 🍫✨ ${titem.price}`;
+      more.disabled = need > 0;
+      more.addEventListener("click", () => {
+        if (!buyItem(progress, titem.id)) return;
+        equipItem(progress, ch.id, shopSlot, titem.id);
+        delete shopTrial[shopSlot];
+        audio.playPurchase();
+        showToast(`¡Compraste otro ${titem.name}! 🎉`);
+        renderShop();
+        refreshShopPreview();
+        refreshHubStats();
+      });
+      shopBarEl.append(more);
+    }
+    const cancel = document.createElement("button");
+    cancel.className = "btn-secondary";
+    cancel.textContent = "Cancelar";
+    cancel.addEventListener("click", () => { delete shopTrial[shopSlot]; renderShop(); refreshShopPreview(); });
+    shopBarEl.append(cancel);
+  } else if (titem) {
     const evt = titem.event ? eventById(titem.event) : null;
     const avail = !evt || eventItemAvailable(titem);
     const need = evt ? titem.tokens - eventTokens(progress, evt.id) : titem.price - progress.coins;
+    const lock = lockReason(progress, titem);
+    const had = ownsItem(progress, titem.id);
     const txt = document.createElement("div");
     txt.className = "sh-bar-txt";
-    txt.innerHTML = `<b>${titem.icon} ${titem.name}</b> <i style="color:${RARITIES[titem.rarity].color}">${RARITIES[titem.rarity].name}</i>` + (evt ? ` · <small>Exclusivo de ${evt.name}</small>` : "");
+    txt.innerHTML = `<b>${titem.icon} ${titem.name}</b> <i style="color:${RARITIES[titem.rarity].color}">${RARITIES[titem.rarity].name}</i>` + (evt ? ` · <small>Exclusivo de ${evt.name}</small>` : "") +
+      (had ? ` · <small>Ya lo tienes puesto. ¿Quieres otro igual para otro Matichico?</small>` : titem.soon ? ` · <small>🔜 Próximamente: lo puedes probar, pero todavía no se vende</small>` : lock ? ` · <small>🔒 Exclusivo: ${lock}</small>` : "");
     const buy = document.createElement("button");
     buy.className = "btn-primary";
-    if (!avail) buy.textContent = `Vuelve en ${evt.name} ${evt.icon}`;
+    if (lock) buy.textContent = titem.soon ? "🔜 Próximamente" : `🔒 ${lock}`;
+    else if (!avail) buy.textContent = `Vuelve en ${evt.name} ${evt.icon}`;
     else if (evt) buy.textContent = need > 0 ? `Te faltan ${need} fichas ${evt.token}` : `Comprar · ${evt.token} ${titem.tokens}`;
-    else buy.textContent = need > 0 ? `Te faltan ${need} Matipuntos` : `Comprar · 🍫✨ ${titem.price}`;
-    buy.disabled = !avail || need > 0;
+    else buy.textContent = need > 0 ? `Te faltan ${need} Matipuntos` : `${had ? "Comprar otro" : "Comprar"} · 🍫✨ ${titem.price}`;
+    buy.disabled = !!lock || !avail || need > 0;
     buy.addEventListener("click", () => {
       if (!(evt ? buyEventItem(progress, titem.id) : buyItem(progress, titem.id))) return;
       equipItem(progress, ch.id, shopSlot, titem.id);
       delete shopTrial[shopSlot];
       audio.playPurchase();
-      showToast(`¡Compraste ${titem.name}! 🎉 Ahora está en 🎒 Lo que tengo`);
+      showToast(had ? `¡Compraste otro ${titem.name}! 🎉` : `¡Compraste ${titem.name}! 🎉 Ahora está en 🎒 Lo que tengo`);
       renderShop();
       refreshShopPreview();
       refreshHubStats();
     });
     const cancel = document.createElement("button");
     cancel.className = "btn-secondary";
-    cancel.textContent = "Quitar";
+    cancel.textContent = had ? "Cerrar" : "Quitar";
     cancel.addEventListener("click", () => {
       delete shopTrial[shopSlot];
       renderShop();
@@ -1690,7 +2159,7 @@ async function launchOrResumeFps() {
   try {
     if (!instances.fps) {
       showToast("Cargando el mundo 3D…");
-      const { FpsGame } = await import("./fps-game.js?v=64565862c1");
+      const { FpsGame } = await import("./fps-game.js?v=71b37ac21d");
       const q = (id) => document.getElementById(id);
       const els = {
         wrap: q("fps-canvas-wrap"),
@@ -1761,20 +2230,21 @@ function errDetail(err) {
 // "<prefijo>-canvas", "-hud-<nombre>", "-overlay-<intro|win|gameover>", "-btn-*".
 
 const GAMES_3D = {
-  town: { module: "./town-game.js?v=64565862c1", cls: "TownGame", hud: [] },
-  recolecta: { module: "./recolecta-game.js?v=64565862c1", cls: "RecolectaGame", hud: [] },
-  basquet_tiros: { module: "./basquet3d-game.js?v=64565862c1", cls: "Basquet3DGame", hud: [], prefix: "basquet" },
-  porristas: { module: "./porristas3d-game.js?v=64565862c1", cls: "Porristas3DGame", hud: ["score", "combo", "coins"] },
-  parkour: { module: "./parkour-game.js?v=64565862c1", cls: "ParkourGame", hud: [] },
-  tetris: { module: "./tetris3d-game.js?v=64565862c1", cls: "Tetris3DGame", hud: ["score", "lines", "level", "combo", "coins"] },
-  salto: { module: "./salto-game.js?v=64565862c1", cls: "SaltoGame", hud: ["score", "height", "hearts", "combo", "coins"] },
-  autos: { module: "./autos-game.js?v=64565862c1", cls: "AutosGame", hud: ["score", "speed", "hearts", "combo", "power", "coins"] },
-  memoria: { module: "./memoria-game.js?v=64565862c1", cls: "MemoriaGame", hud: ["level", "moves", "time", "score", "coins"] },
-  futbol: { module: "./futbol-game.js?v=64565862c1", cls: "FutbolGame", hud: [] },
-  dulces: { module: "./dulces-game.js?v=64565862c1", cls: "DulcesGame", hud: [] },
-  aventura: { module: "./aventura-game.js?v=64565862c1", cls: "AventuraGame", hud: [] },
-  ciudad: { module: "./ciudad-game.js?v=64565862c1", cls: "CiudadGame", hud: [] },
-  creador: { module: "./creador-game.js?v=64565862c1", cls: "CreadorGame", hud: ["score", "count", "coins"] },
+  town: { module: "./town-game.js?v=71b37ac21d", cls: "TownGame", hud: [] },
+  recolecta: { module: "./recolecta-game.js?v=71b37ac21d", cls: "RecolectaGame", hud: [] },
+  basquet_tiros: { module: "./basquet3d-game.js?v=71b37ac21d", cls: "Basquet3DGame", hud: [], prefix: "basquet" },
+  porristas: { module: "./porristas3d-game.js?v=71b37ac21d", cls: "Porristas3DGame", hud: ["score", "combo", "coins"] },
+  parkour: { module: "./parkour-game.js?v=71b37ac21d", cls: "ParkourGame", hud: [] },
+  tetris: { module: "./tetris3d-game.js?v=71b37ac21d", cls: "Tetris3DGame", hud: ["score", "lines", "level", "combo", "coins"] },
+  salto: { module: "./salto-game.js?v=71b37ac21d", cls: "SaltoGame", hud: ["score", "height", "hearts", "combo", "coins"] },
+  autos: { module: "./autos-game.js?v=71b37ac21d", cls: "AutosGame", hud: ["score", "speed", "hearts", "combo", "power", "coins"] },
+  memoria: { module: "./memoria-game.js?v=71b37ac21d", cls: "MemoriaGame", hud: ["level", "moves", "time", "score", "coins"] },
+  futbol: { module: "./futbol-game.js?v=71b37ac21d", cls: "FutbolGame", hud: [] },
+  dulces: { module: "./dulces-game.js?v=71b37ac21d", cls: "DulcesGame", hud: [] },
+  merge: { module: "./merge-game.js?v=71b37ac21d", cls: "MergeGame", hud: [] },
+  aventura: { module: "./aventura-game.js?v=71b37ac21d", cls: "AventuraGame", hud: [] },
+  ciudad: { module: "./ciudad-game.js?v=71b37ac21d", cls: "CiudadGame", hud: [] },
+  creador: { module: "./creador-game.js?v=71b37ac21d", cls: "CreadorGame", hud: ["score", "count", "coins"] },
 };
 
 async function launchOrResume3d(key) {
@@ -1811,10 +2281,10 @@ async function launchOrResume3d(key) {
       if (q("btn-retry")) q("btn-retry").addEventListener("click", () => game.retry());
       if (q("btn-menu")) q("btn-menu").addEventListener("click", goToHub);
       if (q("btn-gameover-menu")) q("btn-gameover-menu").addEventListener("click", goToHub);
-      if (q("btn-next")) q("btn-next").addEventListener("click", () => game.nextLevel());
+      if (q("btn-next")) q("btn-next").addEventListener("click", () => goNextLevel(game));
       if (q("btn-win-menu")) q("btn-win-menu").addEventListener("click", goToHub);
       // Convención nueva: cualquier botón con data-action dentro de la pantalla.
-      const actions = { begin: () => game.beginPlaying(), next: () => game.nextLevel(), retry: () => game.retry(), restart: () => game.restart?.() ?? game.startRun(selectedCharacter, progress), menu: goToHub };
+      const actions = { begin: () => game.beginPlaying(), next: () => goNextLevel(game), retry: () => game.retry(), restart: () => game.restart?.() ?? game.startRun(selectedCharacter, progress), menu: goToHub };
       document.getElementById(`screen-${pre}`).querySelectorAll("[data-action]").forEach((btn) => {
         btn.addEventListener("click", () => actions[btn.dataset.action]?.());
       });

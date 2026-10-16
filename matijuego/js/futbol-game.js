@@ -9,12 +9,12 @@
 // para cargar la potencia y se SUELTA para patear. Con potencia alta la pelota va rápida y plana (pero se puede ir
 // afuera); con potencia baja va lenta y en arco (así se pasa por encima de la barrera, pero el arquero llega).
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeBunting, makeLogo } from "./three-kit.js?v=64565862c1";
-import { createMatichico } from "./matichico3d.js?v=64565862c1";
-import { CHARACTERS, getOutfit } from "./characters.js?v=64565862c1";
-import { saveProgress } from "./storage.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=64565862c1";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeBunting, makeLogo } from "./three-kit.js?v=71b37ac21d";
+import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
+import { CHARACTERS, getOutfit } from "./characters.js?v=71b37ac21d";
+import { saveProgress } from "./storage.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=71b37ac21d";
 
 const GAME_ID = "futbol";
 const GW = 6; // ancho del arco
@@ -151,6 +151,8 @@ function netTexture() {
 export class FutbolGame extends Game3D {
   constructor(character, progress, els) {
     super(GAME_ID, character, progress, els, { fov: 48 });
+    this.kawaii = true; // ambiente kawaii: pastel, sombreado por tonos, pétalos y estrellitas
+    this.ambientOpts = { petals: 28, hearts: 5, stars: 18, radius: 12, height: 9 };
     this.musicTheme = "sport";
     this.q = els.q;
     this.mode = "pen";
@@ -741,6 +743,7 @@ export class FutbolGame extends Game3D {
   // ---------- el tiro ----------
 
   _kick(power) {
+    if (!this.spendAction(1)) return; // cada tiro gasta 1 ⚡
     this.phase = "runup";
     this.runT = 0;
     this.kickPower = power;
