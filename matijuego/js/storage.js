@@ -4,9 +4,9 @@
 // Todo el progreso vive dentro de un "perfil" (ver js/profiles.js), para que
 // varias personas puedan jugar desde el mismo navegador sin mezclar su avance.
 
-import { getItem, EMPTY_LOOK, lockReason } from "./wardrobe-data.js?v=71b37ac21d";
-import { queueSync } from "./online.js?v=71b37ac21d";
-import { addEnergy } from "./energy.js?v=71b37ac21d";
+import { getItem, EMPTY_LOOK, lockReason, isHexColor, CUSTOM_EMBLEMS } from "./wardrobe-data.js?v=980cf22f17";
+import { queueSync } from "./online.js?v=980cf22f17";
+import { addEnergy } from "./energy.js?v=980cf22f17";
 
 const SAVE_PREFIX = "matichoc_save_v3_profile_";
 const DEFAULT_OUTFIT = "polera";
@@ -200,6 +200,15 @@ export function equipItem(progress, characterId, slot, itemId) {
   progress.wardrobe.looks[characterId][slot] = itemId;
   saveProgress(progress);
   return true;
+}
+
+/** Guarda el color y/o la figura elegidos para la prenda "a tu gusto" de un Matichico. */
+export function setOutfitCustom(progress, characterId, patch) {
+  if (!progress.wardrobe.looks[characterId]) progress.wardrobe.looks[characterId] = {};
+  const look = progress.wardrobe.looks[characterId];
+  if (patch.outfitColor !== undefined && isHexColor(patch.outfitColor)) look.outfitColor = patch.outfitColor.toUpperCase();
+  if (patch.outfitEmblem !== undefined && CUSTOM_EMBLEMS.some((e) => e.id === patch.outfitEmblem)) look.outfitEmblem = patch.outfitEmblem;
+  saveProgress(progress);
 }
 
 /** Gasta Matipuntos. Punto único de pago: aquí se sumarán otras monedas en el futuro. */

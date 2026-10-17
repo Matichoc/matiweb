@@ -32,7 +32,7 @@ const ALL_GAMES = [
     orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Parkour Choco",
     icon: "🧗",
-    tagline: "¡Mundo infinito con 10 ambientes, poderes y récord de metros! O la aventura de 6 etapas.",
+    tagline: "¡Mundo infinito con 10 ambientes, poderes y récord de metros! O la aventura de 7 etapas con una troll.",
     status: "available",
     tag: "Nuevo 3D",
   },

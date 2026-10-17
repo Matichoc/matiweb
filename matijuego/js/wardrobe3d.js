@@ -2,9 +2,9 @@
 // sombreros, anteojos, cuello, espalda, zapatos, ropa y tono de chocolate. Solo usa primitivas
 // de Three.js. `applyLook(hero, look)` deja puesto exactamente lo que dice `look` y quita lo anterior.
 
-import { THREE, roundedBox, canvasTexture } from "./three-kit.js?v=71b37ac21d";
-import { getItem, getOutfit, EMPTY_LOOK } from "./wardrobe-data.js?v=71b37ac21d";
-import { buildPet } from "./wardrobe-pets.js?v=71b37ac21d";
+import { THREE, roundedBox, canvasTexture } from "./three-kit.js?v=980cf22f17";
+import { getItem, getOutfit, EMPTY_LOOK, customizeOutfit } from "./wardrobe-data.js?v=980cf22f17";
+import { buildPet } from "./wardrobe-pets.js?v=980cf22f17";
 
 export const HEAD_W = 0.78;
 export const HEAD_H = 0.72;
@@ -1140,7 +1140,13 @@ function addOutfitExtras(hero, outfit, add, ticks) {
   }
 
   if (p.emblem) {
-    const shape = p.emblem === "star" ? starShape(0.085, 0.037) : p.emblem === "heart" ? heartShape(0.075) : p.emblem === "bolt" ? boltShape(0.09) : null;
+    const shape = p.emblem === "star" ? starShape(0.085, 0.037)
+      : p.emblem === "heart" ? heartShape(0.075)
+      : p.emblem === "bolt" ? boltShape(0.09)
+      : p.emblem === "circle" ? (() => { const c = new THREE.Shape(); c.absarc(0, 0, 0.065, 0, Math.PI * 2, false); return c; })()
+      : p.emblem === "diamond" ? (() => { const d = new THREE.Shape(); d.moveTo(0, 0.085); d.lineTo(0.06, 0); d.lineTo(0, -0.085); d.lineTo(-0.06, 0); d.closePath(); return d; })()
+      : p.emblem === "moon" ? (() => { const m = new THREE.Shape(); m.absarc(0, 0, 0.075, Math.PI * 0.35, Math.PI * 1.65, false); m.absarc(0.035, 0, 0.06, Math.PI * 1.55, Math.PI * 0.45, true); return m; })()
+      : null;
     if (shape) {
       const e = new THREE.Mesh(new THREE.ShapeGeometry(shape), basic(outfit.trim, { side: THREE.DoubleSide }));
       e.position.set(0, 0.54, 0.178);
@@ -1253,7 +1259,7 @@ export function applyLook(hero, look = {}) {
   const defaults = hero.defaults;
 
   // ropa (colores de la camiseta + texturas especiales)
-  const outfit = getOutfit(L.outfit);
+  const outfit = customizeOutfit(getOutfit(L.outfit), L); // las prendas "a tu gusto" llevan el color y la figura elegidos
   hero.setOutfit(outfit);
   if (mats.jersey.map && mats.jersey.map.userData.own) { mats.jersey.map.dispose(); }
   mats.jersey.map = null;

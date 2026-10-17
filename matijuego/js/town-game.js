@@ -6,17 +6,17 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=71b37ac21d";
-import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
-import { CHARACTERS, getOutfit } from "./characters.js?v=71b37ac21d";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=71b37ac21d";
-import { GAMES_CATALOG } from "./games-catalog.js?v=71b37ac21d";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=71b37ac21d";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=71b37ac21d";
-import { levelInfo } from "./progression.js?v=71b37ac21d";
-import { bindStick } from "./stick.js?v=71b37ac21d";
-import * as audio from "./audio.js?v=71b37ac21d";
-import { TownFun } from "./town-fun.js?v=71b37ac21d";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=980cf22f17";
+import { createMatichico } from "./matichico3d.js?v=980cf22f17";
+import { CHARACTERS, getOutfit } from "./characters.js?v=980cf22f17";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=980cf22f17";
+import { GAMES_CATALOG } from "./games-catalog.js?v=980cf22f17";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=980cf22f17";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=980cf22f17";
+import { levelInfo } from "./progression.js?v=980cf22f17";
+import { bindStick } from "./stick.js?v=980cf22f17";
+import * as audio from "./audio.js?v=980cf22f17";
+import { TownFun } from "./town-fun.js?v=980cf22f17";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -1044,9 +1044,7 @@ export class TownGame extends Game3D {
       box.querySelector(".td-name").textContent = n.def.name;
       box.querySelector(".td-text").textContent = text;
       box.classList.remove("hidden");
-      this.dialogOpen = true;
-      clearTimeout(this._dialogTimer);
-      this._dialogTimer = setTimeout(() => this._closeDialog(), 6500);
+      this.dialogOpen = true; // se queda abierto hasta que la niña lo toque (antes se cerraba solo a los 6 segundos y no alcanzaba a leerlo)
     }
   }
 

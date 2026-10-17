@@ -3,11 +3,11 @@
 // ¡Mati Dubai! Los 4 generadores sacan productos nuevos (1 ⚡ cada uno) y los clientes piden productos para entregar.
 // El tablero se guarda en tu perfil.
 
-import { THREE, Game3D, lerp, rand, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=71b37ac21d";
-import * as audio from "./audio.js?v=71b37ac21d";
-import { recordRun } from "./progression.js?v=71b37ac21d";
-import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, emptyCells } from "./merge-data.js?v=71b37ac21d";
-import { drawItem, loadProductImages } from "./merge-art.js?v=71b37ac21d";
+import { THREE, Game3D, lerp, rand, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=980cf22f17";
+import * as audio from "./audio.js?v=980cf22f17";
+import { recordRun } from "./progression.js?v=980cf22f17";
+import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, emptyCells } from "./merge-data.js?v=980cf22f17";
+import { drawItem, loadProductImages } from "./merge-art.js?v=980cf22f17";
 
 const GAME_ID = "merge";
 const CELL = 1.1;
@@ -403,10 +403,8 @@ export class MergeGame extends Game3D {
       p.scale = lerp(p.scale, 1, 1 - Math.pow(0.002, dt));
       if (p.pop > 0) p.pop -= dt;
       const bounce = p.pop > 0 ? 1 + Math.sin((p.pop / 0.4) * Math.PI) * 0.22 : 1;
-      const info = itemInfo(p.code);
-      p.mesh.position.set(p.x, p.y + (info.gold ? Math.sin(this.time * 3 + i) * 0.03 : 0), p.z);
+      p.mesh.position.set(p.x, p.y, p.z); // los dorados quedan quietos (antes subían y bajaban y se veían parpadeando)
       p.mesh.scale.setScalar(p.scale * bounce);
-      if (info.top && Math.random() < dt * 5) this.particles.burst(new THREE.Vector3(p.x + rand(-0.35, 0.35), 0.5, p.z + rand(-0.35, 0.35)), [0xffd36a, 0xffffff], 1, 0.8, 0.6, -1);
     }
     const d = this.drag;
     if (d && d.moved && d.over != null && d.over >= 0) {

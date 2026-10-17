@@ -4,14 +4,14 @@
 // checkpoints y llega a la cumbre. Al avanzar, tu Matichico desbloquea accesorios
 // (capa, gafas brillantes y corona) además del atuendo que compraste en la tienda.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars, makeLogo } from "./three-kit.js?v=71b37ac21d";
-import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
-import { earnCoins, saveProgress } from "./storage.js?v=71b37ac21d";
-import { bindStick } from "./stick.js?v=71b37ac21d";
-import { trailColors } from "./wardrobe-data.js?v=71b37ac21d";
-import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=71b37ac21d";
-import * as audio from "./audio.js?v=71b37ac21d";
-import { campaign, renderLevelPicker } from "./campaign.js?v=71b37ac21d";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars, makeLogo } from "./three-kit.js?v=980cf22f17";
+import { createMatichico } from "./matichico3d.js?v=980cf22f17";
+import { earnCoins, saveProgress } from "./storage.js?v=980cf22f17";
+import { bindStick } from "./stick.js?v=980cf22f17";
+import { trailColors } from "./wardrobe-data.js?v=980cf22f17";
+import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=980cf22f17";
+import * as audio from "./audio.js?v=980cf22f17";
+import { campaign, renderLevelPicker } from "./campaign.js?v=980cf22f17";
 
 const GAME_ID = "parkour";
 const R = 0.34; // radio del héroe
@@ -39,6 +39,7 @@ const STAGES = [
   { name: "Nubes Saltarinas", sky: 0xb7c8ff, top: 0xfff6e6, side: 0xb7a3e8, accent: 0xd4216c, hemi: 1.3, sun: 2.4, night: 0, trail: [0xd4216c, 0xffffff] },
   { name: "Molinos de Cacao", sky: 0xf0b27a, top: 0xc98a4b, side: 0x64321b, accent: 0xffc800, hemi: 1.15, sun: 2.2, night: 0, trail: [0xffc800, 0xe8742a] },
   { name: "Noche Neón", sky: 0x1a1240, top: 0x3a2d8a, side: 0x16103a, accent: 0x35f0ff, hemi: 0.75, sun: 0.9, night: 1, trail: [0x35f0ff, 0xff3fa4] },
+  { name: "Parkour Troll", sky: 0x3b1030, top: 0xb8e06a, side: 0x6a9a2a, accent: 0xffe14a, hemi: 1.0, sun: 1.5, night: 0.5, troll: true, trail: [0xff3030, 0xffffff] },
   { name: "Cumbre Matichoc", sky: 0xffd77a, top: 0xffe9a8, side: 0xd4a037, accent: 0xffc800, hemi: 1.3, sun: 2.6, night: 0, trail: [0xffc800, 0xd4216c, 0xfff6e6] },
 ];
 
@@ -199,17 +200,19 @@ export class ParkourGame extends Game3D {
       const p = place(0, "normal", { sx: 4.4, sz: 4.4, gap: 1.5 + i * 0.18, dx: rr(-2.6, 2.6), dy: dy1[i] });
       onTop(p);
       if (i >= 2) arc(prev, p);
+      if (i === 5) this._addHazard(p, { lz: -0.5, w: 4.4, d: 0.55 }); // primera línea roja: se salta
+      if (i === 7) this._addWall(p, { lx: 1.1, w: 2.2 }); // primera pared: se pasa por el lado
       prev = p;
       if (i === 3) prev = fig(0, "diag", { size: 4.2, gap: 2.0, dir: 1 }); // primer tramo en diagonal
     }
-    prev = fig(0, "zigzag", { size: 4.2, gap: 2.0, n: 4, dir: -1 });
+    prev = fig(0, "zigzag", { size: 4.2, gap: 2.0, n: 4, dir: -1, types: ["normal", "moving"] });
     // ---- Etapa 2: Camino de Caramelo ----
     let p = place(1, "normal", { sx: 7, sz: 7, gap: 2.2 });
     stageStart(1, p, 0);
     onTop(p, 2);
     prev = p;
     const s2 = [
-      ["normal", 3.4], ["moving", 3.6], ["normal", 3.2], ["moving", 3.6], ["beam", 1.6], ["normal", 3.0], ["moving", 3.6], ["beam", 1.6], ["normal", 3.2],
+      ["normal", 5.0], ["moving", 3.6], ["normal", 3.2], ["moving", 3.6], ["beam", 1.6], ["normal", 5.2], ["moving", 3.6], ["beam", 1.6], ["normal", 6.4],
     ];
     s2.forEach(([t, w], i) => {
       const o = { sx: w, sz: t === "beam" ? 6.5 : w, gap: t === "beam" ? 2.1 : rr(2.4, 3.0), dx: rr(-1.5, 1.5), dy: i % 3 === 1 ? 0.4 : 0 };
@@ -217,9 +220,14 @@ export class ParkourGame extends Game3D {
       const q = place(1, t, o);
       onTop(q, t === "beam" ? 3 : 1, 1.6);
       if (t !== "beam") arc(prev, q);
+      if (i === 0) this._addHazard(q, { lz: -0.6, w: 5.0, d: 0.55 });
+      if (i === 5) this._addWall(q, { lx: -1.3, w: 2.6 });
+      if (i === 8) this._addWall(q, { w: 2.2, slide: 1.9, speed: 1.1 }); // pared que va y viene
       prev = q;
     });
     prev = fig(1, "sidewalk", { size: 3.8, gap: 2.3, n: 3, dir: 1 }); // una "S": hacia un lado y de vuelta
+    prev = fig(1, "house", { dir: -1 }); // una casa de caramelo: se sube por los balcones del costado…
+    prev = fig(1, "descent", { size: 4.2, n: 5 }); // …y se baja saltando
     // ---- Etapa 3: Nubes Saltarinas ----
     p = place(2, "normal", { sx: 7, sz: 7, gap: 2.4 });
     stageStart(2, p, 0);
@@ -230,12 +238,14 @@ export class ParkourGame extends Game3D {
       arc(prev, q);
       prev = q;
     }
-    let q = place(2, "normal", { sx: 4.2, sz: 4.2, gap: 2.2, dx: 0, dy: 0 });
+    let q = place(2, "normal", { sx: 4.6, sz: 4.6, gap: 2.2, dx: 0, dy: 0 });
     onTop(q, 2);
+    this._addWall(q, { lx: 1.2, w: 2.3 });
     q = place(2, "pad", { sx: 3.6, sz: 3.6, gap: 2.2, dx: 0 });
     prev = q;
     q = place(2, "normal", { sx: 6, sz: 6, gap: 3.4, dx: 0, dy: 6 });
     onTop(q, 3);
+    this._addHazard(q, { lz: -0.4, w: 6, d: 0.55 });
     item(prev.base.x, prev.base.y + 6, prev.base.z - 2.4, "gold");
     prev = q;
     for (let i = 0; i < 3; i++) {
@@ -257,16 +267,21 @@ export class ParkourGame extends Game3D {
       if (t === "spinner") o = { sx: 8.4, sz: 8.4, gap: 2.4, dx: 0 };
       else if (t === "beam") o = { sx: 1.6, sz: 7, gap: 2.0, dx: 0 };
       else if (t === "moving") o = { sx: 4, sz: 4, gap: 2.4, dx: 0, axis: "x", amp: 3.4, speed: 1.0, phase: 0 };
-      else o = { sx: 5, sz: 5, gap: 2.4, dx: 0 };
+      else o = { sx: 6, sz: 6, gap: 2.4, dx: 0 };
       const w = place(3, t === "spinner" ? "normal" : t, o);
       if (t === "spinner") {
         this._makeSpinner(w, 6.6, sp);
         item(w.base.x, w.base.y + w.h.y + 1.7, w.base.z + 2.3);
         item(w.base.x, w.base.y + w.h.y + 1.7, w.base.z - 2.3);
       } else onTop(w, t === "beam" ? 3 : 1, 1.6);
+      if (i === 5) this._addHazard(w, { lz: -0.5, w: 6, d: 0.55 });
       prev = w;
     });
     prev = fig(3, "zigzag", { size: 4.2, gap: 2.0, n: 4, dir: 1, types: ["normal", "moving"] });
+    q = place(3, "normal", { sx: 7, sz: 7, gap: 2.4, dx: 0 }); // pared que barre la plataforma
+    this._addWall(q, { w: 2.6, slide: 2.2, speed: 1.3 });
+    onTop(q, 2, 2.2);
+    prev = q;
     // ---- Etapa 5: Noche Neón ----
     p = place(4, "normal", { sx: 7, sz: 7, gap: 2.4 });
     stageStart(4, p, 0);
@@ -278,34 +293,74 @@ export class ParkourGame extends Game3D {
     }
     item(prev.base.x, prev.base.y + 4.2, prev.base.z - 2.6, "gold");
     prev = fig(4, "sidewalk", { size: 3.4, gap: 2.3, n: 3, dir: -1, type: "blink" });
+    q = place(4, "normal", { sx: 6.2, sz: 6.2, gap: 2.8, dx: 0, dy: 0 });
+    this._addHazard(q, { lz: -1.0, w: 6.2, d: 0.55 });
+    this._addWall(q, { lx: -1.6, lz: 1.2, w: 3.0 });
+    onTop(q, 2, 2.0);
     q = place(4, "normal", { sx: 2.4, sz: 2.4, gap: 2.8, dx: 0, dy: 0.5 });
     onTop(q);
     q = place(4, "normal", { sx: 2.4, sz: 2.4, gap: 2.8, dx: 1, dy: 0.5 });
     onTop(q);
-    // ---- Etapa 6: Cumbre ----
+    // ---- Etapa 6: Parkour Troll (al revés: los bloques son trampa y solo las líneas rojas son seguras) ----
     p = place(5, "normal", { sx: 7, sz: 7, gap: 2.4 });
     stageStart(5, p, 0);
+    onTop(p);
+    this._trollRoute({ cur: () => cur, put: (t, o2) => place(5, t, o2), item });
+    // ---- Etapa 7: Cumbre ----
+    p = place(6, "normal", { sx: 7, sz: 7, gap: 2.4 });
+    stageStart(6, p, 0);
     prev = p;
     const s6 = ["normal", "moving", "crumble", "normal", "moving", "crumble", "normal", "moving"];
     s6.forEach((t, i) => {
       const o = { sx: 3.4, sz: 3.4, gap: 2.5, dx: rr(-1.4, 1.4), dy: 1.0 };
       if (t === "moving") Object.assign(o, { axis: "x", amp: 2.6, speed: 1.1, phase: i });
-      const w = place(5, t, o);
+      const w = place(6, t, o);
       onTop(w);
       arc(prev, w);
       prev = w;
     });
-    prev = fig(5, "spiral", { size: 3.8, gap: 2.2, dir: 1, climb: 1.0 }); // última subida en espiral hasta la cumbre
+    prev = fig(6, "spiral", { size: 3.8, gap: 2.2, dir: 1, climb: 1.0 }); // última subida en espiral hasta la cumbre
     for (let i = 0; i < 3; i++) {
-      const w = place(5, "normal", { sx: 4.2, sz: 4.2, gap: 2.4, dx: rr(-1.2, 1.2), dy: 0 });
+      const w = place(6, "normal", { sx: 5.4, sz: 5.4, gap: 2.4, dx: rr(-1.2, 1.2), dy: 0 });
       onTop(w, 2);
+      if (i === 0) this._addHazard(w, { lz: -0.4, w: 5.4, d: 0.55 });
+      if (i === 1) this._addWall(w, { lx: 1.3, w: 2.7 });
+      if (i === 2) this._addWall(w, { w: 2.0, slide: 1.8, speed: 1.5 });
       prev = w;
     }
-    const fin = place(5, "finish", { sx: 14, sz: 14, gap: 3.0, dx: 0, dy: 0.4 });
+    const fin = place(6, "finish", { sx: 14, sz: 14, gap: 3.0, dx: 0, dy: 0.4 });
     this.goal = { platform: fin, x: fin.base.x, z: fin.base.z, top: fin.base.y + fin.h.y };
     this._makeFinish(fin);
     item(fin.base.x - 3, this.finish.top + 1.2, fin.base.z + 2, "gold");
     this.courseEndZ = fin.base.z;
+  }
+
+  /** Etapa troll: aquí las líneas rojas son el camino y los bloques "normales" son trampa. Una sola ruta. */
+  _trollRoute(ctx) {
+    const { cur, put, item } = ctx;
+    const dirs = [1, -1, -1, 1, -1, 1, 1, -1, 1, 1, -1, -1];
+    const LW = 1.6; // ancho de la línea segura
+    const LSTEP = 3.5; // salto lateral entre líneas
+    for (let i = 0; i < dirs.length; i++) {
+      const c = cur();
+      const long = i % 4 === 3;
+      const sz = long ? 7.5 : 4.4;
+      const gap = 2.1 + (i > 5 ? 0.3 : 0);
+      const top = c.top + (i % 5 === 2 ? 0.4 : 0);
+      const z = c.z - c.sz / 2 - gap - sz / 2;
+      const x = clamp(c.x + dirs[i] * LSTEP, -8, 8);
+      // trampas: un bloque justo adelante y otro del lado contrario (se ven como bloques normales)
+      const bait = put("decoy", { sx: 3.4, sz: 3.4, ax: c.x, atop: top, az: z, gap: 0 });
+      if (i % 3 === 1) item(bait.base.x, bait.base.y + bait.h.y + 1.15, bait.base.z);
+      if (i % 2 === 0) put("decoy", { sx: 3.4, sz: 3.4, ax: c.x - dirs[i] * LSTEP, atop: top, az: z - 0.4, gap: 0 });
+      const line = put("line", { sx: LW, sz, ax: x, atop: top, az: z, gap: 0 });
+      if (i % 2 === 0) item(line.base.x, line.base.y + line.h.y + 1.15, line.base.z);
+      if (long) item(line.base.x, line.base.y + line.h.y + 1.15, line.base.z - 2.4);
+    }
+    // línea final para salir de la etapa
+    const c = cur();
+    const end = put("line", { sx: LW, sz: 5, ax: c.x, atop: c.top, az: c.z - c.sz / 2 - 2.4 - 2.5, gap: 0 });
+    item(end.base.x, end.base.y + end.h.y + 3.4, end.base.z, "gold");
   }
 
   _platformColors(th, type) {
@@ -316,13 +371,15 @@ export class ParkourGame extends Game3D {
     else if (type === "moving") { top = 0xffc800; side = 0xb48400; }
     else if (type === "pad") { top = 0xd4216c; side = 0x8a1648; }
     else if (type === "blink") { top = 0x35f0ff; side = 0x1c6a8a; }
+    else if (type === "wall") { top = 0xffe2c0; side = 0xd05a2a; }
+    else if (type === "line") { top = 0xff2a2a; side = 0x8a1010; }
     else if (type === "start") { top = 0x6cc04a; side = 0x3f8a2d; }
     return { top, side };
   }
 
   _makePlatform(stage, type, o) {
     const th = o.theme || STAGES[stage];
-    const hy = type === "beam" ? 0.3 : 0.4;
+    const hy = o.hy || (type === "beam" || type === "line" ? 0.3 : 0.4);
     const col = this._platformColors(th, type);
     // la textura de tachas se comparte entre plataformas del mismo tamaño
     const texKey = `${o.sx}x${o.sz}`;
@@ -340,7 +397,7 @@ export class ParkourGame extends Game3D {
     const camYaw = o.camYaw; // hacia dónde mira la cámara cuando estás aquí (figuras)
     body.castShadow = true;
     body.receiveShadow = true;
-    const glowCol = type === "blink" ? 0xffffff : th.accent;
+    const glowCol = type === "blink" || type === "line" ? 0xffffff : th.accent;
     const glowMat = new THREE.MeshBasicMaterial({ color: glowCol, transparent: true, opacity: type === "blink" ? 1 : 0.95 });
     const glow = new THREE.Mesh(new THREE.BoxGeometry(o.sx + 0.12, 0.12, o.sz + 0.12), glowMat);
     glow.position.y = -hy + 0.42 > hy ? 0 : hy * 0.25;
@@ -353,8 +410,11 @@ export class ParkourGame extends Game3D {
       h: { x: o.sx / 2, y: hy, z: o.sz / 2 },
       box: {}, dx: 0, dz: 0,
       axis: o.axis, amp: o.amp || 0, speed: o.speed || 1, phase: o.phase || 0,
-      state: "idle", timer: 0, vy: 0, pulse: 0, camYaw,
+      state: "idle", timer: 0, vy: 0, pulse: 0, camYaw, theme: th, hazards: [],
     };
+    if (type === "moving" && !p.amp) { // las que nacen dentro de una figura no traían recorrido: ahora siempre se mueven
+      p.axis = "x"; p.amp = Math.min(2.2, o.sx * 0.5); p.speed = 0.9 + ((o.x * 7 + o.z * 3) % 5 + 5) % 5 * 0.06; p.phase = Math.abs(o.x * 1.7 + o.z * 0.9) % 6.28;
+    }
     if (type === "pad") {
       const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.25, 0.28, 28), new THREE.MeshStandardMaterial({ color: 0xffc800, roughness: 0.25, metalness: 0.5, emissive: 0xffa800, emissiveIntensity: 0.8 }));
       disc.position.y = hy + 0.14;
@@ -411,6 +471,62 @@ export class ParkourGame extends Game3D {
     post.position.y = -0.1;
     this.course.add(g);
     this.spinners.push({ platform: p, group: g, bar, len, speed, angle: 0, x: p.base.x, z: p.base.z, top });
+  }
+
+  /** Línea roja sobre una plataforma: si la pisas, vuelves al último lugar seguro. lx/lz son relativos al centro. */
+  _addHazard(p, { lx = 0, lz = 0, w = 1, d = 0.6 }) {
+    this.m.hazard = this.m.hazard || new THREE.MeshStandardMaterial({ color: 0xff1a1a, roughness: 0.35, emissive: 0xff0000, emissiveIntensity: 0.85 });
+    this._shared.add(this.m.hazard);
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(w, 0.1, d), this.m.hazard);
+    strip.position.set(lx, p.h.y + 0.05, lz);
+    p.mesh.add(strip);
+    p.hazards.push({ lx, lz, hw: w / 2, hd: d / 2 });
+  }
+
+  /** Pared sólida sobre una plataforma (hay que pasar por el lado). Con slide > 0 se desliza de lado a lado. */
+  _addWall(p, { lx = 0, lz = 0, w = 1, d = 0.6, h = 2.8, slide = 0, speed = 1, phase = 0 }) {
+    const wl = this._makePlatform(p.stage, "wall", {
+      sx: w, sz: d, x: p.base.x + lx, z: p.base.z + lz, top: p.base.y + p.h.y + h, hy: h / 2, theme: p.theme,
+      axis: "x", amp: slide, speed, phase,
+    });
+    wl.slide = slide > 0;
+    wl.obstacle = true;
+    return wl;
+  }
+
+  /** Dónde reaparecer tras una línea roja o un bloque troll: el último lugar seguro en que estuviste. */
+  _trackSafe() {
+    if (!this.grounded || !this.ground) return;
+    const g = this.ground;
+    if (g.obstacle || g.type === "decoy" || g.type === "crumble" || g.type === "blink" || g.type === "pad") return;
+    const P = this.pos;
+    for (const h of g.hazards) {
+      if (Math.abs(P.x - (g.c.x + h.lx)) < h.hw + 0.7 && Math.abs(P.z - (g.c.z + h.lz)) < h.hd + 0.7) return;
+    }
+    this.safeRef = { p: g, ox: P.x - g.c.x, oz: P.z - g.c.z };
+  }
+
+  _hazardHits() {
+    if (this.hzCool > 0) return;
+    const P = this.pos;
+    for (const p of this.platforms) {
+      if (!p.hazards.length || Math.abs(p.c.z - P.z) > p.h.z + 1) continue;
+      if (P.y > p.box.maxY + 0.3 || P.y < p.box.maxY - 0.5) continue;
+      for (const h of p.hazards) {
+        if (Math.abs(P.x - (p.c.x + h.lx)) < h.hw + 0.1 && Math.abs(P.z - (p.c.z + h.lz)) < h.hd + 0.1) {
+          this._hurtReset("¡Línea roja! 🔴");
+          return;
+        }
+      }
+    }
+  }
+
+  /** Castigo por pisar una línea roja (o un bloque en la etapa troll): vuelves al último lugar seguro. */
+  _hurtReset(msg) {
+    const s = this.safeRef;
+    const ok = s && s.p.active && s.p.state !== "falling" && this.platforms.includes(s.p);
+    if (!ok) { this._respawn(); return; }
+    this._respawn({ msg, to: new THREE.Vector3(s.p.c.x + s.ox, s.p.box.maxY, s.p.c.z + s.oz) });
   }
 
   _makeFlag(stage, p, theme) {
@@ -657,6 +773,8 @@ export class ParkourGame extends Game3D {
     this.ground = null;
     this.stun = 0;
     this.invuln = 0;
+    this.safeRef = null;
+    this.hzCool = 0;
     this.heroYaw = Math.PI;
     this.trailT = 0;
     this.camYaw = 0;
@@ -751,6 +869,9 @@ export class ParkourGame extends Game3D {
       }
       for (let i = 0; i < n; i++) this._physics(h);
       this._spinnerHits();
+      this._trackSafe();
+      this._hazardHits();
+      this.hzCool = Math.max(0, (this.hzCool || 0) - dt);
       this._collect(dt);
       if (this.worldMode === "inf") {
         this._checkpointsInf();
@@ -886,6 +1007,7 @@ export class ParkourGame extends Game3D {
     if (wasAir && impact < -9) {
       this.particles.burst(new THREE.Vector3(this.pos.x, this.pos.y + 0.1, this.pos.z), [0xfff6e6, 0xd8c8a8], 6, 2.2, 0.4, 3, 0.9);
     }
+    if (p.type === "decoy") { this._hurtReset("¡Era un bloque troll! 😈"); return; }
     if (p.type === "crumble" && p.state === "idle") { p.state = "shaking"; p.timer = 0.55; }
     if (p.type === "pad") {
       this.vel.y = PAD_V;
@@ -981,6 +1103,7 @@ export class ParkourGame extends Game3D {
       this.particles.burst(new THREE.Vector3(c.spawn.x, c.spawn.y + 1.5, c.spawn.z), [0xffc800, 0xd4216c, 0xfff6e6, STAGES[i].accent], 44, 6, 1.2, 5, 1.2);
       const unlock = i === 1 ? "¡Capa Matichoc desbloqueada! 🦸" : i === 2 ? "¡Gafas brillantes desbloqueadas! 😎" : i === 4 ? "¡Corona dorada desbloqueada! 👑" : null;
       if (unlock) this.popups.add(new THREE.Vector3(P.x, P.y + 2.6, P.z), unlock, "combo");
+      if (STAGES[i].troll) this.popups.add(new THREE.Vector3(P.x, P.y + 3.4, P.z), "😈 ¡Aquí solo se pisan las LÍNEAS ROJAS!", "combo");
       this._applyAccessories();
       this.heroMode = "cheer";
       this.heroModeT = 1.2;
@@ -992,7 +1115,7 @@ export class ParkourGame extends Game3D {
     const f = this.goal;
     if (Math.hypot(this.pos.x - f.x, this.pos.z - f.z) < 6.6 && this.pos.y >= f.top - 0.2 && this.pos.y < f.top + 1 && this.grounded) {
       this.finished = true;
-      this.stageReached = 5;
+      this.stageReached = STAGES.length - 1;
       audio.playVictory();
       this.particles.burst(new THREE.Vector3(f.x, f.top + 3, f.z + 2), [0xffc800, 0xd4216c, 0xcfd767, 0xfff6e6, 0x35f0ff], 120, 9, 2, 5, 1.4);
       const coins = 20;
@@ -1016,7 +1139,7 @@ export class ParkourGame extends Game3D {
     return Math.max(0, s);
   }
 
-  _respawn() {
+  _respawn(opts) {
     this.falls++;
     audio.playBump();
     if (this.worldMode === "inf") {
@@ -1029,16 +1152,22 @@ export class ParkourGame extends Game3D {
           this._infGameOver();
           return;
         }
-        this.banner(`¡Ups! Te quedan ${this.inf.lives} ❤️`);
+        this.banner(opts ? `${opts.msg} Te quedan ${this.inf.lives} ❤️` : `¡Ups! Te quedan ${this.inf.lives} ❤️`);
       }
-    } else this.banner("¡Ups! Vuelves al checkpoint");
-    this._safeSpawn();
-    this.pos.copy(this.spawn);
+    } else this.banner(opts ? opts.msg : "¡Ups! Vuelves al checkpoint");
+    if (opts) {
+      this.pos.copy(opts.to);
+      this.hzCool = 0.5;
+      this.stun = 0.3;
+    } else {
+      this._safeSpawn();
+      this.pos.copy(this.spawn);
+    }
     this.vel.set(0, 0, 0);
     this.grounded = false;
     this.ground = null;
-    this.invuln = 1;
-    this.stun = 0;
+    this.invuln = opts ? 0.4 : 1;
+    if (!opts) this.stun = 0;
     this.heroMode = "sad";
     this.heroModeT = 0.7;
     this.els.wrap.classList.add("pk-flash");
@@ -1058,12 +1187,12 @@ export class ParkourGame extends Game3D {
       const d = Math.hypot(p.c.x - sp.x, p.c.z - sp.z);
       if (d < bd) { bd = d; best = p; }
     }
-    if (best) sp.set(best.c.x, best.box.maxY, best.c.z);
+    if (best) sp.set(best.c.x, best.box.maxY, best.c.z + (best.hazards.length ? best.h.z - 0.6 : 0)); // con líneas rojas, al borde de atrás
   }
 
   _updateHud(force = false) {
     const inf = this.worldMode === "inf";
-    const stage = inf ? `Mundo ${(this.inf.zoneReached || 0) + 1} · ${this.metersRun()} m` : `Etapa ${this.stageReached + 1}/6`;
+    const stage = inf ? `Mundo ${(this.inf.zoneReached || 0) + 1} · ${this.metersRun()} m` : `Etapa ${this.stageReached + 1}/${STAGES.length}`;
     const mm = Math.floor(this.runTime / 60);
     const ss = String(Math.floor(this.runTime % 60)).padStart(2, "0");
     const pw = this.power ? `${POWERS[this.power.kind].icon} ${Math.ceil(this.power.t)}` : "";
@@ -1093,7 +1222,7 @@ export class ParkourGame extends Game3D {
   _animateWorld(dt) {
     const t = this.time;
     for (const p of this.platforms) {
-      if (p.type === "moving") {
+      if (p.type === "moving" || p.slide) {
         const o = Math.sin(t * p.speed + p.phase) * p.amp;
         const nx = p.axis === "z" ? p.base.x : p.base.x + o;
         const nz = p.axis === "z" ? p.base.z + o : p.base.z;

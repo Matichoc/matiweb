@@ -64,7 +64,7 @@ export const OUTFITS = [
   out("tutu_rosa", "Tutú Rosa", "🩰", "comun", "#FF7AA8", "#FFF6E6", { skirt: "tutu", skirtColor: "#FF9CC4", tights: "#FFFFFF" }, 40),
   out("vestido_flores", "Vestido de flores", "🌸", "comun", "#FFD1E3", "#4FD09A", { skirt: "vestido", skirtColor: "#FFD1E3", skirtTrim: "#4FD09A", emblem: "heart" }, 45),
   out("vestido_verano", "Vestido de verano", "☀️", "comun", "#FFC800", "#FFF6E6", { skirt: "vestido", skirtColor: "#FFD84D", skirtTrim: "#FF7AA8" }, 45),
-  out("cheer_rosa", "Uniforme Cheer", "📣", "raro", "#D4216C", "#FFFFFF", { skirt: "cheer", skirtColor: "#D4216C", skirtTrim: "#FFC800", emblem: "star", pompoms: "#FFC800" }, 100),
+  out("cheer_rosa", "Uniforme Cheer a tu gusto", "📣", "raro", "#D4216C", "#FFFFFF", { skirt: "cheer", skirtColor: "#D4216C", skirtTrim: "#FFC800", emblem: "star", pompoms: "#FFC800" }, 100, { custom: true }),
   out("cheer_azul", "Cheer Azul", "🌊", "raro", "#2F6FD6", "#FFF6E6", { skirt: "cheer", skirtColor: "#2F6FD6", skirtTrim: "#FFFFFF", emblem: "star", pompoms: "#FFFFFF" }, 100),
   out("bailarina", "Bailarina", "🩰", "raro", "#FFFFFF", "#FF7AA8", { skirt: "tutu", skirtColor: "#FFF0F6", tights: "#FFC2DC" }, 120),
   out("vestido_fiesta", "Vestido de fiesta", "🎉", "raro", "#9A5CFF", "#FFC800", { skirt: "vestido", skirtColor: "#9A5CFF", skirtTrim: "#FFC800", shine: true, emblem: "star" }, 130),
@@ -365,7 +365,7 @@ export const ITEMS = [
   ev("dianino", 80, "pet", "ev_globito", "Globito feliz", "🎈", "legendario", { kind: "globito" }),
 ];
 
-import { levelInfo } from "./xp.js?v=71b37ac21d";
+import { levelInfo } from "./xp.js?v=980cf22f17";
 
 /** Si la prenda todavía está bloqueada devuelve por qué ("" si ya se puede comprar). Lo exclusivo pide nivel o un logro. */
 export function lockReason(progress, item) {
@@ -387,6 +387,34 @@ export function itemsOfSlot(slot) {
   return [...ITEMS.filter((i) => i.slot === slot && !i.soon), ...ITEMS.filter((i) => i.slot === slot && i.soon)];
 }
 
+// ---- Prendas "a tu gusto": con una sola compra eliges el color (cualquiera) y la figura del centro ----
+export const CUSTOM_COLORS = ["#D4216C", "#E83A3A", "#FF8A2A", "#FFC800", "#CFD767", "#4FD09A", "#2FB5B0", "#35C8FF", "#2F6FD6", "#7A4DD8", "#B06BFF", "#FF7AA8", "#FFFFFF", "#8A8A99", "#3D1F10", "#1C1C22"];
+export const CUSTOM_EMBLEMS = [
+  { id: "star", name: "Estrella", icon: "⭐" },
+  { id: "circle", name: "Círculo", icon: "⚪" },
+  { id: "moon", name: "Luna", icon: "🌙" },
+  { id: "heart", name: "Corazón", icon: "❤️" },
+  { id: "diamond", name: "Rombo", icon: "🔷" },
+  { id: "none", name: "Sin figura", icon: "🚫" },
+];
+export const isHexColor = (c) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
+
+/** Color de contraste para los detalles (blanco sobre colores oscuros, café oscuro sobre colores claros). */
+export function contrastOf(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  return lum > 0.68 ? "#3D1F10" : "#FFFFFF";
+}
+
+/** El atuendo tal como se ve con lo que elegiste (si no es "a tu gusto", queda igual). */
+export function customizeOutfit(outfit, look) {
+  if (!outfit || !outfit.custom) return outfit;
+  const color = isHexColor(look && look.outfitColor) ? look.outfitColor : outfit.jersey;
+  const emblem = look && CUSTOM_EMBLEMS.some((e) => e.id === look.outfitEmblem) ? look.outfitEmblem : outfit.params.emblem;
+  const trim = contrastOf(color);
+  return { ...outfit, jersey: color, trim, params: { ...outfit.params, skirtColor: color, skirtTrim: trim, pompoms: trim, emblem: emblem === "none" ? "" : emblem } };
+}
+
 export function getOutfit(id) {
   return OUTFITS.find((o) => o.id === id) || OUTFITS[0];
 }
@@ -397,4 +425,4 @@ export function trailColors(look) {
   return item ? item.params.colors.map((c) => Number.parseInt(c.slice(1), 16)) : [0xffc800, 0xfff6e6];
 }
 
-export const EMPTY_LOOK = { hair: "", hairColor: "", face: "", hat: "", glasses: "", neck: "", back: "", hand: "", outfit: "polera", shoes: "", skin: "", trail: "", pet: "" };
+export const EMPTY_LOOK = { hair: "", hairColor: "", face: "", hat: "", glasses: "", neck: "", back: "", hand: "", outfitColor: "", outfitEmblem: "", outfit: "polera", shoes: "", skin: "", trail: "", pet: "" };

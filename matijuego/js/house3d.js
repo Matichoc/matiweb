@@ -2,10 +2,10 @@
 // con tu Matichico y su mascota adentro. Lo que hay en cada lugar viene de
 // js/house-data.js; aquí solo se dibuja. Es liviano y solo corre cuando la pantalla está visible.
 
-import { THREE, canvasTexture, roundedBox, createRenderer, glAcquire, toonify, makeAmbient } from "./three-kit.js?v=71b37ac21d";
-import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
-import { getOutfit } from "./wardrobe-data.js?v=71b37ac21d";
-import { getHouseItem, houseItemsOfSpot, isWallItem } from "./house-data.js?v=71b37ac21d";
+import { THREE, canvasTexture, roundedBox, createRenderer, glAcquire, toonify, makeAmbient } from "./three-kit.js?v=980cf22f17";
+import { createMatichico } from "./matichico3d.js?v=980cf22f17";
+import { getOutfit } from "./wardrobe-data.js?v=980cf22f17";
+import { getHouseItem, houseItemsOfSpot, isWallItem } from "./house-data.js?v=980cf22f17";
 
 let W = 10; // ancho del cuarto (10, 14 o 18 según cuánto lo agrandes); el alto es siempre 5.2
 const H = 5.2;
@@ -1261,8 +1261,12 @@ export class House3D {
   /** Qué se puede hacer con un mueble (o null si es solo decoración). Las coordenadas son del mueble, sin girar. */
   _interactionOf(f) {
     const it = f.item;
-    if (f.data.wall) return null;
     const k = it.params && it.params.kind;
+    if (f.data.wall) {
+      // la pantalla gigante de la pared también se puede mirar (de pie, frente a ella)
+      if (k === "tv" && f.data.wall === "back") return { act: "watch", enter: [0, 0, 0], at: [0, 0, 0], face: Math.PI };
+      return null;
+    }
     if (it.spot === "bed") {
       const top = { simple: 0.95, nube: 1.1, cohete: 1.0, alfajor: 1.3 }[k] || 1.0;
       return { act: "sleep", enter: [1.9, 0, 0], at: [0.0, top + 0.3, 1.0], face: 0 };
@@ -1311,6 +1315,49 @@ export class House3D {
     return e.y + face;
   }
 
+
+  /** ¿Hay un mueble (de piso) tapando este punto? */
+  _blockedPoint(x, z, skip) {
+    for (const f of this.furn.values()) {
+      if (f === skip || f.data.wall || f.item.spot === "rug") continue;
+      const box = new THREE.Box3().setFromObject(f.group);
+      if (box.max.y < 0.3) continue;
+      if (x > box.min.x - 0.45 && x < box.max.x + 0.45 && z > box.min.z - 0.45 && z < box.max.z + 0.45) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Dónde se para el Matichico a mirar la tele: de frente a ella, a unos 2-3 pasos, siempre DENTRO de la pieza y en un lugar
+   * libre (antes iba a un punto fijo que podía quedar fuera del cuarto o detrás de un sillón, y el Matichico se salía de la pieza).
+   */
+  _watchSpot(f) {
+    const half = W / 2 - 0.9;
+    f.group.updateMatrixWorld(true);
+    const inner = f.group.children[0];
+    const q = new THREE.Quaternion();
+    inner.getWorldQuaternion(q);
+    const dir = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
+    dir.y = 0;
+    dir.normalize();
+    const P = new THREE.Vector3();
+    f.group.getWorldPosition(P);
+    const perp = new THREE.Vector3(-dir.z, 0, dir.x);
+    const clamp = (v) => Math.max(-half, Math.min(half, v));
+    let best = null;
+    for (const d of [3.2, 2.6, 3.8, 2.1, 1.7]) {
+      for (const lat of [0, 0.9, -0.9, 1.7, -1.7, 2.6, -2.6]) {
+        const x = clamp(P.x + dir.x * d + perp.x * lat);
+        const z = clamp(P.z + dir.z * d + perp.z * lat);
+        if (Math.hypot(x - P.x, z - P.z) < 1.5) continue; // no pegado a la tele
+        if (this._blockedPoint(x, z, f)) continue;
+        if (!best) best = { x, z };
+        if (Math.hypot(x - (P.x + dir.x * d), z - (P.z + dir.z * d)) < 0.3) return { x, z }; // sin tener que correrse
+      }
+    }
+    return best || { x: clamp(P.x + dir.x * 2.4), z: clamp(P.z + dir.z * 2.4) };
+  }
+
   /** Ir a usar un mueble (por su uid). `force` = aunque esté haciendo otra cosa. */
   interact(uid, wake = true) {
     const f = this.furn.get(uid);
@@ -1319,7 +1366,7 @@ export class House3D {
     if (!i) return false;
     const L = this.life;
     if (L.state === "act" && wake) this._leaveAct(true);
-    L.target = { uid, i };
+    L.target = { uid, i, goalW: i.act === "watch" ? this._watchSpot(f) : null };
     L.state = "walk";
     L.stuck = 0;
     L.walkT = 0;
@@ -1386,13 +1433,17 @@ export class House3D {
       const ff = tg.uid ? this.furn.get(tg.uid) : null;
       if (tg.uid) {
         if (!ff) { L.state = "idle"; L.target = null; return; }
-        const w = this._worldOf(ff, tg.i.enter);
+        const w = tg.goalW || this._worldOf(ff, tg.i.enter);
         goal = { x: Math.max(-half, Math.min(half, w.x)), z: Math.max(-half, Math.min(half, w.z)) };
       } else goal = tg.pt;
       let dx = goal.x - L.hx;
       let dz = goal.z - L.hz;
       const dist = Math.hypot(dx, dz);
       L.walkT += dt;
+      if (L.walkT > 14 && dist > 1.2) { // no pudo llegar (algo lo tapa): se rinde en vez de usar el mueble desde cualquier parte
+        L.state = "idle"; L.t = 2; L.target = null;
+        return;
+      }
       if (dist < 0.18 || L.walkT > 14) {
         if (tg.uid) { L.state = "enter"; L.blend = 0; L.enterFrom = { x: L.hx, z: L.hz, yaw: L.yaw }; this._beginAct(); }
         else { L.state = "idle"; L.t = 3 + Math.random() * 5; if (tg.door) { L.target = null; this._onDoor?.(); } }
@@ -1417,6 +1468,8 @@ export class House3D {
           az += (oz / d) * k * 1.6 + (ox / d) * k * 0.9;
         }
       }
+      const near = Math.min(1, dist / 1.6); // cerca de la meta ya no esquiva (si no, los muebles de al lado lo alejaban)
+      ax *= near; az *= near;
       let vx = dx + ax, vz = dz + az;
       const vl = Math.hypot(vx, vz) || 1;
       vx /= vl; vz /= vl;
@@ -1441,7 +1494,9 @@ export class House3D {
       const ff = tg && tg.uid ? this.furn.get(tg.uid) : null;
       if (!ff) { L.state = "idle"; L.cur = null; L.target = null; return; }
       const i = tg.i;
-      const wpos = this._worldOf(ff, i.at);
+      const wpos = tg.goalW ? new THREE.Vector3(tg.goalW.x, 0, tg.goalW.z) : this._worldOf(ff, i.at);
+      wpos.x = Math.max(-half - 0.3, Math.min(half + 0.3, wpos.x)); // nunca fuera de la pieza
+      wpos.z = Math.max(-half - 0.3, Math.min(half + 0.3, wpos.z));
       const wyaw = this._yawOf(ff, i.face);
       const k = L.state === "enter" ? Math.min(1, L.blend + dt / 0.8) : 1;
       L.blend = k;
@@ -1472,7 +1527,7 @@ export class House3D {
       const tg = L.target;
       const ff = tg && tg.uid ? this.furn.get(tg.uid) : null;
       if (ff) {
-        const w = this._worldOf(ff, tg.i.enter);
+        const w = tg.goalW || this._worldOf(ff, tg.i.enter);
         L.hx = Math.max(-half, Math.min(half, w.x)); L.hz = Math.max(-half, Math.min(half, w.z));
       }
       g.position.set(L.hx, 0, L.hz);

@@ -6,11 +6,11 @@
 // Todo se guarda por perfil dentro de `progress` (xp, packs, album, daily) y se paga solo
 // con Matipuntos, sin compras reales.
 
-import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=71b37ac21d";
-import { addEnergy } from "./energy.js?v=71b37ac21d";
-import { getItem } from "./wardrobe-data.js?v=71b37ac21d";
-import { activeEvent, addEventTokens } from "./events.js?v=71b37ac21d";
-import { isUnlocked } from "./unlocks.js?v=71b37ac21d";
+import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=980cf22f17";
+import { addEnergy } from "./energy.js?v=980cf22f17";
+import { getItem } from "./wardrobe-data.js?v=980cf22f17";
+import { activeEvent, addEventTokens } from "./events.js?v=980cf22f17";
+import { isUnlocked } from "./unlocks.js?v=980cf22f17";
 
 // ---------- partidas ----------
 
@@ -32,7 +32,7 @@ export const GAME_NAMES = {
 
 // ---------- niveles ----------
 
-import { MAX_LEVEL, xpForLevel, levelInfo } from "./xp.js?v=71b37ac21d";
+import { MAX_LEVEL, xpForLevel, levelInfo } from "./xp.js?v=980cf22f17";
 export { MAX_LEVEL, xpForLevel, levelInfo };
 
 /** Regalos de nivel: objetos del guardarropa que se desbloquean gratis. */
@@ -197,7 +197,7 @@ export function hasPending(progress) {
 
 // ---------- álbum ----------
 // Las figuritas, los sobres y las repetidas viven en js/album.js (aquí se re-exportan para el resto de la app).
-export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=71b37ac21d";
+export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=980cf22f17";
 
 // ---------- el gancho que se llama al terminar una partida ----------
 
