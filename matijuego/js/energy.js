@@ -4,22 +4,24 @@
 // progress.energy = { v, t, day, extra, chestAt, sleepUntil }
 //   v         energía actual (0..ENERGY_CAP)
 //   t         última vez que se calculó la recarga (ms)
-//   day       día local de la última revisión (cada día nuevo se vuelve a llenar hasta 100)
+//   day       día local de la última revisión (cada día nuevo se vuelve a llenar hasta ENERGY_MAX)
+//   ver       versión de las reglas de energía: si cambia, la energía parte de nuevo (solo la energía; lo demás no se toca)
 //   extra     energía "extra" ganada hoy (cofres, misiones, logros...); tiene tope diario
 //   chestAt   cuándo estará listo el próximo cofre del tesoro (ms)
 //   bought    veces que compró energía con Matipuntos hoy
 //   sleepUntil mientras el Matichico duerme en su cama la recarga es más rápida
 
-import { saveProgress, earnCoins, spendCoins, dayKey } from "./storage.js?v=71b37ac21d";
+import { saveProgress, earnCoins, spendCoins, dayKey } from "./storage.js?v=980cf22f17";
 
-export const ENERGY_MAX = 100; // lo que se llena solo (por día y con el tiempo)
-export const ENERGY_CAP = 300; // tope con extras (cofres, logros, calendario...)
-export const REGEN_SECS = 360; // +1 de energía cada 6 minutos (10 por hora)
+export const ENERGY_VERSION = 2; // al subirla, la energía de todos los perfiles se reinicia (llena) una sola vez
+export const ENERGY_MAX = 200; // lo que se llena solo (por día y con el tiempo)
+export const ENERGY_CAP = 400; // tope con extras (cofres, logros, calendario...)
+export const REGEN_SECS = 240; // +1 de energía cada 4 minutos (15 por hora): se gasta y se va reutilizando
 export const SLEEP_MULT = 3; // durmiendo se recarga 3 veces más rápido
-export const EXTRA_DAILY_MAX = 50; // máximo de energía extra por día
+export const EXTRA_DAILY_MAX = 100; // máximo de energía extra por día
 export const CHEST_EVERY = 40 * 60 * 1000; // un cofre del tesoro cada 40 minutos
 export const CHEST_ENERGY = 10;
-/** Comprar energía con Matipuntos: solo sube hasta 100 (no pasa de ahí) y tiene tope de compras por día. */
+/** Comprar energía con Matipuntos: solo sube hasta ENERGY_MAX (no pasa de ahí) y tiene tope de compras por día. */
 export const BUY_ENERGY = { amount: 20, price: 80, perDay: 10 };
 
 /** Cuánto cuesta ENTRAR a jugar cada juego (0 = gratis). Además, durante la partida se gasta por acción (ver ENERGY_RULE). */
@@ -45,7 +47,10 @@ const emitGain = (n, reason) => {
 /** Estado de energía al día (aplica la recarga por tiempo y el llenado del día nuevo). */
 export function energyOf(progress, now = Date.now()) {
   let e = progress.energy;
-  if (!e || typeof e !== "object") e = progress.energy = { v: ENERGY_MAX, t: now, day: dayKey(new Date(now)), extra: 0, chestAt: now + CHEST_EVERY, sleepUntil: 0 };
+  if (!e || typeof e !== "object") e = progress.energy = { v: ENERGY_MAX, t: now, day: dayKey(new Date(now)), extra: 0, chestAt: now + CHEST_EVERY, sleepUntil: 0, ver: ENERGY_VERSION };
+  if (e.ver !== ENERGY_VERSION) { // reglas nuevas de energía: parte de nuevo, llena (lo demás del perfil no se toca)
+    Object.assign(e, { v: ENERGY_MAX, t: now, day: dayKey(new Date(now)), extra: 0, bought: 0, chestAt: now + CHEST_EVERY, sleepUntil: 0, ver: ENERGY_VERSION });
+  }
   if (!Number.isFinite(e.v)) e.v = ENERGY_MAX;
   e.v = Math.min(ENERGY_CAP, Math.max(0, e.v));
   if (!Number.isFinite(e.t) || e.t > now) e.t = now; // el reloj se atrasó: no se regala tiempo
@@ -58,7 +63,7 @@ export function energyOf(progress, now = Date.now()) {
     e.day = today;
     e.extra = 0;
     e.bought = 0;
-    if (e.v < ENERGY_MAX) e.v = ENERGY_MAX; // cada día se empieza con 100
+    if (e.v < ENERGY_MAX) e.v = ENERGY_MAX; // cada día se empieza con la energía llena
     e.t = now;
   }
   if (e.v < ENERGY_MAX) {
@@ -138,7 +143,7 @@ export function buyOffer(progress) {
   return { n, price: n > 0 ? Math.ceil((BUY_ENERGY.price * n) / BUY_ENERGY.amount) : 0 };
 }
 
-/** Compra energía con Matipuntos, solo hasta llegar a 100. Devuelve cuánta sumó, o 0 si no se pudo (sin puntos, tope del día o ya tienes 100). */
+/** Compra energía con Matipuntos, solo hasta llegar al máximo. Devuelve cuánta sumó, o 0 si no se pudo (sin puntos, tope del día o ya está llena). */
 export function buyEnergy(progress) {
   const e = energyOf(progress);
   const { n, price } = buyOffer(progress);

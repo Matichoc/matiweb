@@ -2,7 +2,7 @@
 // Del más chiquito al más grande: dentro de cada familia el dibujo va creciendo y, en los últimos, se vuelve dorado y brillante.
 // Los productos con foto real usan assets/products/<img>.jpg.
 
-import { CHAINS } from "./merge-data.js?v=71b37ac21d";
+import { CHAINS } from "./merge-data.js?v=980cf22f17";
 
 const TAU = Math.PI * 2;
 

@@ -7,8 +7,8 @@
 // Se agrega como "mixin" a ParkourGame (ver el final de parkour-game.js) y usa sus
 // métodos de siempre (_makePlatform, _makeItem, _makeFlag, _makeSpinner...).
 
-import { THREE, clamp, lerp } from "./three-kit.js?v=71b37ac21d";
-import * as audio from "./audio.js?v=71b37ac21d";
+import { THREE, clamp, lerp } from "./three-kit.js?v=980cf22f17";
+import * as audio from "./audio.js?v=980cf22f17";
 
 export const ZONE_LEN = 140; // metros por mundo
 export const MAX_LIVES = 5;
@@ -52,7 +52,7 @@ export const POWERS = {
 
 export function installInfinite(Cls, STAGES) {
   const P = Cls.prototype;
-  const biomes = [STAGES[0], STAGES[1], STAGES[2], EXTRA_BIOMES.bosque, STAGES[3], EXTRA_BIOMES.desierto, EXTRA_BIOMES.menta, STAGES[4], EXTRA_BIOMES.galaxia, STAGES[5]]
+  const biomes = [STAGES[0], STAGES[1], STAGES[2], EXTRA_BIOMES.bosque, STAGES[3], EXTRA_BIOMES.desierto, EXTRA_BIOMES.menta, STAGES[4], EXTRA_BIOMES.galaxia, STAGES[6]]
     .map((b) => ({ ...b, ...META[b.name] }));
 
   P.biomeAt = function biomeAt(i) {
@@ -225,20 +225,85 @@ export function installInfinite(Cls, STAGES) {
       }
       last.camYaw = 0;
       ctx.item?.(last.base.x, last.base.y + last.h.y + 2.8, last.base.z, "gold");
+    } else if (kind === "house") {
+      // una casa pegada al camino: subes por los balcones del costado (cada uno más alto) y cruzas la azotea
+      const n = o.n || 4;
+      const rise = 1.8;
+      const lsx = 2.4;
+      const lsz = 2.6;
+      const lgap = 1.0;
+      const side = o.dir || (c0.x > 0 ? -1 : 1);
+      const hsx = 6;
+      const nearX = c0.x + side * (c0.sx / 2 + 1.8);
+      const z0 = c0.z;
+      let zl = z0;
+      for (let i = 0; i < n; i++) {
+        const p = put(nearX + (side * lsx) / 2, c0.top + rise * (i + 1), zl, { sx: lsx, sz: lsz, camYaw: 0 });
+        if (i % 2 === 1) ctx.onTop(p);
+        zl -= lsz + lgap;
+        last = p;
+      }
+      const zLast = last.base.z;
+      const zBack = z0 + lsz / 2 + 0.2;
+      const zFront = zLast - lsz / 2 - 9.5;
+      const roofTop = c0.top + rise * (n + 1);
+      const roof = put(nearX + side * lsx + (side * hsx) / 2, roofTop, (zBack + zFront) / 2, {
+        type: "wall", sx: hsx, sz: zBack - zFront, hy: (roofTop + 9) / 2, camYaw: 0,
+      });
+      // azotea: dos líneas rojas y una pared para pasar por el lado
+      const rz = roof.base.z;
+      this._addHazard(roof, { lx: 0, lz: zLast - 4.2 - rz, w: hsx, d: 0.6 });
+      this._addWall(roof, { lx: side * 1.3, lz: zLast - 7.2 - rz, w: 3.2, d: 0.6 });
+      ctx.item?.(roof.base.x, roofTop + 1.15, zLast - 2.4, "item");
+      ctx.item?.(roof.base.x, roofTop + 1.15, zLast - 5.8, "item");
+      ctx.item?.(roof.base.x, roofTop + 3.4, zLast - 1.0, "gold");
+      this._addHouseDecor(roof, side);
+      last = roof;
     } else if (kind === "descent") {
       const n = o.n || 5;
       let z = c0.z - c0.sz / 2;
       let top = c0.top;
+      const toX = Math.abs(c0.x) > 5 ? 0 : undefined; // si venimos de una casa al costado, la bajada vuelve al centro
       for (let i = 0; i < n; i++) {
         z -= 2.0 + size / 2;
         top -= 1.8;
-        const p = put(c0.x + (i % 2 ? 1 : -1) * 1.2, top, z, { sx: size + 0.8, sz: size + 0.8, camYaw: 0 });
+        const x = toX !== undefined ? c0.x + ((toX - c0.x) * (i + 1)) / n : c0.x + (i % 2 ? 1 : -1) * 1.2;
+        const p = put(x, top, z, { sx: size + 0.8, sz: size + 0.8, camYaw: 0 });
         ctx.onTop(p);
         last = p;
         z -= size / 2;
       }
     }
     return last;
+  };
+
+  /** Adornos de la casa (ventanas, chimenea, puerta): solo se ven, no estorban. */
+  P._addHouseDecor = function _addHouseDecor(roof, side) {
+    const G = this._pgeo();
+    const g = new THREE.Group();
+    const top = roof.h.y;
+    const add = (geo, hex, x, y, z, sx, sy, sz, emissive) => {
+      const m = new THREE.Mesh(geo, emissive ? new THREE.MeshBasicMaterial({ color: hex }) : this._pmat(hex));
+      m.position.set(x, y, z);
+      m.scale.set(sx, sy, sz);
+      g.add(m);
+      return m;
+    };
+    // chimenea y antena de la azotea, atrás para no tapar el camino
+    add(G.box, 0xa8482a, -side * 1.8, top + 0.9, roof.h.z - 1.4, 1.1, 1.8, 1.1);
+    add(G.box, 0x5a2a18, -side * 1.8, top + 1.9, roof.h.z - 1.4, 1.4, 0.25, 1.4);
+    // ventanas en las paredes (se ven desde afuera): hacia el camino (-side) a distintas alturas
+    const faceX = -side * (roof.h.x + 0.04);
+    for (let k = 0; k < 3; k++) {
+      for (let h = 0; h < 4; h++) {
+        const y = top - 2.0 - h * 3.6;
+        if (y < -6) continue;
+        const z = roof.h.z - 4 - k * ((roof.h.z * 2 - 8) / 2.5);
+        const w = add(G.box, 0xffe28a, faceX, y, z, 0.06, 1.3, 1.3, true);
+        w.userData.win = true;
+      }
+    }
+    roof.mesh.add(g);
   };
 
   P._infCheckpoint = function _infCheckpoint(p, zone) {
@@ -284,7 +349,7 @@ export function installInfinite(Cls, STAGES) {
     if (inf.count > 6 && !inf.lastHard) {
       const mustDescend = cur.top > 7;
       if (mustDescend || (inf.sinceFig >= 9 && rnd() < 0.32)) {
-        const fw = mustDescend ? { descent: 1 } : { sidewalk: 3, zigzag: 2.2, diag: 2.2, spiral: cur.top <= 3 ? 2 : 0 };
+        const fw = mustDescend ? { descent: 1 } : { sidewalk: 3, zigzag: 2.2, diag: 2.2, spiral: cur.top <= 3 ? 2 : 0, house: zone >= 1 && cur.top <= 2 ? 5 : 0 };
         const fe = Object.entries(fw).filter(([, v]) => v > 0);
         let rr2 = rnd() * fe.reduce((a, [, v]) => a + v, 0);
         let kind = fe[0][0];
@@ -304,6 +369,7 @@ export function installInfinite(Cls, STAGES) {
     if (zone >= 1) { w.beam = 1.2 + d; w.crumble = 1.2 + d; }
     if (zone >= 2 && cur.top <= 3) w.pad = 0.9;
     if (zone >= 3) w.spinner = 0.8 + 0.8 * d;
+    if (zone >= 2) w.sweeper = 0.7 + 0.8 * d;
     if (zone >= 4) w.blink = 0.9 + d;
     for (const k of theme.favor || []) if (w[k]) w[k] *= 2.2;
     if (inf.lastHard) w.normal = (w.normal || 1) * 3;
@@ -327,6 +393,7 @@ export function installInfinite(Cls, STAGES) {
       case "moving":
         p = this._infPlace("moving", { ...base, sx: size + 0.6, sz: size + 0.6, dx: rr(-1, 1), dy: 0, axis: "x", amp: lerp(2.0, 3.2, d), speed: lerp(0.8, 1.25, d), phase: rr(0, 6) });
         if (rnd() < 0.6) onTop(p);
+        hard = true; // después de una que se mueve no arrancan figuras (la plataforma barrería el tramo)
         break;
       case "beam":
         p = this._infPlace("beam", { ...base, sx: 1.6, sz: 6.5, gap: 2.0, dx: rr(-0.6, 0.6), dy: 0 });
@@ -350,6 +417,12 @@ export function installInfinite(Cls, STAGES) {
         item(p.base.x, p.base.y + p.h.y + 1.7, p.base.z - 2.3);
         hard = true;
         break;
+      case "sweeper": // pared que va y viene sobre una plataforma ancha: hay que cruzar cuando se abre el paso
+        p = this._infPlace("normal", { sx: 7, sz: 7, gap: 2.4, dx: 0, dy: 0 });
+        this._addWall(p, { w: 2.4, d: 0.6, slide: 2.2, speed: lerp(1.0, 1.7, d), phase: rr(0, 6) });
+        item(p.base.x, p.base.y + p.h.y + 1.15, p.base.z - 2.4);
+        hard = true;
+        break;
       case "pad": {
         const pad = this._infPlace("pad", { sx: 3.6, sz: 3.6, gap: 2.2, dx: 0, dy: 0 });
         item(pad.base.x, pad.base.y + 5.5, pad.base.z - 2.4, "gold");
@@ -357,10 +430,25 @@ export function installInfinite(Cls, STAGES) {
         onTop(p, 3, 1.6);
         break;
       }
-      default:
-        p = this._infPlace("normal", { ...base, sx: size, sz: size });
+      default: {
+        // desde el mundo 2: líneas rojas que se saltan y paredes que se esquivan por el lado (en plataformas más grandes)
+        const r2 = rnd();
+        const wantHaz = zone >= 1 && r2 < 0.16 + 0.26 * d;
+        const wantWall = zone >= 1 && !wantHaz && r2 < 0.30 + 0.4 * d;
+        const sz2 = wantHaz || wantWall ? Math.max(size, 4.8) : size;
+        p = this._infPlace("normal", { ...base, sx: sz2, sz: sz2 });
         if (rnd() < 0.55) onTop(p);
+        if (wantHaz) {
+          this._addHazard(p, { lz: rr(-0.8, -0.3), w: sz2, d: 0.55 });
+          if (sz2 >= 5.4 && rnd() < 0.4) this._addHazard(p, { lz: -p.h.z + 1.0, w: sz2, d: 0.5 });
+          hard = true;
+        } else if (wantWall) {
+          const sd = rnd() < 0.5 ? -1 : 1;
+          this._addWall(p, { lx: sd * sz2 * 0.25, lz: rr(-0.4, 0.4), w: sz2 * 0.5, d: 0.6 });
+          hard = true;
+        }
         break;
+      }
     }
     inf.lastHard = hard;
 

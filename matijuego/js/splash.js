@@ -2,7 +2,7 @@
 // Sale al abrir la app y también al volver después de un buen rato sin usarla. Si pasaron muchas horas
 // (por ejemplo, de un día para otro) la app se reinicia sola, como si se hubiera cerrado, y vuelve a mostrarse.
 
-import * as audio from "./audio.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=980cf22f17";
 
 const SHOW_AFTER_MS = 20 * 60 * 1000; // volver después de 20 minutos: se muestra el sello
 const RESTART_AFTER_MS = 3 * 60 * 60 * 1000; // después de 3 horas: se reinicia la app

@@ -13,7 +13,13 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=71b37ac21d">
+<link rel="stylesheet" href="css/style.css?v=980cf22f17"><style>
+/* Enlaces del juego hacia matichoc.cl (solo en la web; la app no los lleva ni este estilo): discretos. Texto chico, sin íconos ni colores de marca,
+   para que el juego no empuje hacia la tienda. Siguen siendo legibles (color de texto de cada pantalla) y accesibles. */
+.site-links { gap: 2px 14px; margin: 18px 0 6px; }
+.site-links a, .lb-links a { color: inherit; font-weight: 400; font-size: 0.7rem; opacity: 1; }
+.site-links a:hover, .site-links a:focus-visible { text-decoration: underline; }
+</style>
 </head>
 <body>
 <div id="toast" class="toast hidden"></div>
@@ -47,7 +53,7 @@
     <div class="um-icon" id="en-icon">⚡</div>
     <h2 id="en-title">Tu energía</h2>
     <p id="en-text"></p>
-    <div class="en-bar"><i id="en-fill"></i><span id="en-count">100/100</span></div>
+    <div class="en-bar"><i id="en-fill"></i><span id="en-count">200/200</span></div>
     <p class="en-sub" id="en-next"></p>
     <button id="en-chest" class="btn-primary hidden" type="button">🎁 Abrir cofre del tesoro</button>
     <p class="en-sub" id="en-chest-wait"></p>
@@ -97,9 +103,9 @@
         <h1 class="logo">Matijuego<span>el arcade de Matichoc</span></h1>
       </div>
       <nav class="site-links" aria-label="Enlaces a matichoc.cl">
-        <a href="https://matichoc.cl/">← Volver a matichoc.cl</a>
-        <a href="https://matichoc.cl/pages/tienda.html">🍫 Tienda</a>
+        <a href="https://matichoc.cl/">matichoc.cl</a>
         <a href="https://matichoc.cl/pages/la_maestra.html">La Maestra</a>
+        <a href="https://matichoc.cl/pages/tienda.html">Tienda</a>
       </nav>
       <p class="tagline">¿Quién juega? Cada perfil guarda su propio progreso.</p>
       <div id="profile-grid" class="profile-grid"></div>
@@ -122,7 +128,7 @@
         <h1 class="logo lb-logo">Matijuego<span>el arcade de Matichoc</span></h1>
         <div class="lb-actions">
           <div class="stat-chip lb-coins" title="Matipuntos">🍫✨ <span id="hub-total-coins">0</span></div>
-          <button id="btn-energy" class="stat-chip stat-chip-btn lb-energy" type="button" title="Energía: cada partida gasta un poco y se recarga con el tiempo">⚡ <b id="hub-energy">100</b><small>/<span id="hub-energy-max">100</span></small> <small id="hub-energy-next" class="en-next"></small><span class="lv-dot hidden" id="hub-energy-dot"></span></button>
+          <button id="btn-energy" class="stat-chip stat-chip-btn lb-energy" type="button" title="Energía: cada partida gasta un poco y se recarga con el tiempo">⚡ <b id="hub-energy">200</b><small>/<span id="hub-energy-max">200</span></small> <small id="hub-energy-next" class="en-next"></small><span class="lv-dot hidden" id="hub-energy-dot"></span></button>
           <button id="btn-open-progress" class="stat-chip stat-chip-btn lb-level" title="Nivel, misiones y álbum">
             <span class="lv-badge">⭐ <b id="hub-level">1</b></span>
             <span class="lv-bar"><i id="hub-xp-fill"></i></span>
@@ -174,9 +180,9 @@
           <div id="game-feature" class="lb-feature"></div>
           <div id="game-grid" class="game-grid lb-grid"></div>
           <nav class="site-links lb-links" aria-label="Enlaces a matichoc.cl">
-            <a href="https://matichoc.cl/">← Volver a matichoc.cl</a>
-            <a href="https://matichoc.cl/pages/tienda.html">🍫 Tienda</a>
+            <a href="https://matichoc.cl/">matichoc.cl</a>
             <a href="https://matichoc.cl/pages/la_maestra.html">La Maestra</a>
+            <a href="https://matichoc.cl/pages/tienda.html">Tienda</a>
           </nav>
         </main>
       </div>
@@ -190,7 +196,7 @@
         <button id="btn-house-back" class="btn-secondary">← Volver</button>
         <h1 class="logo sh-title">Mi Casa</h1>
         <div class="stat-chip lb-coins" title="Matipuntos">🍫✨ <span id="house-coins">0</span> <small>Matipuntos</small></div>
-        <div class="stat-chip" id="house-energy" title="Energía">⚡ <b id="house-energy-v">100</b><small>/100</small></div>
+        <div class="stat-chip" id="house-energy" title="Energía">⚡ <b id="house-energy-v">200</b><small>/<span id="house-energy-max">200</span></small></div>
       </header>
       <div class="sh-body">
         <aside class="sh-preview">
@@ -291,6 +297,7 @@
           <div id="shop-views" class="house-modes sh-views"></div>
           <div id="shop-tabs" class="sh-tabs"></div>
           <div id="shop-grid" class="sh-grid"></div>
+          <div id="shop-custom" class="sh-custom hidden"></div>
           <div id="shop-bar" class="sh-bar"></div>
         </section>
       </div>
@@ -609,7 +616,7 @@
         </div>
       </div>
       <div class="hud-right">
-        <div class="hud-chip">🏁 <span id="parkour-hud-stage">Etapa 1/6</span></div>
+        <div class="hud-chip">🏁 <span id="parkour-hud-stage">Etapa 1/7</span></div>
         <div class="hud-chip">🍬 <span id="parkour-hud-items">0</span></div>
         <div class="hud-chip">⏱ <span id="parkour-hud-time">0:00</span></div>
         <div class="hud-chip">🍫✨ <span id="parkour-hud-coins">0</span></div>
@@ -642,7 +649,7 @@
           <div class="pk-modes">
             <button class="btn-primary" id="parkour-btn-infinite">♾️ Mundo infinito<small>Nunca termina: 10 mundos que se repiten cada vez más difíciles. Tienes 5 vidas, poderes 🧲🛡️⚡🦘 y un récord que batir.</small></button>
             <button class="btn-primary" id="parkour-btn-missions">🎯 Misiones<small>20 misiones en el Mundo infinito: elige una abajo y cúmplela para desbloquear la siguiente.</small></button>
-            <button class="btn-secondary" id="parkour-btn-campaign">🏁 Aventura<small>6 etapas con capa, gafas y corona de premio.</small></button>
+            <button class="btn-secondary" id="parkour-btn-campaign">🏁 Aventura<small>7 etapas, ¡con una de parkour troll! Capa, gafas y corona de premio.</small></button>
           </div>
           <div id="parkour-lvlpick" class="lvl-pick"></div>
           <p class="fps-hint" id="parkour-record"></p>
@@ -1368,6 +1375,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=71b37ac21d"></script>
+<script type="module" src="js/main.js?v=980cf22f17"></script>
 </body>
 </html>

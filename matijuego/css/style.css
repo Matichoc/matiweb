@@ -1902,3 +1902,17 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
 /* aviso de la versión de prueba de la web */
 .demo-banner { margin: 6px 10px 0; padding: 7px 12px; border-radius: 12px; background: rgba(255, 200, 0, 0.3); border: 2px dashed var(--dorado-osc, #c99900); color: var(--marron-osc, #3d1f10); font-size: 0.82rem; text-align: center; line-height: 1.3; }
 @media (max-height: 520px) { .demo-banner { font-size: 0.72rem; padding: 4px 8px; margin-top: 3px; } }
+
+/* prendas "a tu gusto": color y figura del centro */
+.sh-custom { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border-radius: 14px; background: rgba(255, 255, 255, 0.08); border: 2px solid var(--dorado, #ffc800); }
+.sh-custom .sc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.sh-custom .sc-row > b { flex: 1 0 100%; font-size: 0.8rem; color: var(--crema, #fff6e6); }
+.sc-sw { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.5); cursor: pointer; padding: 0; }
+.sc-sw.on { border-color: #fff; box-shadow: 0 0 0 3px var(--dorado, #ffc800); transform: scale(1.12); }
+.sc-pick { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; border: 2px dashed rgba(255, 255, 255, 0.6); color: var(--crema, #fff6e6); font-size: 0.78rem; font-weight: 800; cursor: pointer; }
+.sc-pick input { width: 30px; height: 26px; border: 0; padding: 0; background: none; cursor: pointer; }
+.sc-em { display: inline-flex; flex-direction: column; align-items: center; min-width: 58px; padding: 4px 6px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.25); background: rgba(0, 0, 0, 0.2); color: var(--crema, #fff6e6); cursor: pointer; }
+.sc-em span { font-size: 1.3rem; line-height: 1.2; }
+.sc-em small { font-size: 0.66rem; }
+.sc-em.on { border-color: var(--dorado, #ffc800); background: rgba(255, 200, 0, 0.25); }
+@media (max-height: 520px) { .sh-custom { padding: 5px 8px; gap: 3px; } .sc-sw { width: 24px; height: 24px; } .sc-em { min-width: 48px; padding: 2px 4px; } .sc-em small { display: none; } }
