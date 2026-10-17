@@ -1,0 +1,191 @@
+// Mati Merge: la lógica del juego de juntar productos (sin gráficos, para poder probarla sola).
+// Como en los juegos de "merge": un tablero lleno de productos de 4 familias (alfajores, cuchuflís, bombones y tabletas).
+// Juntas dos productos IGUALES y se transforman en el siguiente de su familia, del más chiquito al más grande;
+// la tableta más soñada es el ¡Mati Dubai! Para sacar productos nuevos usas los 4 generadores (1 ⚡ cada vez) y los
+// clientes piden productos que puedes entregar por Matipuntos. El tablero se guarda en el perfil.
+//
+// progress.merge = { v:2, grid:[código], bests:[nivel máximo de cada familia], delivered, merges, spawned, orders:[{c,t,coins,xp}], dubai }
+// código de una pieza = familia * 10 + nivel   (0 = casillero vacío)
+
+import { saveProgress, earnCoins } from "./storage.js?v=71b37ac21d";
+import { addXp } from "./progression.js?v=71b37ac21d";
+
+export const COLS = 6;
+export const ROWS = 8;
+export const CELLS = COLS * ROWS;
+
+/** Las familias de productos. `img` = foto real en assets/products; `art` = dibujo hecho a mano (ver merge-art.js). */
+export const CHAINS = [
+  { id: "alfajor", name: "Alfajores", short: "Alfajor", icon: "🍪", color: 0xd08a3a, tiers: [
+    { name: "Galletita", art: "cookie" }, { name: "Alfajor mini", art: "alfmini" },
+    { name: "Alfajor de Menta", img: "alf-menta" }, { name: "Alfajor de Naranja", img: "alf-naranja" },
+    { name: "Alfajor de Maracuyá", img: "alf-maracuya" }, { name: "Alfajor de Frambuesa", img: "alf-frambuesa" },
+    { name: "Caja de alfajores", art: "alfbox", gold: true },
+  ] },
+  { id: "cuchufli", name: "Cuchuflís", short: "Cuchuflí", icon: "🥖", color: 0xe6b34a, tiers: [
+    { name: "Oblea", art: "oblea" }, { name: "Cuchuflí", art: "cuch1" }, { name: "Cuchuflís dúo", art: "cuch2" },
+    { name: "Atado de cuchuflís", art: "cuch3" }, { name: "Frasco de cuchuflís", art: "cuchjar" },
+    { name: "Torre de cuchuflís", art: "cuchtower", gold: true },
+  ] },
+  { id: "bombon", name: "Bombones", short: "Bombón", icon: "🍫", color: 0x8a4a5c, tiers: [
+    { name: "Grano de cacao", art: "bean" }, { name: "Bombón", art: "bonbon" },
+    { name: "Bomba de chocolate", img: "bomba-choco" }, { name: "Caja de bombones", art: "bonbonbox" },
+    { name: "Corazón de bombones", art: "heartbox" }, { name: "Bomba Dorada", img: "bomba-dorada", gold: true },
+  ] },
+  { id: "tableta", name: "Tabletas", short: "Tableta", icon: "🍬", color: 0xd4216c, tiers: [
+    { name: "Trocito de chocolate", art: "bar1" }, { name: "Barrita", art: "bar2" }, { name: "Tableta", art: "bar3" },
+    { name: "Tableta rellena", art: "bar4" }, { name: "Tableta gigante", art: "bar5" }, { name: "Tableta de oro", art: "bar6", gold: true },
+    { name: "¡Mati Dubai!", art: "dubai", gold: true, top: true },
+  ] },
+];
+export const TOTAL_ITEMS = CHAINS.reduce((a, c) => a + c.tiers.length, 0); // 26
+export const DUBAI = { c: 3, t: 7 };
+
+export const codeOf = (c, t) => c * 10 + t;
+export const chainIdx = (code) => Math.floor(code / 10);
+export const tierIdx = (code) => code % 10;
+export const maxTier = (c) => CHAINS[c].tiers.length;
+export function itemInfo(code) {
+  const c = CHAINS[chainIdx(code)];
+  const t = tierIdx(code);
+  if (!c || !c.tiers[t - 1]) return null;
+  return { code, c: chainIdx(code), t, chain: c, ...c.tiers[t - 1], max: c.tiers.length };
+}
+const validCode = (v) => { const n = Math.floor(Number(v)); return n > 0 && !!itemInfo(n) ? n : 0; };
+
+export function foundCount(m) { return m.bests.reduce((a, b) => a + b, 0); }
+
+export function mergeOf(progress) {
+  let m = progress.merge;
+  if (!m || typeof m !== "object") m = progress.merge = {};
+  if (m.v !== 2) { // formato anterior (una sola cadena): se arma un tablero nuevo, sin perder las entregas
+    const keep = Math.floor(Number(m.delivered)) || 0;
+    for (const k of Object.keys(m)) delete m[k];
+    m.v = 2; m.grid = []; m.delivered = keep;
+  }
+  if (!Array.isArray(m.grid) || m.grid.length !== CELLS) m.grid = new Array(CELLS).fill(0);
+  m.grid = m.grid.map(validCode);
+  for (const k of ["delivered", "merges", "spawned"]) { const n = Math.floor(Number(m[k])); m[k] = n > 0 ? n : 0; }
+  if (!Array.isArray(m.bests) || m.bests.length !== CHAINS.length) m.bests = new Array(CHAINS.length).fill(0);
+  m.bests = m.bests.map((b, i) => Math.max(0, Math.min(maxTier(i), Math.floor(Number(b)) || 0)));
+  m.dubai = !!m.dubai;
+  // un tablero vacío y recién empezado se llena como en los juegos de merge
+  if (m.grid.every((v) => v === 0) && m.spawned === 0 && m.merges === 0) fillStart(m);
+  for (const code of m.grid) if (code) m.bests[chainIdx(code)] = Math.max(m.bests[chainIdx(code)], tierIdx(code));
+  if (!Array.isArray(m.orders)) m.orders = [];
+  m.orders = m.orders.slice(0, 3).map((o) => (o && itemInfo(codeOf(o.c, o.t)) ? o : newOrder(m)));
+  while (m.orders.length < 3) m.orders.push(newOrder(m));
+  return m;
+}
+
+function fillStart(m, rnd = Math.random) {
+  const cells = [...Array(CELLS).keys()].sort(() => rnd() - 0.5).slice(0, Math.round(CELLS * 0.8));
+  for (const i of cells) {
+    const c = Math.floor(rnd() * CHAINS.length);
+    const r = rnd();
+    m.grid[i] = codeOf(c, r < 0.62 ? 1 : r < 0.92 ? 2 : 3);
+  }
+}
+
+/** Matipuntos que vale entregar un producto (crece rápido con el nivel). */
+export const coinsFor = (t) => Math.round(5 * Math.pow(1.7, t - 1));
+export const xpFor = (t) => 4 + t * 3;
+
+function newOrder(m, rnd = Math.random) {
+  const c = Math.floor(rnd() * CHAINS.length);
+  const best = Math.max(2, m.bests[c] || 1);
+  const hi = Math.min(maxTier(c), best + 1);
+  const lo = Math.max(2, hi - 3);
+  const t = lo + Math.floor(rnd() * (hi - lo + 1));
+  return { c, t, coins: coinsFor(t), xp: xpFor(t) };
+}
+
+/** Nivel del producto que sale de un generador: casi siempre el más chiquito; con el tiempo salen un poco mejores. */
+export function spawnTier(m, c, rnd = Math.random) {
+  const cap = Math.max(1, Math.min(3, (m.bests[c] || 1) - 2));
+  const r = rnd();
+  return 1 + (r > 0.72 && cap >= 2 ? 1 : 0) + (r > 0.95 && cap >= 3 ? 1 : 0);
+}
+
+export const emptyCells = (m) => m.grid.map((v, i) => (v === 0 ? i : -1)).filter((i) => i >= 0);
+
+/** Un generador de la familia `c` pone una pieza en un casillero libre al azar. Devuelve { cell, code } o null si no cabe. */
+export function spawnPiece(progress, c, rnd = Math.random) {
+  const m = mergeOf(progress);
+  if (!CHAINS[c]) return null;
+  const free = emptyCells(m);
+  if (!free.length) return null;
+  const cell = free[Math.floor(rnd() * free.length)];
+  const code = codeOf(c, spawnTier(m, c, rnd));
+  m.grid[cell] = code;
+  m.spawned++;
+  saveProgress(progress);
+  return { cell, code };
+}
+
+/**
+ * Suelta la pieza de `from` sobre `to`: vacío → se mueve · igual → se juntan y suben de nivel · distinta → se intercambian.
+ * En "merge" devuelve el código nuevo, si es un producto que nunca habías hecho (record) y una pieza de regalo si salió.
+ */
+export function dropPiece(progress, from, to, rnd = Math.random) {
+  const m = mergeOf(progress);
+  if (from === to || !m.grid[from]) return { kind: "none" };
+  const a = m.grid[from];
+  const b = m.grid[to];
+  if (b === 0) {
+    m.grid[to] = a; m.grid[from] = 0;
+    saveProgress(progress);
+    return { kind: "move", from, to };
+  }
+  const c = chainIdx(a);
+  if (a === b && tierIdx(a) < maxTier(c)) {
+    const nt = tierIdx(a) + 1;
+    const code = codeOf(c, nt);
+    m.grid[to] = code; m.grid[from] = 0;
+    m.merges++;
+    const out = { kind: "merge", from, to, code, tier: nt, chain: c, record: false, gift: null, coins: 0, dubai: false };
+    if (nt > m.bests[c]) {
+      m.bests[c] = nt;
+      out.record = true;
+      out.coins = nt * 10;
+      earnCoins(progress, out.coins);
+      if (nt >= maxTier(c) - 1) progress.packs = (progress.packs || 0) + 1; // los dos últimos de cada familia dan un sobre de figuritas
+      if (c === DUBAI.c && nt === DUBAI.t) {
+        m.dubai = true; out.dubai = true; out.coins += 1000; earnCoins(progress, 1000); progress.packs = (progress.packs || 0) + 3;
+      }
+    }
+    addXp(progress, 2 + nt);
+    // a veces aparece una pieza de regalo (como en los juegos de juntar)
+    if (rnd() < 0.18) {
+      const free = emptyCells(m);
+      if (free.length) { const cell = free[Math.floor(rnd() * free.length)]; m.grid[cell] = codeOf(c, Math.max(1, Math.min(3, nt - 3))); out.gift = cell; }
+    }
+    saveProgress(progress);
+    return out;
+  }
+  m.grid[to] = a; m.grid[from] = b;
+  saveProgress(progress);
+  return { kind: "swap", from, to };
+}
+
+/** Entrega el pedido número `idx` con una pieza del tablero. Devuelve null si no tienes el producto. */
+export function deliverOrder(progress, idx, rnd = Math.random) {
+  const m = mergeOf(progress);
+  const o = m.orders[idx];
+  if (!o) return null;
+  const code = codeOf(o.c, o.t);
+  const cell = m.grid.findIndex((v) => v === code);
+  if (cell < 0) return null;
+  m.grid[cell] = 0;
+  m.delivered++;
+  earnCoins(progress, o.coins);
+  addXp(progress, o.xp);
+  let pack = false;
+  if (m.delivered % 5 === 0) { progress.packs = (progress.packs || 0) + 1; pack = true; } // cada 5 entregas, un sobre
+  const done = { ...o, cell, pack };
+  m.orders[idx] = newOrder(m, rnd);
+  saveProgress(progress);
+  return done;
+}
+
+export const canDeliver = (m, idx) => !!m.orders[idx] && m.grid.includes(codeOf(m.orders[idx].c, m.orders[idx].t));

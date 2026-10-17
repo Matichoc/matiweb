@@ -1,4 +1,4 @@
-// Tetris de Productos 3D: el mismo juego de siempre (js/tetris-pieces.js) pero las
+// Bloques de Productos 3D: el mismo juego de siempre (js/tetris-pieces.js) pero las
 // golosinas son cubos de chocolate brillantes dentro de una vitrina de cristal con
 // marco dorado. Las líneas explotan en confeti, la pieza cae con sombra "fantasma"
 // y tu Matichico celebra cada línea desde un costado.
@@ -6,12 +6,12 @@
 // Versión "Gran Vitrina": guardar una pieza (C / Shift), combos y back-to-back, cubos de poder
 // (bomba que limpia 3x3 y rayo que limpia la fila), subida de nivel con cambio de ambiente y música.
 
-import { THREE, Game3D, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=64565862c1";
-import { createMatichico } from "./matichico3d.js?v=64565862c1";
-import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=64565862c1";
-import { saveProgress, earnCoins } from "./storage.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=64565862c1";
+import { THREE, Game3D, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=71b37ac21d";
+import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
+import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=71b37ac21d";
+import { saveProgress, earnCoins } from "./storage.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=71b37ac21d";
 
 const COLS = 8;
 const ROWS = 14;
@@ -28,6 +28,8 @@ const cy = (row) => ROWS - 1 - row + 0.5;
 export class Tetris3DGame extends Game3D {
   constructor(character, progress, els) {
     super("tetris", character, progress, els, { fov: 38 });
+    this.kawaii = true; // ambiente kawaii: pastel, sombreado por tonos, pétalos y estrellitas
+    this.ambientOpts = { petals: 18, hearts: 5, stars: 13, radius: 9, height: 9 };
     this.musicTheme = "puzzle";
     this.grid = [];
     this.pieceMeshes = [];
@@ -582,6 +584,7 @@ export class Tetris3DGame extends Game3D {
   }
 
   _lockPiece() {
+    this.countEnergy("piezas", 4); // cada 4 piezas gasta 1 ⚡
     const style = PIECE_STYLE[this.current.type];
     let toppedOut = false;
     const powers = [];
@@ -726,7 +729,7 @@ export class Tetris3DGame extends Game3D {
     this.shake = 0.1 + fullRows.length * 0.07;
 
     const mid = new THREE.Vector3(0, cy(fullRows[0]) + 0.5, 1);
-    const label = fullRows.length >= 4 ? "¡TETRIS! 🍫" : fullRows.length > 1 ? `¡${fullRows.length} líneas!` : "¡Línea!";
+    const label = fullRows.length >= 4 ? "¡4 LÍNEAS! 🍫" : fullRows.length > 1 ? `¡${fullRows.length} líneas!` : "¡Línea!";
     this.popups.add(mid, `${label} +${pts}`, fullRows.length > 1 ? "combo" : "kill");
     this._setHero("cheer", 1.4);
 

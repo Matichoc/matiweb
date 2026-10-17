@@ -7,11 +7,11 @@
 // bolas con pinchos, aterrizajes perfectos, combo, poderes (jetpack, imán, burbuja), cuatro
 // zonas con su propia decoración (globos, aves, planetas) y música.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, makeStars, roundedBox, makeLogo } from "./three-kit.js?v=64565862c1";
-import { createMatichico } from "./matichico3d.js?v=64565862c1";
-import { earnCoins, saveProgress } from "./storage.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
-import { renderModePicker } from "./campaign.js?v=64565862c1";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, makeStars, roundedBox, makeLogo } from "./three-kit.js?v=71b37ac21d";
+import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
+import { earnCoins, saveProgress } from "./storage.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
+import { renderModePicker } from "./campaign.js?v=71b37ac21d";
 
 const HALF = 4.6;
 const GRAV = -30;
@@ -56,6 +56,8 @@ const SPRITES = ["alf-frambuesa", "alf-menta", "alf-naranja", "alf-trufa", "alf-
 export class SaltoGame extends Game3D {
   constructor(character, progress, els) {
     super("salto", character, progress, els, { fov: 45 });
+    this.kawaii = true; // ambiente kawaii: pastel, sombreado por tonos, pétalos y estrellitas
+    this.ambientOpts = { petals: 18, hearts: 5, stars: 13, radius: 9, height: 9 };
     this.musicTheme = "adventure";
     this.keys = {};
     this.pointerX = null;
@@ -629,6 +631,7 @@ export class SaltoGame extends Game3D {
 
     if (this.y > this.maxY) {
       this.maxY = this.y;
+      this.meterEnergy("alt", this.maxY, 15); // 1 ⚡ cada 15 m de altura
       this.score = Math.floor(this.maxY * 10) + this.bonus;
       if (this.maxY >= this.milestone) {
         this._banner(`¡${this.milestone} m!`);

@@ -2,7 +2,7 @@
 // acompañan en todos los juegos. `buildPet(params, ticks)` devuelve el grupo ya ubicado junto
 // al héroe; las animaciones (aleteo, cola, destellos) se agregan a `ticks`.
 
-import { THREE, roundedBox } from "./three-kit.js?v=64565862c1";
+import { THREE, roundedBox } from "./three-kit.js?v=71b37ac21d";
 
 const std = (color, rough = 0.5, extra = {}) => {
   const m = new THREE.MeshStandardMaterial({ color, roughness: rough, ...extra });
@@ -239,6 +239,120 @@ export function buildPet(p, ticks) {
       b.scale.y = 1.15;
       g.add(b, mesh(new THREE.ConeGeometry(0.05, 0.08, 6), std(0xff3b6b, 0.3), 0, -0.27, 0).rotateX(Math.PI), mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.4, 4), std(0xffffff, 0.8), 0, -0.5, 0));
       face(g, 0.12, 0.28, 0.1, 0.04);
+      break;
+    }
+    case "osito": {
+      const fur = std(0xff9ec0, 0.9);
+      g.add(mesh(new THREE.SphereGeometry(0.26, 14, 10), fur, 0, -0.04, 0), mesh(new THREE.SphereGeometry(0.2, 14, 10), fur, 0, 0.26, 0.03));
+      for (const sx of [-1, 1]) g.add(mesh(new THREE.SphereGeometry(0.075, 8, 6), fur, sx * 0.16, 0.42, 0), mesh(new THREE.SphereGeometry(0.09, 8, 6), fur, sx * 0.25, 0.0, 0.05), mesh(new THREE.SphereGeometry(0.09, 8, 6), fur, sx * 0.15, -0.28, 0.06));
+      g.add(mesh(new THREE.SphereGeometry(0.07, 8, 6), std(0xffe0e8, 0.8), 0, 0.22, 0.2));
+      face(g, 0.3, 0.2, 0.08, 0.035);
+      const bow = new THREE.Group();
+      for (const sx of [-1, 1]) { const w = mesh(new THREE.ConeGeometry(0.05, 0.1, 3), std(0xe83a6a, 0.5), sx * 0.06, 0, 0); w.rotation.z = -sx * Math.PI / 2; bow.add(w); }
+      bow.position.set(0, 0.1, 0.2);
+      g.add(bow);
+      ticks.push((t) => { g.rotation.z = Math.sin(t * 2) * 0.05; });
+      break;
+    }
+    case "conejita": {
+      const fur = std(0xffffff, 0.9);
+      g.add(mesh(new THREE.SphereGeometry(0.27, 14, 10), fur, 0, -0.05, 0), mesh(new THREE.SphereGeometry(0.2, 14, 10), fur, 0, 0.26, 0.04));
+      const ears = [];
+      for (const sx of [-1, 1]) {
+        const e = new THREE.Group();
+        e.add(mesh(new THREE.CapsuleGeometry(0.06, 0.28, 4, 8), fur, 0, 0.2, 0), mesh(new THREE.CapsuleGeometry(0.03, 0.2, 4, 6), std(0xff9ec0, 0.8), 0, 0.2, 0.04));
+        e.position.set(sx * 0.1, 0.4, 0);
+        e.rotation.z = -sx * 0.18;
+        g.add(e);
+        ears.push(e);
+      }
+      g.add(mesh(new THREE.SphereGeometry(0.09, 8, 6), fur, 0, -0.1, -0.27));
+      face(g, 0.3, 0.22, 0.08, 0.035);
+      ticks.push((t) => { ears.forEach((e, i) => { e.rotation.z = (i ? 1 : -1) * (0.18 + Math.sin(t * 3 + i) * 0.08); }); });
+      break;
+    }
+    case "mariposa": {
+      const wings = [];
+      for (const sx of [-1, 1]) {
+        const w = new THREE.Group();
+        const top = mesh(new THREE.SphereGeometry(0.22, 12, 8), std(0xff6fb0, 0.4, { emissive: 0x801050, emissiveIntensity: 0.3 }), sx * 0.2, 0.1, 0);
+        top.scale.set(1, 1.1, 0.12);
+        const bot = mesh(new THREE.SphereGeometry(0.15, 12, 8), std(0xb06bff, 0.4, { emissive: 0x401080, emissiveIntensity: 0.3 }), sx * 0.15, -0.14, 0);
+        bot.scale.set(1, 1.1, 0.12);
+        w.add(top, bot);
+        g.add(w);
+        wings.push([w, sx]);
+      }
+      g.add(mesh(new THREE.CapsuleGeometry(0.05, 0.3, 4, 8), std(0x2a1810, 0.6), 0, 0, 0));
+      g.add(mesh(new THREE.SphereGeometry(0.07, 8, 6), std(0x2a1810, 0.6), 0, 0.24, 0));
+      for (const sx of [-1, 1]) { const a = mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.18, 4), std(0x2a1810, 0.6), sx * 0.05, 0.36, 0); a.rotation.z = -sx * 0.4; g.add(a); }
+      ticks.push((t) => { for (const [w, sx] of wings) w.rotation.y = sx * (0.2 + Math.abs(Math.sin(t * 7)) * 0.9); });
+      break;
+    }
+    case "hada": {
+      const wings = [];
+      for (const sx of [-1, 1]) {
+        const w = mesh(new THREE.SphereGeometry(0.2, 12, 8), std(0xbfeaff, 0.2, { transparent: true, opacity: 0.75, emissive: 0x6fd0ff, emissiveIntensity: 0.3 }), sx * 0.2, 0.08, -0.08);
+        w.scale.set(1, 1.5, 0.1);
+        g.add(w);
+        wings.push([w, sx]);
+      }
+      g.add(mesh(new THREE.SphereGeometry(0.2, 12, 10), std(0xffd1e3, 0.6), 0, -0.1, 0), mesh(new THREE.SphereGeometry(0.16, 12, 10), std(0xffe0c8, 0.6), 0, 0.17, 0.03), mesh(new THREE.ConeGeometry(0.22, 0.3, 10), std(0xff7aa8, 0.6), 0, -0.27, 0));
+      g.add(mesh(new THREE.SphereGeometry(0.12, 10, 8), std(0xffd34d, 0.5), 0, 0.27, -0.03));
+      face(g, 0.18, 0.15, 0.06, 0.03);
+      const star = mesh(new THREE.ExtrudeGeometry(starShape(0.07, 0.03), { depth: 0.02, bevelEnabled: false }), std(0xffc800, 0.25, { emissive: 0xaa7a00, emissiveIntensity: 0.9 }), 0.3, 0.1, 0.1);
+      g.add(star);
+      ticks.push((t) => { for (const [w, sx] of wings) w.rotation.y = sx * Math.sin(t * 9) * 0.5; star.rotation.y = t * 3; });
+      break;
+    }
+    case "balon": { // balón de fútbol que rebota
+      const b = new THREE.Group();
+      b.add(mesh(new THREE.SphereGeometry(0.3, 16, 12), std(0xffffff, 0.45), 0, 0, 0));
+      const dark = std(0x1c1c22, 0.5);
+      for (const d of [[0, 1, 0], [0.95, 0.3, 0.2], [-0.95, 0.3, 0.2], [0.55, -0.6, 0.55], [-0.55, -0.6, 0.55], [0, -1, 0], [0, 0.2, -1]]) {
+        const v = new THREE.Vector3(...d).normalize();
+        const patch = mesh(new THREE.CircleGeometry(0.095, 5), dark, v.x * 0.302, v.y * 0.302, v.z * 0.302);
+        patch.lookAt(v.x * 2, v.y * 2, v.z * 2);
+        b.add(patch);
+      }
+      g.add(b);
+      face(g, 0.0, 0.28, 0.1, 0.04);
+      ticks.push((t) => { const k = Math.abs(Math.sin(t * 3.2)); b.scale.set(1 + (1 - k) * 0.06, 0.92 + k * 0.1, 1 + (1 - k) * 0.06); b.position.y = k * 0.06; });
+      break;
+    }
+    case "basquet": { // pelota de básquet
+      const b = new THREE.Group();
+      b.add(mesh(new THREE.SphereGeometry(0.3, 16, 12), std(0xff8a2a, 0.7), 0, 0, 0));
+      const line = std(0x2a1810, 0.6);
+      for (const r of [0, Math.PI / 2]) b.add(mesh(new THREE.TorusGeometry(0.301, 0.012, 5, 28), line, 0, 0, 0).rotateY(r));
+      b.add(mesh(new THREE.TorusGeometry(0.301, 0.012, 5, 28), line, 0, 0, 0).rotateX(Math.PI / 2));
+      g.add(b);
+      face(g, 0.0, 0.28, 0.1, 0.04);
+      ticks.push((t) => { b.rotation.z = Math.sin(t * 2) * 0.2; b.position.y = Math.abs(Math.sin(t * 3)) * 0.07; });
+      break;
+    }
+    case "pompon": { // pompón de cheer
+      const m = std(0xff6fb0, 0.9);
+      const blob = new THREE.Group();
+      for (let i = 0; i < 26; i++) {
+        const a = i * 2.4;
+        const y = Math.cos(i * 0.9) * 0.9;
+        const r = Math.sqrt(1 - y * y);
+        blob.add(mesh(new THREE.SphereGeometry(0.1, 8, 6), i % 3 ? m : std(0xffc800, 0.9), Math.cos(a) * r * 0.22, y * 0.2 + 0.05, Math.sin(a) * r * 0.22));
+      }
+      g.add(blob, mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.25, 10), std(0xffffff, 0.5), 0, -0.27, 0));
+      face(g, 0.06, 0.28, 0.1, 0.04);
+      ticks.push((t) => { blob.rotation.z = Math.sin(t * 6) * 0.12; blob.scale.setScalar(1 + Math.sin(t * 9) * 0.03); });
+      break;
+    }
+    case "trofeo": { // copita dorada
+      const gold = std(0xffc800, 0.25, { metalness: 0.75, emissive: 0x6a4a00, emissiveIntensity: 0.45 });
+      g.add(mesh(new THREE.CylinderGeometry(0.28, 0.14, 0.4, 16), gold, 0, 0.08, 0), mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2, 8), gold, 0, -0.2, 0), mesh(new THREE.BoxGeometry(0.34, 0.07, 0.24), std(0x64321b, 0.5), 0, -0.33, 0));
+      for (const sx of [-1, 1]) g.add(mesh(new THREE.TorusGeometry(0.1, 0.03, 6, 12), gold, sx * 0.31, 0.1, 0));
+      const star = new THREE.ExtrudeGeometry(starShape(0.07, 0.032), { depth: 0.02, bevelEnabled: false });
+      g.add(mesh(star, std(0xffffff, 0.3), 0, 0.2, 0.26));
+      face(g, 0.02, 0.2, 0.1, 0.04);
+      ticks.push((t) => { g.rotation.z = Math.sin(t * 2.4) * 0.06; });
       break;
     }
     default:

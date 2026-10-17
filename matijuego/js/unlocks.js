@@ -1,13 +1,13 @@
 // Juegos que se canjean con Matipuntos: al juntar suficientes, el jugador los desbloquea desde el menú.
 // Los precios viven aquí, en un solo lugar.
 //
-// PRECIO DE PRUEBA: mientras se prueban los juegos nuevos el costo es bajo para poder canjearlos rápido.
-// Para el lanzamiento se cambia a 20000 (una sola línea: UNLOCK_PRICE).
+// Precio: ~1 semana de juego (se ganan unos 250–350 Matipuntos al día; ver docs/ECONOMIA.md).
+// Para probar rápido se puede bajar a 300 (una sola línea: UNLOCK_PRICE).
 
-import { spendCoins, saveProgress } from "./storage.js?v=64565862c1";
-import { IS_DEMO } from "./demo.js?v=64565862c1";
+import { spendCoins, saveProgress } from "./storage.js?v=71b37ac21d";
+import { IS_DEMO } from "./demo.js?v=71b37ac21d";
 
-const UNLOCK_PRICE = 300; // lanzamiento: 20000
+const UNLOCK_PRICE = 2000; // ≈ una semana de juego
 
 export const UNLOCK_COST = {
   futbol: UNLOCK_PRICE,

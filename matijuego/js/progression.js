@@ -6,15 +6,16 @@
 // Todo se guarda por perfil dentro de `progress` (xp, packs, album, daily) y se paga solo
 // con Matipuntos, sin compras reales.
 
-import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=64565862c1";
-import { getItem } from "./wardrobe-data.js?v=64565862c1";
-import { activeEvent, addEventTokens } from "./events.js?v=64565862c1";
-import { isUnlocked } from "./unlocks.js?v=64565862c1";
+import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=71b37ac21d";
+import { addEnergy } from "./energy.js?v=71b37ac21d";
+import { getItem } from "./wardrobe-data.js?v=71b37ac21d";
+import { activeEvent, addEventTokens } from "./events.js?v=71b37ac21d";
+import { isUnlocked } from "./unlocks.js?v=71b37ac21d";
 
 // ---------- partidas ----------
 
 /** Puntaje que equivale a 1 Matipunto al terminar una partida (cada juego puntúa distinto). */
-export const RUN_DIVISOR = { tetris: 40, basquet_tiros: 12, porristas: 8, salto: 25, autos: 30, memoria: 10, parkour: 40, futbol: 10, dulces: 15, aventura: 20, ciudad: 12 };
+export const RUN_DIVISOR = { tetris: 40, basquet_tiros: 12, porristas: 8, salto: 25, autos: 30, memoria: 10, parkour: 40, futbol: 10, dulces: 15, merge: 300, aventura: 20, ciudad: 12 };
 const RUN_BONUS_CAP = 60;
 
 export function runBonus(gameId, score) {
@@ -24,24 +25,15 @@ export function runBonus(gameId, score) {
 
 export const GAME_NAMES = {
   parkour: "Parkour Choco", recolecta: "Recolecta y Corre", salto: "Salto Choco", autos: "Autos de Chocolate",
-  tetris: "Tetris de Productos", memoria: "Memoria Matichoc", basquet_tiros: "Lanzamientos de Básquet",
+  tetris: "Bloques de Productos", memoria: "Memoria Matichoc", basquet_tiros: "Lanzamientos de Básquet",
   porristas: "Saltos de Porristas", creador: "Crea tu Chocolate", fps3d: "Choco Blaster",
-  futbol: "Fútbol Choco", dulces: "Choco Match", aventura: "Aventura Choco", ciudad: "Ciudad Choco",
+  futbol: "Fútbol Choco", dulces: "Choco Match", merge: "Mati Merge", aventura: "Aventura Choco", ciudad: "Ciudad Choco",
 };
 
 // ---------- niveles ----------
 
-export const MAX_LEVEL = 60;
-/** XP que hace falta para pasar del nivel `l` al siguiente. */
-export const xpForLevel = (l) => 70 + 30 * l;
-
-export function levelInfo(xp) {
-  let level = 1;
-  let left = Math.max(0, xp || 0);
-  while (level < MAX_LEVEL && left >= xpForLevel(level)) { left -= xpForLevel(level); level++; }
-  const need = level >= MAX_LEVEL ? 1 : xpForLevel(level);
-  return { level, into: level >= MAX_LEVEL ? 1 : left, need };
-}
+import { MAX_LEVEL, xpForLevel, levelInfo } from "./xp.js?v=71b37ac21d";
+export { MAX_LEVEL, xpForLevel, levelInfo };
 
 /** Regalos de nivel: objetos del guardarropa que se desbloquean gratis. */
 export const LEVEL_GIFTS = {
@@ -72,6 +64,7 @@ export function addXp(progress, amount) {
       if (!progress.wardrobe.owned.includes(giftId)) progress.wardrobe.owned.push(giftId);
       gift = getItem(giftId);
     }
+    addEnergy(progress, 10, "nivel");
     ups.push({ level: l, coins, gift });
     emit({ type: "level", level: l, coins, gift });
   }
@@ -174,6 +167,7 @@ export function claimMission(progress, index) {
   m.claimed = true;
   progress.stats.missionsClaimed = (progress.stats.missionsClaimed || 0) + 1;
   earnCoins(progress, m.coins);
+  addEnergy(progress, 5, "misión");
   const ups = addXp(progress, m.xp);
   saveProgress(progress);
   return { coins: m.coins, xp: m.xp, ups };
@@ -188,6 +182,7 @@ export function claimChest(progress) {
   if (!canClaimChest(progress)) return null;
   progress.daily.chest = true;
   earnCoins(progress, 30);
+  addEnergy(progress, 15, "cofre del día");
   progress.packs = (progress.packs || 0) + 1;
   const ups = addXp(progress, 40);
   saveProgress(progress);
@@ -202,7 +197,7 @@ export function hasPending(progress) {
 
 // ---------- álbum ----------
 // Las figuritas, los sobres y las repetidas viven en js/album.js (aquí se re-exportan para el resto de la app).
-export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=64565862c1";
+export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=71b37ac21d";
 
 // ---------- el gancho que se llama al terminar una partida ----------
 

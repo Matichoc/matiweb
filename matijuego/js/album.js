@@ -2,7 +2,7 @@
 // (sin "siempre una nueva": completar el álbum cuesta). Las repetidas se pueden vender por Matipuntos o juntar en el
 // «taller» para cambiarlas por la figurita que te falta (12 repetidas; una brillante, 36).
 // Los ids de la primera página y de sus brillantes (con "*") son los del álbum anterior: el avance de antes se conserva.
-import { earnCoins, saveProgress } from "./storage.js?v=64565862c1";
+import { earnCoins, saveProgress } from "./storage.js?v=71b37ac21d";
 
 const P = (id, name, emoji, color) => ({ id, name, emoji, color });
 const PRODUCT_PAGE = [
@@ -31,7 +31,7 @@ export const PAGES = [
     P("in-leche", "Leche", "🥛", "#7fb8e8"), P("in-azucar", "Azúcar", "🧂", "#a0a0b0"), P("in-trufa", "Trufa", "🍫", "#3a1c0e") ] },
   { id: "juegos", title: "Los juegos", icon: "🎮", reward: 40, items: [
     P("jg-parkour", "Parkour Choco", "🧗", "#3aa84a"), P("jg-recolecta", "Recolecta y Corre", "🏃", "#2c6fb7"), P("jg-salto", "Salto Choco", "🦘", "#4fb8e8"),
-    P("jg-autos", "Autos de Chocolate", "🏎️", "#e03a3a"), P("jg-tetris", "Tetris de Productos", "🧱", "#8e44ad"), P("jg-memoria", "Memoria Matichoc", "🧠", "#d4216c"),
+    P("jg-autos", "Autos de Chocolate", "🏎️", "#e03a3a"), P("jg-tetris", "Bloques de Productos", "🧱", "#8e44ad"), P("jg-memoria", "Memoria Matichoc", "🧠", "#d4216c"),
     P("jg-basquet", "Básquet", "🏀", "#ff7a1a"), P("jg-porristas", "Porristas", "🤸", "#d4216c"), P("jg-futbol", "Fútbol Choco", "⚽", "#2fa86a"),
     P("jg-match", "Choco Match", "🍬", "#7a3f22"), P("jg-aventura", "Aventura Choco", "🍄", "#e03a3a"), P("jg-ciudad", "Ciudad Choco", "🌆", "#3b8cff") ] },
   { id: "cosas", title: "Cosas geniales", icon: "🎒", reward: 40, items: [

@@ -11,9 +11,9 @@
 // `progress.bestScores`…) y se reclama una sola vez. Para agregar uno basta sumar una línea abajo.
 // La lista completa en texto está en docs/LOGROS.md (se genera con `node scripts/logros-doc.mjs`).
 
-import { getBestScore } from "./storage.js?v=64565862c1";
-import { levelInfo } from "./progression.js?v=64565862c1";
-import { PAGES } from "./album.js?v=64565862c1";
+import { getBestScore } from "./storage.js?v=71b37ac21d";
+import { levelInfo } from "./progression.js?v=71b37ac21d";
+import { PAGES } from "./album.js?v=71b37ac21d";
 
 const IN_APP = typeof document !== "undefined" && document.documentElement.dataset.app === "1";
 
@@ -37,10 +37,10 @@ const ALL_ACHIEVEMENTS = [
   },
   {
     id: "tetris_master",
-    name: "Maestro del Tetris",
+    name: "Maestro de los Bloques",
     icon: "🧱",
     reward: 20,
-    desc: "Consigue 500 puntos en Tetris de Productos.",
+    desc: "Consigue 500 puntos en Bloques de Productos.",
     isDone: (p) => getBestScore(p, "tetris") >= 500,
   },
   {
@@ -49,7 +49,7 @@ const ALL_ACHIEVEMENTS = [
     icon: "🏆",
     reward: 40,
     desc: "Completa las 8 canchas de Recolecta y Corre.",
-    isDone: (p) => (p.unlockedLevel || 0) >= 8,
+    isDone: (p) => recLevel(p) >= 8,
   },
   {
     id: "leyenda_liga",
@@ -57,7 +57,7 @@ const ALL_ACHIEVEMENTS = [
     icon: "👑",
     reward: 80,
     desc: "Completa los 20 niveles de Recolecta y Corre.",
-    isDone: (p) => (p.unlockedLevel || 0) >= 20,
+    isDone: (p) => recLevel(p) >= 20,
   },
   {
     id: "ahorrista",
@@ -168,16 +168,24 @@ const ALL_ACHIEVEMENTS = [
 
 // ---------- métricas (lo que se mide en el progreso de cada perfil) ----------
 
-const camp = (p, g) => (p.campaign && p.campaign[g]) || { unlocked: 1, stars: {} };
+const camp = (p, g) => {
+  const c = (p.campaign && p.campaign[g]) || { unlocked: 1, stars: {} };
+  // los logros cuentan lo logrado en TODAS las vueltas (empezar una vuelta nueva no los pierde)
+  const won = (c.hist && c.hist.won) || {};
+  const stars = { ...c.stars };
+  for (const [n, s] of Object.entries(won)) stars[n] = Math.max(stars[n] || 0, s);
+  return { ...c, stars };
+};
+const recLevel = (p) => Math.max(p.unlockedLevel || 0, (((p.campaign || {}).recolecta || {}).hist || {}).rec || 0);
 /** Niveles (o misiones) ya cumplidos de un juego. */
-const levelsDone = (g) => (p) => Math.max(Object.keys(camp(p, g).stars).length, g === "recolecta" ? p.unlockedLevel || 0 : 0);
+const levelsDone = (g) => (p) => Math.max(Object.keys(camp(p, g).stars).length, g === "recolecta" ? recLevel(p) : 0);
 const starsOf = (g) => (p) => Object.values(camp(p, g).stars).reduce((a, b) => a + b, 0);
 const best = (g) => (p) => getBestScore(p, g);
 const stat = (k) => (p) => (p.stats && p.stats[k]) || 0;
 const LEVEL_GAMES = ["recolecta", "tetris", "basquet_tiros", "porristas", "memoria"];
 const MISSION_GAMES = ["salto", "autos", "parkour"];
 const sum = (fns) => (p) => fns.reduce((a, f) => a + f(p), 0);
-const playedGames = (p) => ["recolecta", "tetris", "basquet_tiros", "porristas", "memoria", "salto", "autos", "parkour", "creador", "futbol", "dulces", "aventura", "ciudad"].filter((g) => ((p.stats.runsBy || {})[g] || 0) > 0 || getBestScore(p, g) > 0).length;
+const playedGames = (p) => ["recolecta", "tetris", "basquet_tiros", "porristas", "memoria", "salto", "autos", "parkour", "creador", "futbol", "dulces", "merge", "aventura", "ciudad"].filter((g) => ((p.stats.runsBy || {})[g] || 0) > 0 || getBestScore(p, g) > 0).length;
 const eventTokensTotal = (p) => Object.values(p.eventTokens || {}).reduce((a, b) => a + b, 0);
 const albumUnique = (p) => Object.values(p.album || {}).filter((n) => n > 0).length;
 
@@ -256,7 +264,7 @@ chain("campana", "campanas", "Maestro de campañas", "🗺️", sum([...LEVEL_GA
 // Récords en cada juego
 const REC = (id, name, icon, metric, text, tiers, extra) => chain("puntajes", id, name, icon, metric, text, tiers, extra);
 REC("rec_recolecta", "Récord Recolecta", "🍬", best("recolecta"), "Consigue {n} puntos en Recolecta y Corre.", [[500, 15], [2500, 40], [6000, 100], [10000, 250]]);
-REC("rec_tetris", "Récord Tetris", "🧩", best("tetris"), "Consigue {n} puntos en Tetris de Productos.", [[1000, 15], [4000, 40], [10000, 100], [25000, 250]]);
+REC("rec_tetris", "Récord Bloques", "🧩", best("tetris"), "Consigue {n} puntos en Bloques de Productos.", [[1000, 15], [4000, 40], [10000, 100], [25000, 250]]);
 REC("rec_basquet", "Récord Básquet", "🏀", best("basquet_tiros"), "Consigue {n} puntos en Lanzamientos de Básquet.", [[500, 15], [1500, 40], [3000, 100], [6000, 250]]);
 REC("rec_porristas", "Récord Porristas", "🤸", best("porristas"), "Consigue {n} puntos en Saltos de Porristas.", [[100, 15], [300, 40], [700, 100], [1500, 250]]);
 REC("rec_memoria", "Récord Memoria", "🧠", best("memoria"), "Consigue {n} puntos en Memoria Matichoc.", [[3000, 15], [12000, 40], [30000, 100], [60000, 250]]);
@@ -278,6 +286,8 @@ chain("puntajes", "chofer", "Chofer Choco", "🚗", (p) => Math.floor(((p.stats 
 chain("puntajes", "dorados_ciudad", "Cazador de Brillos", "✨", stat("ciudadGold"), "Junta {n} alfajores dorados en Ciudad Choco.", [[20, 15], [100, 50], [300, 120], [800, 300]]);
 chain("puntajes", "pisotones", "Pisotones", "👟", stat("stompsTotal"), "Pisa {n} enemigos en Aventura Choco.", [[20, 15], [100, 50], [300, 120], [800, 300]]);
 chain("puntajes", "alfajores_av", "Alfajorero", "🍫", stat("aventuraCoins"), "Junta {n} alfajores en Aventura Choco.", [[100, 15], [500, 50], [1500, 120], [4000, 300]]);
+chain("puntajes", "merge_nivel", "Coleccionista de Merge", "🍬", (p) => (p.merge && Array.isArray(p.merge.bests) ? p.merge.bests.reduce((a, b) => a + b, 0) : 0), "Descubre {n} productos distintos en Mati Merge (hay 26, el último es el Mati Dubai).", [[8, 15], [14, 50], [20, 120], [26, 400]]);
+chain("puntajes", "merge_pedidos", "Proveedor Estrella", "📦", (p) => (p.merge && p.merge.delivered) || 0, "Entrega {n} pedidos de clientes en Mati Merge.", [[5, 15], [25, 50], [80, 120], [250, 300]]);
 chain("puntajes", "especiales", "Piezas especiales", "✨", stat("dulcesSpecials"), "Crea {n} piezas especiales (rayadas, bombas doradas y envueltas).", [[10, 15], [40, 50], [120, 120], [300, 300]]);
 
 // Pueblo y creación

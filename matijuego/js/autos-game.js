@@ -7,11 +7,11 @@
 // volar y juntar alfajores en el aire, charcos de chocolate, poderes (nitro, imán, escudo),
 // combo de alfajores, un hito cada kilómetro y música.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting, makeLogo, disposeGeometries } from "./three-kit.js?v=64565862c1";
-import { createMatichico } from "./matichico3d.js?v=64565862c1";
-import { earnCoins, saveProgress } from "./storage.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
-import { renderModePicker } from "./campaign.js?v=64565862c1";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting, makeLogo, disposeGeometries } from "./three-kit.js?v=71b37ac21d";
+import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
+import { earnCoins, saveProgress } from "./storage.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
+import { renderModePicker } from "./campaign.js?v=71b37ac21d";
 
 const LANE_W = 2.7;
 const LANES = [-LANE_W, 0, LANE_W];
@@ -25,6 +25,7 @@ const GRAV = 24;
 const ZONES = ["Mañana soleada", "Mediodía dulce", "Atardecer de caramelo", "Anochecer", "Noche de cacao", "Amanecer"];
 const RIVAL_COLORS = [0x3b8cff, 0x4fd09a, 0xffc800, 0x9a5cff, 0xff8a2a, 0x35f0ff];
 
+import { CARS, carById, garageOf, currentCar, buyCar, equipCar } from "./autos-garage.js?v=71b37ac21d";
 const SPRITES = ["alf-frambuesa", "alf-menta", "alf-naranja", "alf-trufa", "alf-pie-limon", "alf-maracuya", "alf-almendra", "alf-capuchino"];
 
 // momentos del día: [color del cielo, color de la niebla, luz del sol, intensidad hemisférica]
@@ -40,6 +41,8 @@ const DAY = [
 export class AutosGame extends Game3D {
   constructor(character, progress, els) {
     super("autos", character, progress, els, { fov: 62 });
+    this.kawaii = true; // ambiente kawaii: pastel, sombreado por tonos, pétalos y estrellitas
+    this.ambientOpts = { petals: 28, hearts: 5, stars: 18, radius: 16, height: 9 };
     this.musicTheme = "race";
     this.laneIndex = 1;
     this.tmpA = new THREE.Color();
@@ -294,15 +297,17 @@ export class AutosGame extends Game3D {
   _buildCar() {
     const car = new THREE.Group();
     const sh = (m) => { m.castShadow = true; return m; };
-    const chassis = sh(new THREE.Mesh(roundedBox(1.7, 0.55, 3.3, 0.2, 0.05), this.m.brown));
+    // materiales propios del auto (así cada auto del garaje puede tener sus colores sin cambiar los obstáculos)
+    this.carM = { body: std2(0x64321b, 0.5), trim: std2(0xd4216c, 0.4), accent: new THREE.MeshStandardMaterial({ color: 0xffc800, roughness: 0.25, metalness: 0.5 }) };
+    const chassis = sh(new THREE.Mesh(roundedBox(1.7, 0.55, 3.3, 0.2, 0.05), this.carM.body));
     chassis.position.y = 0.58;
     car.add(chassis);
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.03, 3.1), this.m.gold);
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.03, 3.1), this.carM.accent);
     stripe.position.set(0, 0.87, 0);
     car.add(stripe);
     for (const sx of [-1, 1]) {
       for (const sz of [-1, 1]) {
-        const fender = sh(new THREE.Mesh(roundedBox(0.16, 0.34, 1.05, 0.06, 0.02), this.m.pink));
+        const fender = sh(new THREE.Mesh(roundedBox(0.16, 0.34, 1.05, 0.06, 0.02), this.carM.trim));
         fender.position.set(sx * 0.9, 0.62, sz * 1.0);
         car.add(fender);
       }
@@ -310,7 +315,7 @@ export class AutosGame extends Game3D {
     const seat = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.04, 1.25), std2(0x3a2010));
     seat.position.set(0, 0.88, 0.35);
     car.add(seat);
-    const rim = sh(new THREE.Mesh(roundedBox(1.35, 0.14, 1.55, 0.05, 0.02), this.m.pink));
+    const rim = sh(new THREE.Mesh(roundedBox(1.35, 0.14, 1.55, 0.05, 0.02), this.carM.trim));
     rim.position.set(0, 0.9, 0.35);
     car.add(rim);
     const wind = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.5), this.m.glass);
@@ -325,7 +330,7 @@ export class AutosGame extends Game3D {
         w.position.set(sx * 0.96, 0.38, sz * 1.05);
         const tire = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.34, 18), this.m.black));
         tire.rotation.z = Math.PI / 2;
-        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.36, 12), this.m.gold);
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.36, 12), this.carM.accent);
         cap.rotation.z = Math.PI / 2;
         w.add(tire, cap);
         car.add(w);
@@ -341,11 +346,11 @@ export class AutosGame extends Game3D {
       tl.position.set(sx * 0.62, 0.68, 1.66);
       car.add(hl, tl);
     }
-    const spoiler = sh(new THREE.Mesh(roundedBox(1.7, 0.07, 0.42, 0.03, 0.015), this.m.pink));
+    const spoiler = sh(new THREE.Mesh(roundedBox(1.7, 0.07, 0.42, 0.03, 0.015), this.carM.trim));
     spoiler.position.set(0, 1.28, 1.55);
     car.add(spoiler);
     for (const sx of [-1, 1]) {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.4, 0.07), this.m.gold);
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.4, 0.07), this.carM.accent);
       post.position.set(sx * 0.6, 1.08, 1.5);
       car.add(post);
     }
@@ -355,9 +360,52 @@ export class AutosGame extends Game3D {
     logo.position.set(0, 0.62, 1.675);
     car.add(plate, logo);
 
+    // brillo de neón bajo el auto y corona (solo en los autos que los traen)
+    this.carGlow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 4.2), new THREE.MeshBasicMaterial({ map: this._glowTex(), color: 0x35f0ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.carGlow.rotation.x = -Math.PI / 2;
+    this.carGlow.position.y = 0.06;
+    this.carGlow.visible = false;
+    this.crown = new THREE.Group();
+    const cb = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.4, 0.2, 5), this.carM.accent);
+    this.crown.add(cb);
+    for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; const sp = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.26, 6), this.carM.accent); sp.position.set(Math.sin(a) * 0.32, 0.2, Math.cos(a) * 0.32); this.crown.add(sp); }
+    this.crown.position.set(0, 1.95, 0.4);
+    this.crown.visible = false;
+    car.add(this.carGlow, this.crown);
+
     this.car = car;
     this.scene.add(car);
     this._ensureDriver();
+  }
+
+  /** Resplandor suave (círculo difuso) para halos y luces. */
+  _glowTex() {
+    if (this._glowT) return this._glowT;
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const g = c.getContext("2d");
+    const gr = g.createRadialGradient(32, 32, 2, 32, 32, 31);
+    gr.addColorStop(0, "rgba(255,255,255,1)");
+    gr.addColorStop(0.4, "rgba(255,255,255,0.5)");
+    gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 64, 64);
+    this._glowT = new THREE.CanvasTexture(c);
+    return this._glowT;
+  }
+
+  /** Viste el auto con el modelo elegido en el garaje y fija sus ventajas. */
+  _applyCar() {
+    const def = currentCar(this.progress);
+    this.perk = def;
+    this.bonusMult = def.coin;
+    if (!this.carM) return;
+    this.carM.body.color.setHex(def.body);
+    this.carM.trim.color.setHex(def.trim);
+    this.carM.accent.color.setHex(def.accent);
+    this.carGlow.visible = !!def.glow;
+    if (def.glow) this.carGlow.material.color.setHex(def.glow);
+    this.crown.visible = !!def.crown;
   }
 
   _ensureDriver() {
@@ -401,8 +449,9 @@ export class AutosGame extends Game3D {
     this.airFromRamp = false;
     this.combo = 0;
     this.comboT = 0;
+    this._applyCar();
     this.power = null;
-    this.shield = false;
+    this.shield = !!this.perk.shield; // algunos autos del garaje parten con escudo
     this.km = 0;
     this.zoneIdx = -1;
     this.nearMisses = 0;
@@ -494,6 +543,7 @@ export class AutosGame extends Game3D {
       this.speed = lerp(this.speed, 0, 1 - Math.exp(-2.5 * dt));
     }
     this.dist += this.speed * dt;
+    this.meterEnergy("dist", this.dist, 250); // 1 ⚡ cada 250 m
     this.curvNow = lerp(this.curvNow, this.curv(), 1 - Math.exp(-2 * dt));
 
     // carril
@@ -584,10 +634,36 @@ export class AutosGame extends Game3D {
   }
 
   onIntro() {
+    this._applyCar();
+    this.renderGarage();
     renderModePicker(this.els.q("lvlpick"), { id: "autos", progress: this.progress, kind: "missions", onChange: () => this.reset() });
   }
 
   nextLevel() { this.nextMission(); }
+
+  /** El garaje de la tarjeta de inicio: ver los autos, comprar con Matipuntos y elegir cuál usar. */
+  renderGarage() {
+    const el = this.els.q("garage");
+    if (!el) return;
+    const g = garageOf(this.progress);
+    el.innerHTML = "";
+    for (const c of CARS) {
+      const owned = g.owned.includes(c.id);
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "gar-card" + (g.car === c.id ? " on" : "") + (!owned ? " locked" : "");
+      b.innerHTML = `<span class="gar-ic">${c.icon}</span><b>${c.name}</b><small>${c.perks}</small><em>${g.car === c.id ? "✔ En uso" : owned ? "Usar" : `🍫✨ ${c.price}`}</em>`;
+      b.addEventListener("click", () => {
+        if (owned) equipCar(this.progress, c.id);
+        else if (buyCar(this.progress, c.id)) { audio.playPurchase(); this.banner(`¡Nuevo auto: ${c.name}! ${c.icon}`); }
+        else { this.banner(`Te faltan Matipuntos para ${c.name}`); audio.playBump(); return; }
+        this._applyCar();
+        this.renderGarage();
+        this._updateHud?.();
+      });
+      el.appendChild(b);
+    }
+  }
 
   _addCombo(n = 1) {
     const before = this._mult();
@@ -611,8 +687,9 @@ export class AutosGame extends Game3D {
       this.banner(`¡${km} km! +${b}`);
       audio.playMissionComplete();
       this.haptic(60);
-      earnCoins(this.progress, 3);
-      this.coinsEarned += 3;
+      const kc = Math.round(3 * this.perk.coin);
+      earnCoins(this.progress, kc);
+      this.coinsEarned += kc;
       saveProgress(this.progress);
       this.particles.burst(new THREE.Vector3(this.carX, 3, -2), [0xffc800, 0xd4216c, 0x35f0ff, 0xfff6e6], 40, 7, 1.1, 5);
     }
@@ -732,6 +809,49 @@ export class AutosGame extends Game3D {
     }
   }
 
+  // ---------- que se vea bien qué es cada cosa ----------
+
+  _glyphTex(glyph, color) {
+    this._glyphs = this._glyphs || {};
+    const key = glyph + color;
+    if (this._glyphs[key]) return this._glyphs[key];
+    const hex = "#" + new THREE.Color(color).getHexString();
+    const t = canvasTexture(96, 96, (g, w, h) => {
+      g.fillStyle = hex;
+      g.beginPath(); g.arc(w / 2, h / 2, 42, 0, Math.PI * 2); g.fill();
+      g.lineWidth = 7; g.strokeStyle = "#fff"; g.stroke();
+      g.fillStyle = "#fff";
+      g.font = "900 54px system-ui, 'Apple Color Emoji', sans-serif";
+      g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText(glyph, w / 2, h / 2 + 3);
+    });
+    this._glyphs[key] = t;
+    return t;
+  }
+
+  /** Halo luminoso (se ve de lejos y da el color de lo que es). */
+  _halo(color, size) {
+    this._haloMats = this._haloMats || {};
+    const m = this._haloMats[color] || (this._haloMats[color] = new THREE.SpriteMaterial({ map: this._glowTex(), color, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const sp = new THREE.Sprite(m);
+    sp.scale.set(size, size, 1);
+    return sp;
+  }
+
+  /** Columna de luz + ícono sobre algo importante (peligro rojo, rampa celeste…). */
+  _addBeacon(g, color, glyph, { h = 5, y = 3.4, size = 1.5 } = {}) {
+    this._colMats = this._colMats || {};
+    const mat = this._colMats[color] || (this._colMats[color] = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.55, h, 12, 1, true), mat);
+    col.position.y = h / 2;
+    col.userData.noToon = true;
+    const ic = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._glyphTex(glyph, color), transparent: true, depthTest: false }));
+    ic.scale.set(size, size, 1);
+    ic.position.y = y;
+    ic.renderOrder = 9;
+    g.add(col, ic);
+  }
+
   _addRival(lane, d) {
     const g = new THREE.Group();
     const color = RIVAL_COLORS[Math.floor(Math.random() * RIVAL_COLORS.length)];
@@ -754,6 +874,7 @@ export class AutosGame extends Game3D {
       g.add(tl);
     }
     this._addDanger(g, 3, 4.4);
+    this._addBeacon(g, 0xff3b5c, "⚠", { h: 6, y: 3.2, size: 1.7 });
     g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.scene.add(g);
     this.obstacles.push({ mesh: g, lane, d, hit: false, kind: "rival", v: rand(9, 15), prevA: d - this.dist, passed: false });
@@ -767,6 +888,7 @@ export class AutosGame extends Game3D {
     const side = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.6, 0.15), this.m.pink);
     side.position.set(0, 0.3, -1.65);
     g.add(slab, side);
+    this._addBeacon(g, 0x35c8ff, "▲", { h: 4, y: 2.8, size: 1.4 });
     g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     this.scene.add(g);
     this.obstacles.push({ mesh: g, lane, d, hit: false, kind: "ramp" });
@@ -783,6 +905,7 @@ export class AutosGame extends Game3D {
     m.position.y = 0.05;
     ring.position.y = 0.049;
     g.add(m, ring);
+    this._addBeacon(g, 0xffa83c, "💧", { h: 3, y: 2.2, size: 1.2 });
     this.scene.add(g);
     this.obstacles.push({ mesh: g, lane, d, hit: false, kind: "puddle" });
   }
@@ -818,6 +941,7 @@ export class AutosGame extends Game3D {
       mesh = wrapG;
     }
     this._addDanger(mesh, 2.8, 2.8);
+    this._addBeacon(mesh, 0xff3b5c, "⚠", { h: 5, y: 2.6, size: 1.5 });
     mesh.traverse((o) => { if (o.isMesh) { o.castShadow = true; } });
     this.scene.add(mesh);
     this.obstacles.push({ mesh, lane, d, hit: false });
@@ -827,7 +951,7 @@ export class AutosGame extends Game3D {
     let mesh;
     if (kind === "alfajor") {
       const top = new THREE.MeshStandardMaterial({ map: this.textures[Math.floor(Math.random() * this.textures.length)], roughness: 0.5 });
-      const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.1, 26), [this.m.cream, top, this.m.cream]);
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.1, 26), [this.m.cream, top, this.logoBack || (this.logoBack = new THREE.MeshStandardMaterial({ map: this.logoTex, roughness: 0.5 }))]);
       disc.rotation.x = Math.PI / 2;
       const rim = new THREE.Mesh(new THREE.TorusGeometry(0.43, 0.05, 8, 26), this.m.gold);
       rim.position.z = 0.03;
@@ -848,6 +972,19 @@ export class AutosGame extends Game3D {
       mesh.add(bar, pis);
       mesh.scale.setScalar(1.3);
     }
+    // más visibles: halo del color de cada cosa, anillo en el camino (marca el carril) y, en los poderes, columna de luz
+    const hue = { alfajor: 0xffd34d, iman: 0xff3fa4, escudo: 0x35f0ff }[kind] || 0xff9a3c;
+    mesh.add(this._halo(hue, kind === "alfajor" ? 2.7 : 3.6));
+    const gr = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.78, 24), new THREE.MeshBasicMaterial({ color: hue, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    gr.rotation.x = -Math.PI / 2;
+    gr.position.y = -y + 0.07;
+    mesh.add(gr);
+    if (kind !== "alfajor") {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.45, 5, 10, 1, true), new THREE.MeshBasicMaterial({ color: hue, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+      col.position.y = -y + 2.5;
+      mesh.add(col);
+    }
+    if (kind === "alfajor") mesh.scale.setScalar(1.35);
     this.scene.add(mesh);
     this.pickups.push({ mesh, kind, lane, d, y, x: LANES[lane], taken: false });
   }
@@ -935,7 +1072,7 @@ export class AutosGame extends Game3D {
       this.particles.burst(at, [0xffc800, 0xfff6e6], 8, 3.5, 0.5, 4);
       audio.playCollect();
     } else if (k.kind === "iman") {
-      this.power = { kind: "iman", t: 9 };
+      this.power = { kind: "iman", t: 9 * this.perk.magnet };
       this.bonus += 40;
       this.popups.add(at, "¡Imán! 🧲", "combo");
       this.particles.burst(at, [0xff3fa4, 0xfff6e6], 20, 5, 0.8, 3);
@@ -947,12 +1084,13 @@ export class AutosGame extends Game3D {
       this.particles.burst(at, [0x35f0ff, 0xfff6e6], 20, 5, 0.8, 3);
       audio.playPowerup();
     } else {
-      this.boost = 3.2;
+      this.boost = 3.2 * this.perk.nitro;
       this.bonus += 60;
-      earnCoins(this.progress, 2);
-      this.coinsEarned += 2;
+      const nc = Math.round(2 * this.perk.coin);
+      earnCoins(this.progress, nc);
+      this.coinsEarned += nc;
       saveProgress(this.progress);
-      this.popups.add(at, "¡Nitro! +2 🍫✨", "combo");
+      this.popups.add(at, `¡Nitro! +${nc} 🍫✨`, "combo");
       this.particles.burst(at, [0x7ee0ff, 0xcfd767, 0xffc800, 0xffffff], 22, 6, 0.8, 3);
       audio.playBonusCollect();
     }

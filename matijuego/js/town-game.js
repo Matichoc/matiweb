@@ -6,16 +6,17 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=64565862c1";
-import { createMatichico } from "./matichico3d.js?v=64565862c1";
-import { CHARACTERS, getOutfit } from "./characters.js?v=64565862c1";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=64565862c1";
-import { GAMES_CATALOG } from "./games-catalog.js?v=64565862c1";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=64565862c1";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=64565862c1";
-import { levelInfo } from "./progression.js?v=64565862c1";
-import { bindStick } from "./stick.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=71b37ac21d";
+import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
+import { CHARACTERS, getOutfit } from "./characters.js?v=71b37ac21d";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=71b37ac21d";
+import { GAMES_CATALOG } from "./games-catalog.js?v=71b37ac21d";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=71b37ac21d";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=71b37ac21d";
+import { levelInfo } from "./progression.js?v=71b37ac21d";
+import { bindStick } from "./stick.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
+import { TownFun } from "./town-fun.js?v=71b37ac21d";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -65,6 +66,8 @@ export class TownGame extends Game3D {
   constructor(character, progress, els) {
     super(GAME_ID, character, progress, els, { fov: 56 });
     this.musicTheme = "chill";
+    this.kawaii = true; // ambiente kawaii: tonos pastel, sombreado por tonos, pétalos y estrellitas
+    this.ambientOpts = { petals: 38, hearts: 8, stars: 24, radius: 20, height: 10 };
     this.q = els.q;
     this.keys = {};
     this.joy = { x: 0, y: 0 };
@@ -139,6 +142,8 @@ export class TownGame extends Game3D {
     this._buildNeighbors();
     this._buildEvent();
     this._ensureHero();
+    this.fun = new TownFun(this); // faros llamativos, baile, trampolines, circuito, tesoros y actividades del día
+    this.fun.build();
   }
 
   _signTexture(text, color, icon) {
@@ -419,7 +424,7 @@ export class TownGame extends Game3D {
     const crowns = new THREE.InstancedMesh(crownGeo, new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), good.length);
     const mat = new THREE.Matrix4();
     const col = new THREE.Color();
-    const palette = [0x4aa84a, 0x5fc25a, 0x3d9a5a, 0xe8742a, 0xff8ab8];
+    const palette = [0x9be39a, 0xb7ecaa, 0x86d9b0, 0xffc2dc, 0xffa8cc, 0xffd9a0, 0xffb8d6]; // verdes suaves y árboles de sakura rosados
     good.forEach(([x, z, sc], i) => {
       mat.makeScale(sc, sc, sc).setPosition(x, 1.2 * sc, z);
       trunks.setMatrixAt(i, mat);
@@ -481,7 +486,8 @@ export class TownGame extends Game3D {
       }
       const g = new THREE.Group();
       const tex = this.sprites[SPRITES[i % SPRITES.length]];
-      const disc = new THREE.Mesh(this.discGeo, [this.m.cream, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 }), this.m.cream]);
+      // frente: el alfajor; dorso: el logo oficial de Matichoc (antes se veía un círculo blanco)
+      const disc = new THREE.Mesh(this.discGeo, [this.m.cream, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 }), this.backMat || (this.backMat = new THREE.MeshStandardMaterial({ map: loadTexture("assets/brand/logo-badge.png"), roughness: 0.5 }))]);
       disc.rotation.x = Math.PI / 2;
       const rim = new THREE.Mesh(this.rimGeo, this.m.gold);
       rim.position.z = 0.03;
@@ -720,6 +726,7 @@ export class TownGame extends Game3D {
       this._updateNeighbors(dt);
       this._collectItems(dt);
       this._collectEvent(dt);
+      if (this.fun) this.fun.update(dt);
       this._pickTarget();
     } else {
       this._updateNeighbors(dt);
@@ -1009,6 +1016,7 @@ export class TownGame extends Game3D {
     if (!t) return;
     audio.playPurchase();
     if (t.kind === "npc") this._talk(t.npc);
+    else if (t.kind === "ring") { this.fun && this.fun.startCircuit(); }
     else if (t.kind === "fountain") {
       this.popups.add(new THREE.Vector3(0, 4.6, 0), "¡Mmm, qué rico! 🍫", "combo");
       this.particles.burst(new THREE.Vector3(0, 3.6, 0), [0x64321b, 0xffc800, 0xfff6e6], 22, 4, 1, 4, 1);
@@ -1104,6 +1112,7 @@ export class TownGame extends Game3D {
     const b = SKY[i + 1];
     const u = clamp((f - a[0]) / (b[0] - a[0]), 0, 1);
     this.tmpColor.setHex(a[1]).lerp(this.tmpColor2.setHex(b[1]), u);
+    this.tmpColor.lerp(this.tmpColor2.setHex(0xffd6ee), 0.28 * (1 - (a[4] + (b[4] - a[4]) * u))); // cielo con velo rosado (de día)
     if (this.event) this.tmpColor.lerp(this.tmpColor2.setHex(this.event.tint), 0.22);
     this.scene.background.copy(this.tmpColor);
     this.scene.fog.color.copy(this.tmpColor);
@@ -1126,7 +1135,11 @@ export class TownGame extends Game3D {
     const sp = Math.hypot(this.vel.x, this.vel.z);
     const mv = this._move_();
     const riding = mv.id === "skates" || mv.id === "board";
-    this.hero.animate(this.time, sp > 0.8 ? (riding ? "jump" : "run") : "idle", riding ? 0.7 : clamp(sp / SPEED, 0.4, 1.4));
+    let mode = sp > 0.8 ? (riding ? "jump" : "run") : "idle";
+    let spd = riding ? 0.7 : clamp(sp / SPEED, 0.4, 1.4);
+    if (this.fun && this.fun.airborne) { mode = "jump"; spd = 1; }
+    else if (this.fun && this.fun.heroMode) { mode = this.fun.heroMode; spd = 1; }
+    this.hero.animate(this.time, mode, spd);
     this._syncRide(dt);
   }
 

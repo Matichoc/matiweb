@@ -4,12 +4,14 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=64565862c1";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
-import { recordRun, runBonus } from "./progression.js?v=64565862c1";
-import { campaignWin, campaignMode, campaignLevel, campaign, LEVELS_PER_GAME } from "./campaign.js?v=64565862c1";
-import { missionFor } from "./missions.js?v=64565862c1";
+import { getOutfit } from "./characters.js?v=71b37ac21d";
+import { IS_DEMO, demoAllows } from "./demo.js?v=71b37ac21d";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
+import { recordRun, runBonus } from "./progression.js?v=71b37ac21d";
+import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=71b37ac21d";
+import { missionFor } from "./missions.js?v=71b37ac21d";
+import { costOf, spendEnergy, energyOf } from "./energy.js?v=71b37ac21d";
 
 export { THREE };
 
@@ -68,19 +70,25 @@ export const lerp = (a, b, t) => a + (b - a) * t;
 export const rand = (a, b) => a + Math.random() * (b - a);
 
 // "Look" compartido (brillo suave estilo juego moderno); cada juego puede ajustarlo.
-export const LOOK = { bloom: { strength: 0.32, radius: 0.55, threshold: 0.92 }, grade: { sat: 1.16, contrast: 1.06, vig: 0.22 } };
+export const LOOK = {
+  bloom: { strength: 0.32, radius: 0.55, threshold: 0.92 },
+  grade: { sat: 1.16, contrast: 1.06, vig: 0.22, lift: 0, tint: [1, 1, 1] },
+  // ambiente "kawaii": colores pastel, negros levantados con un velo rosado y brillo suave tipo ensueño
+  kawaii: { bloom: { strength: 0.2, radius: 0.5, threshold: 0.96 }, grade: { sat: 1.14, contrast: 1.0, vig: 0.16, lift: 0.025, tint: [1.0, 0.88, 0.94] } },
+};
 
 // Ajuste final de color (saturación, contraste y viñeta) sobre la imagen ya en sRGB.
 const GRADE_SHADER = {
-  uniforms: { tDiffuse: { value: null }, sat: { value: 1.16 }, contrast: { value: 1.06 }, vig: { value: 0.22 } },
+  uniforms: { tDiffuse: { value: null }, sat: { value: 1.16 }, contrast: { value: 1.06 }, vig: { value: 0.22 }, lift: { value: 0 }, tint: { value: new THREE.Vector3(1, 1, 1) } },
   vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float sat; uniform float contrast; uniform float vig; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float sat; uniform float contrast; uniform float vig; uniform float lift; uniform vec3 tint; varying vec2 vUv;
     void main(){
       vec4 c = texture2D(tDiffuse, vUv);
       float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
       c.rgb = mix(vec3(l), c.rgb, sat);
       c.rgb = (c.rgb - 0.5) * contrast + 0.5;
       c.rgb *= 1.0 - vig * smoothstep(0.45, 0.98, distance(vUv, vec2(0.5)));
+      c.rgb = mix(c.rgb, tint, lift * (1.0 - l * 0.6));
       gl_FragColor = c;
     }`,
 };
@@ -341,6 +349,8 @@ export class Game3D {
   constructor(gameId, character, progress, els, { fov = 50, bloom = true } = {}) {
     this.gameId = gameId;
     this.bloom = bloom === true ? LOOK.bloom : bloom;
+    this.kawaii = false; // los mundos con estilo kawaii lo encienden en su constructor (ver kawaiiStyle)
+    this.ambients = [];
     this.character = character;
     this.progress = progress;
     this.els = els;
@@ -438,13 +448,17 @@ export class Game3D {
       const target = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, samples: this.coarse ? 0 : 4 });
       this.composer = new EffectComposer(this.renderer, target);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
-      this.bloomPass = new UnrealBloomPass(new THREE.Vector2(w, h), this.bloom.strength, this.bloom.radius, this.bloom.threshold);
+      const bl = this.kawaii ? LOOK.kawaii.bloom : this.bloom;
+      this.bloomPass = new UnrealBloomPass(new THREE.Vector2(w, h), bl.strength, bl.radius, bl.threshold);
       this.composer.addPass(this.bloomPass);
       this.composer.addPass(new OutputPass());
       const grade = new ShaderPass(GRADE_SHADER);
-      grade.uniforms.sat.value = LOOK.grade.sat;
-      grade.uniforms.contrast.value = LOOK.grade.contrast;
-      grade.uniforms.vig.value = LOOK.grade.vig;
+      const gr = this.kawaii ? LOOK.kawaii.grade : LOOK.grade;
+      grade.uniforms.sat.value = gr.sat;
+      grade.uniforms.contrast.value = gr.contrast;
+      grade.uniforms.vig.value = gr.vig;
+      grade.uniforms.lift.value = gr.lift || 0;
+      grade.uniforms.tint.value.set(...(gr.tint || [1, 1, 1]));
       this.composer.addPass(grade);
     } catch (e) {
       console.warn("Postprocesado no disponible:", e);
@@ -461,6 +475,7 @@ export class Game3D {
     this.popups.clear();
     this.state = "intro";
     this.reset();
+    if (this.kawaii) this._kawaiiScene();
     this.showOverlay("intro");
     this.onIntro?.();
     this.running = true;
@@ -468,13 +483,97 @@ export class Game3D {
     requestAnimationFrame(this._loop);
   }
 
+  /** Estilo kawaii del escenario: sombreado por tonos (no a los personajes) y pétalos/estrellitas flotando. */
+  _kawaiiScene() {
+    toonify(this.scene);
+    if (!this.ambient) this.ambient = makeAmbient(this.scene, this.ambientOpts || {});
+  }
+
   beginPlaying() {
     if (this.state === "playing") return;
+    if (!this._payEnergy()) return;
+    this._em = {}; // contadores del gasto por acción (ver meterEnergy / countEnergy)
+    this._ec = {};
+    this._eT = 0;
+    this._lowWarned = false;
     this.state = "playing";
     this.showOverlay(null);
     if (this.musicTheme) audio.startMusic(this.musicTheme);
     this.onBegin?.();
     if (this.mission) this.banner(`🎯 Misión ${this.mission.n}: ${this.mission.text}`);
+  }
+
+  /** Cada partida gasta energía (ver js/energy.js). Sin energía no empieza: se avisa y se queda en la tarjeta de inicio. */
+  _payEnergy() {
+    const cost = costOf(this.gameId);
+    if (!(cost > 0) || !this.progress) return true;
+    if (spendEnergy(this.progress, cost)) return true;
+    try { window.dispatchEvent(new CustomEvent("no-energy", { detail: { need: cost, game: this.gameId } })); } catch (e) { /* sin ventana */ }
+    return false;
+  }
+
+  /**
+   * Gasto de energía DURANTE la partida (además de la entrada): cada tiro, cada pieza, cada movimiento, cada tanto
+   * de camino... Devuelve false si no alcanzó (la partida termina con un aviso amable y se conserva el puntaje).
+   */
+  spendAction(n = 1) {
+    if (!(n > 0) || !this.progress || this.state !== "playing") return true;
+    if (spendEnergy(this.progress, n)) {
+      this._showSpend(n);
+      return true;
+    }
+    this._outOfEnergy();
+    return false;
+  }
+
+  /** Gasta `cost` cada vez que `value` cruza un múltiplo de `every` (distancia, altura, piezas, rebotes...). */
+  meterEnergy(key, value, every, cost = 1) {
+    if (this.state !== "playing") return true;
+    if (!this._em) this._em = {};
+    const k = Math.floor(value / every);
+    while ((this._em[key] || 0) < k && this.state === "playing") {
+      this._em[key] = (this._em[key] || 0) + 1;
+      if (!this.spendAction(cost)) return false;
+    }
+    return true;
+  }
+
+  /** Cuenta una acción (un tiro, una pieza...) y gasta `cost` cada `every` veces. */
+  countEnergy(key, every = 1, cost = 1) {
+    if (this.state !== "playing") return true;
+    if (!this._ec) this._ec = {};
+    this._ec[key] = (this._ec[key] || 0) + 1;
+    return this._ec[key] % every === 0 ? this.spendAction(cost) : true;
+  }
+
+  _outOfEnergy() {
+    try { window.dispatchEvent(new CustomEvent("no-energy", { detail: { need: 1, game: this.gameId, mid: true } })); } catch (e) { /* sin ventana */ }
+    this.haptic(60);
+    if (this.onNoEnergy) this.onNoEnergy();
+    else this.finish("😴 ¡Matichico se quedó sin energía! Descansa un ratito (o duerme en tu casa) y sigue jugando.");
+  }
+
+  /** Cartelito "-1 ⚡ 73" arriba al centro cada vez que se gasta, y aviso cuando queda poca. */
+  _showSpend(n) {
+    const left = Math.floor(energyOf(this.progress).v);
+    let el = document.getElementById("game-energy");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "game-energy";
+      el.className = "game-energy hidden";
+      document.body.appendChild(el);
+    }
+    el.innerHTML = `<b>-${n}</b> ⚡ <span>${left}</span>`;
+    el.classList.toggle("low", left <= 10);
+    el.classList.remove("hidden", "pop");
+    void el.offsetWidth;
+    el.classList.add("pop");
+    clearTimeout(this._enHide);
+    this._enHide = setTimeout(() => el.classList.add("hidden"), 2600);
+    if (left <= 10 && !this._lowWarned) {
+      this._lowWarned = true;
+      this.banner(`🔋 ¡Poca energía! Te quedan ${left} ⚡`);
+    }
   }
 
   // ---------- modo misiones (juegos sin fin) ----------
@@ -565,6 +664,7 @@ export class Game3D {
    * estrellas, da puntos/XP y muestra la tarjeta "¡Nivel completado!" (overlay "win").
    */
   levelWin({ level, stars, text, title }) {
+    if (this.state === "gameover") return;
     audio.stopMusic();
     audio.playMissionComplete();
     this.state = "win";
@@ -579,19 +679,41 @@ export class Game3D {
     if (e.stars) e.stars.innerHTML = [1, 2, 3].map((n) => `<span class="${n <= stars ? "on" : "off"}">★</span>`).join("");
     if (e.winTitle) e.winTitle.textContent = title || `¡Nivel ${level} completado!`;
     if (e.winText) e.winText.textContent = `${text} +${bonus} Matipuntos 🍫✨ +${run.xp} XP ⭐`;
+    // al terminar el último nivel el botón pasa a ser "Nueva vuelta" (con premio) en vez de repetir el nivel 20
+    const campId = this.missionId || this.gameId;
+    const nb = e.q && e.q("btn-next");
+    this._lapNext = level >= LEVELS_PER_GAME && campaignComplete(this.progress, campId);
+    if (nb) {
+      if (!nb.dataset.orig) nb.dataset.orig = nb.textContent;
+      if (this._lapNext) {
+        const r = lapReward(this.progress, campId);
+        nb.textContent = `🔄 Nueva vuelta (🍫✨ ${r.coins} y ${r.packs} 🎴)`;
+        if (e.winTitle) e.winTitle.textContent = "🏆 ¡Completaste todos los niveles!";
+      } else if (IS_DEMO && !demoAllows(campId, level + 1)) nb.textContent = "📲 Sigue en la app";
+      else nb.textContent = nb.dataset.orig;
+    }
     this.haptic(60);
     this.showOverlay("win");
   }
 
+  /** Después del último nivel: empieza una vuelta nueva (premio + niveles desde el 1). */
+  startNewLap() {
+    const got = campaignStartOver(this.progress, this.missionId || this.gameId);
+    this._lapNext = false;
+    if (got) { try { window.dispatchEvent(new CustomEvent("lap-start", { detail: got })); } catch (e) { /* sin ventana */ } }
+    this.retry(); // arranca otra vez, ahora desde el nivel 1
+  }
+
   /** Cierra la partida: guarda puntaje/ranking y muestra el resumen. */
   finish(text) {
+    if (this.state === "gameover") return; // ya terminó (p. ej. se acabó la energía justo antes)
     audio.stopMusic();
     this.state = "gameover";
     if (this.mission && !this._missionWon) text = `🎯 Misión ${this.mission.n} (${this.mission.text.toLowerCase()}): ¡todavía no! ${text}`;
     reportScore(this.progress, this.gameId, this.score);
     addToLeaderboard(this.progress, this.gameId, this.progress.playerName, this.score);
     // Matipuntos por terminar la partida, según el puntaje (cada juego puntúa distinto)
-    const bonus = runBonus(this.gameId, this.score);
+    const bonus = Math.round(runBonus(this.gameId, this.score) * (this.bonusMult || 1)); // algunos juegos dan más con mejoras (p. ej. autos del garaje)
     if (bonus > 0) {
       earnCoins(this.progress, bonus);
       saveProgress(this.progress);
@@ -621,6 +743,11 @@ export class Game3D {
     this._adaptQuality(dt);
     this.update(dt);
     this._missionTick(dt);
+    if (this.state === "playing" && this.energyEvery) {
+      // juegos de correr/avanzar sin acciones claras: gastan 1 cada cierto tiempo
+      this._eT = (this._eT || 0) + dt;
+      if (this._eT >= this.energyEvery) { this._eT -= this.energyEvery; this.spendAction(1); }
+    }
     if (this.state === "playing" && this.progress) {
       // tiempo jugado (para los logros de constancia); se guarda cada ~10 s
       this._playAcc = (this._playAcc || 0) + dt;
@@ -630,6 +757,7 @@ export class Game3D {
         saveProgress(this.progress);
       }
     }
+    if (this.ambient) this.ambient.update(this.time, dt, this.camera.position);
     this.particles.update(dt);
     this.popups.update(dt);
     if (this.composer) this.composer.render(dt);
@@ -681,5 +809,147 @@ export function disposeTree(obj) {
 
 /** Libera solo las geometrías de un objeto (para lo que se crea y se quita todo el rato, con materiales compartidos). */
 export function disposeGeometries(obj) {
-  obj.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+  obj.traverse((o) => { if (o.geometry && !o.isSprite) o.geometry.dispose(); }); // los sprites comparten una sola geometría
+}
+
+// ---------- estilo "anime": sombreado por tonos (cel-shading) y contorno ----------
+let toonGradTex = null;
+function toonGradient() {
+  if (!toonGradTex) {
+    const c = document.createElement("canvas");
+    c.width = 4;
+    c.height = 1;
+    const x = c.getContext("2d");
+    ["#7a6c94", "#b3a6c8", "#dcd2e8", "#f4eef9"].forEach((col, i) => { x.fillStyle = col; x.fillRect(i, 0, 1, 1); });
+    toonGradTex = new THREE.CanvasTexture(c);
+    toonGradTex.minFilter = THREE.NearestFilter;
+    toonGradTex.magFilter = THREE.NearestFilter;
+    toonGradTex.generateMipmaps = false;
+  }
+  return toonGradTex;
+}
+
+const toonOf = new WeakMap();
+function toToon(m) {
+  if (!m || m.isMeshToonMaterial || !m.isMeshStandardMaterial) return m;
+  if (toonOf.has(m)) return toonOf.get(m);
+  const t = new THREE.MeshToonMaterial({
+    color: m.color, map: m.map, emissive: m.emissive, emissiveIntensity: m.emissiveIntensity, emissiveMap: m.emissiveMap,
+    transparent: m.transparent, opacity: m.opacity, side: m.side, alphaTest: m.alphaTest, vertexColors: m.vertexColors,
+    flatShading: false, gradientMap: toonGradient(),
+  });
+  t.color = m.color; // se comparten los colores: si el original cambia (ropa, pelo), el nuevo también
+  t.emissive = m.emissive;
+  toonOf.set(m, t);
+  return t;
+}
+
+/** Convierte los materiales estándar de una escena u objeto en materiales "anime" (sombras por tonos, colores planos). */
+export function toonify(root) {
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    for (let a = o; a; a = a.parent) if (a.userData && a.userData.noToon) return; // los personajes se quedan como son
+    if (Array.isArray(o.material)) o.material = o.material.map(toToon);
+    else o.material = toToon(o.material);
+  });
+}
+
+const outlineMat = new THREE.MeshBasicMaterial({ color: 0x2a1410, side: THREE.BackSide });
+outlineMat.onBeforeCompile = (sh) => {
+  sh.uniforms.thick = { value: 0.018 };
+  sh.vertexShader = sh.vertexShader.replace("void main() {", "uniform float thick;\nvoid main() {").replace("#include <begin_vertex>", "vec3 transformed = position + normalize(normal) * thick;");
+};
+
+/** Contorno fino oscuro alrededor de las mallas de un objeto (casco invertido). Solo para personajes y objetos clave. */
+export function addOutline(root, thick = 0.018) {
+  const add = [];
+  root.traverse((o) => { if (o.isMesh && !o.userData.isOutline && !o.userData.noOutline && !o.isInstancedMesh && !o.isSkinnedMesh) add.push(o); });
+  for (const m of add) {
+    const mat = outlineMat.clone();
+    mat.onBeforeCompile = (sh) => {
+      sh.uniforms.thick = { value: thick };
+      sh.vertexShader = sh.vertexShader.replace("void main() {", "uniform float thick;\nvoid main() {").replace("#include <begin_vertex>", "vec3 transformed = position + normalize(normal) * thick;");
+    };
+    const ol = new THREE.Mesh(m.geometry, mat);
+    ol.userData.isOutline = true;
+    ol.castShadow = false;
+    ol.receiveShadow = false;
+    m.add(ol);
+  }
+}
+
+// ---------- ambiente flotante: pétalos, corazoncitos y estrellitas ----------
+function sparkleTexture(kind) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const x = c.getContext("2d");
+  x.translate(32, 32);
+  if (kind === "petal") {
+    x.fillStyle = "#ffc2dc";
+    x.beginPath();
+    x.ellipse(0, 0, 11, 19, 0.5, 0, Math.PI * 2);
+    x.fill();
+    x.fillStyle = "rgba(255,255,255,0.55)";
+    x.beginPath();
+    x.ellipse(-3, -5, 3, 8, 0.5, 0, Math.PI * 2);
+    x.fill();
+  } else if (kind === "heart") {
+    x.fillStyle = "#ff8fb8";
+    x.beginPath();
+    x.moveTo(0, 14);
+    x.bezierCurveTo(-26, -4, -12, -22, 0, -8);
+    x.bezierCurveTo(12, -22, 26, -4, 0, 14);
+    x.fill();
+  } else {
+    x.fillStyle = "#fff6c8";
+    x.beginPath();
+    for (let i = 0; i < 8; i++) { const r = i % 2 ? 6 : 22; const a = (i / 8) * Math.PI * 2 - Math.PI / 2; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    x.closePath();
+    x.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** Pétalos que caen despacito, corazoncitos y estrellitas que titilan alrededor de la cámara. `update(t, dt, centro)` cada cuadro. */
+export function makeAmbient(parent, { petals = 36, hearts = 10, stars = 26, radius = 16, height = 11, floor = 0 } = {}) {
+  const layers = [];
+  const mk = (kind, n, size, fall, twinkle) => {
+    if (n <= 0) return;
+    const pos = new Float32Array(n * 3);
+    const off = [];
+    for (let i = 0; i < n; i++) off.push({ x: (Math.random() * 2 - 1) * radius, y: Math.random() * height, z: (Math.random() * 2 - 1) * radius, ph: Math.random() * 6.28, v: fall * (0.6 + Math.random() * 0.8) });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({ map: sparkleTexture(kind), size, transparent: true, depthWrite: false, opacity: 0.95, sizeAttenuation: true });
+    const pts = new THREE.Points(geo, mat);
+    pts.frustumCulled = false;
+    pts.renderOrder = 8;
+    pts.userData.noToon = true;
+    parent.add(pts);
+    layers.push({ pts, geo, mat, off, fall, twinkle, base: size });
+  };
+  mk("petal", petals, 0.8, 0.5, false);
+  mk("heart", hearts, 0.7, 0.28, false);
+  mk("star", stars, 0.5, 0.0, true);
+  return {
+    update(t, dt, c) {
+      for (const L of layers) {
+        const a = L.geo.attributes.position.array;
+        L.off.forEach((o, i) => {
+          if (L.fall) {
+            o.y -= o.v * dt;
+            if (o.y < 0) { o.y = height; o.x = (Math.random() * 2 - 1) * radius; o.z = (Math.random() * 2 - 1) * radius; }
+          }
+          const sway = Math.sin(t * 0.8 + o.ph) * (L.fall ? 0.8 : 0.15);
+          a[i * 3] = c.x + o.x + sway;
+          a[i * 3 + 1] = floor + o.y * (L.fall ? 1 : 0.5) + (L.fall ? 0 : 0.6);
+          a[i * 3 + 2] = c.z + o.z + Math.cos(t * 0.6 + o.ph) * (L.fall ? 0.6 : 0.1);
+        });
+        L.geo.attributes.position.needsUpdate = true;
+        if (L.twinkle) L.mat.opacity = 0.35 + 0.3 * Math.sin(t * 2.2);
+      }
+    },
+  };
 }

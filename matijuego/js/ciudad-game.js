@@ -9,14 +9,15 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=64565862c1";
-import { createMatichico } from "./matichico3d.js?v=64565862c1";
-import { CHARACTERS, getOutfit } from "./characters.js?v=64565862c1";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=64565862c1";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=64565862c1";
-import { recordRun } from "./progression.js?v=64565862c1";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=64565862c1";
-import * as audio from "./audio.js?v=64565862c1";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=71b37ac21d";
+import { createMatichico } from "./matichico3d.js?v=71b37ac21d";
+import { CHARACTERS, getOutfit } from "./characters.js?v=71b37ac21d";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=71b37ac21d";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=71b37ac21d";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=71b37ac21d";
+import { recordRun } from "./progression.js?v=71b37ac21d";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=71b37ac21d";
+import * as audio from "./audio.js?v=71b37ac21d";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60
@@ -228,6 +229,8 @@ export class CiudadGame extends Game3D {
   constructor(character, progress, els) {
     super(GAME_ID, character, progress, els, { fov: 55 });
     this.musicTheme = "chill";
+    this.kawaii = true;
+    this.ambientOpts = { petals: 34, hearts: 6, stars: 18, radius: 22, height: 11 };
     this.q = els.q;
     this.keys = {};
     this.joy = { x: 0, y: 0 };
@@ -262,8 +265,8 @@ export class CiudadGame extends Game3D {
 
   async build() {
     const s = this.scene;
-    s.background = new THREE.Color(0x9fdcf5);
-    s.fog = new THREE.Fog(0xcdeeff, 70, 210);
+    s.background = new THREE.Color(0xbfe3ff);
+    s.fog = new THREE.Fog(0xf3dcf7, 60, 190); // niebla lila-rosada, como un sueño
     s.add(new THREE.HemisphereLight(0xfff6e0, 0x6a9a50, 1.25));
     this.sun = new THREE.DirectionalLight(0xfff0d2, 2.5);
     this.sun.position.set(-30, 50, 25);
@@ -278,7 +281,7 @@ export class CiudadGame extends Game3D {
     this.onLowQuality = () => { this.sun.castShadow = false; };
 
     this.m = {
-      grass: new THREE.MeshStandardMaterial({ color: 0x7ecb6a, roughness: 1 }),
+      grass: new THREE.MeshStandardMaterial({ color: 0xa6e592, roughness: 1 }),
       lawn: new THREE.MeshStandardMaterial({ color: 0x8fd67a, roughness: 1 }),
       road: new THREE.MeshStandardMaterial({ color: 0x53535c, roughness: 0.95 }),
       pad: new THREE.MeshStandardMaterial({ color: 0xe9dcc4, roughness: 0.9 }),
@@ -362,7 +365,8 @@ export class CiudadGame extends Game3D {
     mk(2 * HALF - RW, false, 0, 0);
     mk(2 * HALF - RW, true, 0, 0);
     // pasos de cebra (todos juntos en una malla con instancias)
-    const zebraSpots = [[-22, HALF, true], [22, -HALF, true], [HALF, -22, false], [-HALF, 22, false], [0, 12, true], [0, -12, true], [12, 0, false], [-12, 0, false], [HALF - 14, 0, false]];
+    // [x, z, horiz]: horiz = la franja se extiende a lo ancho (en x) porque cruza una calle que va de norte a sur; si no, cruza una calle de este a oeste.
+    const zebraSpots = [[-22, HALF, false], [22, -HALF, false], [HALF, -22, true], [-HALF, 22, true], [0, 12, true], [0, -12, true], [12, 0, false], [-12, 0, false], [HALF - 14, 0, false]];
     const zg = new THREE.BoxGeometry(0.7, 0.02, 2.6);
     const zebra = new THREE.InstancedMesh(zg, new THREE.MeshBasicMaterial({ color: 0xffffff }), zebraSpots.length * 9);
     const mat = new THREE.Matrix4();
@@ -440,8 +444,9 @@ export class CiudadGame extends Game3D {
     body.position.y = h / 2;
     body.castShadow = true;
     body.receiveShadow = true;
-    const rf = new THREE.Mesh(new THREE.ConeGeometry(1, h * 0.42, 4), this._std(roof, 0.6));
-    rf.rotation.y = Math.PI / 4;
+    const rg = new THREE.ConeGeometry(1, h * 0.42, 4);
+    rg.rotateY(Math.PI / 4); // la base queda alineada con las paredes (si se girara la malla entera, el techo de una casa larga saldría torcido)
+    const rf = new THREE.Mesh(rg, this._std(roof, 0.6));
     rf.scale.set(w * 0.78, 1, d * 0.78);
     rf.position.y = h + h * 0.21;
     rf.castShadow = true;
@@ -738,19 +743,20 @@ export class CiudadGame extends Game3D {
 
   _buildTrees() {
     // árboles de afuera de la ciudad, para que el mundo no se vea vacío
+    // (en un cuadrado alrededor de las calles, bien separados de ellas: nunca sobre la calzada ni la vereda)
     for (let i = 0; i < 90; i++) {
       const a = rnd() * 6.28;
-      const r = 76 + rnd() * 16;
-      const x = Math.cos(a) * r;
-      const z = Math.sin(a) * r;
-      this._tree(x, z, 0.9 + rnd() * 0.9, false);
+      const dx = Math.cos(a);
+      const dz = Math.sin(a);
+      const d = Math.min(125, (76 + rnd() * 18) / Math.max(Math.abs(dx), Math.abs(dz)));
+      this._tree(dx * d, dz * d, 0.9 + rnd() * 0.9, false);
     }
     const n = this.treeSpots.length;
     const trunkGeo = new THREE.CylinderGeometry(0.18, 0.26, 1.8, 6);
     const crownGeo = new THREE.IcosahedronGeometry(1.35, 0);
     const trunks = new THREE.InstancedMesh(trunkGeo, this.m.trunk, n);
     const crowns = new THREE.InstancedMesh(crownGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, flatShading: true }), n);
-    const greens = [0x3fae4c, 0x56bd55, 0x2f9a58, 0x6cc65a, 0xe9a23b, 0xe05f8a];
+    const greens = [0x9be39a, 0xb7ecaa, 0x86d9b0, 0xffc2dc, 0xffa8cc, 0xffd9a0, 0xffb8d6]; // verdes suaves y sakura
     const mat = new THREE.Matrix4();
     const col = new THREE.Color();
     this.treeSpots.forEach(([x, z, sc], i) => {
@@ -1177,6 +1183,13 @@ export class CiudadGame extends Game3D {
     const inp = this._input();
     let thr = inp.iy;
     let steer = inp.ix;
+    // pedales de la pantalla: ⛽ acelera; 🛑 frena y, si ya estás detenido y lo mantienes un ratito, da reversa
+    if (this.keys.gas) thr = 1;
+    if (this.keys.stop) {
+      this._revT = (this._revT || 0) + dt;
+      if (c.speed > 0.5) thr = -1;
+      else thr = this._revT > 0.6 ? -0.7 : 0;
+    } else this._revT = 0;
     if (this.keys.brake) thr = Math.min(thr, -0.001);
     if (this.dialog || this.lock > 0) { thr = 0; steer = 0; }
     const road = onRoad(c.x, c.z);
@@ -1248,11 +1261,23 @@ export class CiudadGame extends Game3D {
     g.rotation.set(0, 0, 0);
     g.scale.setScalar(0.64);
     audio.playPowerup();
-    this.banner("🚗 ¡A manejar! Joystick: ←→ gira, ↑ acelera, ↓ frena");
+    this._setDriveUi(true);
+    this.banner("🚗 ¡A manejar! Gira con el volante y mantén ⛽ para avanzar");
+  }
+
+  /** En el auto, el joystick pasa a ser un volante (solo gira) y aparecen los pedales: ⛽ acelerar y 🛑 frenar. */
+  _setDriveUi(on) {
+    const joy = this.q("joy");
+    if (joy) { joy.classList.toggle("steer", on); joy.style.setProperty("--steer", "0"); }
+    this.els.wrap?.classList.toggle("driving", on);
+    for (const id of ["btn-gas", "btn-stop"]) this.q(id)?.classList.toggle("hidden", !on);
+    this.joy.x = 0; this.joy.y = 0;
+    this.keys.gas = false; this.keys.stop = false;
   }
 
   _leaveCar(silent = false) {
     if (!this.inCar) return;
+    this._setDriveUi(false);
     const c = this.car;
     this.inCar = false;
     const g = this.hero.group;
@@ -1536,6 +1561,11 @@ export class CiudadGame extends Game3D {
 
   _startMission(id) {
     const m = MISSIONS.find((x) => x.id === id);
+    if (!spendEnergy(this.progress, ENERGY_MISSION)) {
+      this._toast("😴 Sin energía para otra misión. ¡Recarga en el cofre, duerme en tu casa o espera un ratito!");
+      try { window.dispatchEvent(new CustomEvent("no-energy", { detail: { need: ENERGY_MISSION, game: "ciudad" } })); } catch (e) { /* sin ventana */ }
+      return;
+    }
     this.active = { id, step: "do", n: 0, data: {} };
     this.wayTo = null;
     const init = {
@@ -1792,15 +1822,15 @@ export class CiudadGame extends Game3D {
   _pickTarget() {
     const pl = this._playerXZ();
     let t = null;
-    if (this.dialog) { this.actionTarget = { label: "Seguir ▶", fn: () => this._advanceDialog() }; this._updateActionBtn(); return; }
+    if (this.dialog) { this.actionTarget = { label: "Seguir ▶", icon: "▶", short: "Seguir", fn: () => this._advanceDialog() }; this._updateActionBtn(); return; }
     if (this.inCar) {
-      if (Math.abs(this.car.speed) < 7) t = { label: "🚪 Bajar del auto", fn: () => this._leaveCar() };
+      if (Math.abs(this.car.speed) < 7) t = { label: "🚪 Bajar del auto", icon: "🚪", short: "Bajar", fn: () => this._leaveCar() };
     } else {
       const a = this.active;
       if (a && a.id === "flores") {
         let best = null;
         for (const p of this.pots) if (!p.watered && Math.hypot(pl.x - p.x, pl.z - p.z) < 2.8 && (!best || Math.hypot(pl.x - p.x, pl.z - p.z) < Math.hypot(pl.x - best.x, pl.z - best.z))) best = p;
-        if (best) t = { label: "💧 Regar", fn: () => this._waterPot(best, true) };
+        if (best) t = { label: "💧 Regar", icon: "💧", short: "Regar", fn: () => this._waterPot(best, true) };
       }
       if (!t) {
         let bestN = null;
@@ -1809,11 +1839,11 @@ export class CiudadGame extends Game3D {
           const d = Math.hypot(pl.x - n.x, pl.z - n.z);
           if (d < bd) { bd = d; bestN = n; }
         }
-        if (bestN) t = { label: `💬 Hablar con ${GIVERS[bestN.id].name}`, fn: () => this._talk(bestN.id) };
+        if (bestN) t = { label: `💬 Hablar con ${GIVERS[bestN.id].name}`, icon: "💬", short: "Hablar", fn: () => this._talk(bestN.id) };
       }
-      if (!t && Math.hypot(pl.x - this.car.x, pl.z - this.car.z) < 3.8) t = { label: "🚗 Subir al auto", fn: () => this._enterCar() };
+      if (!t && Math.hypot(pl.x - this.car.x, pl.z - this.car.z) < 3.8) t = { label: "🚗 Subir al auto", icon: "🚗", short: "Subir", fn: () => this._enterCar() };
       if (!t) {
-        for (const p of this.peds) if (Math.hypot(pl.x - p.x, pl.z - p.z) < 2.6) { t = { label: "👋 Saludar", fn: () => this._pedSay(p) }; break; }
+        for (const p of this.peds) if (Math.hypot(pl.x - p.x, pl.z - p.z) < 2.6) { t = { label: "👋 Saludar", icon: "👋", short: "Saludar", fn: () => this._pedSay(p) }; break; }
       }
     }
     this.actionTarget = t;
@@ -1825,7 +1855,12 @@ export class CiudadGame extends Game3D {
     if (!b) return;
     const t = this.actionTarget;
     b.classList.toggle("hidden", !t || this.state !== "playing");
-    if (t && b.textContent !== t.label) b.textContent = t.label;
+    // en el celular es un botón redondo (ícono + palabra corta); con mouse se ve la frase completa
+    if (t && b.dataset.label !== t.label) {
+      b.dataset.label = t.label;
+      b.innerHTML = `<span class="ab-full">${t.label}</span><span class="ab-i">${t.icon || "✋"}</span><small>${t.short || ""}</small>`;
+      b.setAttribute("aria-label", t.label);
+    }
   }
 
   act() {
@@ -2041,7 +2076,7 @@ export class CiudadGame extends Game3D {
       if (e.code === "Space") this.keys.hand = false;
       if (e.code === "ShiftLeft" || e.code === "ShiftRight") this.keys.sprint = false;
     });
-    window.addEventListener("blur", () => { this.keys = {}; });
+    window.addEventListener("blur", () => { this.keys = {}; this.q("btn-gas")?.classList.remove("down"); this.q("btn-stop")?.classList.remove("down"); });
 
     const cv = this.els.canvas;
     let drag = null;
@@ -2064,6 +2099,15 @@ export class CiudadGame extends Game3D {
     on("btn-action", () => this.act());
     on("btn-horn", () => this.horn());
     on("btn-missions", () => (this.listOpen ? this._closeList() : this.openList()));
+    for (const [id, key] of [["btn-gas", "gas"], ["btn-stop", "stop"]]) {
+      const b = this.q(id);
+      if (!b) continue;
+      b.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); try { b.setPointerCapture?.(e.pointerId); } catch (err) { /* sin captura */ } this.keys[key] = true; b.classList.add("down"); });
+      const up = () => { this.keys[key] = false; b.classList.remove("down"); };
+      b.addEventListener("pointerup", up);
+      b.addEventListener("pointercancel", up);
+      b.addEventListener("lostpointercapture", up);
+    }
     on("btn-brake", () => { this.keys.hand = true; });
     const brake = this.q("btn-brake");
     if (brake) { const up = () => { this.keys.hand = false; }; brake.addEventListener("pointerup", up); brake.addEventListener("pointercancel", up); brake.addEventListener("pointerleave", up); }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" >
+<html lang="es" data-demo="1">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=64565862c1">
+<link rel="stylesheet" href="css/style.css?v=71b37ac21d">
 </head>
 <body>
 <div id="toast" class="toast hidden"></div>
@@ -26,6 +26,35 @@
     <p id="um-text"></p>
     <button id="um-buy" class="btn-primary" type="button"></button>
     <button id="um-cancel" class="btn-secondary" type="button">Ahora no</button>
+  </div>
+</div>
+
+<!-- Calendario de recompensas del mes -->
+<div id="calendar-dialog" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-card cal-card">
+    <h2 id="cal-title">🎁 Recompensas del mes</h2>
+    <div id="cal-today" class="cal-today"></div>
+    <button id="cal-claim" class="btn-primary" type="button">🎁 Cobrar la de hoy</button>
+    <p id="cal-sub" class="cal-sub"></p>
+    <div id="cal-grid" class="cal-grid"></div>
+    <button id="cal-close" class="btn-secondary" type="button">Cerrar</button>
+  </div>
+</div>
+
+<!-- Energía: estado, cofre del tesoro y cómo conseguir más -->
+<div id="energy-dialog" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-card en-card">
+    <div class="um-icon" id="en-icon">⚡</div>
+    <h2 id="en-title">Tu energía</h2>
+    <p id="en-text"></p>
+    <div class="en-bar"><i id="en-fill"></i><span id="en-count">100/100</span></div>
+    <p class="en-sub" id="en-next"></p>
+    <button id="en-chest" class="btn-primary hidden" type="button">🎁 Abrir cofre del tesoro</button>
+    <p class="en-sub" id="en-chest-wait"></p>
+    <div class="en-miss hidden" id="en-miss"></div>
+    <ul class="en-ways" id="en-ways"></ul>
+    <details class="en-costs"><summary>¿Cuánto gasta cada juego?</summary><ul id="en-costs"></ul></details>
+    <button id="en-close" class="btn-secondary" type="button">Cerrar</button>
   </div>
 </div>
 
@@ -44,10 +73,19 @@
   <div class="modal-card">
     <div class="um-icon">🎮</div>
     <h2>¡Esto sigue en la app!</h2>
-    <p>Ya probaste lo primero de este juego. Para seguir jugando todos los niveles, descarga Matijuego en Google Play.</p>
+    <p>Ya probaste lo primero de este juego. <b>Matijuego completo</b> (todos los niveles y todos los juegos) llegará pronto a Google Play: ¡prepárate para seguir jugando!</p>
     <a id="demo-wall-link" class="btn-primary" target="_blank" rel="noopener">📲 Descargar en Google Play</a>
     <button id="demo-wall-close" class="btn-secondary" type="button">Seguir mirando</button>
   </div>
+</div>
+<!-- Sello de inicio (como al prender una consola): sale al abrir la app y cuando se vuelve después de un buen rato -->
+<div id="splash" aria-hidden="true">
+  <div class="sp-pattern"></div>
+  <div class="sp-glow"></div>
+  <p class="sp-by">Desarrollado por</p>
+  <div class="sp-logo"><img src="assets/brand/logo-badge.png" alt="Matichoc, pasión por el cacao"><i class="sp-shine"></i></div>
+  <p class="sp-tag">Matijuego · el arcade de Matichoc</p>
+  <span class="sp-star s1">✦</span><span class="sp-star s2">✦</span><span class="sp-star s3">✦</span><span class="sp-star s4">✦</span>
 </div>
 <div id="app">
 
@@ -84,6 +122,7 @@
         <h1 class="logo lb-logo">Matijuego<span>el arcade de Matichoc</span></h1>
         <div class="lb-actions">
           <div class="stat-chip lb-coins" title="Matipuntos">🍫✨ <span id="hub-total-coins">0</span></div>
+          <button id="btn-energy" class="stat-chip stat-chip-btn lb-energy" type="button" title="Energía: cada partida gasta un poco y se recarga con el tiempo">⚡ <b id="hub-energy">100</b><small>/<span id="hub-energy-max">100</span></small> <small id="hub-energy-next" class="en-next"></small><span class="lv-dot hidden" id="hub-energy-dot"></span></button>
           <button id="btn-open-progress" class="stat-chip stat-chip-btn lb-level" title="Nivel, misiones y álbum">
             <span class="lv-badge">⭐ <b id="hub-level">1</b></span>
             <span class="lv-bar"><i id="hub-xp-fill"></i></span>
@@ -102,6 +141,8 @@
         </div>
       </header>
 
+      <div id="demo-banner" class="demo-banner hidden">🧪 <b>Versión de prueba en la web:</b> algunos juegos traen solo 2 o 3 niveles. <b>Matijuego completo, próximamente en Google Play</b> 📲</div>
+
       <div class="lb-body">
         <aside class="lb-stage">
           <div class="lb-stage-view">
@@ -115,8 +156,11 @@
             <button id="btn-open-shop" class="btn-primary lb-shop">👕 Vestuario y Tienda</button>
             <button id="btn-open-house" class="lb-shop lb-house">🏠 Mi Casa</button>
           </div>
-          <label class="field-label" for="input-name">Tu apodo en los puntajes</label>
-          <input id="input-name" class="text-input lb-name" type="text" maxlength="16" placeholder="Jugador">
+          <details class="lb-rename">
+            <summary>✏️ Cambiar mi nombre</summary>
+            <label class="field-label" for="input-name">Así te llamas en el juego y en la tabla de mejores puntajes</label>
+            <input id="input-name" class="text-input lb-name" type="text" maxlength="16" placeholder="Jugador">
+          </details>
         </aside>
 
         <main class="lb-games">
@@ -146,14 +190,19 @@
         <button id="btn-house-back" class="btn-secondary">← Volver</button>
         <h1 class="logo sh-title">Mi Casa</h1>
         <div class="stat-chip lb-coins" title="Matipuntos">🍫✨ <span id="house-coins">0</span> <small>Matipuntos</small></div>
+        <div class="stat-chip" id="house-energy" title="Energía">⚡ <b id="house-energy-v">100</b><small>/100</small></div>
       </header>
       <div class="sh-body">
         <aside class="sh-preview">
-          <div class="sh-stage"><canvas id="house-canvas"></canvas></div>
+          <div class="sh-stage"><canvas id="house-canvas"></canvas>
+            <button id="house-prev" class="hs-arrow left hidden" type="button" aria-label="Cuarto anterior">◀</button>
+            <button id="house-next" class="hs-arrow right hidden" type="button" aria-label="Cuarto siguiente">▶</button>
+          </div>
           <div id="house-tools" class="house-tools hidden"></div>
           <div class="shop-character-name">Tu casa</div>
         </aside>
         <section class="sh-panel">
+          <div id="house-rooms" class="house-rooms" aria-label="Cuartos de la casa"></div>
           <div id="house-modes" class="house-modes"></div>
           <div id="house-views" class="house-modes sh-views"></div>
           <div id="house-tabs" class="sh-tabs"></div>
@@ -342,7 +391,7 @@
         <button id="tetris-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
         <img id="tetris-hud-avatar" class="hud-avatar" alt="">
         <div>
-          <div class="hud-level">Tetris de Productos</div>
+          <div class="hud-level">Bloques de Productos</div>
           <div class="hud-mission">Encaja las golosinas y completa líneas</div>
         </div>
       </div>
@@ -363,7 +412,7 @@
 
       <div id="tetris-overlay-intro" class="overlay hidden">
         <div class="overlay-card">
-          <h2>Tetris de Productos 3D</h2>
+          <h2>Bloques de Productos 3D</h2>
           <p class="fps-tag">Ahora en 3D</p>
           <details class="how"><summary>📖 Cómo se juega</summary>
           <p>Encaja las golosinas cayendo y completa líneas. ← → para mover,
@@ -852,6 +901,7 @@
           <details class="how"><summary>📖 Cómo se juega</summary>
           <p>Maneja tu auto de chocolate por la ruta de Matichoc. Cambia de carril con ← → (o A / D), toca/desliza a los lados en el celular. Esquiva conos, barriles y charcos, adelanta autos rivales (¡los roces dan puntos y combo!), vuela con las rampas para juntar alfajores en el aire y toma el nitro 🔥, el imán 🧲 y el escudo 🛡️. ¡Tienes 3 vidas! Elige entre la carrera infinita o las 20 misiones.</p>
           </details>
+          <div id="autos-garage" class="garage" aria-label="Garaje"></div>
           <div id="autos-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="autos-btn-start">¡Vamos!</button>
         </div>
@@ -1077,6 +1127,52 @@
     </div>
   </section>
 
+  <!-- PANTALLA DE JUEGO 3D: MATI MERGE (juntar productos) -->
+  <section id="screen-merge" class="screen game-screen hidden">
+    <div id="merge-hud" class="hud">
+      <div class="hud-left">
+        <button id="merge-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="merge-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level">Mati Merge</div>
+          <div class="hud-mission" id="merge-hud-name">Bombón</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">🏆 <span id="merge-hud-best">1/13</span></div>
+        <div class="hud-chip">📦 <span id="merge-hud-free">0</span></div>
+        <div class="hud-chip">🍫✨ <span id="merge-hud-coins">0</span></div>
+        <button id="merge-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="merge-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="merge-canvas"></canvas>
+      <div id="merge-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="merge-popups" class="fps-popups" aria-hidden="true"></div>
+
+      <div class="mg-bar">
+        <div id="merge-orders" class="mg-orders" aria-label="Pedidos de clientes"></div>
+        <div id="merge-gens" class="mg-gens" aria-label="Generadores de productos"></div>
+      </div>
+
+      <div id="merge-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Mati Merge</h2>
+          <p class="fps-tag">Junta, transforma y entrega</p>
+          <p>Un tablero lleno de productos Matichoc: junta dos <b>iguales</b> y se transforman en el siguiente de su familia, del más chiquito al más grande. ¿Llegas hasta el <b>¡Mati Dubai!</b> 👑?</p>
+          <div id="merge-chain" class="mg-chain"></div>
+          <p id="merge-next-goal" class="mg-next"></p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
+          <p>Arrastra un producto sobre otro igual para juntarlos: ¡suben de nivel! A veces aparece un regalo. Hay 4 familias: alfajores, cuchuflís, bombones y tabletas.
+            Los <b>botones de abajo</b> sacan un producto nuevo de esa familia (gastan 1 ⚡). Los <b>clientes</b> piden productos: cuando lo tienes en el tablero se ilumina; tócalo para entregarlo y ganar Matipuntos y espacio. Si el tablero se llena, junta o entrega. Tu tablero se guarda solo.</p>
+          </details>
+          <button class="btn-primary" id="merge-btn-start">¡A juntar!</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- PANTALLA DE JUEGO 3D: AVENTURA CHOCO (plataformas tipo Mario) -->
   <section id="screen-aventura" class="screen game-screen hidden">
     <div id="aventura-hud" class="hud">
@@ -1108,6 +1204,8 @@
           <button class="g3d-tbtn" id="aventura-btn-right" aria-label="Derecha">▶</button>
         </div>
         <button class="g3d-tbtn av-jump" id="aventura-btn-jump" aria-label="Saltar">⤴</button>
+        <button class="g3d-tbtn av-fire hidden" id="aventura-btn-fire" aria-label="Lanzar fuego">🔥</button>
+        <button class="g3d-tbtn av-down hidden" id="aventura-btn-down" aria-label="Entrar a la tubería">⬇</button>
       </div>
 
       <div id="aventura-overlay-intro" class="overlay hidden">
@@ -1119,6 +1217,7 @@
           <p>Corre con ← → (o A D) y salta con ESPACIO o ↑ (¡mantén apretado para saltar más alto!). En el celular usa ◀ ▶ y ⤴.
             Salta <b>sobre</b> los malvaviscos para pisarlos (los de pinchos no se pisan), junta alfajores, golpea los bloques <b>?</b> desde abajo (a veces dan un corazón) y llega a la bandera.
             Cuidado con los pozos y los pinchos. El último nivel de cada mundo tiene un <b>JEFE</b>: písalo 3 veces para abrir el camino.</p>
+          <p><b>Poderes:</b> 🍄 el <b>hongo</b> te agranda y te protege de un golpe · 🌸 la <b>flor de fuego</b> te deja lanzar bolas de fuego con <b>F</b> (o el botón 🔥) · 🍀 la <b>vida extra</b> te salva cuando te quedas sin corazones (también ganas una cada 50 alfajores) · las tuberías <b>celestes</b> te llevan a una <b>sala secreta</b> con alfajores: párate encima y toca <b>⬇</b>.</p>
           </details>
           <div id="aventura-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="aventura-btn-start">¡A la aventura!</button>
@@ -1177,6 +1276,8 @@
       <div id="ciudad-dialog" class="town-dialog hidden"><b class="td-name"></b><span class="td-text"></span><small>toca para seguir</small></div>
       <button id="ciudad-btn-action" class="town-action hidden" type="button"></button>
       <button id="ciudad-btn-horn" class="cd-horn hidden" type="button" aria-label="Bocina">📯</button>
+      <button id="ciudad-btn-stop" class="cd-pedal stop hidden" type="button" aria-label="Frenar">🛑<small>FRENO</small></button>
+      <button id="ciudad-btn-gas" class="cd-pedal gas hidden" type="button" aria-label="Acelerar">⛽<small>ACELERAR</small></button>
       <div class="pk-touch" id="ciudad-touch">
         <div class="pk-joy" id="ciudad-joy"><div class="pk-knob" id="ciudad-knob"></div></div>
       </div>
@@ -1197,7 +1298,7 @@
           <p>Pasea por la ciudad a pie o en tu auto y ayuda a los vecinos: pintar una reja, juntar manzanas, regar flores, encontrar a un perrito, cruzar a la abuelita… ¡y una carrera!</p>
           <details class="how"><summary>📖 Cómo se juega</summary>
           <p>Habla con los vecinos que tienen un <b>❗</b> sobre la cabeza: te piden ayuda y te dan Matipuntos. La flecha de arriba y el mapa te muestran a dónde ir. El botón 📋 (o M) lista todas las misiones.</p>
-          <p class="fps-hint">A pie: joystick o WASD/flechas (arrastra para mover la cámara) · Botón de acción: E o Enter · En el auto: ←→ gira, ↑ acelera, ↓ frena, Espacio freno de mano, H bocina. Los autos de la ciudad paran si hay alguien adelante, ¡no hay golpes que duelan!</p>
+          <p class="fps-hint">A pie: joystick o WASD/flechas (arrastra para mover la cámara) · Botón de acción: E o Enter · En el auto (celular): el círculo es un volante que gira a los lados, ⛽ acelera y 🛑 frena (si sigues apretando, da reversa). Con teclado: ←→ gira, ↑ acelera, ↓ frena, Espacio freno de mano, H bocina. Los autos de la ciudad paran si hay alguien adelante, ¡no hay golpes que duelan!</p>
           </details>
           <button class="btn-primary" id="ciudad-btn-start">¡A recorrer la ciudad!</button>
         </div>
@@ -1267,6 +1368,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=64565862c1"></script>
+<script type="module" src="js/main.js?v=71b37ac21d"></script>
 </body>
 </html>

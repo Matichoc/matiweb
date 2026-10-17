@@ -32,7 +32,7 @@ const ALL_GAMES = [
     orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Parkour Choco",
     icon: "🧗",
-    tagline: "Estilo Roblox: ¡mundo infinito con 10 ambientes, poderes y récord de metros! O la aventura de 6 etapas.",
+    tagline: "¡Mundo infinito con 10 ambientes, poderes y récord de metros! O la aventura de 6 etapas.",
     status: "available",
     tag: "Nuevo 3D",
   },
@@ -57,7 +57,7 @@ const ALL_GAMES = [
   {
     id: "tetris",
     orient: "any", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
-    name: "Tetris de Productos",
+    name: "Bloques de Productos",
     icon: "🧱",
     tagline: "Encaja cubos de chocolate en tu vitrina 3D antes de que se acumulen.",
     status: "available",
@@ -114,6 +114,15 @@ const ALL_GAMES = [
     name: "Ciudad Choco",
     icon: "🏙️",
     tagline: "Mundo abierto: maneja tu auto, pasea y ayuda a los vecinos con misiones tranquilas.",
+    status: "available",
+    tag: "Nuevo",
+  },
+  {
+    id: "merge",
+    orient: "any",
+    name: "Mati Merge",
+    icon: "🍬",
+    tagline: "Tablero lleno: junta alfajores, cuchuflís, bombones y tabletas del más chico al más grande, ¡hasta el Mati Dubai! Entrega pedidos y completa tu colección.",
     status: "available",
     tag: "Nuevo",
   },
