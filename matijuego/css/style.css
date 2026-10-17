@@ -1916,3 +1916,10 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
 .sc-em small { font-size: 0.66rem; }
 .sc-em.on { border-color: var(--dorado, #ffc800); background: rgba(255, 200, 0, 0.25); }
 @media (max-height: 520px) { .sh-custom { padding: 5px 8px; gap: 3px; } .sc-sw { width: 24px; height: 24px; } .sc-em { min-width: 48px; padding: 2px 4px; } .sc-em small { display: none; } }
+
+/* Enlaces del juego hacia matichoc.cl (solo en la web): discretos. Texto chico y sin íconos ni colores de marca, para que el juego
+   no empuje hacia la tienda. Siguen siendo legibles (se mantiene el color de texto de cada pantalla) y accesibles. */
+.site-links { gap: 2px 14px; margin: 18px 0 6px; }
+.site-links a, .lb-links a { color: inherit; font-weight: 400; font-size: 0.7rem; opacity: 1; }
+.site-links a:hover, .site-links a:focus-visible { text-decoration: underline; }
+

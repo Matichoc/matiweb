@@ -28,9 +28,13 @@ Deploy directo a GitHub Pages (`.nojekyll`).
 - `js/brillos.js` + `.brillos`/`.choco-fondo` (css/chocolate-wow.css): chocolates y destellos que suben
   detrás de los recuadros. Para sumar un recuadro nuevo, agrega su selector a `SELECTOR` en el script.
   La barra café con gotas (`.choco-drip`) se quitó de los banners por pedido del dueño: no volver a ponerla.
-- Matijuego (el arcade) vive dentro de este sitio, en `matijuego/` (`https://matichoc.cl/matijuego/`), con su propia
-  política de seguridad en su `index.html` (el `importmap` va con hash: si se cambia, recalcular el sha256). Es copia del repo
-  `Matichoc/MAtigame_v0`, que queda como respaldo y solo redirige aquí. Se edita aquí, no en el otro repo.
+- Matijuego (el arcade) se sirve desde este sitio, en `matijuego/` (`https://matichoc.cl/matijuego/`), con su propia política de
+  seguridad en su `index.html` (el `importmap` va con hash: si se cambia, recalcular el sha256). **`matijuego/` es una copia GENERADA**:
+  el código vive en `Matichoc/MAtigame_v0` (`app/index.template.html` con bloques `<!--WEB-->`/`<!--APP-->`, `css/`, `js/`) y se
+  despliega aquí con `MATIJUEGO_DEMO=1 node scripts/deploy-matiweb.mjs <ruta-a-matiweb>` (la web va en modo demo). **No editar a mano
+  aquí**: el próximo despliegue lo pisa; se cambia en MAtigame_v0 y se despliega. La variante APP (Android, la que usan los niños) no
+  lleva enlaces a matichoc.cl; en la web esos enlaces son **discretos a propósito** (texto chico, sin íconos, sin color de marca) para
+  que el juego no empuje hacia la tienda (ver Ley 20.606 en la revisión legal). No volver a hacerlos llamativos sin hablar con el dueño.
 
 ## Cuentas Matilover (opcionales, apagadas hasta configurar Supabase)
 
@@ -61,6 +65,10 @@ Chocolatería Matichoc Inés Saavedra EIRL · RUT 77.877.372-4 · Guayacán 1409
 resolución sanitaria N° 2505129791. Aparecen en `pages/terminos.html`, `pages/privacidad.html` y el pie de página
 (`components/footer.html`, sin domicilio). Entregas: martes y jueves en el stand de la plaza de La Ligua, otro día a
 coordinar en el domicilio, o envío por pagar (a regiones, Blue Express). No cambiar estos textos sin confirmar con el dueño.
+
+## Pendientes que el dueño pidió NO recordar
+
+- Etiquetas nutricionales y sellos ("ALTO EN") de cada producto: están en preparación. **No pedirlas ni recordarlas** hasta que el dueño avise.
 
 ## Convenciones
 
