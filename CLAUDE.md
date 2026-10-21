@@ -35,6 +35,7 @@ Deploy directo a GitHub Pages (`.nojekyll`).
   aquí**: el próximo despliegue lo pisa; se cambia en MAtigame_v0 y se despliega. La variante APP (Android, la que usan los niños) no
   lleva enlaces a matichoc.cl; en la web esos enlaces son **discretos a propósito** (texto chico, sin íconos, sin color de marca) para
   que el juego no empuje hacia la tienda (ver Ley 20.606 en la revisión legal). No volver a hacerlos llamativos sin hablar con el dueño.
+  **Política de privacidad del Matijuego** (la que se pega en Google Play): `matijuego/privacy.html` (`https://matichoc.cl/matijuego/privacy.html`), también generada desde `app/privacy.html` de MAtigame_v0 junto con el resto de `matijuego/` (el deploy la repone). Es **distinta** de `pages/privacidad.html` (la política general de matichoc.cl, que no se toca desde el juego): si cambia lo que el juego guarda o envía, se actualiza en MAtigame_v0 y se despliega.
 
 ## Cuentas Matilover (opcionales, apagadas hasta configurar Supabase)
 
