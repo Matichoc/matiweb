@@ -6,14 +6,14 @@
 import {
   CHAPTERS, CHOICES, GOALS, adventureOf, currentStep, chapterDone, objective, choose, choiceOf, choiceOption, placeOpen,
   setGoal, goalStatus, returnSummary, seasonalChallenge, setTownDest, stepPlace, startAdventure, adventureComplete,
-} from "./adventure.js?v=6ffcfcb247";
-import { sportOf, cupsWon, cupRival, DIFF_NAMES } from "./sports-progress.js?v=6ffcfcb247";
-import { activeEvent } from "./events.js?v=6ffcfcb247";
-import { GAMES_CATALOG } from "./games-catalog.js?v=6ffcfcb247";
-import { isUnlocked } from "./unlocks.js?v=6ffcfcb247";
-import { earnCoins, saveProgress } from "./storage.js?v=6ffcfcb247";
-import { addXp, onProgressEvent } from "./progression.js?v=6ffcfcb247";
-import * as audio from "./audio.js?v=6ffcfcb247";
+} from "./adventure.js?v=a012447234";
+import { sportOf, cupsWon, cupRival, DIFF_NAMES } from "./sports-progress.js?v=a012447234";
+import { activeEvent } from "./events.js?v=a012447234";
+import { GAMES_CATALOG } from "./games-catalog.js?v=a012447234";
+import { isUnlocked } from "./unlocks.js?v=a012447234";
+import { earnCoins, saveProgress } from "./storage.js?v=a012447234";
+import { addXp, onProgressEvent } from "./progression.js?v=a012447234";
+import * as audio from "./audio.js?v=a012447234";
 
 const $ = (id) => document.getElementById(id);
 const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

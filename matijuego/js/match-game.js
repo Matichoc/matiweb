@@ -2,11 +2,11 @@
 // controles (joystick o teclado + botones grandes), pausa, y el cierre del partido (avance guardado, premio de la copa una
 // sola vez y la tarjeta final). Cada deporte pone su escena, su simulación y su cámara.
 
-import { THREE, Game3D } from "./three-kit.js?v=6ffcfcb247";
-import { saveProgress, earnCoins } from "./storage.js?v=6ffcfcb247";
-import { addMedal } from "./adventure.js?v=6ffcfcb247";
-import { sportOf, setDifficulty, recordMatch, cupRival, DIFFS, DIFF_NAMES, CUP_ROUNDS, ROUND_NAMES } from "./sports-progress.js?v=6ffcfcb247";
-import * as audio from "./audio.js?v=6ffcfcb247";
+import { THREE, Game3D } from "./three-kit.js?v=a012447234";
+import { saveProgress, earnCoins } from "./storage.js?v=a012447234";
+import { addMedal } from "./adventure.js?v=a012447234";
+import { sportOf, setDifficulty, recordMatch, cupRival, DIFFS, DIFF_NAMES, CUP_ROUNDS, ROUND_NAMES } from "./sports-progress.js?v=a012447234";
+import * as audio from "./audio.js?v=a012447234";
 
 const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -167,7 +167,7 @@ export class MatchGame extends Game3D {
     opt(r1, "🤝 Amistoso", this.mode === "amistoso", () => { this.mode = "amistoso"; });
     opt(r1, `🏆 Copa · ${rival.roundName}`, this.mode === "copa", () => { this.mode = "copa"; });
     const r2 = row("Dificultad");
-    for (const d of DIFFS) opt(r2, DIFF_NAMES[d], s.diff === d, () => setDifficulty(this.progress, this.sportId, d));
+    for (const d of DIFFS) opt(r2, d === "accesible" ? "Accesible · para aprender" : DIFF_NAMES[d], s.diff === d, () => setDifficulty(this.progress, this.sportId, d));
     const info = document.createElement("p");
     info.className = "mt-info";
     const cups = DIFFS.filter((d) => s.cups[d] > 0).map((d) => `🏆 ${DIFF_NAMES[d]} x${s.cups[d]}`).join(" · ");

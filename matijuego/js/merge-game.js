@@ -3,11 +3,11 @@
 // ¡Mati Dubai! Los 4 generadores sacan productos nuevos (1 ⚡ cada uno) y los clientes piden productos para entregar.
 // El tablero se guarda en tu perfil.
 
-import { THREE, Game3D, lerp, rand, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=6ffcfcb247";
-import * as audio from "./audio.js?v=6ffcfcb247";
-import { recordRun } from "./progression.js?v=6ffcfcb247";
-import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, emptyCells } from "./merge-data.js?v=6ffcfcb247";
-import { drawItem, loadProductImages } from "./merge-art.js?v=6ffcfcb247";
+import { THREE, Game3D, lerp, rand, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=a012447234";
+import * as audio from "./audio.js?v=a012447234";
+import { recordRun } from "./progression.js?v=a012447234";
+import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, emptyCells } from "./merge-data.js?v=a012447234";
+import { drawItem, loadProductImages } from "./merge-art.js?v=a012447234";
 
 const GAME_ID = "merge";
 const CELL = 1.1;

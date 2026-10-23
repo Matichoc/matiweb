@@ -13,10 +13,11 @@ export const COURT = { W: 15, D: 14, hoopZ: 1.3, rimH: 3.05, three: 6.0, topZ: 9
 export const MATCH_SECS = 180;
 export const TARGET = 11;
 
+// Calibrado con el "jugador humano" simulado (scripts/qa/jugador-humano.mjs), no con un robot perfecto (ver pichanga-sim.js).
 export const DIFFICULTY = {
-  accesible: { speed: 4.4, react: 0.6, steal: 0.12, shot: 0.72, reb: 0.35, human: 6.0, humanSteal: 0.5, humanShot: 1.14, target: 9 },
-  normal: { speed: 5.1, react: 0.42, steal: 0.2, shot: 0.92, reb: 0.5, human: 5.8, humanSteal: 0.4, humanShot: 1.0, target: 11 },
-  desafio: { speed: 5.6, react: 0.28, steal: 0.28, shot: 1.04, reb: 0.62, human: 5.8, humanSteal: 0.34, humanShot: 0.96, target: 11 },
+  accesible: { speed: 4.4, react: 0.68, steal: 0.1, shot: 0.68, reb: 0.34, human: 6.1, humanSteal: 0.6, humanShot: 1.2, target: 9, autoSteal: true, safePass: 0.5, reach: 1.7 },
+  normal: { speed: 4.85, react: 0.48, steal: 0.15, shot: 0.82, reb: 0.44, human: 5.9, humanSteal: 0.5, humanShot: 1.1, target: 11, autoSteal: false, safePass: 0.75, reach: 1.55 },
+  desafio: { speed: 5.2, react: 0.36, steal: 0.2, shot: 0.9, reb: 0.56, human: 5.8, humanSteal: 0.42, humanShot: 1.0, target: 11, autoSteal: false, safePass: 1, reach: 1.4 },
 };
 const ALLY = { speed: 5.0, react: 0.4, steal: 0.2, shot: 0.9, reb: 0.5 };
 
@@ -187,7 +188,8 @@ export function trySteal(m, p) {
   const c = b.owner;
   p.cool = 0.9;
   if (!c || c.team === p.team || (m.check && m.check.taker === c)) return false;
-  if (dist(p, c) > 1.35) { p.stun = 0.15; return false; }
+  const human = p === m.human;
+  if (dist(p, c) > (human ? m.skill.reach : 1.35)) { p.stun = human ? 0 : 0.15; return false; }
   const chance = p === m.human ? m.skill.humanSteal : skillOf(m, p).steal + 0.1;
   if (m.rng() < chance) {
     c.stun = 0.5;
@@ -196,7 +198,7 @@ export function trySteal(m, p) {
     giveBall(m, p);
     return true;
   }
-  p.stun = 0.4;
+  p.stun = human ? 0.2 : 0.4;
   ev(m, { type: "stealfail", team: p.team });
   return false;
 }
@@ -389,7 +391,8 @@ function updateBall(m, dt) {
       if (q.team === b.lastTeam || b.pass.tried[q.id]) continue;
       if (Math.hypot(q.x - b.x, q.z - b.z) < 0.55) {
         b.pass.tried[q.id] = true;
-        if (m.rng() < (q === m.human ? 0.6 : skillOf(m, q).steal * 1.6)) { m.stats.steals[q.team]++; ev(m, { type: "steal", team: q.team, by: q.id, pass: true }); giveBall(m, q); return; }
+        // los pases de tu equipo se cortan menos en accesible y normal (safePass)
+        if (m.rng() < (q === m.human ? 0.6 : skillOf(m, q).steal * 1.6 * (b.lastTeam === 0 && m.human ? m.skill.safePass : 1))) { m.stats.steals[q.team]++; ev(m, { type: "steal", team: q.team, by: q.id, pass: true }); giveBall(m, q); return; }
       }
     }
   } else {
@@ -510,6 +513,8 @@ function step(m, dt, input) {
     } else {
       h.charge = -1;
       if (input.pass && b.owner && b.owner.team !== h.team) trySteal(m, h);
+      // en accesible y normal, pegarse al rival que lleva la pelota ya intenta robarla
+      else if (m.skill.autoSteal && b.owner && b.owner.team !== h.team && h.cool <= 0 && dist(h, b.owner) < 0.95 && !(m.check && m.check.taker === b.owner)) trySteal(m, h);
       if (input.shootPress) jump(h); // sin la pelota, el botón de tiro es "saltar": tapar un tiro o ganar un rebote
     }
   }

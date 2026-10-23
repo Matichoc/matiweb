@@ -2,7 +2,7 @@
 // Vive en progress.sports (versionado). Lógica pura, sin DOM, para probarla en Node (scripts/qa/deportes-logica.mjs).
 // Los premios de copa se marcan como cobrados aquí (una vez por dificultad); quien llama los paga con Matipuntos.
 
-export const SPORTS_VERSION = 1;
+export const SPORTS_VERSION = 2; // v2: se empieza en "accesible" (ver normalizeSports)
 export const SPORTS = ["pichanga", "basquet2v2"];
 export const DIFFS = ["accesible", "normal", "desafio"];
 export const DIFF_NAMES = { accesible: "Accesible", normal: "Normal", desafio: "Desafío" };
@@ -26,7 +26,7 @@ export const ROUND_NAMES = ["Cuartos de final", "Semifinal", "Final"];
 /** Premio (Matipuntos) por ganar la copa la primera vez en cada dificultad. */
 export const CUP_REWARD = { accesible: 60, normal: 100, desafio: 150 };
 
-const blankSport = () => ({ played: 0, wins: 0, draws: 0, losses: 0, scored: 0, against: 0, cup: { round: 0 }, cups: { accesible: 0, normal: 0, desafio: 0 }, diff: "normal", claimed: [] });
+const blankSport = () => ({ played: 0, wins: 0, draws: 0, losses: 0, scored: 0, against: 0, cup: { round: 0 }, cups: { accesible: 0, normal: 0, desafio: 0 }, diff: "accesible", claimed: [] });
 
 const nat = (v) => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
 
@@ -38,7 +38,9 @@ export function normalizeSports(raw) {
     for (const k of ["played", "wins", "draws", "losses", "scored", "against"]) s[k] = nat(src[k]);
     s.cup.round = Math.min(CUP_ROUNDS - 1, nat(src.cup && src.cup.round));
     for (const d of DIFFS) s.cups[d] = nat(src.cups && src.cups[d]);
-    s.diff = DIFFS.includes(src.diff) ? src.diff : "normal";
+    s.diff = DIFFS.includes(src.diff) ? src.diff : "accesible";
+    // v1 → v2: antes se partía en "normal", que quedó difícil para aprender; quien no ganó copas ahí pasa a "accesible"
+    if (raw && raw.v === 1 && s.diff === "normal" && !DIFFS.some((d) => s.cups[d] > 0)) s.diff = "accesible";
     s.claimed = Array.isArray(src.claimed) ? [...new Set(src.claimed.filter((x) => DIFFS.includes(x)))] : [];
     out[id] = s;
   }

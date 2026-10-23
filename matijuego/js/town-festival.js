@@ -3,9 +3,9 @@
 // siempre, con lo que elegiste. También: el "❗" sobre el vecino que te espera, la flecha que guía al objetivo, el objetivo
 // escrito arriba y la decoración del festival terminado (con los colores del evento de temporada, si hay uno).
 
-import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=6ffcfcb247";
-import { activeEvent } from "./events.js?v=6ffcfcb247";
-import { CHAPTERS, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentStep, adventureComplete, objective } from "./adventure.js?v=6ffcfcb247";
+import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=a012447234";
+import { activeEvent } from "./events.js?v=a012447234";
+import { CHAPTERS, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentStep, adventureComplete, objective } from "./adventure.js?v=a012447234";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;

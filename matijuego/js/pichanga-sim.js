@@ -10,13 +10,16 @@ export const PITCH = { L: 30, W: 19, goalW: 4.4, goalH: 2.1, boxX: 5, boxZ: 5.5 
 export const MATCH_SECS = 120;
 
 /** Habilidad de los rivales por dificultad. aim: puntería; keeper: atajadas; react: cada cuánto deciden (s). */
+// Calibrado con un "jugador humano" simulado (scripts/qa/jugador-humano.mjs: reacciona en ~0,45 s y apunta con error),
+// no con un robot perfecto: con el robot quedó demasiado difícil para personas reales (prueba en el celular, 23-oct).
+// carry: qué tan rápido conduce el rival con la pelota; press: cuántos intentos de quitar por segundo.
 export const DIFFICULTY = {
-  accesible: { speed: 4.3, react: 0.62, tackle: 0.2, aim: 0.45, keeper: 0.34, shootRange: 7, human: 6.3, humanTackle: 0.78, humanAim: 0.92 },
-  normal: { speed: 5.1, react: 0.4, tackle: 0.33, aim: 0.66, keeper: 0.56, shootRange: 8.5, human: 6.0, humanTackle: 0.64, humanAim: 0.85 },
-  desafio: { speed: 5.65, react: 0.26, tackle: 0.45, aim: 0.8, keeper: 0.68, shootRange: 10, human: 6.0, humanTackle: 0.55, humanAim: 0.8 },
+  accesible: { speed: 4.5, react: 0.6, tackle: 0.2, aim: 0.62, keeper: 0.48, shootRange: 8.5, human: 6.3, humanTackle: 0.72, humanAim: 0.92, carry: 0.86, press: 1.6, autoSteal: true, reach: 1.75 },
+  normal: { speed: 4.9, react: 0.46, tackle: 0.28, aim: 0.6, keeper: 0.5, shootRange: 8.5, human: 6.1, humanTackle: 0.58, humanAim: 0.87, carry: 0.87, press: 2.2, autoSteal: false, reach: 1.6 },
+  desafio: { speed: 5.25, react: 0.34, tackle: 0.34, aim: 0.68, keeper: 0.56, shootRange: 9, human: 6.0, humanTackle: 0.54, humanAim: 0.84, carry: 0.9, press: 2.4, autoSteal: false, reach: 1.5 },
 };
 /** Tus compañeros (IA) juegan siempre parejo, para ayudar sin ganar solos. */
-const ALLY = { speed: 5.1, react: 0.38, tackle: 0.33, aim: 0.66, keeper: 0.6, shootRange: 8.5 };
+const ALLY = { speed: 5.1, react: 0.38, tackle: 0.33, aim: 0.66, keeper: 0.68, shootRange: 8.5, carry: 0.9, press: 2.6 };
 
 const HALF = PITCH.L / 2;
 const SIDE = PITCH.W / 2;
@@ -246,7 +249,9 @@ export function tryTackle(m, p) {
   const c = b.owner;
   p.cool = 0.85;
   if (!c || c.team === p.team || (m.restart && m.restart.taker === c)) return false;
-  if (dist(p, c) > 1.4) { p.stun = 0.2; ev(m, { type: "whiff", team: p.team }); return false; }
+  const human = p === m.human;
+  // a quien juega se le da más alcance para quitar (con el dedo es difícil quedar pegado al rival)
+  if (dist(p, c) > (human ? m.skill.reach : 1.4)) { p.stun = human ? 0 : 0.2; ev(m, { type: "whiff", team: p.team }); return false; }
   const chance = p === m.human ? m.skill.humanTackle : skillOf(m, p).tackle + (c === m.human ? 0 : 0.08);
   if (m.rng() < chance) {
     c.stun = 0.6;
@@ -261,7 +266,7 @@ export function tryTackle(m, p) {
     ev(m, { type: "tackle", team: p.team, by: p.id });
     return true;
   }
-  p.stun = 0.45;
+  p.stun = human ? 0.2 : 0.45;
   ev(m, { type: "tacklefail", team: p.team });
   return false;
 }
@@ -385,7 +390,7 @@ function aiCarrier(m, p, dt) {
     p.tx = tx;
     p.tz = clamp(tz, -SIDE + 1, SIDE - 1);
   }
-  steer(p, p.tx, p.tz, sk.speed * 0.9, dt);
+  steer(p, p.tx, p.tz, sk.speed * (sk.carry || 0.9), dt);
 }
 
 function aiSupport(m, p, dt) {
@@ -425,7 +430,7 @@ function aiDefend(m, p, dt) {
       const gz = -c.z;
       const gl = Math.hypot(gx, gz) || 1;
       steer(p, c.x + (gx / gl) * 0.7, c.z + (gz / gl) * 0.7, sk.speed, dt);
-      if (dist(p, c) < 1.25 && p.cool <= 0 && p.stun <= 0 && !(m.restart && m.restart.taker === c) && m.rng() < dt * 2.6) tryTackle(m, p);
+      if (dist(p, c) < 1.25 && p.cool <= 0 && p.stun <= 0 && !(m.restart && m.restart.taker === c) && m.rng() < dt * (sk.press || 2.6)) tryTackle(m, p);
     } else steer(p, b.x + b.vx * 0.25, b.z + b.vz * 0.25, sk.speed, dt); // pelota suelta: va a buscarla
     return;
   }
@@ -454,7 +459,8 @@ function aiField(m, p, dt) {
   if (b.owner === p) {
     if (m.restart && m.restart.taker === p) return; // el saque lo resuelve updateRestart
     aiCarrier(m, p, dt);
-  } else if (b.owner && b.owner.team === p.team) aiSupport(m, p, dt);
+  } else if (!b.owner && b.kind === "pass" && b.target === p) steer(p, b.x + b.vx * 0.15, b.z + b.vz * 0.15, skillOf(m, p).speed, dt); // va a buscar el pase
+  else if (b.owner && b.owner.team === p.team) aiSupport(m, p, dt);
   else aiDefend(m, p, dt);
 }
 
@@ -680,6 +686,8 @@ function step(m, dt, input) {
           else if (input.pass) doPass(m, h, mx, mz);
         } else if ((input.pass || input.shoot) && b.owner && b.owner.team !== h.team) tryTackle(m, h);
         else if (input.pass && b.owner && b.owner.team === h.team && b.owner !== h) doPass(m, b.owner, 0, 0, h); // "¡pásala!": tu compañero te la da
+        // en accesible y normal, chocar con el rival que lleva la pelota ya intenta quitársela (sin tener que apretar justo)
+        if (m.skill.autoSteal && b.owner && b.owner.team !== h.team && h.cool <= 0 && dist(h, b.owner) < 0.95) tryTackle(m, h);
       }
     }
   }
