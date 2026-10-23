@@ -3,11 +3,11 @@
 // cae; rebotar centrado suma combo (¡y hace volteretas!), los pompones dan puntos extra.
 // Si cae fuera de la rebotadora, se acaba la partida. Las reglas son las de siempre.
 
-import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=6ffcfcb247";
-import { createMatichico } from "./matichico3d.js?v=6ffcfcb247";
-import { saveProgress, earnCoins } from "./storage.js?v=6ffcfcb247";
-import * as audio from "./audio.js?v=6ffcfcb247";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=6ffcfcb247";
+import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=a012447234";
+import { createMatichico } from "./matichico3d.js?v=a012447234";
+import { saveProgress, earnCoins } from "./storage.js?v=a012447234";
+import * as audio from "./audio.js?v=a012447234";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=a012447234";
 
 const GAME_ID = "porristas";
 const PX_W = 800;

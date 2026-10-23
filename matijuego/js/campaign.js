@@ -2,8 +2,8 @@
 // guarda sus estrellas (1 a 3). Los juegos "infinitos" no usan niveles: tienen su modo misiones
 // (ver js/missions.js). Todo vive en `progress.campaign[idJuego] = { unlocked, stars: { nivel: n } }`.
 
-import { saveProgress, earnCoins } from "./storage.js?v=6ffcfcb247";
-import { demoAllows, showDemoWall } from "./demo.js?v=6ffcfcb247";
+import { saveProgress, earnCoins } from "./storage.js?v=a012447234";
+import { demoAllows, showDemoWall } from "./demo.js?v=a012447234";
 
 export const LEVELS_PER_GAME = 20;
 

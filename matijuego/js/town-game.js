@@ -6,19 +6,19 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=6ffcfcb247";
-import { createMatichico } from "./matichico3d.js?v=6ffcfcb247";
-import { CHARACTERS, getOutfit } from "./characters.js?v=6ffcfcb247";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=6ffcfcb247";
-import { GAMES_CATALOG } from "./games-catalog.js?v=6ffcfcb247";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6ffcfcb247";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=6ffcfcb247";
-import { levelInfo } from "./progression.js?v=6ffcfcb247";
-import { bindStick } from "./stick.js?v=6ffcfcb247";
-import * as audio from "./audio.js?v=6ffcfcb247";
-import { TownFun } from "./town-fun.js?v=6ffcfcb247";
-import { TownFestival } from "./town-festival.js?v=6ffcfcb247";
-import { talkTo, celebrateAtFountain, stepPlace, gossip } from "./adventure.js?v=6ffcfcb247";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=a012447234";
+import { createMatichico } from "./matichico3d.js?v=a012447234";
+import { CHARACTERS, getOutfit } from "./characters.js?v=a012447234";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=a012447234";
+import { GAMES_CATALOG } from "./games-catalog.js?v=a012447234";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=a012447234";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=a012447234";
+import { levelInfo } from "./progression.js?v=a012447234";
+import { bindStick } from "./stick.js?v=a012447234";
+import * as audio from "./audio.js?v=a012447234";
+import { TownFun } from "./town-fun.js?v=a012447234";
+import { TownFestival } from "./town-festival.js?v=a012447234";
+import { talkTo, celebrateAtFountain, stepPlace, gossip } from "./adventure.js?v=a012447234";
 
 const GAME_ID = "town";
 const SPEED = 6.4;

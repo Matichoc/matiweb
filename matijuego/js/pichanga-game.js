@@ -5,13 +5,13 @@
 // Controles: mover con el joystick o WASD/flechas · Pase (Espacio/J): pasa; sin la pelota quita o la pide · Tiro (K/L) ·
 // Cambiar (Q/E/Tab): pasa al otro jugador de campo · Pausa (P/Esc).
 
-import { THREE, clamp, canvasTexture, makeBunting, makeLogo } from "./three-kit.js?v=6ffcfcb247";
-import { createMatichico } from "./matichico3d.js?v=6ffcfcb247";
-import { CHARACTERS, getOutfit } from "./characters.js?v=6ffcfcb247";
-import { choiceOf, choiceOption } from "./adventure.js?v=6ffcfcb247";
-import { MatchGame } from "./match-game.js?v=6ffcfcb247";
-import { createMatch, stepMatch, PITCH } from "./pichanga-sim.js?v=6ffcfcb247";
-import * as audio from "./audio.js?v=6ffcfcb247";
+import { THREE, clamp, canvasTexture, makeBunting, makeLogo } from "./three-kit.js?v=a012447234";
+import { createMatichico } from "./matichico3d.js?v=a012447234";
+import { CHARACTERS, getOutfit } from "./characters.js?v=a012447234";
+import { choiceOf, choiceOption } from "./adventure.js?v=a012447234";
+import { MatchGame } from "./match-game.js?v=a012447234";
+import { createMatch, stepMatch, PITCH } from "./pichanga-sim.js?v=a012447234";
+import * as audio from "./audio.js?v=a012447234";
 
 const GAME_ID = "pichanga";
 const L = PITCH.L;
@@ -231,7 +231,7 @@ export class PichangaGame extends MatchGame {
   onBegin() {
     this.banner(this.mode === "copa" ? `🏆 ${this.rival().roundName}: ¡a jugar!` : "⚽ ¡A jugar!");
     audio.playCountdown(true);
-    this._hint("Tu jugador tiene el anillo dorado. ¡Pasa la pelota y busca el arco!", 3.5);
+    this._hint(this.diff === "accesible" ? "Tu jugador tiene el anillo dorado. Para quitar, ¡choca al rival que tiene la pelota!" : "Tu jugador tiene el anillo dorado. ¡Pasa la pelota y busca el arco!", 3.5);
   }
 
   update(dt) {
