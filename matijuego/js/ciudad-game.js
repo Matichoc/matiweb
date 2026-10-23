@@ -9,15 +9,15 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=980cf22f17";
-import { createMatichico } from "./matichico3d.js?v=980cf22f17";
-import { CHARACTERS, getOutfit } from "./characters.js?v=980cf22f17";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=980cf22f17";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=980cf22f17";
-import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=980cf22f17";
-import { recordRun } from "./progression.js?v=980cf22f17";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=980cf22f17";
-import * as audio from "./audio.js?v=980cf22f17";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=6ffcfcb247";
+import { createMatichico } from "./matichico3d.js?v=6ffcfcb247";
+import { CHARACTERS, getOutfit } from "./characters.js?v=6ffcfcb247";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=6ffcfcb247";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6ffcfcb247";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=6ffcfcb247";
+import { recordRun } from "./progression.js?v=6ffcfcb247";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=6ffcfcb247";
+import * as audio from "./audio.js?v=6ffcfcb247";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60
@@ -27,7 +27,8 @@ const HERO_R = 0.45;
 const CAR_R = 1.15;
 const Y0 = 0.04; // altura de las veredas (todo casi plano)
 const GOLD_CAP = 30; // alfajores dorados que dan Matipuntos por día
-const REPEAT_CAP = 4; // propinas de misiones repetidas por día
+const REPEAT_CAP = 4; // pedidos repetidos que se pagan por día
+const REPEAT_PAY = 0.5; // un pedido repetido paga la mitad de la recompensa
 
 const rnd = (() => { let s = 77; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
 
@@ -258,7 +259,18 @@ export class CiudadGame extends Game3D {
     if (!p.ciudad) p.ciudad = { done: {}, gDay: "", gCount: 0, rDay: "", rCount: 0, medal: 0 };
     const c = p.ciudad;
     c.done = c.done || {};
+    c.last = c.last || {}; // día en que se completó por última vez cada misión
     return c;
+  }
+
+  /** ¿El vecino tiene un pedido para hoy? Una misión nueva siempre; una ya hecha, otra vez cada día (hasta el tope diario). */
+  _available(m) {
+    const sv = this.save;
+    if (this.active && this.active.id === m.id) return false;
+    if (!sv.done[m.id]) return true;
+    const today = todayKey();
+    if (sv.last[m.id] === today) return false;
+    return sv.rDay !== today || sv.rCount < REPEAT_CAP;
   }
 
   // ---------- el mundo ----------
@@ -1061,11 +1073,10 @@ export class CiudadGame extends Game3D {
   }
 
   _updateBangs() {
-    const done = this.save.done;
     for (const m of MISSIONS) {
       const n = this.npcs[m.giver];
       if (!n) continue;
-      n.bang.visible = !(this.active && this.active.id === m.id) && !done[m.id];
+      n.bang.visible = this._available(m);
     }
   }
 
@@ -1623,12 +1634,13 @@ export class CiudadGame extends Game3D {
       text = ` ${["Sin medalla", "🥉 Bronce", "🥈 Plata", "🥇 Oro"][medal]} · ${extra.time.toFixed(1)} s`;
       if (!before && medal === 0) reward = 20;
     } else if (before) {
-      // repetir una misión da solo una propinita (con tope diario)
+      // repetir una misión paga la mitad (con tope de pedidos pagados por día)
       const today = todayKey();
       if (sv.rDay !== today) { sv.rDay = today; sv.rCount = 0; }
-      if (sv.rCount < REPEAT_CAP) { sv.rCount++; reward = Math.round(m.reward * 0.25); } else reward = 0;
+      if (sv.rCount < REPEAT_CAP) { sv.rCount++; reward = Math.round(m.reward * REPEAT_PAY); } else reward = 0;
     }
     sv.done[m.id] = before + 1;
+    sv.last[m.id] = todayKey();
     if (reward > 0) earnCoins(this.progress, reward);
     this.score += reward * 10;
     const run = recordRun(this.progress, GAME_ID, Math.max(40, reward * 10), { missions: before ? 0 : 1, mission: m.id, medal: extra.medal || 0 });
@@ -1640,7 +1652,7 @@ export class CiudadGame extends Game3D {
     this._updateBangs();
     this.banner(`¡Misión cumplida! ${m.icon}`);
     this.popups.add(new THREE.Vector3(this.pos.x, 2.8, this.pos.z), reward ? `+${reward}` : "¡Gracias!", "combo");
-    this._toast(`${m.icon} ${m.title}: ${reward ? `+${reward} Matipuntos 🍫✨` : "¡Ya la hiciste muchas veces hoy!"}${text} · +${run.xp} XP ⭐`);
+    this._toast(`${m.icon} ${m.title}: ${reward ? `+${reward} Matipuntos 🍫✨` : "¡Gracias! Hoy ya hiciste muchos pedidos; mañana habrá más 🌙"}${text} · +${run.xp} XP ⭐`);
     this.particles.burst(new THREE.Vector3(this.pos.x, 1.5, this.pos.z), [0xffc800, 0xd4216c, 0xfff6e6, 0x35f0ff], 40, 6, 1.1, 4);
     audio.playMissionComplete();
     this.haptic(60);
@@ -1940,7 +1952,7 @@ export class CiudadGame extends Game3D {
     const rows = MISSIONS.map((m, i) => {
       const act = this.active && this.active.id === m.id;
       const medal = m.id === "carrera" && this.save.medal ? ` ${["", "🥉", "🥈", "🥇"][this.save.medal]}` : "";
-      return `<div class="cl-row${act ? " on" : ""}"><span class="cl-ic">${m.icon}</span><span class="cl-tt"><b>${i + 1}. ${m.title}</b><small>${m.level} · +${m.reward} 🍫✨ · con ${GIVERS[m.giver].name}</small></span><span class="cl-st">${done[m.id] ? "✅" + medal : ""}</span><button type="button" class="btn-secondary cl-go" data-go="${m.giver}">${act ? "Ver" : "Ir"}</button></div>`;
+      return `<div class="cl-row${act ? " on" : ""}"><span class="cl-ic">${m.icon}</span><span class="cl-tt"><b>${i + 1}. ${m.title}</b><small>${m.level} · +${m.reward} 🍫✨ · con ${GIVERS[m.giver].name}</small></span><span class="cl-st">${this._available(m) ? (done[m.id] ? "🔔" : "") : "✅" + medal}</span><button type="button" class="btn-secondary cl-go" data-go="${m.giver}">${act ? "Ver" : "Ir"}</button></div>`;
     }).join("");
     el.querySelector(".cl-rows").innerHTML = rows;
     el.querySelectorAll(".cl-go").forEach((b) => b.addEventListener("click", () => { this.wayTo = b.dataset.go; this._closeList(); this.banner("📍 Sigue la flecha hasta el vecino con el ❗"); }));
@@ -2013,7 +2025,7 @@ export class CiudadGame extends Game3D {
     // vecinos con misión
     g.fillStyle = "#ff9a1f";
     for (const m of MISSIONS) {
-      if (this.save.done[m.id] || (this.active && this.active.id === m.id)) continue;
+      if (!this._available(m)) continue;
       const n = GIVERS[m.giver];
       g.beginPath(); g.arc(X(n.x), X(n.z), 3, 0, 6.3); g.fill();
     }

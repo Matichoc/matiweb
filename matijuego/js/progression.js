@@ -6,16 +6,16 @@
 // Todo se guarda por perfil dentro de `progress` (xp, packs, album, daily) y se paga solo
 // con Matipuntos, sin compras reales.
 
-import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=980cf22f17";
-import { addEnergy } from "./energy.js?v=980cf22f17";
-import { getItem } from "./wardrobe-data.js?v=980cf22f17";
-import { activeEvent, addEventTokens } from "./events.js?v=980cf22f17";
-import { isUnlocked } from "./unlocks.js?v=980cf22f17";
+import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=6ffcfcb247";
+import { addEnergy } from "./energy.js?v=6ffcfcb247";
+import { getItem } from "./wardrobe-data.js?v=6ffcfcb247";
+import { activeEvent, addEventTokens } from "./events.js?v=6ffcfcb247";
+import { isUnlocked } from "./unlocks.js?v=6ffcfcb247";
 
 // ---------- partidas ----------
 
 /** Puntaje que equivale a 1 Matipunto al terminar una partida (cada juego puntúa distinto). */
-export const RUN_DIVISOR = { tetris: 40, basquet_tiros: 12, porristas: 8, salto: 25, autos: 30, memoria: 10, parkour: 40, futbol: 10, dulces: 15, merge: 300, aventura: 20, ciudad: 12 };
+export const RUN_DIVISOR = { tetris: 40, basquet_tiros: 12, porristas: 8, salto: 25, autos: 30, memoria: 10, parkour: 40, futbol: 10, dulces: 15, merge: 300, aventura: 20, ciudad: 12, pichanga: 10, basquet2v2: 6 };
 const RUN_BONUS_CAP = 60;
 
 export function runBonus(gameId, score) {
@@ -28,11 +28,13 @@ export const GAME_NAMES = {
   tetris: "Bloques de Productos", memoria: "Memoria Matichoc", basquet_tiros: "Lanzamientos de Básquet",
   porristas: "Saltos de Porristas", creador: "Crea tu Chocolate", fps3d: "Choco Blaster",
   futbol: "Fútbol Choco", dulces: "Choco Match", merge: "Mati Merge", aventura: "Aventura Choco", ciudad: "Ciudad Choco",
+  pichanga: "Pichanga Choco", basquet2v2: "Básquet 2 contra 2",
 };
 
 // ---------- niveles ----------
 
-import { MAX_LEVEL, xpForLevel, levelInfo } from "./xp.js?v=980cf22f17";
+import { MAX_LEVEL, xpForLevel, levelInfo } from "./xp.js?v=6ffcfcb247";
+import { onGamePlayed, seasonalOnPlay } from "./adventure.js?v=6ffcfcb247";
 export { MAX_LEVEL, xpForLevel, levelInfo };
 
 /** Regalos de nivel: objetos del guardarropa que se desbloquean gratis. */
@@ -197,7 +199,7 @@ export function hasPending(progress) {
 
 // ---------- álbum ----------
 // Las figuritas, los sobres y las repetidas viven en js/album.js (aquí se re-exportan para el resto de la app).
-export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=980cf22f17";
+export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=6ffcfcb247";
 
 // ---------- el gancho que se llama al terminar una partida ----------
 
@@ -245,6 +247,12 @@ export function recordRun(progress, gameId, score, info = {}) {
   for (const m of done) m.notified = true;
   if (done.length) emit({ type: "mission", missions: done });
   if (pack) emit({ type: "pack" });
+  // aventura del festival: si el paso actual es "jugar" y este juego es una de sus alternativas, se cumple (gane o pierda)
+  const advStep = onGamePlayed(progress, gameId);
+  if (advStep) emit({ type: "adventure", step: advStep });
+  // reto opcional de la temporada (una vez por evento y por año): da fichas del evento de siempre, no una moneda nueva
+  const seasonTokens = seasonalOnPlay(progress, ev, gameId);
+  if (seasonTokens) { addEventTokens(progress, ev.id, seasonTokens); emit({ type: "season", event: ev, tokens: seasonTokens }); }
   saveProgress(progress);
   return { xp, first, ups, pack, missionsDone: done.length, tokens, eventToken: ev ? ev.token : "" };
 }

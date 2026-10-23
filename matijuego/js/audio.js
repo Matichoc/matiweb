@@ -1,14 +1,36 @@
 // Efectos de sonido generados con Web Audio API (sin archivos externos).
 
 let ctx = null;
+let master = null;
 let muted = false;
 
 function getCtx() {
   if (!ctx) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     ctx = new AudioCtx();
+    // Salida común: un filtro que recorta los agudos (las ondas cuadradas y de sierra "chillan" en el parlante del celular)
+    // y un limitador suave para que ningún efecto suene más fuerte que el resto.
+    const soft = ctx.createBiquadFilter();
+    soft.type = "lowpass";
+    soft.frequency.value = 2600;
+    soft.Q.value = 0.4;
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -14;
+    limiter.knee.value = 12;
+    limiter.ratio.value = 6;
+    master = ctx.createGain();
+    master.gain.value = 0.8;
+    master.connect(soft);
+    soft.connect(limiter);
+    limiter.connect(ctx.destination);
   }
   return ctx;
+}
+
+/** Dónde se conecta todo lo que suena (la salida común de arriba). */
+function out() {
+  getCtx();
+  return master;
 }
 
 function tone(freq, duration, type = "sine", startGain = 0.18, delay = 0) {
@@ -20,7 +42,7 @@ function tone(freq, duration, type = "sine", startGain = 0.18, delay = 0) {
   osc.frequency.value = freq;
   gain.gain.value = startGain;
   osc.connect(gain);
-  gain.connect(audio.destination);
+  gain.connect(out());
   const t0 = audio.currentTime + delay;
   osc.start(t0);
   gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
@@ -130,7 +152,7 @@ function noise(duration, gainV = 0.12, lowpass = 1800, delay = 0) {
   gain.gain.value = gainV;
   src.connect(filter);
   filter.connect(gain);
-  gain.connect(audio.destination);
+  gain.connect(out());
   src.start(audio.currentTime + delay);
 }
 
@@ -270,7 +292,7 @@ function schedule() {
     if (li != null) playNote(MIDI(noteAt(th, li)), nextT, stepDur * 1.5, th.wave, 0.22, musicGain);
     // percusión simple
     if (st % 4 === 0) playNote(60, nextT, 0.08, "sine", 0.6, musicGain);
-    if (st % 2 === 1) playNote(MIDI(96), nextT, 0.03, "square", 0.05, musicGain);
+    if (st % 2 === 1) playNote(MIDI(84), nextT, 0.03, "triangle", 0.05, musicGain);
     nextT += stepDur;
     step++;
   }
@@ -291,7 +313,7 @@ export function startMusic(name) {
   if (audio.state === "suspended") audio.resume();
   musicGain = audio.createGain();
   musicGain.gain.value = 0.06;
-  musicGain.connect(audio.destination);
+  musicGain.connect(out());
   tracks = { lead: composeTrack(THEMES[name]) };
   step = 0;
   nextT = audio.currentTime + 0.1;

@@ -2,7 +2,7 @@
 // Del más chiquito al más grande: dentro de cada familia el dibujo va creciendo y, en los últimos, se vuelve dorado y brillante.
 // Los productos con foto real usan assets/products/<img>.jpg.
 
-import { CHAINS } from "./merge-data.js?v=980cf22f17";
+import { CHAINS } from "./merge-data.js?v=6ffcfcb247";
 
 const TAU = Math.PI * 2;
 
@@ -22,6 +22,11 @@ function star(g, x, y, r, fill = "#fff") {
   g.beginPath();
   for (let i = 0; i < 8; i++) { const a = (i / 8) * TAU - Math.PI / 2; const rad = i % 2 ? r * 0.28 : r; g.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad); }
   g.closePath(); g.fillStyle = fill; g.fill();
+}
+/** Mezcla un color (0xRRGGBB) con blanco: `k` = cuánto blanco (0 = el color, 1 = blanco). */
+function tint(color, k) {
+  const c = [(color >> 16) & 255, (color >> 8) & 255, color & 255].map((v) => Math.round(v + (255 - v) * k));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
 }
 function goldGrad(g, x0, y0, x1, y1) {
   const gr = g.createLinearGradient(x0, y0, x1, y1);
@@ -143,6 +148,26 @@ const ART = {
   },
 };
 
+const BOXES = {};
+/** Tamaño real (en píxeles del dibujo sin escalar) de un dibujo: se pinta una vez aparte y se mira qué casilleros quedaron pintados. */
+function measure(name) {
+  if (BOXES[name] !== undefined) return BOXES[name];
+  let box = null;
+  try {
+    const c = document.createElement("canvas");
+    c.width = c.height = 400;
+    const g = c.getContext("2d", { willReadFrequently: true });
+    g.translate(200, 200);
+    ART[name](g);
+    const d = g.getImageData(0, 0, 400, 400).data;
+    let x0 = 400, y0 = 400, x1 = -1, y1 = -1;
+    for (let y = 0; y < 400; y++) for (let x = 0; x < 400; x++) if (d[(y * 400 + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 > x0 && y1 > y0) box = { w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2 - 200, cy: (y0 + y1) / 2 - 200 };
+  } catch (e) { /* sin medir: se usa el tamaño de siempre */ }
+  BOXES[name] = box;
+  return box;
+}
+
 /** Pinta el producto `info` (de merge-data.js) en un canvas de 256x256. `images` = { nombre: Image } con las fotos ya cargadas. */
 export function drawItem(canvas, info, images = {}) {
   const g = canvas.getContext("2d");
@@ -157,7 +182,8 @@ export function drawItem(canvas, info, images = {}) {
   const grd = info.gold ? goldGrad(g, -128, -128, 128, 128) : (() => { const gr = g.createRadialGradient(-40, -50, 20, 0, 0, 128); gr.addColorStop(0, "#fff"); gr.addColorStop(1, col); return gr; })();
   circle(g, 0, 0, 120, grd);
   g.shadowBlur = 0;
-  circle(g, 0, 0, 100, info.top ? "#fff7d0" : "#fff8fc");
+  // fondo del casillero con un tono claro de la familia (así se distinguen de lejos: naranja, amarillo, malva, rosa)
+  circle(g, 0, 0, 100, info.top ? "#fff7d0" : tint(chain.color, 0.8));
   // dibujo (crece con el nivel)
   g.save();
   g.beginPath(); g.arc(0, 0, 96, 0, TAU); g.clip();
@@ -166,17 +192,23 @@ export function drawItem(canvas, info, images = {}) {
     if (img && img.width) g.drawImage(img, -96, -96, 192, 192);
     else circle(g, 0, 0, 96, col);
   } else {
-    const s = 1.1 * (0.66 + 0.34 * ((info.t - 1) / Math.max(1, info.max - 1)));
+    // el dibujo se mide y se ajusta para llenar el círculo; crece con el nivel (de ~65 % a ~95 % del círculo)
+    const frac = (info.t - 1) / Math.max(1, info.max - 1);
+    const want = 125 + 65 * frac;
+    const box = measure(info.art);
+    const s = box ? Math.min(want / Math.max(box.w, box.h), 2.2) : 1;
     g.scale(s, s);
+    if (box) g.translate(-box.cx, -box.cy);
     ART[info.art](g);
   }
   g.restore();
   // número del nivel
   g.restore();
   g.fillStyle = "#4a2440";
-  g.beginPath(); g.arc(206, 206, 32, 0, TAU); g.fill();
-  g.fillStyle = "#fff"; g.font = "bold 38px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
-  g.fillText(String(info.t), 206, 208);
+  g.beginPath(); g.arc(204, 204, 40, 0, TAU); g.fill();
+  g.strokeStyle = "#fff"; g.lineWidth = 5; g.stroke();
+  g.fillStyle = "#fff"; g.font = "bold 50px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(String(info.t), 204, 207);
   return canvas;
 }
 

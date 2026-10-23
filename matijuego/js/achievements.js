@@ -11,9 +11,11 @@
 // `progress.bestScores`…) y se reclama una sola vez. Para agregar uno basta sumar una línea abajo.
 // La lista completa en texto está en docs/LOGROS.md (se genera con `node scripts/logros-doc.mjs`).
 
-import { getBestScore } from "./storage.js?v=980cf22f17";
-import { levelInfo } from "./progression.js?v=980cf22f17";
-import { PAGES } from "./album.js?v=980cf22f17";
+import { getBestScore } from "./storage.js?v=6ffcfcb247";
+import { levelInfo } from "./progression.js?v=6ffcfcb247";
+import { PAGES } from "./album.js?v=6ffcfcb247";
+import { chaptersDone } from "./adventure.js?v=6ffcfcb247";
+import { cupsWon as sportCups } from "./sports-progress.js?v=6ffcfcb247";
 
 const IN_APP = typeof document !== "undefined" && document.documentElement.dataset.app === "1";
 
@@ -295,6 +297,10 @@ chain("pueblo", "pueblo_cosas", "Buscador del pueblo", "✨", stat("townItems"),
 chain("pueblo", "pueblo_vecinos", "Amigo de los vecinos", "👋", stat("townTalks"), "Saluda a los vecinos {n} veces (una por vecino y día).", [[10, 15], [40, 50], [100, 120]]);
 chain("pueblo", "disenos", "Diseñador de chocolates", "🍫", (p) => (p.creations || []).length, "Guarda {n} creaciones en Crea tu Chocolate.", [[3, 20], [10, 60], [25, 150]]);
 chain("pueblo", "eventos", "Fiestero de temporada", "🎃", eventTokensTotal, "Junta {n} fichas de eventos de temporada.", [[10, 30], [40, 80], [100, 200]]);
+// Aventura del festival y deportes del Pueblo (js/adventure.js, js/sports-progress.js)
+chain("pueblo", "festival", "Organizador del festival", "🎪", (p) => (p.adventure ? chaptersDone(p) : 0), "Completa {n} capítulos del gran festival del Pueblo (hay 3).", [[1, 20], [2, 40], [3, 80]]);
+chain("campana", "copa_pichanga", "Campeón de la Pichanga", "⚽", (p) => (p.sports ? sportCups(p, "pichanga") : 0), "Gana {n} copas de la Pichanga Choco.", [[1, 40], [3, 100]]);
+chain("campana", "copa_basquet", "Campeón del 2 contra 2", "🏀", (p) => (p.sports ? sportCups(p, "basquet2v2") : 0), "Gana {n} copas de Básquet 2 contra 2.", [[1, 40], [3, 100]]);
 
 // Estilo y casa
 chain("estilo", "ropero", "Gran ropero", "👗", (p) => (p.wardrobe && p.wardrobe.owned ? p.wardrobe.owned.length : 0), "Ten {n} objetos en tu vestuario.", [[5, 15], [15, 50], [30, 120], [50, 250], [70, 500]]);

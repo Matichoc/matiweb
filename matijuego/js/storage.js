@@ -4,9 +4,11 @@
 // Todo el progreso vive dentro de un "perfil" (ver js/profiles.js), para que
 // varias personas puedan jugar desde el mismo navegador sin mezclar su avance.
 
-import { getItem, EMPTY_LOOK, lockReason, isHexColor, CUSTOM_EMBLEMS } from "./wardrobe-data.js?v=980cf22f17";
-import { queueSync } from "./online.js?v=980cf22f17";
-import { addEnergy } from "./energy.js?v=980cf22f17";
+import { getItem, EMPTY_LOOK, lockReason, isHexColor, CUSTOM_EMBLEMS } from "./wardrobe-data.js?v=6ffcfcb247";
+import { queueSync } from "./online.js?v=6ffcfcb247";
+import { addEnergy } from "./energy.js?v=6ffcfcb247";
+import { normalizeAdventure } from "./adventure.js?v=6ffcfcb247";
+import { normalizeSports } from "./sports-progress.js?v=6ffcfcb247";
 
 const SAVE_PREFIX = "matichoc_save_v3_profile_";
 const DEFAULT_OUTFIT = "polera";
@@ -43,6 +45,8 @@ function defaultProgress() {
     claimedAchievements: [], // [achievementId, ...]
     creations: [], // "Mis creaciones" de Crea tu Chocolate (ver js/creador-data.js)
     creatorChallengeDate: null, // "YYYY-MM-DD" del último reto del día cumplido
+    adventure: normalizeAdventure(null), // aventura del festival (js/adventure.js): NO se reinicia cada día
+    sports: normalizeSports(null), // Pichanga 3 contra 3 y Básquet 2 contra 2 (js/sports-progress.js)
   };
 }
 
@@ -125,6 +129,10 @@ export function loadProgress(profileId) {
       albumClaimed: parsed.albumClaimed || [],
       packs: parsed.packs ?? 1,
       creations: Array.isArray(parsed.creations) ? parsed.creations.slice(0, MAX_CREATIONS) : [],
+      // aventura del festival y deportes nuevos: estados versionados; la migración es idempotente y no borra avance
+      // (un perfil antiguo, sin estos campos, parte con la aventura sin empezar)
+      adventure: normalizeAdventure(parsed.adventure),
+      sports: normalizeSports(parsed.sports),
     };
     sanitizeNumbers(progress);
   } catch (e) {
