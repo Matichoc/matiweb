@@ -3,9 +3,11 @@
 // siempre, con lo que elegiste. También: el "❗" sobre el vecino que te espera, la flecha que guía al objetivo, el objetivo
 // escrito arriba y la decoración del festival terminado (con los colores del evento de temporada, si hay uno).
 
-import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=a012447234";
-import { activeEvent } from "./events.js?v=a012447234";
-import { CHAPTERS, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentStep, adventureComplete, objective } from "./adventure.js?v=a012447234";
+import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=b23d80ca32";
+import { activeEvent } from "./events.js?v=b23d80ca32";
+import { CHAPTERS, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentStep, adventureComplete, objective } from "./adventure.js?v=b23d80ca32";
+import { paintNeighbor } from "./neighbors.js?v=b23d80ca32";
+import { GAMES_CATALOG } from "./games-catalog.js?v=b23d80ca32";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -385,7 +387,11 @@ export class TownFestival {
 
   /** Al entrar al Pueblo desde "Ir al Pueblo": te deja junto al lugar del objetivo. */
   applyDest() {
-    const dest = takeTownDest();
+    return this.goTo(takeTownDest());
+  }
+
+  /** Pone al héroe junto al lugar (y su vecino), mirándolo. */
+  goTo(dest) {
     if (!dest || !PLACES[dest]) return false;
     const P = PLACES[dest];
     const h = P.home;
@@ -400,6 +406,8 @@ export class TownFestival {
     this.g.pos.set(x, 0, z);
     this.g.heroYaw = Math.atan2(h.x - x, h.z - z);
     this.g.camYaw = this.g.heroYaw + Math.PI;
+    this.g.vel.set(0, 0, 0);
+    if (this.g.ready) this.g._placeCamera(true);
     return true;
   }
 
@@ -444,13 +452,41 @@ export class TownFestival {
     this._goal();
   }
 
+  /** Globo de arriba: la cara de quien te pide algo, qué hacer en una frase y un botón (jugar o llevarte al lugar). */
   _goal(force = false) {
     const el = this.g.q && this.g.q("goal");
     if (!el) return;
-    const obj = objective(this.progress);
-    const text = obj.done ? "🎉 ¡El festival está listo! Juega en la cancha y en el aro cuando quieras" : `🎪 Capítulo ${obj.chapter.n}/3 · ${obj.text}`;
-    if (!force && text === this.goalText) return;
-    this.goalText = text;
-    el.textContent = text;
+    const p = this.progress;
+    const obj = objective(p);
+    const key = obj.done ? "done" : obj.step.id;
+    if (!force && key === this.goalText) return;
+    this.goalText = key;
+    el.innerHTML = "";
+    el.classList.toggle("hidden", obj.done);
+    if (obj.done) return;
+    const place = stepPlace(p);
+    const npc = place === "fuente" ? null : obj.chapter.npc;
+    const face = document.createElement(npc ? "canvas" : "span");
+    face.className = "tq-face";
+    if (npc) { face.width = face.height = 96; paintNeighbor(face, npc); } else face.textContent = "🎉";
+    const txt = document.createElement("span");
+    txt.className = "tq-text";
+    txt.innerHTML = "<b></b><span></span>";
+    txt.querySelector("b").textContent = npc || "¡El festival!";
+    txt.querySelector("span").textContent = obj.text;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tq-btn";
+    const quick = obj.step.kind === "play" && obj.step.quick;
+    if (quick) {
+      const entry = GAMES_CATALOG.find((g) => g.id === quick);
+      btn.textContent = `▶ ${({ pichanga: "Pichanga", basquet2v2: "Básquet" })[quick] || (entry ? entry.name : "Jugar")}`;
+      btn.addEventListener("click", () => window.dispatchEvent(new CustomEvent("town-action", { detail: { kind: "game", game: quick } })));
+    } else {
+      btn.textContent = "📍 Llévame";
+      btn.addEventListener("click", () => this.goTo(place));
+    }
+    btn.addEventListener("pointerdown", (e) => e.stopPropagation());
+    el.append(face, txt, btn);
   }
 }

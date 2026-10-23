@@ -2,9 +2,9 @@
 // el modelo 3D con todo lo que lleva puesto y se copia a un canvas 2D pequeño.
 // Usa un solo renderizador compartido, así que es barato pedir muchos retratos.
 
-import { THREE } from "./three-kit.js?v=a012447234";
-import { createMatichico } from "./matichico3d.js?v=a012447234";
-import { getOutfit } from "./wardrobe-data.js?v=a012447234";
+import { THREE } from "./three-kit.js?v=b23d80ca32";
+import { createMatichico } from "./matichico3d.js?v=b23d80ca32";
+import { getOutfit } from "./wardrobe-data.js?v=b23d80ca32";
 
 let renderer = null;
 let scene = null;
@@ -45,5 +45,24 @@ export function renderHeroThumb(target, character, look) {
   ctx.drawImage(renderer.domElement, 0, 0, target.width, target.height);
   scene.remove(hero.group);
   disposeTree(hero.group);
+  return true;
+}
+
+/**
+ * Dibuja en `target` un objeto 3D cualquiera (por ejemplo un producto de Mati Merge), mirado un poco desde arriba.
+ * `size` = ancho aproximado del objeto; `y` = altura de su centro.
+ */
+export function renderObjectThumb(target, object, { size = 1, y = 0.3 } = {}) {
+  if (!renderer) init();
+  const cam = new THREE.PerspectiveCamera(30, 1, 0.05, 30);
+  const dist = (size * 0.62) / Math.tan((15 * Math.PI) / 180);
+  cam.position.set(0, y + dist * 0.62, dist * 0.78);
+  cam.lookAt(0, y * 0.8, 0);
+  scene.add(object);
+  renderer.render(scene, cam);
+  const ctx = target.getContext("2d");
+  ctx.clearRect(0, 0, target.width, target.height);
+  ctx.drawImage(renderer.domElement, 0, 0, target.width, target.height);
+  scene.remove(object);
   return true;
 }

@@ -50,10 +50,10 @@ export const CHAPTERS = [
     ask: "¡Hola! ¿Ves ese rincón junto a la fuente? Está todo descuidado y quiero que quede lindo para el festival.",
     reward: { coins: 60, xp: 60 },
     steps: [
-      { id: "c1.hablar", kind: "talk", text: "Habla con Bombi en la plaza del Pueblo" },
-      { id: "c1.materiales", kind: "play", games: ANY_FREE, text: "Consigue materiales: termina una partida de cualquier juego (por ejemplo Memoria, Mati Merge o Salto Choco)" },
-      { id: "c1.estilo", kind: "choose", choice: "plaza", text: "Elige cómo quedará el rincón" },
-      { id: "c1.inaugurar", kind: "finish", text: "Vuelve con Bombi para inaugurar el rincón" },
+      { id: "c1.hablar", kind: "talk", text: "Habla con Bombi: está junto a la fuente y tiene un ❗" },
+      { id: "c1.materiales", kind: "play", games: ANY_FREE, quick: "memoria", say: "Necesito chocolates para decorar. ¿Me los consigues? Se ganan jugando una partida de cualquier juego, ¡ganes o pierdas!", text: "Bombi necesita chocolates para decorar: gánalos jugando una partida de cualquier juego 🎮" },
+      { id: "c1.estilo", kind: "choose", choice: "plaza", text: "Elige cómo decorar el rincón de Bombi 🎨" },
+      { id: "c1.inaugurar", kind: "finish", text: "Muéstrale a Bombi cómo quedó su rincón" },
     ],
   },
   {
@@ -62,10 +62,10 @@ export const CHAPTERS = [
     ask: "¡Hola, crack! La cancha del Pueblo está llena de pasto y sin arcos. Quiero organizar una pichanga para el festival.",
     reward: { coins: 80, xp: 80 },
     steps: [
-      { id: "c2.hablar", kind: "talk", text: "Habla con Capi Menta en la cancha del Pueblo" },
-      { id: "c2.colores", kind: "choose", choice: "cancha", text: "Elige los colores de tu equipo" },
-      { id: "c2.pichanga", kind: "play", games: ["pichanga", "futbol", "recolecta", "parkour"], text: "Juega la pichanga en la cancha (gane o pierda). También sirve una partida de Recolecta y Corre o de Parkour" },
-      { id: "c2.contar", kind: "finish", text: "Vuelve con Capi Menta y cuéntale cómo te fue" },
+      { id: "c2.hablar", kind: "talk", text: "Habla con Capi Menta: está junto a la cancha ⚽" },
+      { id: "c2.colores", kind: "choose", choice: "cancha", text: "Elige los colores de tu equipo 🎨" },
+      { id: "c2.pichanga", kind: "play", games: ["pichanga", "futbol", "recolecta", "parkour"], quick: "pichanga", say: "¡Ahora sí: juguemos una pichanga en la cancha! Ganar o perder da igual, lo importante es jugar.", text: "Juega una pichanga en la cancha (ganar o perder da igual) ⚽" },
+      { id: "c2.contar", kind: "finish", text: "Cuéntale a Capi Menta cómo te fue" },
     ],
   },
   {
@@ -74,10 +74,10 @@ export const CHAPTERS = [
     ask: "¡Buenas! Al festival le falta un lugar para jugar básquet. Armemos una media cancha aquí mismo.",
     reward: { coins: 120, xp: 120 },
     steps: [
-      { id: "c3.hablar", kind: "talk", text: "Habla con Don Cuchufli junto al terreno de básquet" },
-      { id: "c3.estilo", kind: "choose", choice: "aro", text: "Elige cómo será la cancha de básquet" },
-      { id: "c3.basquet", kind: "play", games: ["basquet2v2", "basquet_tiros", "porristas"], text: "Juega básquet: un partido 2 contra 2 en el aro del Pueblo o el concurso de lanzamientos (o Saltos de Porristas)" },
-      { id: "c3.festival", kind: "finish", text: "Ve a la fuente de la plaza y celebra el gran festival" },
+      { id: "c3.hablar", kind: "talk", text: "Habla con Don Cuchufli: está junto al aro 🏀" },
+      { id: "c3.estilo", kind: "choose", choice: "aro", text: "Elige cómo pintar la cancha de básquet 🎨" },
+      { id: "c3.basquet", kind: "play", games: ["basquet2v2", "basquet_tiros", "porristas"], quick: "basquet2v2", say: "¡Estrenemos el aro con un partido de básquet! Ganar o perder da igual.", text: "Juega un partido de básquet (ganar o perder da igual) 🏀" },
+      { id: "c3.festival", kind: "finish", text: "¡Ve a la fuente de la plaza y empieza el festival! 🎉" },
     ],
   },
 ];
@@ -95,7 +95,7 @@ export const GOALS = [
 ];
 
 export function defaultAdventure() {
-  return { v: ADVENTURE_VERSION, started: false, steps: {}, choices: {}, claimed: [], medals: [], goal: null, lastSeen: 0, seenSummaryAt: 0 };
+  return { v: ADVENTURE_VERSION, started: false, introSeen: false, steps: {}, choices: {}, claimed: [], medals: [], goal: null, lastSeen: 0, seenSummaryAt: 0 };
 }
 
 /**
@@ -106,6 +106,7 @@ export function normalizeAdventure(raw) {
   const a = defaultAdventure();
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return a;
   a.started = !!raw.started;
+  a.introSeen = !!raw.introSeen; // la viñeta que cuenta de qué se trata el festival (se muestra una vez)
   if (raw.steps && typeof raw.steps === "object") {
     for (const [id, v] of Object.entries(raw.steps)) if (STEP_IDS.has(id) && v) a.steps[id] = 1;
   }
@@ -239,10 +240,11 @@ export function talkTo(progress, npcName, season = null) {
   if (cur.kind === "talk") {
     complete(a, cur.id);
     const next = currentStep(progress);
-    return { text: `${ch.ask} ¿Me ayudas? Primero: ${next.text.charAt(0).toLowerCase()}${next.text.slice(1)}.`, step: cur, action: next.kind === "choose" ? "choose" : null, choice: next.choice, play: next.kind === "play" ? next.games : null };
+    const pide = next.kind === "choose" ? "¿Me ayudas a elegir cómo dejarlo?" : next.say || next.text;
+    return { text: `${ch.ask} ${pide}`, step: cur, action: next.kind === "choose" ? "choose" : null, choice: next.choice, play: next.kind === "play" ? next.games : null };
   }
-  if (cur.kind === "choose") return { text: `${CHOICES[cur.choice].title} Elige el que más te guste.`, action: "choose", choice: cur.choice };
-  if (cur.kind === "play") return { text: `Para seguir: ${cur.text.charAt(0).toLowerCase()}${cur.text.slice(1)}. ¡Aquí te espero!`, play: cur.games };
+  if (cur.kind === "choose") return { text: `${CHOICES[cur.choice].title} ¡Elige el que más te guste!`, action: "choose", choice: cur.choice };
+  if (cur.kind === "play") return { text: `${cur.say || cur.text} ¡Aquí te espero!`, play: cur.games };
   if (cur.kind === "finish" && ch.id !== "c3") return finishChapter(progress, ch);
   if (cur.kind === "finish") return { text: "¡Todo listo! Ve a la fuente de la plaza y celebremos el gran festival 🎉" };
   return null;
@@ -377,4 +379,12 @@ export function gossip(progress) {
   if (chapterDone(progress, "c2")) lines.push("¡La cancha del Pueblo quedó lista! Cuando quieras jugamos una pichanga ⚽");
   if (chapterDone(progress, "c3")) lines.push("¡Qué gran festival armaste! Ahora el pueblo entero juega básquet en el aro nuevo 🏀");
   return lines;
+}
+
+/** Ya vio la viñeta inicial que cuenta de qué se trata el festival. */
+export function markIntroSeen(progress) {
+  const a = adventureOf(progress);
+  a.introSeen = true;
+  a.started = true;
+  return a;
 }

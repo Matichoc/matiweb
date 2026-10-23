@@ -6,19 +6,19 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=a012447234";
-import { createMatichico } from "./matichico3d.js?v=a012447234";
-import { CHARACTERS, getOutfit } from "./characters.js?v=a012447234";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=a012447234";
-import { GAMES_CATALOG } from "./games-catalog.js?v=a012447234";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=a012447234";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=a012447234";
-import { levelInfo } from "./progression.js?v=a012447234";
-import { bindStick } from "./stick.js?v=a012447234";
-import * as audio from "./audio.js?v=a012447234";
-import { TownFun } from "./town-fun.js?v=a012447234";
-import { TownFestival } from "./town-festival.js?v=a012447234";
-import { talkTo, celebrateAtFountain, stepPlace, gossip } from "./adventure.js?v=a012447234";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=b23d80ca32";
+import { createMatichico } from "./matichico3d.js?v=b23d80ca32";
+import { getOutfit } from "./characters.js?v=b23d80ca32";
+import { GAMES_CATALOG } from "./games-catalog.js?v=b23d80ca32";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=b23d80ca32";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=b23d80ca32";
+import { levelInfo } from "./progression.js?v=b23d80ca32";
+import { bindStick } from "./stick.js?v=b23d80ca32";
+import * as audio from "./audio.js?v=b23d80ca32";
+import { TownFun } from "./town-fun.js?v=b23d80ca32";
+import { TownFestival } from "./town-festival.js?v=b23d80ca32";
+import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=b23d80ca32";
+import { talkTo, celebrateAtFountain, stepPlace, gossip } from "./adventure.js?v=b23d80ca32";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -50,14 +50,6 @@ const SKY = [
   [1.0, 0xffc9a8, 0.9, 1.4, 0.2],
 ];
 
-const NEIGHBORS = [
-  { name: "Mati Cacao", say: ["¡Hola! Bienvenida al Pueblo Matichoc 🍫", "En la Boutique hay peinados, capas y alas. ¡Pruébate todo antes de comprar!", "Los alfajores dorados que flotan por el pueblo dan Matipuntos ✨"] },
-  { name: "Choco Lola", say: ["¿Ya viste el tablero de misiones? Cada día hay 3 nuevas 🎯", "Si completas las 3 misiones, ¡te dan un cofre!", "Mi alfajor favorito es el de maracuyá. ¿Y el tuyo?"] },
-  { name: "Don Cuchufli", say: ["En el Parkour infinito hay poderes: 🧲 imán, 🛡️ escudo, ⚡ turbo y 🦘 súper salto.", "¡Llega lejos en el Mundo infinito y bate tu récord de metros!", "De noche se prenden los faroles, ¡qué bonito se ve!"] },
-  { name: "Bombi", say: ["¿Has visto la fuente de chocolate? ¡Es la más rica del mundo!", "Cada sobre trae 3 figuritas. ¡Completa tu álbum! 📖", "Dicen que las figuritas brillantes son muy difíciles de conseguir ✨"] },
-  { name: "Trufita", say: ["En la Fábrica puedes inventar tu propio chocolate 🏭", "Me encanta jugar Memoria Matichoc. ¡Mi mejor racha es de 6!", "Si subes de nivel, ¡te regalan cosas para vestirte!"] },
-  { name: "Capi Menta", say: ["Los juegos del Arcade están allá, con puertas brillantes 🎮", "Cada día que juegas, tu racha crece 🔥", "¡Corre por la plaza, no hay prisa! 😄"] },
-];
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -507,17 +499,12 @@ export class TownGame extends Game3D {
   }
 
   _buildNeighbors() {
-    const pool = ITEMS.filter((i) => ["hair", "hat", "glasses", "neck", "back", "shoes", "face"].includes(i.slot));
-    const slots = ["hair", "hat", "glasses", "neck", "back", "shoes", "face"];
     let seed = 31;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const looks = neighborLooks(); // ropa de cada vecino (js/neighbors.js: el menú los dibuja igual)
     NEIGHBORS.forEach((n, i) => {
-      const char = CHARACTERS[i % CHARACTERS.length];
-      const look = { hair: "", hairColor: "", face: "", hat: "", glasses: "", neck: "", back: "", outfit: OUTFITS[Math.floor(rnd() * OUTFITS.length)].id, shoes: "", skin: "", trail: "" };
-      for (const slot of slots) {
-        const opts = pool.filter((it) => it.slot === slot && it.rarity !== "legendario");
-        if (opts.length && rnd() < (slot === "hat" ? 0.55 : 0.4)) look[slot] = opts[Math.floor(rnd() * opts.length)].id;
-      }
+      const { char, look } = looks[i];
+      for (let k = 0; k < looks[i].draws; k++) rnd(); // avanza igual que antes, para que los vecinos partan en los mismos lugares
       const hero = createMatichico(char, getOutfit(look.outfit), look);
       hero.group.scale.setScalar(1.08);
       hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });

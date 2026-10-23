@@ -5,15 +5,16 @@
 
 import {
   CHAPTERS, CHOICES, GOALS, adventureOf, currentStep, chapterDone, objective, choose, choiceOf, choiceOption, placeOpen,
-  setGoal, goalStatus, returnSummary, seasonalChallenge, setTownDest, stepPlace, startAdventure, adventureComplete,
-} from "./adventure.js?v=a012447234";
-import { sportOf, cupsWon, cupRival, DIFF_NAMES } from "./sports-progress.js?v=a012447234";
-import { activeEvent } from "./events.js?v=a012447234";
-import { GAMES_CATALOG } from "./games-catalog.js?v=a012447234";
-import { isUnlocked } from "./unlocks.js?v=a012447234";
-import { earnCoins, saveProgress } from "./storage.js?v=a012447234";
-import { addXp, onProgressEvent } from "./progression.js?v=a012447234";
-import * as audio from "./audio.js?v=a012447234";
+  setGoal, goalStatus, returnSummary, seasonalChallenge, setTownDest, stepPlace, startAdventure, adventureComplete, markIntroSeen,
+} from "./adventure.js?v=b23d80ca32";
+import { paintNeighbor } from "./neighbors.js?v=b23d80ca32";
+import { sportOf, cupsWon, cupRival, DIFF_NAMES } from "./sports-progress.js?v=b23d80ca32";
+import { activeEvent } from "./events.js?v=b23d80ca32";
+import { GAMES_CATALOG } from "./games-catalog.js?v=b23d80ca32";
+import { isUnlocked } from "./unlocks.js?v=b23d80ca32";
+import { earnCoins, saveProgress } from "./storage.js?v=b23d80ca32";
+import { addXp, onProgressEvent } from "./progression.js?v=b23d80ca32";
+import * as audio from "./audio.js?v=b23d80ca32";
 
 const $ = (id) => document.getElementById(id);
 const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -131,8 +132,17 @@ export function initAdventureUI(ctx) {
       btn.classList.remove("lp-pulse");
     } else {
       const obj = objective(p);
-      sub.textContent = obj.done ? "¡Festival listo! Copas y lugares del Pueblo" : `Capítulo ${obj.chapter.n} de 3 · ${obj.text}`;
-      btn.classList.toggle("lp-pulse", !a.started && !REDUCED);
+      const npc = !obj.done && stepPlace(p) !== "fuente" ? obj.chapter.npc : null;
+      sub.textContent = obj.done ? "¡El festival está listo! Juega en la cancha y en el aro" : !a.introSeen ? "Los vecinos del Pueblo necesitan tu ayuda" : obj.text;
+      btn.classList.toggle("lp-pulse", !a.introSeen && !REDUCED);
+      // la cara del vecino que te espera, en vez de un ícono
+      const ico = btn.querySelector(".lp-ico");
+      if (ico.dataset.npc !== (npc || "")) {
+        ico.dataset.npc = npc || "";
+        ico.innerHTML = "";
+        if (npc) { const c = document.createElement("canvas"); c.width = c.height = 96; c.className = "lp-face"; ico.appendChild(c); paintNeighbor(c, npc); }
+        else ico.textContent = "🎪";
+      }
     }
     const g = goalStatus(p, { furniture: furnitureCount(p), cups: { pichanga: cupsWon(p, "pichanga"), basquet2v2: cupsWon(p, "basquet2v2") } });
     const goalEl = $("lb-goal");
@@ -153,9 +163,26 @@ export function initAdventureUI(ctx) {
   }
   $("lb-welcome-ok").addEventListener("click", () => { $("lb-welcome").classList.add("hidden"); open(); });
 
+  // "Continuar mi aventura": la primera vez, la viñeta que cuenta de qué se trata; después, directo al vecino que te espera
+  const introDlg = $("adv-intro");
+  function openIntro() {
+    introDlg.querySelectorAll("canvas[data-npc]").forEach((c) => paintNeighbor(c, c.dataset.npc));
+    introDlg.classList.remove("hidden");
+    $("adv-intro-go").focus();
+  }
+  $("adv-intro-go").addEventListener("click", () => {
+    const p = P();
+    markIntroSeen(p);
+    saveProgress(p);
+    introDlg.classList.add("hidden");
+    goTown(stepPlace(p) || "fuente");
+  });
+  $("adv-intro-close").addEventListener("click", () => introDlg.classList.add("hidden"));
   $("btn-path-adventure").addEventListener("click", () => {
+    const p = P();
     if (!ctx.getCharacter()) { ctx.needCharacter(); return; }
-    open();
+    if (!adventureOf(p).introSeen) { openIntro(); return; }
+    goTown(stepPlace(p) || "fuente");
   });
   $("btn-path-free").addEventListener("click", () => {
     const t = $("game-feature");

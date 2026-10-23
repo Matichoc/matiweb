@@ -7,13 +7,13 @@
 // cintas transportadoras, combo de golosinas, poderes (reloj, botas turbo, imán), impulso
 // con Shift, estrellas por nivel y música. Ahora son 8 canchas.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, makeBunting, makeLogo, disposeTree } from "./three-kit.js?v=a012447234";
-import { createMatichico } from "./matichico3d.js?v=a012447234";
-import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=a012447234";
-import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=a012447234";
-import { recordRun } from "./progression.js?v=a012447234";
-import * as audio from "./audio.js?v=a012447234";
-import { campaign, campaignWin, campaignComplete, campaignStartOver, renderLevelPicker } from "./campaign.js?v=a012447234";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, makeBunting, makeLogo, disposeTree } from "./three-kit.js?v=b23d80ca32";
+import { createMatichico } from "./matichico3d.js?v=b23d80ca32";
+import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=b23d80ca32";
+import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=b23d80ca32";
+import { recordRun } from "./progression.js?v=b23d80ca32";
+import * as audio from "./audio.js?v=b23d80ca32";
+import { campaign, campaignWin, campaignComplete, campaignStartOver, renderLevelPicker } from "./campaign.js?v=b23d80ca32";
 
 const GAME_ID = "recolecta";
 const S = 0.04; // píxeles del nivel -> unidades 3D

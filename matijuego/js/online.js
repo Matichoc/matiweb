@@ -1,7 +1,7 @@
 // Ranking y monitoreo del creador: manda al servidor SOLO el apodo del perfil, un identificador al azar y el avance de juego
 // (puntajes, nivel, partidas y tiempo jugado). Nada de datos personales. Está apagado hasta que js/online-config.js tenga datos.
 // La tabla no se puede leer desde la app: el creador la ve desde admin/ranking.html y decide si se la muestra a los jugadores.
-import { ONLINE } from "./online-config.js?v=a012447234";
+import { ONLINE } from "./online-config.js?v=b23d80ca32";
 
 const url = String(ONLINE.url || "").replace(/\/$/, "");
 const SYNC_EVERY = 90 * 1000; // como mucho una actualización cada 90 s
