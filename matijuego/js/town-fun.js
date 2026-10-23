@@ -4,10 +4,11 @@
 //  · "Actividades del día": 5 desafíos con guía; al completarlos hay premio (Matipuntos, sobre de figuritas y energía).
 // El estado del día vive en progress.town.fun (se reinicia solo cada día, igual que el resto del pueblo).
 
-import { THREE, canvasTexture } from "./three-kit.js?v=980cf22f17";
-import { earnCoins, saveProgress } from "./storage.js?v=980cf22f17";
-import { addEnergy } from "./energy.js?v=980cf22f17";
-import * as audio from "./audio.js?v=980cf22f17";
+import { THREE, canvasTexture } from "./three-kit.js?v=6ffcfcb247";
+import { earnCoins, saveProgress } from "./storage.js?v=6ffcfcb247";
+import { addEnergy } from "./energy.js?v=6ffcfcb247";
+import * as audio from "./audio.js?v=6ffcfcb247";
+import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=6ffcfcb247";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -22,6 +23,14 @@ const rngOf = (seedStr) => {
 
 const DANCE_GOAL = 20; // segundos bailando
 const JUMP_GOAL = 5;
+const JUMP_WALK = 12.5; // salto normal (el de los trampolines es más alto): llega a ~3 de alto
+const COURSE_COINS = 10; // premio de la cima de cada recorrido de parkour (una vez al día)
+const DOORS = [
+  { id: "gato", name: "El Gato", icon: "🐱", wall: 0xffb0d0, roof: 0xd4216c, sign: "#d4216c", beacon: "#ff5fa8" },
+  { id: "sudoku", name: "Sudoku", icon: "🔢", wall: 0xbfe6ff, roof: 0x2a8fd6, sign: "#2a8fd6", beacon: "#35c8ff" },
+  { id: "cachipun", name: "Cachipún", icon: "✊", wall: 0xd6f5b8, roof: 0x3d9a4a, sign: "#3d9a4a", beacon: "#4fd09a" },
+];
+const PASTEL = [0xff7aa8, 0x35c8ff, 0xffd34d, 0x9a5cff, 0x4fd09a];
 const CHEST_GOAL = 3;
 const HELLO_GOAL = 4;
 const CHESTS_PER_DAY = 5;
@@ -85,6 +94,13 @@ export class TownFun {
     this.stars = [];
     this.chests = [];
     this.rings = [];
+    this.platforms = []; // plataformas de parkour: { x, z, top, r }
+    this.pillars = []; // columnas de las torres: { x, z, r, top }
+    this.courses = []; // recorridos: { id, name, start, top: { x, z, top, r }, done }
+    this.doorSpots = [];
+    this.puzzleOpen = false;
+    this.groundY = 0;
+    this.claimed = []; // lugares ya usados por las casitas y los recorridos
     this.circuit = null; // { idx, t } mientras corre
     this.danceT = 0;
     this.heroMode = null;
@@ -99,7 +115,15 @@ export class TownFun {
   st() {
     const d = this.g._daily();
     if (!d.fun) d.fun = { dance: 0, danceCoins: 0, jumps: 0, circuit: 0, best: 0, chests: [], stars: 0, done: false };
+    d.fun.doors = d.fun.doors || {}; // puertas de juegos ganadas hoy
+    d.fun.courses = d.fun.courses || {}; // recorridos de parkour completados hoy
     return d.fun;
+  }
+
+  /** Casitas con puertas y recorridos de parkour: se arman antes que los árboles (ver TownGame.build). */
+  buildWorld() {
+    this._buildDoors();
+    this._buildCourses();
   }
 
   build() {
@@ -146,7 +170,7 @@ export class TownFun {
     const g = this.g;
     const spec = { shop: ["#ff5fa8", "👕", "Boutique"], creador: ["#ff9a3c", "🏭", "Fábrica"], album: ["#ffc800", "📖", "Figuritas"], house: ["#3fd0a8", "🏠", "Mi Casa"] };
     for (const it of g.interact) {
-      const s = spec[it.kind];
+      const s = it.beacon || spec[it.kind];
       if (!s || it.fun) continue;
       if (it.label.includes("misiones")) { this._beacon(it.x - 1, it.z - 3, "#ff9a3c", "🎯", "Misiones", { h: 20 }); continue; }
       this._beacon(it.x, it.z, s[0], s[1], s[2]);
@@ -156,6 +180,7 @@ export class TownFun {
     this._beacon(DANCE_AT.x, DANCE_AT.z, "#ff4fd0", "💃", "Pista de baile", { h: 20 });
     this._beacon(START_AT.x, START_AT.z, "#4fd09a", "🏁", "Circuito", { h: 20 });
     PADS.forEach((p) => this._beacon(p.x, p.z, "#35c8ff", "🎈", "Trampolín", { h: 12, r: 0.9 }));
+    for (const c of this.courses) this._beacon(c.start.x, c.start.z, "#ff9a3c", "🧗", c.name, { h: 24, r: 1.1 });
   }
 
   // ---------- "!" sobre los vecinos que faltan por saludar ----------
@@ -315,6 +340,234 @@ export class TownFun {
     return pts.some((p) => Math.hypot(x - p.x, z - p.z) < 8);
   }
 
+  // ---------- lugares libres ----------
+
+  /** ¿Se puede construir algo en (x, z)? Lejos de edificios, caminos, trampolines, pista de baile y de lo que ya se puso. */
+  _free(x, z, margin) {
+    if (this.g._nearStructure(x, z, margin) || this._nearActivity(x, z)) return false;
+    return !this.claimed.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + margin);
+  }
+
+  /** Busca (siempre igual, no al azar) un lugar libre: prueba ángulos y radios hasta que `pointsAt(deg, r)` quede todo libre. */
+  _findSpot(pointsAt, margin, radii) {
+    for (const m of [margin, margin * 0.7]) {
+      for (const r of radii) {
+        for (let deg = 190; deg < 190 + 360; deg += 3) {
+          const pts = pointsAt(deg % 360, r);
+          if (pts.every((p) => this._free(p.x, p.z, m))) return { deg: deg % 360, r };
+        }
+      }
+    }
+    return null;
+  }
+
+  // ---------- casitas con puertas de juegos (Gato, Sudoku, Cachipún) ----------
+
+  _buildDoors() {
+    const g = this.g;
+    const SPACING = 15; // grados entre casitas
+    const spot = this._findSpot((deg, r) => DOORS.map((_, k) => pol(deg + k * SPACING, r)), 7.5, [41, 37, 33]);
+    if (!spot) return;
+    DOORS.forEach((def, k) => {
+      const deg = spot.deg + k * SPACING;
+      const p = pol(deg, spot.r);
+      this.claimed.push({ x: p.x, z: p.z, r: 5 });
+      g._addBuilding({ deg, r: spot.r, w: 7, d: 6, h: 4.5, color: def.wall, roof: def.roof, name: def.name, icon: def.icon, signColor: def.sign, kind: "puzzle", label: `🚪 Entrar: ${def.name}` });
+      const it = g.interact[g.interact.length - 1];
+      it.puzzle = def.id;
+      it.beacon = [def.beacon, def.icon, def.name];
+      this.doorSpots.push({ id: def.id, x: it.x, z: it.z });
+    });
+  }
+
+  /** Abre una puerta: un cuadro con el juego. El premio del día se entrega solo la primera vez que se gana. */
+  openDoor(id) {
+    const g = this.g;
+    this.puzzleOpen = true;
+    g.keys = {};
+    g.joy = { x: 0, y: 0 };
+    const st = this.st();
+    const ok = openPuzzle(id, {
+      onWin: (kind) => {
+        if (st.doors[kind]) return "(Ya tienes el premio de hoy: ¡juega por diversión!)";
+        st.doors[kind] = true;
+        const coins = PUZZLES[kind].reward;
+        earnCoins(g.progress, coins);
+        saveProgress(g.progress);
+        g.popups.add(new THREE.Vector3(g.pos.x, 3.2, g.pos.z), `+${coins} 🍫✨`, "coin");
+        return `+${coins} 🍫✨ (premio del día)`;
+      },
+      onClose: () => { this.puzzleOpen = false; },
+    });
+    if (!ok) this.puzzleOpen = false;
+  }
+
+  // ---------- parkour: una torre en espiral y una escalera de nubes ----------
+
+  _platform(x, z, top, r, mesh) {
+    this.platforms.push({ x, z, top, r });
+    this.g.scene.add(mesh);
+  }
+
+  _candyDisc(x, z, top, r, color) {
+    const grp = new THREE.Group();
+    grp.position.set(x, 0, z);
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.5, 24), new THREE.MeshStandardMaterial({ color, roughness: 0.45, emissive: color, emissiveIntensity: 0.18 }));
+    disc.position.y = top - 0.25;
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(r, 0.1, 8, 28), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }));
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = top;
+    disc.castShadow = disc.receiveShadow = true;
+    grp.add(disc, rim);
+    return grp;
+  }
+
+  _cloud(x, z, top, r) {
+    const grp = new THREE.Group();
+    grp.position.set(x, top - r * 0.3, z);
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, emissive: 0xbfe6ff, emissiveIntensity: 0.15 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), mat);
+    body.scale.set(1, 0.3, 1);
+    grp.add(body);
+    for (const [dx, dz, k] of [[0.55, 0.2, 0.55], [-0.5, -0.3, 0.5], [0.1, -0.6, 0.45]]) {
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(r * k, 12, 9), mat);
+      puff.position.set(dx * r, -r * 0.05, dz * r);
+      puff.scale.set(1, 0.45, 1);
+      grp.add(puff);
+    }
+    grp.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    return grp;
+  }
+
+  _trophy(x, z, top) {
+    const s = iconSprite("🏆", "#ffc800");
+    s.scale.set(2.6, 2.6, 1);
+    s.position.set(x, top + 2.2, z);
+    this.g.scene.add(s);
+    return s;
+  }
+
+  _buildCourses() {
+    this._buildTower();
+    this._buildClouds();
+  }
+
+  _buildTower() {
+    const g = this.g;
+    const N = 11;
+    const R = 6.2;
+    const spot = this._findSpot((deg, r) => { const c = pol(deg, r); return [c, ...[0, 90, 180, 270].map((a) => ({ x: c.x + Math.sin((a * Math.PI) / 180) * 8, z: c.z - Math.cos((a * Math.PI) / 180) * 8 }))]; }, 5, [40, 35, 44]);
+    if (!spot) return;
+    const c = pol(spot.deg, spot.r);
+    this.claimed.push({ x: c.x, z: c.z, r: 9 });
+    const topY = 1.2 + N * 1.0;
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.9, topY, 16), g.m.choco);
+    pillar.position.set(c.x, topY / 2, c.z);
+    pillar.castShadow = true;
+    g.scene.add(pillar);
+    this.pillars.push({ x: c.x, z: c.z, r: 1.9, top: topY }); // choca solo por debajo de la cima (arriba se puede caminar por toda la plataforma dorada)
+    const a0 = (spot.deg * Math.PI) / 180 + Math.PI; // la espiral empieza mirando a la plaza
+    let start = null;
+    for (let i = 0; i < N; i++) {
+      const ang = a0 + i * 0.66;
+      const x = c.x + Math.sin(ang) * R;
+      const z = c.z - Math.cos(ang) * R;
+      const top = 1.2 + i * 1.0;
+      this._platform(x, z, top, 1.9, this._candyDisc(x, z, top, 1.9, PASTEL[i % PASTEL.length]));
+      if (i === 0) start = { x, z };
+    }
+    this._platform(c.x, c.z, topY, 2.7, this._candyDisc(c.x, c.z, topY, 2.7, 0xffc800));
+    const trophy = this._trophy(c.x, c.z, topY);
+    this.courses.push({ id: "tower", name: "Torre de Cacao", start, top: { x: c.x, z: c.z, top: topY, r: 2.7 }, trophy });
+  }
+
+  _buildClouds() {
+    const g = this.g;
+    const N = 8;
+    const STEP = 4.3;
+    const spot = this._findSpot((deg, r) => {
+      // la escalera corre en la dirección de un círculo (tangente) y mide ~36 de largo
+      const out = [];
+      for (let k = 0; k <= N; k++) out.push(pol(deg + k * ((STEP * 180) / (Math.PI * r)), r));
+      return out;
+    }, 3, [46, 44, 40, 36, 32]);
+    if (!spot) return;
+    const dDeg = (STEP * 180) / (Math.PI * spot.r);
+    let start = null;
+    let last = null;
+    for (let k = 0; k < N; k++) {
+      const p = pol(spot.deg + k * dDeg, spot.r - (k % 2 ? 1.7 : -1.7));
+      const top = 1.0 + k * 0.95;
+      this._platform(p.x, p.z, top, 2.1, this._cloud(p.x, p.z, top, 2.1));
+      this.claimed.push({ x: p.x, z: p.z, r: 3 });
+      if (k === 0) start = { x: p.x, z: p.z };
+      last = { x: p.x, z: p.z, top };
+    }
+    const end = pol(spot.deg + N * dDeg, spot.r);
+    const topY = last.top + 1.0;
+    this._platform(end.x, end.z, topY, 2.8, this._cloud(end.x, end.z, topY, 2.8));
+    this.claimed.push({ x: end.x, z: end.z, r: 4 });
+    const trophy = this._trophy(end.x, end.z, topY);
+    this.courses.push({ id: "clouds", name: "Escalera de Nubes", start, top: { x: end.x, z: end.z, top: topY, r: 2.8 }, trophy });
+  }
+
+  /** Altura del piso bajo (x, z): la plataforma más alta que está a los pies (o hasta 0,5 sobre ellos, como un escalón). */
+  _groundAt(x, z, y) {
+    let top = 0;
+    for (const p of this.platforms) {
+      if (p.top <= y + 0.5 && p.top > top && Math.hypot(x - p.x, z - p.z) < p.r) top = p.top;
+    }
+    return top;
+  }
+
+  /** Gravedad: el Matichico cae al piso o a la plataforma que tenga abajo (las plataformas se atraviesan al subir). */
+  _physics(dt) {
+    const P = this.g.pos;
+    for (const c of this.pillars) {
+      if (P.y >= c.top - 0.2) continue;
+      const dx = P.x - c.x, dz = P.z - c.z, d = Math.hypot(dx, dz), min = c.r + 0.45;
+      if (d < min) { const k = d > 1e-4 ? min / d : 1; P.x = c.x + (d > 1e-4 ? dx * k : min); P.z = c.z + (d > 1e-4 ? dz * k : 0); }
+    }
+    const gy = this._groundAt(P.x, P.z, P.y);
+    this.groundY = gy;
+    if (this.vy > 0 || P.y > gy + 0.001) {
+      this.vy -= GRAVITY * dt;
+      const ny = P.y + this.vy * dt;
+      if (this.vy <= 0 && ny <= gy) { P.y = gy; this.vy = 0; } else P.y = ny;
+    } else { P.y = gy; this.vy = 0; }
+  }
+
+  /** Salto del botón ⤴️ / Espacio: solo desde el piso o desde una plataforma. */
+  jump() {
+    const g = this.g;
+    if (g.state !== "playing" || this.puzzleOpen) return;
+    if (this.vy <= 0 && g.pos.y <= this.groundY + 0.08) {
+      this.vy = JUMP_WALK;
+      g.pos.y = this.groundY + 0.05;
+      audio.playJump?.();
+    }
+  }
+
+  _updateCourses(dt, st) {
+    const g = this.g;
+    const t = g.time;
+    for (const c of this.courses) {
+      c.trophy.position.y = c.top.top + 2.2 + Math.sin(t * 2.5) * 0.25;
+      c.trophy.visible = !st.courses[c.id];
+      if (st.courses[c.id]) continue;
+      const T = c.top;
+      if (Math.hypot(g.pos.x - T.x, g.pos.z - T.z) < T.r && g.pos.y >= T.top - 0.1 && this.vy <= 0 && this.groundY >= T.top - 0.1) {
+        st.courses[c.id] = true;
+        earnCoins(g.progress, COURSE_COINS);
+        saveProgress(g.progress);
+        g.particles.burst(new THREE.Vector3(T.x, T.top + 1.4, T.z), [0xffe14a, 0xff4fd0, 0x35f0ff, 0xffffff], 40, 6, 1.2, 5);
+        g.popups.add(new THREE.Vector3(T.x, T.top + 3.4, T.z), `+${COURSE_COINS} 🍫✨`, "combo");
+        audio.playVictory?.();
+        this._say(`🏆 ¡Llegaste a la cima de ${c.name}! +${COURSE_COINS} 🍫✨`, 3.6);
+      }
+    }
+  }
+
   // ---------- flecha guía y panel ----------
 
   _buildArrow() {
@@ -337,6 +590,8 @@ export class TownFun {
       { id: "dance", icon: "💃", text: "Baila en la pista", cur: Math.min(DANCE_GOAL, Math.floor(st.dance)), goal: DANCE_GOAL, unit: " s", at: () => DANCE_AT },
       { id: "jump", icon: "🎈", text: "Salta en los trampolines", cur: Math.min(JUMP_GOAL, st.jumps), goal: JUMP_GOAL, at: () => this._nearest(PADS) },
       { id: "ring", icon: "🏁", text: "Completa el circuito de aros", cur: st.circuit ? 1 : 0, goal: 1, at: () => START_AT },
+      { id: "parkour", icon: "🧗", text: "Sube a la cima de la Torre y las Nubes", cur: this.courses.filter((c) => st.courses[c.id]).length, goal: Math.max(1, this.courses.length), at: () => this._nearest(this.courses.filter((c) => !st.courses[c.id]).map((c) => c.start)) },
+      { id: "doors", icon: "🚪", text: "Gana en las 3 puertas de juegos", cur: Object.keys(st.doors).filter((k) => st.doors[k]).length, goal: DOORS.length, at: () => this._nearest(this.doorSpots.filter((d) => !st.doors[d.id])) },
       { id: "chest", icon: "🧰", text: "Encuentra tesoros escondidos", cur: Math.min(CHEST_GOAL, st.chests.length), goal: CHEST_GOAL, hot: true },
       { id: "hello", icon: "👋", text: "Saluda a los vecinos", cur: Math.min(HELLO_GOAL, g._daily().talked.length), goal: HELLO_GOAL, at: () => { const n = g.npcs.filter((x) => !g._daily().talked.includes(x.def.name)); return this._nearest(n); } },
     ];
@@ -428,6 +683,7 @@ export class TownFun {
 
     this._updateDance(dt, st);
     this._updatePads(dt, st);
+    this._updateCourses(dt, st);
     this._updateCircuit(dt, st);
     this._updateChests(dt, st);
     this._updateGuide(dt);
@@ -470,13 +726,8 @@ export class TownFun {
     const g = this.g;
     const P = g.pos;
     const t = g.time;
-    // física vertical del salto
-    const mv = Math.hypot(g.vel.x, g.vel.z);
-    if (P.y > 0 || this.vy > 0) {
-      this.vy -= GRAVITY * dt;
-      P.y += this.vy * dt;
-      if (P.y <= 0) { P.y = 0; this.vy = 0; }
-    }
+    // física vertical del salto (piso y plataformas de parkour)
+    this._physics(dt);
     for (const p of this.pads) {
       p.squash = Math.max(0, p.squash - dt * 4);
       p.top.scale.y = 1 - p.squash * 0.5;
@@ -491,7 +742,7 @@ export class TownFun {
         saveProgress(g.progress);
       }
     }
-    this.airborne = P.y > 0.25;
+    this.airborne = P.y > this.groundY + 0.25;
     for (const s of this.stars) {
       if (s.taken) { s.respawn -= dt; if (s.respawn <= 0) { s.taken = false; s.s.visible = true; } continue; }
       s.s.position.y = s.y + Math.sin(t * 2.5 + s.ph) * 0.25;
@@ -508,7 +759,6 @@ export class TownFun {
         saveProgress(g.progress);
       }
     }
-    void mv;
   }
 
   _updateCircuit(dt, st) {

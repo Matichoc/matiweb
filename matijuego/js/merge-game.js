@@ -3,11 +3,11 @@
 // ¡Mati Dubai! Los 4 generadores sacan productos nuevos (1 ⚡ cada uno) y los clientes piden productos para entregar.
 // El tablero se guarda en tu perfil.
 
-import { THREE, Game3D, lerp, rand, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=980cf22f17";
-import * as audio from "./audio.js?v=980cf22f17";
-import { recordRun } from "./progression.js?v=980cf22f17";
-import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, emptyCells } from "./merge-data.js?v=980cf22f17";
-import { drawItem, loadProductImages } from "./merge-art.js?v=980cf22f17";
+import { THREE, Game3D, lerp, rand, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=6ffcfcb247";
+import * as audio from "./audio.js?v=6ffcfcb247";
+import { recordRun } from "./progression.js?v=6ffcfcb247";
+import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, emptyCells } from "./merge-data.js?v=6ffcfcb247";
+import { drawItem, loadProductImages } from "./merge-art.js?v=6ffcfcb247";
 
 const GAME_ID = "merge";
 const CELL = 1.1;
@@ -30,6 +30,8 @@ export class MergeGame extends Game3D {
     this.urlCache = new Map();
     this.images = {};
     this.drag = null;
+    this.hint = { cells: [], t: 0 }; // pista: las dos piezas que se pueden juntar
+    this.rings = []; // aros verdes que marcan con quién se puede juntar la pieza
     this.sessionMerges = 0;
     this.onNoEnergy = () => this.banner("😴 Sin energía: ¡puedes seguir juntando y entregando, pero no sacar productos nuevos!");
   }
@@ -175,7 +177,7 @@ export class MergeGame extends Game3D {
     this._updateHud();
     this._renderOrders();
     const m = mergeOf(this.progress);
-    if (m.spawned === 0 && m.merges === 0) this.banner("👆 Arrastra un producto sobre otro igual para juntarlos");
+    if (m.spawned === 0 && m.merges === 0) this.banner("👆 Junta dos productos iguales");
   }
 
   _renderGens() {
@@ -193,11 +195,32 @@ export class MergeGame extends Game3D {
       const b = e.target.closest("[data-gen]");
       if (b) this.spawn(Number(b.dataset.gen));
     });
+    this.q("btn-hint")?.addEventListener("click", () => this._giveHint());
     const orders = this.q("orders");
     if (orders) orders.addEventListener("click", (e) => {
       const b = e.target.closest("[data-order]");
       if (b) this.deliver(Number(b.dataset.order));
     });
+  }
+
+  /** 💡 Pista: marca con aros verdes dos piezas iguales que se pueden juntar. */
+  _giveHint() {
+    if (this.state !== "playing") return;
+    const m = mergeOf(this.progress);
+    const seen = new Map();
+    for (let i = 0; i < CELLS; i++) {
+      const code = m.grid[i];
+      if (!code || tierIdx(code) >= maxTier(chainIdx(code))) continue;
+      if (seen.has(code)) {
+        this.hint = { cells: [seen.get(code), i], t: 4 };
+        this.banner("💡 ¡Junta estas dos!");
+        audio.playPop();
+        return;
+      }
+      seen.set(code, i);
+    }
+    this.banner(emptyCells(m).length ? "💡 No hay pares: saca un producto nuevo abajo 👇" : "💡 No hay pares: entrega un pedido para hacer espacio");
+    audio.playBump();
   }
 
   spawn(c) {
@@ -373,11 +396,11 @@ export class MergeGame extends Game3D {
     const aspect = this.camera.aspect;
     const vf = (this.camera.fov * Math.PI) / 180;
     const wide = aspect > 1.25; // en celular acostado, el tablero va a la izquierda y la barra a la derecha
-    const needH = (ROWS * CELL * (wide ? 1.08 : 0.92) + (wide ? 2.2 : 5.6)) / 2;
+    const needH = (ROWS * CELL * (wide ? 1.02 : 0.92) + (wide ? 1.3 : 5.2)) / 2;
     const needW = (COLS * CELL + 0.9) / 2 / (wide ? aspect * 0.66 : aspect);
     const half = Math.max(needH, needW);
     const dist = half / Math.tan(vf / 2);
-    const tilt = 0.42;
+    const tilt = 0.26; // casi desde arriba: se ve el tablero entero sin que se achique al fondo
     const shift = wide ? dist * Math.tan(vf / 2) * aspect * 0.34 : 0;
     this.camBase = new THREE.Vector3(shift, Math.cos(tilt) * dist, Math.sin(tilt) * dist + 0.3);
     this.camera.position.copy(this.camBase);
@@ -416,11 +439,40 @@ export class MergeGame extends Game3D {
       this.sel.material.color.setHex(same ? 0x7be08a : 0xff7ab8);
       this.sel.scale.setScalar(1 + Math.sin(this.time * 9) * 0.06);
     } else this.sel.visible = false;
+    this._updateRings(dt);
     if (this.camBase) this.camera.lookAt(this.camLook);
+  }
+
+  /** Aros verdes: al arrastrar una pieza, las otras iguales (con las que se puede juntar); o las dos de la pista. */
+  _updateRings(dt) {
+    let cells = [];
+    const d = this.drag;
+    if (d && d.moved && this.pieces[d.from]) {
+      const code = this.pieces[d.from].code;
+      if (tierIdx(code) < maxTier(chainIdx(code))) for (let i = 0; i < CELLS; i++) if (i !== d.from && this.pieces[i] && this.pieces[i].code === code) cells.push(i);
+    } else if (this.hint.t > 0) {
+      this.hint.t -= dt;
+      cells = this.hint.cells.filter((i) => this.pieces[i]);
+    }
+    while (this.rings.length < cells.length) {
+      const r = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.07, 8, 32), new THREE.MeshBasicMaterial({ color: 0x4be06a }));
+      r.rotation.x = Math.PI / 2;
+      this.scene.add(r);
+      this.rings.push(r);
+    }
+    const pulse = 1 + Math.sin(this.time * 8) * 0.08;
+    this.rings.forEach((r, k) => {
+      const i = cells[k];
+      r.visible = i != null;
+      if (i == null) return;
+      r.position.set(cellX(i), 0.24, cellZ(i));
+      r.scale.setScalar(pulse);
+    });
   }
 
   pauseForMenu() {
     this.drag = null;
+    this.hint.t = 0;
     // jugar un rato cuenta como una partida para las misiones y la experiencia
     if (this.sessionMerges >= 3 && this.progress) {
       try { recordRun(this.progress, GAME_ID, this.score || 0, {}); } catch (e) { /* no debe romper la salida */ }

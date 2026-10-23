@@ -3,17 +3,17 @@
 // maridajes, guarda las creaciones en el perfil y permite pedir algo parecido
 // por WhatsApp (solo un mensaje, sin precios ni promesas).
 
-import { THREE, Game3D, canvasTexture, makeBunting } from "./three-kit.js?v=980cf22f17";
-import { createMatichico } from "./matichico3d.js?v=980cf22f17";
-import { saveProgress, earnCoins, reportScore, addToLeaderboard, saveCreation, deleteCreation, todayKey } from "./storage.js?v=980cf22f17";
-import { recordRun } from "./progression.js?v=980cf22f17";
-import * as audio from "./audio.js?v=980cf22f17";
+import { THREE, Game3D, canvasTexture, makeBunting } from "./three-kit.js?v=6ffcfcb247";
+import { createMatichico } from "./matichico3d.js?v=6ffcfcb247";
+import { saveProgress, earnCoins, reportScore, addToLeaderboard, saveCreation, deleteCreation, todayKey } from "./storage.js?v=6ffcfcb247";
+import { recordRun } from "./progression.js?v=6ffcfcb247";
+import * as audio from "./audio.js?v=6ffcfcb247";
 import {
   PRODUCTS, CHOCOLATES, FLAVORS, TOPPINGS, WRAPS, WRAP_COLORS, MOTIFS, STEPS,
   defaultCreation, sanitize, scoreCreation, comboKey, dailyChallenge, matchesChallenge,
   describeChallenge, describeCreation, whatsappUrl, drawLabel, getProduct, getFlavor,
-} from "./creador-data.js?v=980cf22f17";
-import { buildCreation } from "./creador-3d.js?v=980cf22f17";
+} from "./creador-data.js?v=6ffcfcb247";
+import { buildCreation } from "./creador-3d.js?v=6ffcfcb247";
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -446,11 +446,14 @@ export class CreadorGame extends Game3D {
     save.type = "button";
     save.disabled = r.saved;
     save.addEventListener("click", () => this._save());
-    const wa = el("button", "btn-whatsapp", "💬 Pedir algo parecido por WhatsApp");
-    wa.type = "button";
-    wa.addEventListener("click", () => window.open(whatsappUrl(c), "_blank", "noopener"));
-    // En la app de tienda (sin enlaces a matichoc.cl ni a WhatsApp) el botón no se muestra.
+    // En la app de tienda (sin enlaces a matichoc.cl ni a WhatsApp) el botón ni siquiera se crea.
     const inApp = document.documentElement.dataset.app === "1";
+    let wa = null;
+    if (!inApp) {
+      wa = el("button", "btn-whatsapp", "💬 Pedir algo parecido por WhatsApp");
+      wa.type = "button";
+      wa.addEventListener("click", () => window.open(whatsappUrl(c), "_blank", "noopener"));
+    }
     const again = el("button", "btn-secondary", "🔁 Crear otro");
     again.type = "button";
     again.addEventListener("click", () => { this.cfg = defaultCreation(); this.step = 0; this.view = "wizard"; this.touched = false; this.userYaw = 0; this._rebuild(true); this._renderPanel(); });

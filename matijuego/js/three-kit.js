@@ -4,14 +4,14 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=980cf22f17";
-import { IS_DEMO, demoAllows } from "./demo.js?v=980cf22f17";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=980cf22f17";
-import * as audio from "./audio.js?v=980cf22f17";
-import { recordRun, runBonus } from "./progression.js?v=980cf22f17";
-import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=980cf22f17";
-import { missionFor } from "./missions.js?v=980cf22f17";
-import { costOf, spendEnergy, energyOf } from "./energy.js?v=980cf22f17";
+import { getOutfit } from "./characters.js?v=6ffcfcb247";
+import { IS_DEMO, demoAllows } from "./demo.js?v=6ffcfcb247";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=6ffcfcb247";
+import * as audio from "./audio.js?v=6ffcfcb247";
+import { recordRun, runBonus } from "./progression.js?v=6ffcfcb247";
+import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=6ffcfcb247";
+import { missionFor } from "./missions.js?v=6ffcfcb247";
+import { costOf, spendEnergy, energyOf } from "./energy.js?v=6ffcfcb247";
 
 export { THREE };
 
@@ -206,9 +206,8 @@ export function makeStars(count = 400, radius = 120) {
 }
 
 /** Banderines de colores de marca sobre una línea (como en la web y la feria 3D). */
-export function makeBunting(from, to, { count = 14, sag = 0.7, size = 0.28 } = {}) {
+export function makeBunting(from, to, { count = 14, sag = 0.7, size = 0.28, colors = [0xd4216c, 0xffc800, 0xcfd767, 0xfff6e6, 0xf08a3c] } = {}) {
   const group = new THREE.Group();
-  const colors = [0xd4216c, 0xffc800, 0xcfd767, 0xfff6e6, 0xf08a3c];
   const geo = new THREE.ConeGeometry(size, size * 2, 3);
   geo.rotateX(Math.PI);
   const flags = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7, side: THREE.DoubleSide }), count);

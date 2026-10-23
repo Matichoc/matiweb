@@ -6,17 +6,19 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=980cf22f17";
-import { createMatichico } from "./matichico3d.js?v=980cf22f17";
-import { CHARACTERS, getOutfit } from "./characters.js?v=980cf22f17";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=980cf22f17";
-import { GAMES_CATALOG } from "./games-catalog.js?v=980cf22f17";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=980cf22f17";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=980cf22f17";
-import { levelInfo } from "./progression.js?v=980cf22f17";
-import { bindStick } from "./stick.js?v=980cf22f17";
-import * as audio from "./audio.js?v=980cf22f17";
-import { TownFun } from "./town-fun.js?v=980cf22f17";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=6ffcfcb247";
+import { createMatichico } from "./matichico3d.js?v=6ffcfcb247";
+import { CHARACTERS, getOutfit } from "./characters.js?v=6ffcfcb247";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=6ffcfcb247";
+import { GAMES_CATALOG } from "./games-catalog.js?v=6ffcfcb247";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6ffcfcb247";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=6ffcfcb247";
+import { levelInfo } from "./progression.js?v=6ffcfcb247";
+import { bindStick } from "./stick.js?v=6ffcfcb247";
+import * as audio from "./audio.js?v=6ffcfcb247";
+import { TownFun } from "./town-fun.js?v=6ffcfcb247";
+import { TownFestival } from "./town-festival.js?v=6ffcfcb247";
+import { talkTo, celebrateAtFountain, stepPlace, gossip } from "./adventure.js?v=6ffcfcb247";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -137,13 +139,17 @@ export class TownGame extends Game3D {
     this._buildFountain();
     this._buildBuildings();
     this._buildArcade();
+    this.fun = new TownFun(this); // faros llamativos, baile, trampolines, circuito, tesoros, parkour y puertas de juegos
+    this.fun.buildWorld(); // casitas y recorridos de parkour van antes que los árboles, para que nada quede dentro de uno
+    this.festival = new TownFestival(this); // rincón de la plaza, cancha y aro de la aventura del festival (js/adventure.js)
+    this.festival.buildWorld();
     this._buildDecor();
     this._buildCollectibles();
     this._buildNeighbors();
     this._buildEvent();
     this._ensureHero();
-    this.fun = new TownFun(this); // faros llamativos, baile, trampolines, circuito, tesoros y actividades del día
     this.fun.build();
+    this.festival.build();
   }
 
   _signTexture(text, color, icon) {
@@ -417,7 +423,8 @@ export class TownGame extends Game3D {
       const p = pol(deg, 26 + rnd() * 14);
       spots.push([p.x, p.z, 0.8 + rnd() * 0.6]);
     }
-    const good = spots.filter(([x, z]) => !this._nearStructure(x, z, 6));
+    const claimed = this.fun ? this.fun.claimed : []; // casitas y recorridos de parkour: sin árboles encima
+    const good = spots.filter(([x, z]) => !this._nearStructure(x, z, 6) && !claimed.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + 2.5));
     const trunkGeo = new THREE.CylinderGeometry(0.28, 0.4, 2.4, 6);
     const crownGeo = new THREE.IcosahedronGeometry(1.7, 0);
     const trunks = new THREE.InstancedMesh(trunkGeo, this.m.choco, good.length);
@@ -683,6 +690,10 @@ export class TownGame extends Game3D {
       this.heroYaw = Math.PI;
       this.camYaw = 0;
     }
+    if (this.festival) {
+      this.festival.refresh(); // el perfil pudo cambiar, o avanzar la aventura fuera del Pueblo
+      this.festival.applyDest(); // "Ir al Pueblo" desde la aventura: aparece junto al objetivo
+    }
     this.vel.set(0, 0, 0);
     this._syncHero(0);
     this._placeCamera(true);
@@ -731,6 +742,7 @@ export class TownGame extends Game3D {
     } else {
       this._updateNeighbors(dt);
     }
+    if (this.festival) this.festival.update(dt);
     this._animateWorld(dt);
     this._syncHero(dt);
     this._updateCamera(dt);
@@ -754,7 +766,8 @@ export class TownGame extends Game3D {
   _move(dt) {
     const inp = this._input();
     const mv = this._move_();
-    const top = mv.speed * (this.keys.sprint ? 1.35 : 1);
+    let top = mv.speed * (this.keys.sprint ? 1.35 : 1);
+    if (this.fun && this.fun.airborne) top = Math.min(top, 7); // en el aire se controla mejor: los saltos de parkour no se pasan de largo
     const acc = (mv.id === "skates" || mv.id === "board" ? 34 : 60) * dt;
     this.vel.x += clamp(inp.x * top - this.vel.x, -acc, acc);
     this.vel.z += clamp(inp.z * top - this.vel.z, -acc, acc);
@@ -904,9 +917,15 @@ export class TownGame extends Game3D {
         if (d < 0.6) {
           n.wait = 1.5 + Math.random() * 4;
           const a = Math.random() * Math.PI * 2;
-          const r = 6 + Math.random() * 40;
-          n.tx = Math.sin(a) * r;
-          n.tz = Math.cos(a) * r;
+          if (n.home) { // los vecinos de la aventura se quedan cerca de su lugar, para encontrarlos fácil
+            const r = Math.random() * 2.2;
+            n.tx = n.home.x + Math.sin(a) * r;
+            n.tz = n.home.z + Math.cos(a) * r;
+          } else {
+            const r = 6 + Math.random() * 40;
+            n.tx = Math.sin(a) * r;
+            n.tz = Math.cos(a) * r;
+          }
         } else {
           n.x += (tx / d) * 1.9 * dt;
           n.z += (tz / d) * 1.9 * dt;
@@ -1017,6 +1036,9 @@ export class TownGame extends Game3D {
     audio.playPurchase();
     if (t.kind === "npc") this._talk(t.npc);
     else if (t.kind === "ring") { this.fun && this.fun.startCircuit(); }
+    else if (t.kind === "puzzle") { this.fun && this.fun.openDoor(t.puzzle); }
+    else if (t.kind === "fest") { this.festival && this.festival.act(t); }
+    else if (t.kind === "fountain" && stepPlace(this.progress) === "fuente") this._celebrate(celebrateAtFountain(this.progress), { x: 0, z: 0 });
     else if (t.kind === "fountain") {
       this.popups.add(new THREE.Vector3(0, 4.6, 0), "¡Mmm, qué rico! 🍫", "combo");
       this.particles.burst(new THREE.Vector3(0, 3.6, 0), [0x64321b, 0xffc800, 0xfff6e6], 22, 4, 1, 4, 1);
@@ -1028,7 +1050,12 @@ export class TownGame extends Game3D {
   _talk(n) {
     const daily = this._daily();
     const say = n.def.say;
-    let text = say[n.said % say.length];
+    // los vecinos de la aventura hablan según tu avance (y recuerdan lo que construiste); los demás, lo de siempre
+    const adv = talkTo(this.progress, n.def.name, this.event);
+    let text = adv ? adv.text : say[n.said % say.length];
+    const news = adv ? [] : gossip(this.progress);
+    if (news.length && n.said % 2 === 1) text = news[Math.floor(n.said / 2) % news.length]; // también comentan lo que construiste
+    if (adv) saveProgress(this.progress);
     n.said++;
     n.speaking = 2.5;
     if (!daily.talked.includes(n.def.name)) {
@@ -1043,9 +1070,66 @@ export class TownGame extends Game3D {
     if (box) {
       box.querySelector(".td-name").textContent = n.def.name;
       box.querySelector(".td-text").textContent = text;
+      this._dialogButtons(adv && adv.play ? adv.play : null);
       box.classList.remove("hidden");
       this.dialogOpen = true; // se queda abierto hasta que la niña lo toque (antes se cerraba solo a los 6 segundos y no alcanzaba a leerlo)
     }
+    if (!adv) return;
+    if (adv.step && !adv.reward) window.dispatchEvent(new CustomEvent("adventure-changed", { detail: { step: adv.step } }));
+    if (adv.action === "choose") window.dispatchEvent(new CustomEvent("adventure-choose", { detail: { key: adv.choice } }));
+    if (adv.action === "celebrate") this._celebrate(adv, n);
+  }
+
+  /** Atajos para jugar desde el diálogo (cuando el vecino pide terminar una partida). */
+  _dialogButtons(games) {
+    const box = this.q("dialog");
+    let row = box.querySelector(".td-actions");
+    if (!row) {
+      row = document.createElement("div");
+      row.className = "td-actions";
+      box.insertBefore(row, box.querySelector("small"));
+    }
+    row.innerHTML = "";
+    if (!games) return;
+    const names = { pichanga: "⚽ Pichanga", basquet2v2: "🏀 2 contra 2" };
+    const pick = ["pichanga", "basquet2v2", "memoria", "salto", "basquet_tiros", "tetris", "recolecta"].filter((g) => games.includes(g)).slice(0, 3);
+    for (const id of pick) {
+      const entry = GAMES_CATALOG.find((x) => x.id === id);
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn-primary td-play";
+      b.textContent = names[id] || `${entry ? entry.icon : "▶"} ${entry ? entry.name : id}`;
+      b.addEventListener("pointerdown", (e) => e.stopPropagation());
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this._closeDialog();
+        window.dispatchEvent(new CustomEvent("town-action", { detail: { kind: "game", game: id } }));
+      });
+      row.appendChild(b);
+    }
+  }
+
+  /** Cierre de un capítulo: fiesta en el lugar, y el menú paga el premio (una sola vez; ver js/adventure.js). */
+  _celebrate(res, at) {
+    if (!res) return;
+    const p = new THREE.Vector3(at.x, 3, at.z);
+    this.particles.burst(p, [0xffc800, 0xd4216c, 0x4fd0ff, 0x4fd09a, 0xffffff], 40, 6, 1.4, 5, 1.3);
+    audio.playVictory();
+    this.haptic(80);
+    if (res.reward) this.popups.add(new THREE.Vector3(at.x, 4.2, at.z), `+${res.reward.coins} 🍫✨ +${res.reward.xp} XP`, "coin");
+    this.banner(res.chapter ? `🎉 ¡Capítulo ${res.chapter.n} completo!` : "🎉 ¡Festival!");
+    if (!(at && at.def)) {
+      const box = this.q("dialog");
+      if (box) {
+        box.querySelector(".td-name").textContent = "🎉 Gran festival";
+        box.querySelector(".td-text").textContent = res.text;
+        this._dialogButtons(null);
+        box.classList.remove("hidden");
+        this.dialogOpen = true;
+      }
+    }
+    window.dispatchEvent(new CustomEvent("adventure-changed", { detail: { reward: res.reward, chapter: res.chapter } }));
+    if (this.festival) this.festival.refresh();
   }
 
   _closeDialog() {
@@ -1142,7 +1226,7 @@ export class TownGame extends Game3D {
   }
 
   _placeCamera(snap = false) {
-    const target = new THREE.Vector3(this.pos.x, 1.4, this.pos.z);
+    const target = new THREE.Vector3(this.pos.x, 1.4 + this.pos.y * 0.75, this.pos.z);
     if (!this.camFocus || snap) this.camFocus = target.clone();
     const portrait = this.camera.aspect < 0.95;
     const dist = portrait ? 12.5 : 9.5;
@@ -1154,7 +1238,7 @@ export class TownGame extends Game3D {
 
   _updateCamera(dt) {
     const k = 1 - Math.exp(-9 * Math.max(dt, 0.001));
-    const t = new THREE.Vector3(this.pos.x, 1.4, this.pos.z);
+    const t = new THREE.Vector3(this.pos.x, 1.4 + this.pos.y * 0.75, this.pos.z);
     if (!this.camFocus) this.camFocus = t.clone();
     this.camFocus.lerp(t, k);
     this._placeCamera();
@@ -1190,10 +1274,15 @@ export class TownGame extends Game3D {
 
   _bindInput() {
     const map = { ArrowLeft: "left", a: "left", A: "left", ArrowRight: "right", d: "right", D: "right", ArrowUp: "up", w: "up", W: "up", ArrowDown: "down", s: "down", S: "down" };
+    window.addEventListener("adventure-changed", () => { if (this.festival && this.ready) this.festival.refresh(); });
     window.addEventListener("keydown", (e) => {
-      if (!this.running) return;
-      if (e.key === "e" || e.key === "E" || e.key === "Enter" || e.code === "Space") {
-        if (this.state === "playing") { e.preventDefault(); if (!e.repeat) this.act(); }
+      if (!this.running || (this.fun && this.fun.puzzleOpen) || document.querySelector(".modal:not(.hidden)")) return;
+      if (e.key === "e" || e.key === "E" || e.key === "Enter" || e.code === "Space" || e.key === "j" || e.key === "J") {
+        if (this.state === "playing") {
+          e.preventDefault();
+          // Espacio usa lo que tienes cerca (hablar, entrar...) y, si no hay nada, salta; J siempre salta
+          if (!e.repeat) { if (e.key === "j" || e.key === "J" || (e.code === "Space" && !this.target)) this.fun && this.fun.jump(); else this.act(); }
+        }
         return;
       }
       if (e.key === "q" || e.key === "Q") { this.camYaw += 0.25; return; }
@@ -1220,6 +1309,8 @@ export class TownGame extends Game3D {
 
     const joy = document.getElementById("town-joy");
     if (joy) bindStick(joy, (x, y) => { this.joy.x = x; this.joy.y = y; });
+    const jump = document.getElementById("town-btn-jump");
+    if (jump) jump.addEventListener("pointerdown", (e) => { e.preventDefault(); this.fun && this.fun.jump(); });
     const spd = document.getElementById("town-btn-speed");
     if (spd) spd.addEventListener("pointerdown", (e) => { e.preventDefault(); this.cycleMove(); });
     const act = document.getElementById("town-btn-action");

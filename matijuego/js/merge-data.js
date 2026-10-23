@@ -7,8 +7,8 @@
 // progress.merge = { v:2, grid:[código], bests:[nivel máximo de cada familia], delivered, merges, spawned, orders:[{c,t,coins,xp}], dubai }
 // código de una pieza = familia * 10 + nivel   (0 = casillero vacío)
 
-import { saveProgress, earnCoins } from "./storage.js?v=980cf22f17";
-import { addXp } from "./progression.js?v=980cf22f17";
+import { saveProgress, earnCoins } from "./storage.js?v=6ffcfcb247";
+import { addXp } from "./progression.js?v=6ffcfcb247";
 
 export const COLS = 6;
 export const ROWS = 8;

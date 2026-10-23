@@ -6,12 +6,12 @@
 // Versión "Gran Vitrina": guardar una pieza (C / Shift), combos y back-to-back, cubos de poder
 // (bomba que limpia 3x3 y rayo que limpia la fila), subida de nivel con cambio de ambiente y música.
 
-import { THREE, Game3D, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=980cf22f17";
-import { createMatichico } from "./matichico3d.js?v=980cf22f17";
-import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=980cf22f17";
-import { saveProgress, earnCoins } from "./storage.js?v=980cf22f17";
-import * as audio from "./audio.js?v=980cf22f17";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=980cf22f17";
+import { THREE, Game3D, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=6ffcfcb247";
+import { createMatichico } from "./matichico3d.js?v=6ffcfcb247";
+import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=6ffcfcb247";
+import { saveProgress, earnCoins } from "./storage.js?v=6ffcfcb247";
+import * as audio from "./audio.js?v=6ffcfcb247";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=6ffcfcb247";
 
 const COLS = 8;
 const ROWS = 14;
