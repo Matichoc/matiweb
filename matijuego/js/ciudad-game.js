@@ -9,15 +9,16 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=b23d80ca32";
-import { createMatichico } from "./matichico3d.js?v=b23d80ca32";
-import { CHARACTERS, getOutfit } from "./characters.js?v=b23d80ca32";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=b23d80ca32";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=b23d80ca32";
-import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=b23d80ca32";
-import { recordRun } from "./progression.js?v=b23d80ca32";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=b23d80ca32";
-import * as audio from "./audio.js?v=b23d80ca32";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=b28a0715a9";
+import { createMatichico } from "./matichico3d.js?v=b28a0715a9";
+import { CHARACTERS, getOutfit } from "./characters.js?v=b28a0715a9";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=b28a0715a9";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=b28a0715a9";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=b28a0715a9";
+import { recordRun } from "./progression.js?v=b28a0715a9";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=b28a0715a9";
+import * as audio from "./audio.js?v=b28a0715a9";
+import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=b28a0715a9";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60
@@ -41,6 +42,7 @@ const MISSIONS = [
   { id: "abuelita", icon: "👵", title: "La abuelita cruza la calle", reward: 60, giver: "tita", level: "Media" },
   { id: "entrega", icon: "📦", title: "Entrega de chocolates (en auto)", reward: 70, giver: "ana", level: "Media" },
   { id: "carrera", icon: "🏁", title: "Carrera por la ciudad (en auto)", reward: 80, giver: "rayo", level: "Difícil" },
+  ...BARRIO_MISSIONS, // parque, playa y colegio (js/ciudad-barrios.js)
 ];
 
 // vecinos que dan misiones
@@ -53,6 +55,7 @@ const GIVERS = {
   tita: { name: "Abuelita Tita", x: -22, z: 53.2, yaw: 0, char: 2 },
   ana: { name: "Ana la Chocolatera", x: 28, z: 40.6, yaw: 0, char: 3 },
   rayo: { name: "Piloto Rayo", x: 8.6, z: 28, yaw: Math.PI * 1.5, char: 0 },
+  ...BARRIO_GIVERS,
 };
 
 const SAY = {
@@ -96,6 +99,7 @@ const SAY = {
     wait: ["Sube al auto y ve al aro de partida (el amarillo). ¡Son 8 aros! 🏁"],
     done: ["¡Qué vuelta! Eres un crack del volante 🏆"],
   },
+  ...BARRIO_SAY,
 };
 
 const PED_CHATS = [
@@ -136,6 +140,7 @@ const ROADS = [
   { x0: HALF - RW / 2, x1: HALF + RW / 2, z0: -HALF - RW / 2, z1: HALF + RW / 2 },
   { x0: -RW / 2, x1: RW / 2, z0: -HALF, z1: HALF },
   { x0: -HALF, x1: HALF, z0: -RW / 2, z1: RW / 2 },
+  ...EXTRA_ROADS, // las calles del centro siguen hasta los barrios nuevos
 ];
 const onRoad = (x, z) => ROADS.some((r) => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1);
 
@@ -321,6 +326,8 @@ export class CiudadGame extends Game3D {
     this._buildNorthEast();
     this._buildSouthWest();
     this._buildSouthEast();
+    this.barrios = new CiudadBarrios(this); // parque, playa con muelle y colegio, fuera del anillo
+    this.barrios.build();
     this._buildTrees();
     this._buildLamps();
     this._buildMarkers();
@@ -956,12 +963,17 @@ export class CiudadGame extends Game3D {
 
   _buildMinimap() {
     const S = 132;
-    const sc = S / 190; // el mapa muestra -95..95
+    const sc = S / 300; // el mapa muestra -150..150 (el centro y los barrios nuevos)
     const c = document.createElement("canvas");
     c.width = c.height = S;
     const g = c.getContext("2d");
     g.fillStyle = "#6fbf5f"; g.fillRect(0, 0, S, S);
     const X = (x) => S / 2 + x * sc;
+    // barrios nuevos: parque, playa (con el mar) y colegio
+    const tint = { parque: "#8fdc72", playa: "#f6dfa4", colegio: "#b8d98f" };
+    for (const a of AREAS) { g.fillStyle = tint[a.id]; g.fillRect(X(a.x0), X(a.z0), (a.x1 - a.x0) * sc, (a.z1 - a.z0) * sc); }
+    g.fillStyle = "#3ea8e0"; g.fillRect(X(128), X(-48), 22 * sc, 96 * sc);
+    g.fillStyle = "#5ab8e8"; g.beginPath(); g.arc(X(0), X(-108), 12 * sc, 0, 6.3); g.fill();
     g.fillStyle = "#4b4b55";
     for (const r of ROADS) g.fillRect(X(r.x0), X(r.z0), (r.x1 - r.x0) * sc, (r.z1 - r.z0) * sc);
     g.fillStyle = "#e9dcc4";
@@ -1021,6 +1033,7 @@ export class CiudadGame extends Game3D {
     for (const a of this.apples) { if (!a.home) a.home = a.mesh.position.clone(); a.got = false; a.fly = 0; a.mesh.visible = true; a.mesh.scale.setScalar(1); a.mesh.position.copy(a.home); }
     for (const t of this.trash) { if (!t.home) t.home = t.mesh.position.clone(); t.got = false; t.fly = 0; t.mesh.visible = true; t.mesh.scale.setScalar(1); t.mesh.position.copy(t.home); }
     for (const p of this.pots) this._waterPot(p, !!done.flores, true);
+    if (this.barrios) this.barrios.setDone(done);
     for (const g of this.golds) { g.got = false; g.sp.visible = g.ring.visible = true; }
     this.tita.x = this.tita.home.x;
     this.tita.z = this.tita.home.z;
@@ -1092,6 +1105,7 @@ export class CiudadGame extends Game3D {
       this._missionTick(dt);
       this._pickTarget();
     }
+    if (this.barrios) this.barrios.update(dt, this._playerXZ());
     this._traffic(dt);
     this._people(dt);
     this._animateWorld(dt);
@@ -1144,9 +1158,15 @@ export class CiudadGame extends Game3D {
     this._limit(this.pos, 1);
   }
 
+  /** No salirse de la ciudad: el centro (un círculo) y los barrios nuevos (rectángulos; el mar no, salvo el muelle). */
   _limit(p, k) {
     const r = Math.hypot(p.x, p.z);
-    if (r > LIMIT * k) { p.x *= (LIMIT * k) / r; p.z *= (LIMIT * k) / r; }
+    if (r <= LIMIT * k) return;
+    if (this.barrios && this.barrios.inBarrio(p.x, p.z)) return;
+    const rx = (p.x * LIMIT * k) / r;
+    const rz = (p.z * LIMIT * k) / r;
+    const c = this.barrios ? this.barrios.clampInto(p) : null;
+    if (c && c.d < Math.hypot(rx - p.x, rz - p.z)) { p.x = c.x; p.z = c.z; } else { p.x = rx; p.z = rz; }
   }
 
   _pushCircle(p, rad, cx, cz, cr) {
@@ -1598,6 +1618,7 @@ export class CiudadGame extends Game3D {
       carrera: () => { this.active.data = { phase: "goto", gate: 0, t: 0, count: 0, away: 0 }; },
     };
     init[id]?.();
+    if (this.barrios.isMission(id)) this.barrios.reset(id);
     this._updateBangs();
     this.banner(`${m.icon} Misión: ${m.title}`);
     audio.playPowerup();
@@ -1652,7 +1673,7 @@ export class CiudadGame extends Game3D {
     this._updateBangs();
     this.banner(`¡Misión cumplida! ${m.icon}`);
     this.popups.add(new THREE.Vector3(this.pos.x, 2.8, this.pos.z), reward ? `+${reward}` : "¡Gracias!", "combo");
-    this._toast(`${m.icon} ${m.title}: ${reward ? `+${reward} Matipuntos 🍫✨` : "¡Gracias! Hoy ya hiciste muchos pedidos; mañana habrá más 🌙"}${text} · +${run.xp} XP ⭐`);
+    this._toast(`${m.icon} ${m.title}: ${reward ? `+${reward} Matipuntos 🍫✨` : "¡Gracias! Hoy ya hiciste muchos pedidos; mañana habrá más 🌙"}${text} · +${run.xp} XP${run.stars ? ` · +${run.stars} ⭐ para el Pueblo` : ""}`);
     this.particles.burst(new THREE.Vector3(this.pos.x, 1.5, this.pos.z), [0xffc800, 0xd4216c, 0xfff6e6, 0x35f0ff], 40, 6, 1.1, 4);
     audio.playMissionComplete();
     this.haptic(60);
@@ -1825,7 +1846,14 @@ export class CiudadGame extends Game3D {
         }
         break;
       }
-      default: break;
+      default: {
+        // misiones de los barrios (patos, quitasoles, libros): juntar o hacer algo en varios lugares y volver
+        if (this.barrios && this.barrios.isMission(a.id)) {
+          const t = this.barrios.tick(a, dt, pl, this.inCar);
+          this.target = a.step === "report" ? toGiver : t || toGiver;
+        }
+        break;
+      }
     }
   }
 
@@ -1980,7 +2008,7 @@ export class CiudadGame extends Game3D {
       const m = MISSIONS.find((x) => x.id === a.id);
       qt = `${m.icon} ${m.title}`;
       const d = a.data;
-      const need = { reja: this.panels.length, manzanas: 10, plaza: 8, flores: this.pots.length, entrega: 3 }[a.id];
+      const need = { reja: this.panels.length, manzanas: 10, plaza: 8, flores: this.pots.length, entrega: 3 }[a.id] || m.need;
       if (a.id === "carrera") {
         qs = d.phase === "goto" ? "Sube al auto y ve al aro blanco de salida 🏁" : d.phase === "count" ? "¡Prepárate!" : `Aro ${d.gate + 1}/${GATES.length} · ⏱️ ${d.t.toFixed(1)} s`;
       } else if (a.id === "perrito") qs = a.step === "do" ? `Buscando a Choco… ${d.hint || ""}` : "Lleva a Choco con Lola 🐶";

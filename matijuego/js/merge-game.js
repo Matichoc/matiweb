@@ -3,13 +3,15 @@
 // ¡Mati Dubai! Los 4 generadores sacan productos nuevos (1 ⚡ cada uno) y los clientes piden productos para entregar.
 // El tablero se guarda en tu perfil.
 
-import { THREE, Game3D, lerp, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=b23d80ca32";
-import * as audio from "./audio.js?v=b23d80ca32";
-import { recordRun } from "./progression.js?v=b23d80ca32";
-import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, emptyCells } from "./merge-data.js?v=b23d80ca32";
-import { drawItem } from "./merge-art.js?v=b23d80ca32";
-import { makeItemMesh } from "./merge-models.js?v=b23d80ca32";
-import { NEIGHBORS, paintNeighbor } from "./neighbors.js?v=b23d80ca32";
+import { THREE, Game3D, lerp, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=b28a0715a9";
+import * as audio from "./audio.js?v=b28a0715a9";
+import { recordRun } from "./progression.js?v=b28a0715a9";
+import { saveProgress } from "./storage.js?v=b28a0715a9";
+import { addStars } from "./adventure.js?v=b28a0715a9";
+import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, orderHave, emptyCells } from "./merge-data.js?v=b28a0715a9";
+import { drawItem } from "./merge-art.js?v=b28a0715a9";
+import { makeItemMesh } from "./merge-models.js?v=b28a0715a9";
+import { paintNeighbor } from "./neighbors.js?v=b28a0715a9";
 
 const GAME_ID = "merge";
 const CELL = 1.1;
@@ -107,7 +109,7 @@ export class MergeGame extends Game3D {
     this.sel.rotation.x = Math.PI / 2;
     this.sel.visible = false;
     s.add(this.sel);
-    try { this._thumb = (await import("./thumb3d.js?v=b23d80ca32")).renderObjectThumb; } catch (e) { /* quedan los dibujos 2D */ }
+    try { this._thumb = (await import("./thumb3d.js?v=b28a0715a9")).renderObjectThumb; } catch (e) { /* quedan los dibujos 2D */ }
   }
 
   /**
@@ -252,13 +254,22 @@ export class MergeGame extends Game3D {
     const m = mergeOf(this.progress);
     const o = m.orders[idx];
     if (!o) return;
-    const info = itemInfo(codeOf(o.c, o.t));
     const done = deliverOrder(this.progress, idx);
-    if (!done) { this.banner(`Aún no tienes ${info.name} en el tablero`); audio.playBump(); return; }
-    const p = this.pieces[done.cell];
-    if (p) this.particles.burst(new THREE.Vector3(p.x, 0.5, p.z), [0xffd36a, 0xff7ab8, 0xffffff], 18, 4, 0.8, 6);
-    this._removePiece(done.cell);
-    this.popups.add(new THREE.Vector3(0, 1.2, -ROWS * CELL * 0.5 + 0.4), `+${done.coins} 🍫✨${done.pack ? " 🎴" : ""}`, "combo");
+    if (!done) {
+      const have = orderHave(m, o);
+      const miss = o.items.filter((_, k) => !have[k]).map((it) => itemInfo(codeOf(it.c, it.t)).name);
+      this.banner(`${o.who} todavía espera: ${miss.join(" y ")}`);
+      audio.playBump();
+      return;
+    }
+    for (const cell of done.cells) {
+      const p = this.pieces[cell];
+      if (p) this.particles.burst(new THREE.Vector3(p.x, 0.5, p.z), [0xffd36a, 0xff7ab8, 0xffffff], 18, 4, 0.8, 6);
+      this._removePiece(cell);
+    }
+    const star = addStars(this.progress, 1); // cada pedido entregado también da ⭐ para renovar el Pueblo
+    saveProgress(this.progress);
+    this.popups.add(new THREE.Vector3(0, 1.2, -ROWS * CELL * 0.5 + 0.4), `¡Gracias! +${done.coins} 🍫✨ +${star} ⭐${done.pack ? " 🎴" : ""}`, "combo");
     audio.playPurchase();
     this.haptic(25);
     this.score = foundCount(m) * 100 + m.delivered;
@@ -389,24 +400,15 @@ export class MergeGame extends Game3D {
     const box = this.q("orders");
     if (!box) return;
     const m = mergeOf(this.progress);
-    const who = this._customers(m.orders);
     box.innerHTML = m.orders.map((o, i) => {
-      const code = codeOf(o.c, o.t);
-      const info = itemInfo(code);
-      return `<button type="button" class="mg-order${canDeliver(m, i) ? " ready" : ""}" data-order="${i}" title="${who[i]} quiere: ${info.name}" aria-label="${who[i]} quiere ${info.name}${canDeliver(m, i) ? ". Toca para entregar" : ""}"><span class="mg-face" data-face="${i}"></span><span class="mg-bub"><img src="${this._urlOf(code)}" alt=""><em>${info.name}</em><b>${canDeliver(m, i) ? "¡Entregar!" : `🍫✨${o.coins}`}</b></span></button>`;
+      const ready = canDeliver(m, i);
+      const have = orderHave(m, o);
+      const names = o.items.map((it) => itemInfo(codeOf(it.c, it.t)).name);
+      const imgs = o.items.map((it, k) => `<i class="${have[k] ? "ok" : ""}"><img src="${this._urlOf(codeOf(it.c, it.t))}" alt=""></i>`).join("");
+      const label = `${o.who} quiere ${names.join(" y ")} ${o.why}${ready ? ". Toca para entregar" : ""}`;
+      return `<button type="button" class="mg-order${ready ? " ready" : ""}${o.items.length > 1 ? " two" : ""}" data-order="${i}" title="${label}" aria-label="${label}"><span class="mg-face" data-face="${i}"></span><span class="mg-bub"><span class="mg-imgs">${imgs}</span><em>${o.items.length > 1 ? `${names[0]} + 1` : names[0]}</em><b>${ready ? "¡Entregar!" : `🍫✨${o.coins}`}</b></span></button>`;
     }).join("");
-    box.querySelectorAll("[data-face]").forEach((el) => el.appendChild(this._faceCanvas(Number(el.dataset.face), who[Number(el.dataset.face)])));
-  }
-
-  /** Qué vecino hace cada pedido (siempre el mismo para el mismo pedido, y nunca dos veces el mismo a la vez). */
-  _customers(orders) {
-    const used = new Set();
-    return orders.map((o, i) => {
-      let k = (o.c * 3 + o.t * 5 + o.coins + i * 2) % NEIGHBORS.length;
-      while (used.has(k)) k = (k + 1) % NEIGHBORS.length;
-      used.add(k);
-      return NEIGHBORS[k].name;
-    });
+    box.querySelectorAll("[data-face]").forEach((el) => { const i = Number(el.dataset.face); el.appendChild(this._faceCanvas(i, m.orders[i].who)); });
   }
 
   /** La cara del cliente de un pedido: un canvas por casillero, que se vuelve a pintar solo si cambia el vecino. */

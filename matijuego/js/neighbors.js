@@ -1,8 +1,8 @@
 // Los vecinos del Pueblo: nombre, lo que dicen y cómo se visten. Lo usan el Pueblo (js/town-game.js) y el menú
 // (caras de la aventura), así se ven iguales en los dos lados.
 
-import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=b23d80ca32";
-import { ITEMS, OUTFITS, customizeOutfit } from "./wardrobe-data.js?v=b23d80ca32";
+import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=b28a0715a9";
+import { ITEMS, OUTFITS, customizeOutfit } from "./wardrobe-data.js?v=b28a0715a9";
 
 export const NEIGHBORS = [
   { name: "Mati Cacao", say: ["¡Hola! Bienvenida al Pueblo Matichoc 🍫", "En la Boutique hay peinados, capas y alas. ¡Pruébate todo antes de comprar!", "Los alfajores dorados que flotan por el pueblo dan Matipuntos ✨"] },
@@ -11,6 +11,10 @@ export const NEIGHBORS = [
   { name: "Bombi", say: ["¿Has visto la fuente de chocolate? ¡Es la más rica del mundo!", "Cada sobre trae 3 figuritas. ¡Completa tu álbum! 📖", "Dicen que las figuritas brillantes son muy difíciles de conseguir ✨"] },
   { name: "Trufita", say: ["En la Fábrica puedes inventar tu propio chocolate 🏭", "Me encanta jugar Memoria Matichoc. ¡Mi mejor racha es de 6!", "Si subes de nivel, ¡te regalan cosas para vestirte!"] },
   { name: "Capi Menta", say: ["Los juegos del Arcade están allá, con puertas brillantes 🎮", "Cada día que juegas, tu racha crece 🔥", "¡Corre por la plaza, no hay prisa! 😄"] },
+  // vecinos de los barrios nuevos (más allá de la cerca; ver js/town-zones.js)
+  { name: "Guardabosque Maní", say: ["En el bosque crecen mazorcas de cacao: ¡cosecha las de hoy! 🍫", "Shhh… si escuchas bien, se oye el arroyo.", "Cuido estos árboles desde que era chiquito 🌳"] },
+  { name: "Tía Avellana", say: ["Mis gallinas esconden huevos por toda la granja 🥚", "¡Las vacas dan la leche para el chocolate! 🐄", "Ven a ver el molino cuando sople el viento 🌬️"] },
+  { name: "Capitán Almendra", say: ["¡Ahoy! En la orilla del lago aparecen conchitas cada día 🐚", "Antes salíamos a navegar todas las tardes ⛵", "Desde el agua se ve todo el pueblo 🌅"] },
 ];
 
 let cache = null;
@@ -58,5 +62,5 @@ export function paintNeighbor(canvas, name) {
   };
   renderCharacterThumb(tmp, n.char, customizeOutfit(getOutfit(n.look.outfit), n.look));
   copy();
-  import("./thumb3d.js?v=b23d80ca32").then((m) => { m.renderHeroThumb(tmp, n.char, n.look); copy(); }).catch(() => { /* sin WebGL: queda el 2D */ });
+  import("./thumb3d.js?v=b28a0715a9").then((m) => { m.renderHeroThumb(tmp, n.char, n.look); copy(); }).catch(() => { /* sin WebGL: queda el 2D */ });
 }

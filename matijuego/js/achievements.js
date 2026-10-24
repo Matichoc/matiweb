@@ -11,11 +11,11 @@
 // `progress.bestScores`…) y se reclama una sola vez. Para agregar uno basta sumar una línea abajo.
 // La lista completa en texto está en docs/LOGROS.md (se genera con `node scripts/logros-doc.mjs`).
 
-import { getBestScore } from "./storage.js?v=b23d80ca32";
-import { levelInfo } from "./progression.js?v=b23d80ca32";
-import { PAGES } from "./album.js?v=b23d80ca32";
-import { chaptersDone } from "./adventure.js?v=b23d80ca32";
-import { cupsWon as sportCups } from "./sports-progress.js?v=b23d80ca32";
+import { getBestScore } from "./storage.js?v=b28a0715a9";
+import { levelInfo } from "./progression.js?v=b28a0715a9";
+import { PAGES } from "./album.js?v=b28a0715a9";
+import { chaptersDone } from "./adventure.js?v=b28a0715a9";
+import { cupsWon as sportCups } from "./sports-progress.js?v=b28a0715a9";
 
 const IN_APP = typeof document !== "undefined" && document.documentElement.dataset.app === "1";
 
@@ -298,7 +298,7 @@ chain("pueblo", "pueblo_vecinos", "Amigo de los vecinos", "👋", stat("townTalk
 chain("pueblo", "disenos", "Diseñador de chocolates", "🍫", (p) => (p.creations || []).length, "Guarda {n} creaciones en Crea tu Chocolate.", [[3, 20], [10, 60], [25, 150]]);
 chain("pueblo", "eventos", "Fiestero de temporada", "🎃", eventTokensTotal, "Junta {n} fichas de eventos de temporada.", [[10, 30], [40, 80], [100, 200]]);
 // Aventura del festival y deportes del Pueblo (js/adventure.js, js/sports-progress.js)
-chain("pueblo", "festival", "Organizador del festival", "🎪", (p) => (p.adventure ? chaptersDone(p) : 0), "Completa {n} capítulos del gran festival del Pueblo (hay 3).", [[1, 20], [2, 40], [3, 80]]);
+chain("pueblo", "festival", "Renovador del Pueblo", "🎪", (p) => (p.adventure ? chaptersDone(p) : 0), "Renueva {n} zonas del Pueblo (hay 7).", [[1, 20], [2, 40], [4, 80], [7, 200]]);
 chain("campana", "copa_pichanga", "Campeón de la Pichanga", "⚽", (p) => (p.sports ? sportCups(p, "pichanga") : 0), "Gana {n} copas de la Pichanga Choco.", [[1, 40], [3, 100]]);
 chain("campana", "copa_basquet", "Campeón del 2 contra 2", "🏀", (p) => (p.sports ? sportCups(p, "basquet2v2") : 0), "Gana {n} copas de Básquet 2 contra 2.", [[1, 40], [3, 100]]);
 

@@ -1,25 +1,28 @@
-// Pantallas de la aventura en el menú: los tres accesos grandes ("Continuar mi aventura", "Jugar libremente" y
-// "Mi personaje y mis espacios"), la pantalla "El gran festival", el cuadro para elegir estilos, la meta personal,
-// el resumen al volver y el pago (una sola vez) de los premios de cada capítulo.
-// La lógica (qué paso toca, qué se cobró) está en js/adventure.js; aquí solo se muestra y se conecta con el menú.
+// Pantallas de la aventura "Renovar el Pueblo" en el menú: los tres accesos grandes ("Continuar mi aventura", "Jugar
+// libremente" y "Mi personaje y mis espacios"), la lista de tareas de la zona (cada una cuesta ⭐, como en los juegos de
+// renovar), el cuadro para elegir estilos, la pantalla "Mis lugares y copas", la meta personal, el resumen al volver y el
+// pago (una sola vez) de los premios de cada zona.
+// La lógica (qué tarea toca, cuántas ⭐ hay, qué se cobró) está en js/adventure.js; aquí solo se muestra y se conecta.
 
 import {
-  CHAPTERS, CHOICES, GOALS, adventureOf, currentStep, chapterDone, objective, choose, choiceOf, choiceOption, placeOpen,
-  setGoal, goalStatus, returnSummary, seasonalChallenge, setTownDest, stepPlace, startAdventure, adventureComplete, markIntroSeen,
-} from "./adventure.js?v=b23d80ca32";
-import { paintNeighbor } from "./neighbors.js?v=b23d80ca32";
-import { sportOf, cupsWon, cupRival, DIFF_NAMES } from "./sports-progress.js?v=b23d80ca32";
-import { activeEvent } from "./events.js?v=b23d80ca32";
-import { GAMES_CATALOG } from "./games-catalog.js?v=b23d80ca32";
-import { isUnlocked } from "./unlocks.js?v=b23d80ca32";
-import { earnCoins, saveProgress } from "./storage.js?v=b23d80ca32";
-import { addXp, onProgressEvent } from "./progression.js?v=b23d80ca32";
-import * as audio from "./audio.js?v=b23d80ca32";
+  ZONES, CHOICES, GOALS, adventureOf, currentTask, zoneDone, zoneProgress, objective, doTask, choose, choiceOf, choiceOption,
+  placeOpen, setGoal, goalStatus, returnSummary, seasonalChallenge, setTownDest, stepPlace, startAdventure, adventureComplete,
+  markIntroSeen, starsOf, taskDone,
+} from "./adventure.js?v=b28a0715a9";
+import { paintNeighbor } from "./neighbors.js?v=b28a0715a9";
+import { sportOf, cupsWon, cupRival, DIFF_NAMES } from "./sports-progress.js?v=b28a0715a9";
+import { activeEvent } from "./events.js?v=b28a0715a9";
+import { GAMES_CATALOG } from "./games-catalog.js?v=b28a0715a9";
+import { isUnlocked } from "./unlocks.js?v=b28a0715a9";
+import { earnCoins, saveProgress } from "./storage.js?v=b28a0715a9";
+import { addXp, onProgressEvent } from "./progression.js?v=b28a0715a9";
+import * as audio from "./audio.js?v=b28a0715a9";
 
 const $ = (id) => document.getElementById(id);
 const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const SPORT_NAMES = { pichanga: "⚽ Pichanga 3 contra 3", basquet2v2: "🏀 Básquet 2 contra 2" };
-const PLAY_ORDER = ["pichanga", "basquet2v2", "memoria", "salto", "basquet_tiros", "merge", "tetris", "recolecta", "parkour", "porristas", "autos", "futbol"];
+/** Un juego rápido para ganar ⭐ desde cada zona (sirve cualquiera; estos están libres en un perfil nuevo). */
+const QUICK = { plaza: "memoria", cancha: "pichanga", aro: "basquet2v2", festival: "porristas", bosque: "recolecta", granja: "merge", lago: "salto" };
 const PLACE_INFO = {
   plaza: { key: "plaza", icon: "🌷", name: "Rincón de Bombi" },
   cancha: { key: "cancha", icon: "⚽", name: "Cancha del Pueblo" },
@@ -38,11 +41,6 @@ export function initAdventureUI(ctx) {
   const choiceDlg = $("adv-choice");
   const meDlg = $("me-dialog");
 
-  const gameLabel = (id) => {
-    if (SPORT_NAMES[id]) return SPORT_NAMES[id];
-    const e = GAMES_CATALOG.find((g) => g.id === id);
-    return e ? `${e.icon} ${e.name}` : id;
-  };
   /** ¿Se puede jugar ya este juego? (los bloqueados nunca se ofrecen como camino de la aventura) */
   const playable = (id) => {
     const p = P();
@@ -68,7 +66,8 @@ export function initAdventureUI(ctx) {
       earnCoins(p, r.coins);
       addXp(p, r.xp);
       audio.playVictory();
-      ctx.queueToast(`🎉 ¡Capítulo completo! +${r.coins} 🍫✨ y +${r.xp} XP ⭐`);
+      const z = ZONES.find((x) => x.id === r.zone);
+      ctx.queueToast(`🎉 ¡Zona renovada${z ? `: ${z.title}` : ""}! +${r.coins} 🍫✨ y +${r.xp} XP`);
     }
     saveProgress(p);
     renderPaths();
@@ -76,16 +75,18 @@ export function initAdventureUI(ctx) {
   });
   window.addEventListener("adventure-choose", (e) => openChoice(e.detail.key));
   onProgressEvent((ev) => {
-    if (ev.type === "adventure") {
-      const obj = objective(P());
-      ctx.queueToast(`🎪 ¡Conseguiste lo que faltaba!${obj.done ? "" : ` Ahora: ${obj.text.toLowerCase()}`}`);
+    if (ev.type === "stars") {
+      const p = P();
+      const obj = objective(p);
+      if (adventureOf(p).introSeen) ctx.queueToast(`⭐ +${ev.stars} para el Pueblo (tienes ${starsOf(p)})${!obj.done && obj.can ? ` · ¡Ya puedes: ${obj.task.text.toLowerCase()}!` : ""}`);
       renderPaths();
     } else if (ev.type === "season") ctx.queueToast(`${ev.event.icon} ¡Reto de ${ev.event.name} cumplido! +${ev.tokens} ${ev.event.token}`);
   });
 
   // ---------- elegir el estilo de un lugar ----------
 
-  function openChoice(key) {
+  /** Elegir un estilo: para hacer la tarea (`onPick` la hace con la opción) o, después, para cambiarlo gratis. */
+  function openChoice(key, onPick = null) {
     const p = P();
     const def = CHOICES[key];
     if (!def) return;
@@ -104,12 +105,13 @@ export function initAdventureUI(ctx) {
       b.querySelector("small").textContent = o.text;
       if (o.color != null) b.style.setProperty("--ao", `#${o.color.toString(16).padStart(6, "0")}`);
       b.addEventListener("click", () => {
+        choiceDlg.classList.add("hidden");
+        if (onPick) { onPick(o); return; }
         const r = choose(p, key, o.id);
         if (!r.ok) return;
         saveProgress(p);
-        choiceDlg.classList.add("hidden");
         audio.playPurchase();
-        ctx.showToast(r.advanced ? `${o.icon} ¡${o.name}! Mira cómo quedó en el Pueblo.` : `${o.icon} Cambiaste a ${o.name}.`);
+        ctx.showToast(`${o.icon} Cambiaste a ${o.name}. Mira cómo quedó en el Pueblo.`);
         window.dispatchEvent(new CustomEvent("adventure-changed", { detail: { chose: key } }));
       });
       box.appendChild(b);
@@ -118,6 +120,107 @@ export function initAdventureUI(ctx) {
     box.querySelector("button")?.focus();
   }
   $("adv-choice-close").addEventListener("click", () => choiceDlg.classList.add("hidden"));
+
+  // ---------- la lista de tareas de la zona (como en los juegos de renovar) ----------
+
+  const tasksDlg = $("adv-tasks");
+  const inTown = () => !$("screen-town").classList.contains("hidden");
+  const playQuick = (zone) => {
+    const game = QUICK[zone] || "memoria";
+    tasksDlg.classList.add("hidden");
+    if (inTown()) window.dispatchEvent(new CustomEvent("town-action", { detail: { kind: "game", game } }));
+    else ctx.playGame(game);
+  };
+
+  /** Hace la tarea: gasta las ⭐, cambia el Pueblo, paga el premio de la zona (una vez) y muestra la escena. */
+  function perform(task, option = null) {
+    const p = P();
+    const res = doTask(p, task.id, option ? option.id : null);
+    if (!res.ok) { renderTasks(); return; }
+    saveProgress(p);
+    tasksDlg.classList.add("hidden");
+    audio.playPurchase();
+    window.dispatchEvent(new CustomEvent("adventure-changed", { detail: { reward: res.reward || null, task: task.id } }));
+    if (inTown()) window.dispatchEvent(new CustomEvent("adventure-task-done", { detail: res }));
+    else { ctx.showToast(`${task.icon} ¡${task.text}: listo! ${res.say}`, 4200); goTown(task.zone.place); }
+  }
+
+  function renderTasks() {
+    const p = P();
+    const cur = currentTask(p);
+    const zone = cur ? cur.zone : ZONES[ZONES.length - 1];
+    const stars = starsOf(p);
+    const pr = zoneProgress(p, zone.id);
+    $("at-title").textContent = `${zone.icon} Zona ${zone.n}: ${zone.title}`;
+    $("at-stars").textContent = String(stars);
+    $("at-bar").style.width = `${Math.round((pr.done / pr.total) * 100)}%`;
+    const face = $("at-face");
+    if (face.dataset.npc !== zone.npc) { face.dataset.npc = zone.npc; paintNeighbor(face, zone.npc); }
+    $("at-say").textContent = !cur ? "¡Renovaste el Pueblo entero! Eres la persona más querida de todos." : pr.done === 0 ? zone.intro : `¡Vamos bien! Lo que sigue: ${cur.text.toLowerCase()}.`;
+    const list = $("at-list");
+    list.innerHTML = "";
+    for (const t of zone.tasks) {
+      const li = document.createElement("li");
+      const done = taskDone(p, t.id);
+      const now = cur && cur.id === t.id;
+      li.className = `at-task${done ? " done" : now ? " now" : " later"}`;
+      li.innerHTML = `<span class="at-ico"></span><span class="at-txt"></span>`;
+      li.querySelector(".at-ico").textContent = done ? "✅" : t.icon;
+      li.querySelector(".at-txt").textContent = t.text;
+      if (now) {
+        const can = stars >= t.cost;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = `at-go${can ? "" : " short"}`;
+        b.innerHTML = `<span>⭐${t.cost}</span>${can ? "¡Hacer!" : `faltan ${t.cost - stars}`}`;
+        b.disabled = !can;
+        b.addEventListener("click", () => {
+          if (!t.choice) { perform(t); return; }
+          tasksDlg.classList.add("hidden"); // el cuadro de estilos va encima, no detrás de la lista
+          openChoice(t.choice, (o) => perform(t, o));
+        });
+        li.appendChild(b);
+        if (!can) {
+          const q = document.createElement("button");
+          q.type = "button";
+          q.className = "at-play";
+          q.textContent = "▶ Jugar";
+          q.title = "Juega cualquier juego para ganar ⭐";
+          q.addEventListener("click", () => playQuick(zone.id));
+          li.appendChild(q);
+        }
+      } else if (!done) {
+        const c = document.createElement("small");
+        c.className = "at-cost";
+        c.textContent = `⭐${t.cost}`;
+        li.appendChild(c);
+      }
+      list.appendChild(li);
+    }
+    // el mapa de etapas: las 7 zonas del Pueblo
+    const map = $("at-map");
+    map.innerHTML = "";
+    for (const z of ZONES) {
+      const d = zoneDone(p, z.id);
+      const on = z.id === zone.id && !d;
+      const sp = document.createElement("span");
+      sp.className = `at-zone${d ? " done" : on ? " now" : " locked"}`;
+      sp.title = z.title;
+      sp.textContent = d ? "✓" : on ? z.icon : "🔒";
+      map.appendChild(sp);
+    }
+  }
+
+  function openTasks() {
+    const p = P();
+    if (!p) return;
+    startAdventure(p);
+    renderTasks();
+    tasksDlg.classList.remove("hidden");
+    tasksDlg.querySelector(".at-go:not([disabled]), .at-play, #adv-tasks-close")?.focus();
+  }
+  window.addEventListener("adventure-tasks", openTasks);
+  $("adv-tasks-close").addEventListener("click", () => tasksDlg.classList.add("hidden"));
 
   // ---------- menú: los tres caminos ----------
 
@@ -132,10 +235,15 @@ export function initAdventureUI(ctx) {
       btn.classList.remove("lp-pulse");
     } else {
       const obj = objective(p);
-      const npc = !obj.done && stepPlace(p) !== "fuente" ? obj.chapter.npc : null;
-      sub.textContent = obj.done ? "¡El festival está listo! Juega en la cancha y en el aro" : !a.introSeen ? "Los vecinos del Pueblo necesitan tu ayuda" : obj.text;
-      btn.classList.toggle("lp-pulse", !a.introSeen && !REDUCED);
-      // la cara del vecino que te espera, en vez de un ícono
+      const npc = obj.done ? null : obj.zone.npc;
+      if (!a.introSeen) sub.textContent = "Los vecinos del Pueblo necesitan tu ayuda";
+      else if (obj.done) sub.textContent = "¡Renovaste el Pueblo entero! Pasea por sus 7 zonas";
+      else {
+        const pr = zoneProgress(p, obj.zone.id);
+        sub.textContent = `⭐${starsOf(p)} · ${obj.zone.icon} ${obj.zone.title} ${pr.done}/${pr.total} · ${obj.can ? `¡Ya puedes: ${obj.task.text.toLowerCase()}!` : `Siguiente: ${obj.task.text.toLowerCase()} (⭐${obj.task.cost})`}`;
+      }
+      btn.classList.toggle("lp-pulse", (!a.introSeen || (!obj.done && obj.can)) && !REDUCED);
+      // la cara del vecino de la zona, en vez de un ícono
       const ico = btn.querySelector(".lp-ico");
       if (ico.dataset.npc !== (npc || "")) {
         ico.dataset.npc = npc || "";
@@ -175,14 +283,14 @@ export function initAdventureUI(ctx) {
     markIntroSeen(p);
     saveProgress(p);
     introDlg.classList.add("hidden");
-    goTown(stepPlace(p) || "fuente");
+    goTown(stepPlace(p) || "plaza");
   });
   $("adv-intro-close").addEventListener("click", () => introDlg.classList.add("hidden"));
   $("btn-path-adventure").addEventListener("click", () => {
     const p = P();
     if (!ctx.getCharacter()) { ctx.needCharacter(); return; }
     if (!adventureOf(p).introSeen) { openIntro(); return; }
-    goTown(stepPlace(p) || "fuente");
+    goTown(stepPlace(p) || "plaza");
   });
   $("btn-path-free").addEventListener("click", () => {
     const t = $("game-feature");
@@ -221,67 +329,57 @@ export function initAdventureUI(ctx) {
 
   function render() {
     const p = P();
-    const cur = currentStep(p);
-    // capítulos
+    const cur = currentTask(p);
+    // las zonas (etapas) del Pueblo
     const list = $("adv-chapters");
     list.innerHTML = "";
-    for (const ch of CHAPTERS) {
+    for (const z of ZONES) {
       const li = document.createElement("li");
-      const done = chapterDone(p, ch.id);
-      const now = cur && cur.chapter.id === ch.id;
+      const done = zoneDone(p, z.id);
+      const now = cur && cur.zone.id === z.id;
+      const pr = zoneProgress(p, z.id);
       li.className = `adv-ch${done ? " done" : now ? " now" : " later"}`;
       li.innerHTML = `<span class="ac-ico"></span><span class="ac-txt"><b></b><small></small></span>`;
-      li.querySelector(".ac-ico").textContent = done ? "✅" : ch.icon;
-      li.querySelector("b").textContent = `${ch.n}. ${ch.title}`;
-      li.querySelector("small").textContent = done ? "¡Terminado!" : now ? `Con ${ch.npc}` : "Después";
+      li.querySelector(".ac-ico").textContent = done ? "✅" : now ? z.icon : "🔒";
+      li.querySelector("b").textContent = `${z.n}. ${z.title}`;
+      li.querySelector("small").textContent = done ? "¡Renovada!" : now ? `Con ${z.npc} · ${pr.done}/${pr.total}` : "Después";
       list.appendChild(li);
     }
     // lo que toca ahora
     const nowEl = $("adv-now");
     nowEl.innerHTML = "";
     if (!cur) {
-      nowEl.appendChild(Object.assign(document.createElement("h2"), { textContent: "🎉 ¡El gran festival está listo!" }));
-      nowEl.appendChild(Object.assign(document.createElement("p"), { textContent: "Los vecinos recuerdan todo lo que hiciste. La cancha y el aro del Pueblo quedan abiertos: juega partidos y copas cuando quieras." }));
+      nowEl.appendChild(Object.assign(document.createElement("h2"), { textContent: "🎉 ¡Renovaste el Pueblo entero!" }));
+      nowEl.appendChild(Object.assign(document.createElement("p"), { textContent: "Los vecinos recuerdan todo lo que hiciste. Pasea por el bosque, la granja y el lago, y juega en la cancha y el aro cuando quieras." }));
       const row = document.createElement("div");
       row.className = "adv-actions";
-      row.append(btn("🏘️ Ir al Pueblo", "btn-primary", () => goTown("fuente")), btn(SPORT_NAMES.pichanga, "btn-secondary", () => ctx.playGame("pichanga")), btn(SPORT_NAMES.basquet2v2, "btn-secondary", () => ctx.playGame("basquet2v2")));
+      row.append(btn("🏘️ Ir al Pueblo", "btn-primary", () => goTown("plaza")), btn(SPORT_NAMES.pichanga, "btn-secondary", () => ctx.playGame("pichanga")), btn(SPORT_NAMES.basquet2v2, "btn-secondary", () => ctx.playGame("basquet2v2")));
       nowEl.appendChild(row);
     } else {
-      const ch = cur.chapter;
+      const z = cur.zone;
       const h = document.createElement("h2");
-      h.textContent = `${ch.icon} Capítulo ${ch.n}: ${ch.title}`;
+      h.textContent = `${z.icon} Zona ${z.n}: ${z.title}`;
       const need = document.createElement("p");
       need.className = "adv-need";
-      need.textContent = ch.need;
+      need.textContent = `${z.npc}: ${z.intro}`;
       const steps = document.createElement("ol");
       steps.className = "adv-steps";
-      for (const s of ch.steps) {
+      for (const t of z.tasks) {
         const li = document.createElement("li");
-        const done = !!adventureOf(p).steps[s.id];
-        li.className = done ? "done" : s.id === cur.id ? "now" : "later";
-        li.textContent = `${done ? "✓" : s.id === cur.id ? "▶" : "○"} ${s.text}`;
+        const done = taskDone(p, t.id);
+        li.className = done ? "done" : t.id === cur.id ? "now" : "later";
+        li.textContent = `${done ? "✓" : t.id === cur.id ? "▶" : "○"} ${t.icon} ${t.text}${done ? "" : ` · ⭐${t.cost}`}`;
         steps.appendChild(li);
       }
       const row = document.createElement("div");
       row.className = "adv-actions";
-      const place = stepPlace(p);
-      if (cur.kind === "choose") {
-        row.append(btn("🎨 Elegir el estilo", "btn-primary", () => openChoice(cur.choice)), btn(`🏘️ Ir con ${ch.npc}`, "btn-secondary", () => goTown(place)));
-      } else if (cur.kind === "play") {
-        const games = PLAY_ORDER.filter((g) => cur.games.includes(g) && playable(g)).slice(0, 4);
-        games.forEach((g, i) => row.appendChild(btn(`▶ ${gameLabel(g)}`, i ? "btn-secondary" : "btn-primary", () => ctx.playGame(g))));
-        const hint = document.createElement("p");
-        hint.className = "adv-hint";
-        hint.textContent = "Sirve cualquier resultado: lo importante es jugar la partida hasta el final.";
-        nowEl.append(h, need, steps, row, hint);
-        renderRest(p);
-        return;
-      } else if (place === "fuente") {
-        row.appendChild(btn("🎉 Ir a la fuente a celebrar", "btn-primary", () => goTown("fuente")));
-      } else {
-        row.appendChild(btn(`🏘️ Ir al Pueblo con ${ch.npc}`, "btn-primary", () => goTown(place)));
-      }
-      nowEl.append(h, need, steps, row);
+      const stars = starsOf(p);
+      row.append(btn(stars >= cur.cost ? `🔨 Ir a hacerlo (⭐${cur.cost})` : `🏘️ Ir al Pueblo con ${z.npc}`, "btn-primary", () => goTown(z.place)));
+      if (stars < cur.cost) row.append(btn("▶ Jugar para ganar ⭐", "btn-secondary", () => ctx.playGame(QUICK[z.id] || "memoria")));
+      const hint = document.createElement("p");
+      hint.className = "adv-hint";
+      hint.textContent = `Tienes ⭐${stars}. Las ⭐ se ganan jugando cualquier juego (ganes o pierdas), entregando pedidos en Mati Merge y juntando lo de los barrios.`;
+      nowEl.append(h, need, steps, row, hint);
     }
     renderRest(p);
   }
@@ -319,7 +417,7 @@ export function initAdventureUI(ctx) {
       t.querySelector(".adv-cups").textContent = cups || "Todavía sin copas";
       card.appendChild(t);
       if (playable(id)) card.appendChild(btn("▶ Jugar", "btn-primary btn-small", () => ctx.playGame(id)));
-      else card.appendChild(Object.assign(document.createElement("small"), { className: "adv-lock", textContent: "Se abre en el capítulo 2 (cancha del Pueblo)" }));
+      else card.appendChild(Object.assign(document.createElement("small"), { className: "adv-lock", textContent: "Se abre al poner los arcos de la cancha del Pueblo" }));
       sp.appendChild(card);
     }
     const medals = adventureOf(p).medals;
@@ -356,9 +454,9 @@ export function initAdventureUI(ctx) {
     if (ch) {
       seasonEl.innerHTML = "<h2></h2><p></p>";
       seasonEl.querySelector("h2").textContent = `${ev.icon} ${ev.name} (opcional)`;
-      seasonEl.querySelector("p").textContent = ch.done ? `✅ ¡Reto cumplido! Ganaste ${ch.tokens} ${ev.token}. El festival y todo tu avance siguen igual cuando termine la temporada.` : `${ch.text} Premio: ${ch.tokens} ${ev.token}. Es opcional: nada se pierde si no lo haces.`;
+      seasonEl.querySelector("p").textContent = ch.done ? `✅ ¡Reto cumplido! Ganaste ${ch.tokens} ${ev.token}. Todo lo que renovaste sigue igual cuando termine la temporada.` : `${ch.text} Premio: ${ch.tokens} ${ev.token}. Es opcional: nada se pierde si no lo haces.`;
     }
   }
 
-  return { renderPaths, showWelcome, open, render, isOpen: () => !screen.classList.contains("hidden"), complete: () => adventureComplete(P()) };
+  return { renderPaths, showWelcome, open, render, openTasks, isOpen: () => !screen.classList.contains("hidden"), complete: () => adventureComplete(P()) };
 }

@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=b23d80ca32"><style>
+<link rel="stylesheet" href="css/style.css?v=b28a0715a9"><style>
 /* Enlaces del juego hacia matichoc.cl (solo en la web; la app no los lleva ni este estilo): discretos. Texto chico, sin íconos ni colores de marca,
    para que el juego no empuje hacia la tienda. Siguen siendo legibles (color de texto de cada pantalla) y accesibles. */
 .site-links { gap: 2px 14px; margin: 18px 0 6px; }
@@ -109,16 +109,28 @@
 <div id="adv-intro" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="adv-intro-title">
   <div class="modal-card joy-card adv-intro-card">
     <p class="joy-kicker">🎪 Aventura del Pueblo</p>
-    <h2 id="adv-intro-title">¡Se viene el gran festival!</h2>
+    <h2 id="adv-intro-title">¡Renovemos el Pueblo!</h2>
     <div class="ai-faces">
       <figure><canvas width="128" height="128" data-npc="Bombi"></canvas><figcaption>Bombi</figcaption></figure>
       <figure><canvas width="128" height="128" data-npc="Capi Menta"></canvas><figcaption>Capi Menta</figcaption></figure>
       <figure><canvas width="128" height="128" data-npc="Don Cuchufli"></canvas><figcaption>Don Cuchufli</figcaption></figure>
     </div>
-    <p class="ai-text">Estos tres vecinos necesitan tu ayuda para preparar la fiesta del Pueblo: arreglar un <b>rincón de la plaza</b>, la <b>cancha de fútbol</b> y el <b>aro de básquet</b>.</p>
-    <p class="ai-how">👉 Busca al vecino que tiene un <b>❗</b>, háblale y haz lo que te pide. ¡Todo lo que arregles se queda en el Pueblo para siempre!</p>
+    <p class="ai-text">El Pueblo Matichoc está descuidado. Ayuda a los vecinos a dejarlo precioso, <b>zona por zona</b>: la plaza, la cancha, el aro, el gran festival… ¡y más allá de la cerca, un bosque, una granja y un lago!</p>
+    <p class="ai-how">⭐ Cada tarea cuesta estrellas, y las <b>⭐ se ganan jugando cualquier juego</b> (ganes o pierdas). ¡Te regalamos ⭐1 para la primera!</p>
     <button class="btn-primary joy-go" id="adv-intro-go" type="button">¡Vamos al Pueblo!</button>
     <button class="btn-secondary" id="adv-intro-close" data-back type="button">Ahora no</button>
+  </div>
+</div>
+<!-- Aventura: las tareas de la zona (al estilo de los juegos de renovar: cada tarea cuesta ⭐) -->
+<div id="adv-tasks" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="at-title">
+  <div class="modal-card joy-card adv-tasks-card">
+    <div class="at-head"><h2 id="at-title">Zona</h2><span class="at-stars" title="Estrellas para renovar el Pueblo">⭐ <b id="at-stars">0</b></span></div>
+    <div class="at-bar" aria-hidden="true"><i id="at-bar"></i></div>
+    <div class="at-npc"><canvas id="at-face" width="96" height="96"></canvas><p id="at-say"></p></div>
+    <ol id="at-list" class="at-list"></ol>
+    <div id="at-map" class="at-map" aria-label="Las zonas del Pueblo"></div>
+    <p class="at-how">⭐ Se ganan jugando <b>cualquier juego</b> (ganes o pierdas), entregando pedidos en Mati Merge y juntando lo de los barrios.</p>
+    <button id="adv-tasks-close" data-back class="btn-secondary" type="button">Seguir paseando</button>
   </div>
 </div>
 <!-- Menú: "Mi personaje y mis espacios" (lleva a las pantallas de siempre) -->
@@ -194,7 +206,7 @@
           <div class="stat-chip lb-coins" title="Matipuntos">🍫✨ <span id="hub-total-coins">0</span></div>
           <button id="btn-energy" class="stat-chip stat-chip-btn lb-energy" type="button" title="Energía: cada partida gasta un poco y se recarga con el tiempo">⚡ <b id="hub-energy">200</b><small>/<span id="hub-energy-max">200</span></small> <small id="hub-energy-next" class="en-next"></small><span class="lv-dot hidden" id="hub-energy-dot"></span></button>
           <button id="btn-open-progress" class="stat-chip stat-chip-btn lb-level" title="Nivel, misiones y álbum">
-            <span class="lv-badge">⭐ <b id="hub-level">1</b></span>
+            <span class="lv-badge">🏅 <b id="hub-level">1</b></span>
             <span class="lv-bar"><i id="hub-xp-fill"></i></span>
             <span class="lv-dot hidden" id="hub-progress-dot"></span>
           </button>
@@ -269,10 +281,10 @@
     <div class="adv">
       <header class="sh-top adv-top">
         <button id="btn-adventure-back" class="btn-secondary">← Volver</button>
-        <h1 class="logo sh-title">El gran festival</h1>
+        <h1 class="logo sh-title">Renovar el Pueblo</h1>
       </header>
       <div class="adv-body">
-        <ol id="adv-chapters" class="adv-chapters" aria-label="Capítulos"></ol>
+        <ol id="adv-chapters" class="adv-chapters" aria-label="Zonas del Pueblo"></ol>
         <section id="adv-now" class="adv-now" aria-live="polite"></section>
         <section class="adv-block"><h2>🏗️ Lo que construiste</h2><div id="adv-built" class="adv-built"></div></section>
         <section class="adv-block"><h2>🏆 Deportes del Pueblo</h2><div id="adv-sports" class="adv-sports"></div></section>
@@ -321,7 +333,7 @@
         <div class="stat-chip lb-coins" title="Matipuntos">🍫✨ <span id="pg-coins">0</span></div>
       </header>
       <div class="pg-level">
-        <div class="pg-lv-badge">⭐<b id="pg-level">1</b></div>
+        <div class="pg-lv-badge">🏅<b id="pg-level">1</b></div>
         <div class="pg-lv-body">
           <div class="pg-lv-name" id="pg-level-name">Nivel 1</div>
           <div class="pg-xpbar"><i id="pg-xp-fill"></i><span id="pg-xp-text">0 / 100 XP</span></div>
@@ -787,7 +799,8 @@
         <div class="hud-chip">🕒 <span id="town-hud-time">08:00</span></div>
         <div class="hud-chip">✨ <span id="town-hud-items">0/25</span></div>
         <div class="hud-chip hidden"><span id="town-hud-event"></span></div>
-        <div class="hud-chip">⭐ <span id="town-hud-level">Nv 1</span></div>
+        <div class="hud-chip">🏅 <span id="town-hud-level">Nv 1</span></div>
+        <div class="hud-chip hud-stars" title="Estrellas para renovar el Pueblo (se ganan jugando)">⭐ <span id="town-hud-stars">0</span></div>
         <div class="hud-chip">🍫✨ <span id="town-hud-coins">0</span></div>
         <button id="town-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
       </div>
@@ -1610,6 +1623,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=b23d80ca32"></script>
+<script type="module" src="js/main.js?v=b28a0715a9"></script>
 </body>
 </html>

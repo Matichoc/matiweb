@@ -2,7 +2,7 @@
 // (más Matipuntos por partida, nitro e imán más largos, escudo al partir), así que gastar bien sirve para ganar más.
 // progress.garage = { owned: [ids], car: id }
 
-import { spendCoins, saveProgress } from "./storage.js?v=b23d80ca32";
+import { spendCoins, saveProgress } from "./storage.js?v=b28a0715a9";
 
 export const CARS = [
   { id: "choco", name: "Choco Racer", icon: "🍫", price: 0, body: 0x64321b, trim: 0xd4216c, accent: 0xffc800, perks: "El de siempre", coin: 1, nitro: 1, magnet: 1, shield: false },
