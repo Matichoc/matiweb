@@ -6,11 +6,11 @@
 // Todo se guarda por perfil dentro de `progress` (xp, packs, album, daily) y se paga solo
 // con Matipuntos, sin compras reales.
 
-import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=a012447234";
-import { addEnergy } from "./energy.js?v=a012447234";
-import { getItem } from "./wardrobe-data.js?v=a012447234";
-import { activeEvent, addEventTokens } from "./events.js?v=a012447234";
-import { isUnlocked } from "./unlocks.js?v=a012447234";
+import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=b28a0715a9";
+import { addEnergy } from "./energy.js?v=b28a0715a9";
+import { getItem } from "./wardrobe-data.js?v=b28a0715a9";
+import { activeEvent, addEventTokens } from "./events.js?v=b28a0715a9";
+import { isUnlocked } from "./unlocks.js?v=b28a0715a9";
 
 // ---------- partidas ----------
 
@@ -33,8 +33,8 @@ export const GAME_NAMES = {
 
 // ---------- niveles ----------
 
-import { MAX_LEVEL, xpForLevel, levelInfo } from "./xp.js?v=a012447234";
-import { onGamePlayed, seasonalOnPlay } from "./adventure.js?v=a012447234";
+import { MAX_LEVEL, xpForLevel, levelInfo } from "./xp.js?v=b28a0715a9";
+import { onGamePlayed, seasonalOnPlay } from "./adventure.js?v=b28a0715a9";
 export { MAX_LEVEL, xpForLevel, levelInfo };
 
 /** Regalos de nivel: objetos del guardarropa que se desbloquean gratis. */
@@ -199,7 +199,7 @@ export function hasPending(progress) {
 
 // ---------- álbum ----------
 // Las figuritas, los sobres y las repetidas viven en js/album.js (aquí se re-exportan para el resto de la app).
-export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=a012447234";
+export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=b28a0715a9";
 
 // ---------- el gancho que se llama al terminar una partida ----------
 
@@ -247,12 +247,12 @@ export function recordRun(progress, gameId, score, info = {}) {
   for (const m of done) m.notified = true;
   if (done.length) emit({ type: "mission", missions: done });
   if (pack) emit({ type: "pack" });
-  // aventura del festival: si el paso actual es "jugar" y este juego es una de sus alternativas, se cumple (gane o pierda)
-  const advStep = onGamePlayed(progress, gameId);
-  if (advStep) emit({ type: "adventure", step: advStep });
+  // aventura "Renovar el Pueblo": cada partida (gane o pierda) da ⭐ para las tareas de las zonas
+  const stars = onGamePlayed(progress, gameId);
+  if (stars) emit({ type: "stars", stars });
   // reto opcional de la temporada (una vez por evento y por año): da fichas del evento de siempre, no una moneda nueva
   const seasonTokens = seasonalOnPlay(progress, ev, gameId);
   if (seasonTokens) { addEventTokens(progress, ev.id, seasonTokens); emit({ type: "season", event: ev, tokens: seasonTokens }); }
   saveProgress(progress);
-  return { xp, first, ups, pack, missionsDone: done.length, tokens, eventToken: ev ? ev.token : "" };
+  return { xp, first, ups, pack, missionsDone: done.length, tokens, eventToken: ev ? ev.token : "", stars };
 }

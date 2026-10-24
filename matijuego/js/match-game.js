@@ -2,11 +2,11 @@
 // controles (joystick o teclado + botones grandes), pausa, y el cierre del partido (avance guardado, premio de la copa una
 // sola vez y la tarjeta final). Cada deporte pone su escena, su simulación y su cámara.
 
-import { THREE, Game3D } from "./three-kit.js?v=a012447234";
-import { saveProgress, earnCoins } from "./storage.js?v=a012447234";
-import { addMedal } from "./adventure.js?v=a012447234";
-import { sportOf, setDifficulty, recordMatch, cupRival, DIFFS, DIFF_NAMES, CUP_ROUNDS, ROUND_NAMES } from "./sports-progress.js?v=a012447234";
-import * as audio from "./audio.js?v=a012447234";
+import { THREE, Game3D } from "./three-kit.js?v=b28a0715a9";
+import { saveProgress, earnCoins } from "./storage.js?v=b28a0715a9";
+import { addMedal } from "./adventure.js?v=b28a0715a9";
+import { sportOf, setDifficulty, recordMatch, cupRival, DIFFS, DIFF_NAMES, CUP_ROUNDS, ROUND_NAMES } from "./sports-progress.js?v=b28a0715a9";
+import * as audio from "./audio.js?v=b28a0715a9";
 
 const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -153,21 +153,32 @@ export class MatchGame extends Game3D {
       box.appendChild(r);
       return r;
     };
-    const opt = (r, text, on, fn) => {
+    // cada opción es una ficha con su dibujito y su color (verde para aprender, amarillo normal, naranja desafío...)
+    const opt = (r, icon, title, sub, tone, on, fn) => {
       const b = document.createElement("button");
       b.type = "button";
-      b.className = `mode-btn${on ? " sel" : ""}`;
-      b.textContent = text;
+      b.className = `mode-btn mt-chip${on ? " sel" : ""}`;
+      b.dataset.tone = tone;
+      const i = document.createElement("i");
+      i.textContent = icon;
+      const t = document.createElement("span");
+      t.textContent = title;
+      b.append(i, t);
+      if (sub) { const sm = document.createElement("small"); sm.textContent = sub; b.appendChild(sm); }
       b.setAttribute("aria-pressed", String(on));
       b.addEventListener("click", () => { fn(); saveProgress(this.progress); this.reset(); this._renderOptions(); this.onOptions?.(); });
       r.appendChild(b);
       return b;
     };
     const r1 = row("Partido");
-    opt(r1, "🤝 Amistoso", this.mode === "amistoso", () => { this.mode = "amistoso"; });
-    opt(r1, `🏆 Copa · ${rival.roundName}`, this.mode === "copa", () => { this.mode = "copa"; });
+    opt(r1, "🤝", "Amistoso", "para jugar tranqui", "blue", this.mode === "amistoso", () => { this.mode = "amistoso"; });
+    opt(r1, "🏆", "Copa", rival.roundName, "gold", this.mode === "copa", () => { this.mode = "copa"; });
     const r2 = row("Dificultad");
-    for (const d of DIFFS) opt(r2, d === "accesible" ? "Accesible · para aprender" : DIFF_NAMES[d], s.diff === d, () => setDifficulty(this.progress, this.sportId, d));
+    const DIFF_LOOK = { accesible: ["🌱", "para aprender", "mint"], normal: ["⭐", "", "yellow"], desafio: ["🔥", "", "orange"] };
+    for (const d of DIFFS) {
+      const [icon, sub, tone] = DIFF_LOOK[d] || ["⭐", "", "yellow"];
+      opt(r2, icon, DIFF_NAMES[d], sub, tone, s.diff === d, () => setDifficulty(this.progress, this.sportId, d));
+    }
     const info = document.createElement("p");
     info.className = "mt-info";
     const cups = DIFFS.filter((d) => s.cups[d] > 0).map((d) => `🏆 ${DIFF_NAMES[d]} x${s.cups[d]}`).join(" · ");

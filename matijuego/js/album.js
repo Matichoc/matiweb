@@ -2,7 +2,7 @@
 // (sin "siempre una nueva": completar el álbum cuesta). Las repetidas se pueden vender por Matipuntos o juntar en el
 // «taller» para cambiarlas por la figurita que te falta (12 repetidas; una brillante, 36).
 // Los ids de la primera página y de sus brillantes (con "*") son los del álbum anterior: el avance de antes se conserva.
-import { earnCoins, saveProgress } from "./storage.js?v=a012447234";
+import { earnCoins, saveProgress } from "./storage.js?v=b28a0715a9";
 
 const P = (id, name, emoji, color) => ({ id, name, emoji, color });
 const PRODUCT_PAGE = [

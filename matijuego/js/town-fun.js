@@ -4,11 +4,11 @@
 //  · "Actividades del día": 5 desafíos con guía; al completarlos hay premio (Matipuntos, sobre de figuritas y energía).
 // El estado del día vive en progress.town.fun (se reinicia solo cada día, igual que el resto del pueblo).
 
-import { THREE, canvasTexture } from "./three-kit.js?v=a012447234";
-import { earnCoins, saveProgress } from "./storage.js?v=a012447234";
-import { addEnergy } from "./energy.js?v=a012447234";
-import * as audio from "./audio.js?v=a012447234";
-import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=a012447234";
+import { THREE, canvasTexture } from "./three-kit.js?v=b28a0715a9";
+import { earnCoins, saveProgress } from "./storage.js?v=b28a0715a9";
+import { addEnergy } from "./energy.js?v=b28a0715a9";
+import * as audio from "./audio.js?v=b28a0715a9";
+import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=b28a0715a9";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -39,6 +39,7 @@ const RING_TIME = 60; // segundos para el circuito
 const GRAVITY = 26;
 const JUMP_V = 17;
 const COMPLETE_COINS = 30;
+const DAY_GOAL = 7; // actividades del día que hay que completar para el premio (hay 10: se eligen las que más gusten)
 
 const DANCE_AT = pol(235, 16);
 const PADS = [pol(28, 18), pol(76, 18), pol(-30, 18), pol(-78, 18)];
@@ -594,6 +595,7 @@ export class TownFun {
       { id: "doors", icon: "🚪", text: "Gana en las 3 puertas de juegos", cur: Object.keys(st.doors).filter((k) => st.doors[k]).length, goal: DOORS.length, at: () => this._nearest(this.doorSpots.filter((d) => !st.doors[d.id])) },
       { id: "chest", icon: "🧰", text: "Encuentra tesoros escondidos", cur: Math.min(CHEST_GOAL, st.chests.length), goal: CHEST_GOAL, hot: true },
       { id: "hello", icon: "👋", text: "Saluda a los vecinos", cur: Math.min(HELLO_GOAL, g._daily().talked.length), goal: HELLO_GOAL, at: () => { const n = g.npcs.filter((x) => !g._daily().talked.includes(x.def.name)); return this._nearest(n); } },
+      ...(g.zones ? g.zones.tasks() : []), // lo que se recolecta cada día en el bosque, la granja y el lago
     ];
   }
 
@@ -635,7 +637,7 @@ export class TownFun {
     const key = tasks.map((t) => t.cur).join(",") + `|${this.guide || ""}`;
     if (key === this._last) return;
     this._last = key;
-    this.nEl.textContent = `${done}/${tasks.length}`;
+    this.nEl.textContent = `${Math.min(done, DAY_GOAL)}/${Math.min(DAY_GOAL, tasks.length)}`; // hay más actividades que las que se piden: se eligen
     this.listEl.innerHTML = "";
     for (const t of tasks) {
       const b = document.createElement("button");
@@ -853,7 +855,7 @@ export class TownFun {
   _checkComplete(st) {
     if (st.done) return;
     const tasks = this._tasks();
-    if (!tasks.every((t) => t.cur >= t.goal)) return;
+    if (tasks.filter((t) => t.cur >= t.goal).length < Math.min(DAY_GOAL, tasks.length)) return;
     st.done = true;
     const g = this.g;
     earnCoins(g.progress, COMPLETE_COINS);

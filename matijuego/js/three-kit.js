@@ -4,14 +4,14 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=a012447234";
-import { IS_DEMO, demoAllows } from "./demo.js?v=a012447234";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=a012447234";
-import * as audio from "./audio.js?v=a012447234";
-import { recordRun, runBonus } from "./progression.js?v=a012447234";
-import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=a012447234";
-import { missionFor } from "./missions.js?v=a012447234";
-import { costOf, spendEnergy, energyOf } from "./energy.js?v=a012447234";
+import { getOutfit } from "./characters.js?v=b28a0715a9";
+import { IS_DEMO, demoAllows } from "./demo.js?v=b28a0715a9";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=b28a0715a9";
+import * as audio from "./audio.js?v=b28a0715a9";
+import { recordRun, runBonus } from "./progression.js?v=b28a0715a9";
+import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=b28a0715a9";
+import { missionFor } from "./missions.js?v=b28a0715a9";
+import { costOf, spendEnergy, energyOf } from "./energy.js?v=b28a0715a9";
 
 export { THREE };
 
@@ -677,7 +677,7 @@ export class Game3D {
     const e = this.els;
     if (e.stars) e.stars.innerHTML = [1, 2, 3].map((n) => `<span class="${n <= stars ? "on" : "off"}">★</span>`).join("");
     if (e.winTitle) e.winTitle.textContent = title || `¡Nivel ${level} completado!`;
-    if (e.winText) e.winText.textContent = `${text} +${bonus} Matipuntos 🍫✨ +${run.xp} XP ⭐`;
+    if (e.winText) e.winText.textContent = `${text} +${bonus} Matipuntos 🍫✨ +${run.xp} XP${run.stars ? ` +${run.stars} ⭐` : ""}`;
     // al terminar el último nivel el botón pasa a ser "Nueva vuelta" (con premio) en vez de repetir el nivel 20
     const campId = this.missionId || this.gameId;
     const nb = e.q && e.q("btn-next");
@@ -720,7 +720,7 @@ export class Game3D {
     }
     const run = recordRun(this.progress, this.gameId, this.score, this.runInfo || {});
     this.runInfo = null;
-    text += ` +${run.xp} XP ⭐`;
+    text += ` +${run.xp} XP${run.stars ? ` +${run.stars} ⭐` : ""}`;
     if (run.tokens) text += ` +${run.tokens} ${run.eventToken}`;
     if (this.els.gameoverText) this.els.gameoverText.textContent = text;
     this.showOverlay("gameover");

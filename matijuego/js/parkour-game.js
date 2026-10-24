@@ -4,14 +4,14 @@
 // checkpoints y llega a la cumbre. Al avanzar, tu Matichico desbloquea accesorios
 // (capa, gafas brillantes y corona) además del atuendo que compraste en la tienda.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars, makeLogo } from "./three-kit.js?v=a012447234";
-import { createMatichico } from "./matichico3d.js?v=a012447234";
-import { earnCoins, saveProgress } from "./storage.js?v=a012447234";
-import { bindStick } from "./stick.js?v=a012447234";
-import { trailColors } from "./wardrobe-data.js?v=a012447234";
-import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=a012447234";
-import * as audio from "./audio.js?v=a012447234";
-import { campaign, renderLevelPicker } from "./campaign.js?v=a012447234";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars, makeLogo } from "./three-kit.js?v=b28a0715a9";
+import { createMatichico } from "./matichico3d.js?v=b28a0715a9";
+import { earnCoins, saveProgress } from "./storage.js?v=b28a0715a9";
+import { bindStick } from "./stick.js?v=b28a0715a9";
+import { trailColors } from "./wardrobe-data.js?v=b28a0715a9";
+import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=b28a0715a9";
+import * as audio from "./audio.js?v=b28a0715a9";
+import { campaign, renderLevelPicker } from "./campaign.js?v=b28a0715a9";
 
 const GAME_ID = "parkour";
 const R = 0.34; // radio del héroe
