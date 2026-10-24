@@ -4,14 +4,15 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=b28a0715a9";
-import { IS_DEMO, demoAllows } from "./demo.js?v=b28a0715a9";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=b28a0715a9";
-import * as audio from "./audio.js?v=b28a0715a9";
-import { recordRun, runBonus } from "./progression.js?v=b28a0715a9";
-import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=b28a0715a9";
-import { missionFor } from "./missions.js?v=b28a0715a9";
-import { costOf, spendEnergy, energyOf } from "./energy.js?v=b28a0715a9";
+import { getOutfit } from "./characters.js?v=d71cbaec54";
+import { IS_DEMO, demoAllows } from "./demo.js?v=d71cbaec54";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=d71cbaec54";
+import * as audio from "./audio.js?v=d71cbaec54";
+import { recordRun, runBonus } from "./progression.js?v=d71cbaec54";
+import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=d71cbaec54";
+import { missionFor } from "./missions.js?v=d71cbaec54";
+import { costOf, spendEnergy, energyOf } from "./energy.js?v=d71cbaec54";
+import { vibrate } from "./native.js?v=d71cbaec54";
 
 export { THREE };
 
@@ -635,7 +636,7 @@ export class Game3D {
 
   /** Vibración corta en el celular (golpes, premios). */
   haptic(ms = 30) {
-    try { navigator.vibrate?.(ms); } catch (e) { /* no disponible */ }
+    vibrate(ms); // en la app: vibración nativa (también en iPhone); en la web: navigator.vibrate si existe
   }
 
   retry() {
