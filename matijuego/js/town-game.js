@@ -6,20 +6,20 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=d71cbaec54";
-import { createMatichico } from "./matichico3d.js?v=d71cbaec54";
-import { getOutfit } from "./characters.js?v=d71cbaec54";
-import { GAMES_CATALOG } from "./games-catalog.js?v=d71cbaec54";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=d71cbaec54";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=d71cbaec54";
-import { levelInfo } from "./progression.js?v=d71cbaec54";
-import { bindStick } from "./stick.js?v=d71cbaec54";
-import * as audio from "./audio.js?v=d71cbaec54";
-import { TownFun } from "./town-fun.js?v=d71cbaec54";
-import { TownFestival, PLACES } from "./town-festival.js?v=d71cbaec54";
-import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=d71cbaec54";
-import { talkTo, gossip, starsOf } from "./adventure.js?v=d71cbaec54";
-import { TownZones } from "./town-zones.js?v=d71cbaec54";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=0b6ea6a745";
+import { createMatichico } from "./matichico3d.js?v=0b6ea6a745";
+import { getOutfit } from "./characters.js?v=0b6ea6a745";
+import { GAMES_CATALOG } from "./games-catalog.js?v=0b6ea6a745";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=0b6ea6a745";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=0b6ea6a745";
+import { levelInfo } from "./progression.js?v=0b6ea6a745";
+import { bindStick } from "./stick.js?v=0b6ea6a745";
+import * as audio from "./audio.js?v=0b6ea6a745";
+import { TownFun } from "./town-fun.js?v=0b6ea6a745";
+import { TownFestival, PLACES } from "./town-festival.js?v=0b6ea6a745";
+import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=0b6ea6a745";
+import { talkTo, gossip, starsOf } from "./adventure.js?v=0b6ea6a745";
+import { TownZones } from "./town-zones.js?v=0b6ea6a745";
 
 const GAME_ID = "town";
 const SPEED = 6.4;

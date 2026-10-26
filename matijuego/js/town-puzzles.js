@@ -2,8 +2,8 @@
 // Se abren en un cuadro (#puzzle-dialog) sobre el pueblo. La lógica vive en puzzles-logic.js; aquí solo la pantalla.
 // Cada puerta da un premio una vez al día (lo entrega el pueblo con `onWin`); después se puede seguir jugando por diversión.
 
-import * as audio from "./audio.js?v=d71cbaec54";
-import { gatoWinner, gatoFull, gatoMachineMove, sudokuNew, sudokuSolved, sudokuConflict, cachipun } from "./puzzles-logic.js?v=d71cbaec54";
+import * as audio from "./audio.js?v=0b6ea6a745";
+import { gatoWinner, gatoFull, gatoMachineMove, sudokuNew, sudokuSolved, sudokuConflict, cachipun } from "./puzzles-logic.js?v=0b6ea6a745";
 
 export const PUZZLES = {
   gato: { title: "🐱 El Gato", reward: 4 },

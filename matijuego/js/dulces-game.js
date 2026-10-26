@@ -6,10 +6,10 @@
 //   · Cada 5 niveles aparece un JEFE: lo derrotas juntando piezas (le duele más su color débil) y él te lanza coberturas.
 // 20 niveles con estrellas por movimientos que te sobran.
 
-import { THREE, Game3D, lerp, rand, loadTexture, roundedBox, makeBunting, makeLogo, disposeGeometries } from "./three-kit.js?v=d71cbaec54";
-import { saveProgress } from "./storage.js?v=d71cbaec54";
-import * as audio from "./audio.js?v=d71cbaec54";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=d71cbaec54";
+import { THREE, Game3D, lerp, rand, loadTexture, roundedBox, makeBunting, makeLogo, disposeGeometries } from "./three-kit.js?v=0b6ea6a745";
+import { saveProgress } from "./storage.js?v=0b6ea6a745";
+import * as audio from "./audio.js?v=0b6ea6a745";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=0b6ea6a745";
 
 const GAME_ID = "dulces";
 const COLS = 7;

@@ -6,11 +6,11 @@
 //
 // Controles: ← → / A D para moverte, ESPACIO / ↑ / W para saltar. En el celular: ◀ ▶ y ⤴.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeLogo, goldCoinTexture, disposeGeometries } from "./three-kit.js?v=d71cbaec54";
-import { createMatichico } from "./matichico3d.js?v=d71cbaec54";
-import { saveProgress } from "./storage.js?v=d71cbaec54";
-import * as audio from "./audio.js?v=d71cbaec54";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=d71cbaec54";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeLogo, goldCoinTexture, disposeGeometries } from "./three-kit.js?v=0b6ea6a745";
+import { createMatichico } from "./matichico3d.js?v=0b6ea6a745";
+import { saveProgress } from "./storage.js?v=0b6ea6a745";
+import * as audio from "./audio.js?v=0b6ea6a745";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=0b6ea6a745";
 
 const GAME_ID = "aventura";
 const H = 18; // alto del mapa en casillas
@@ -21,6 +21,7 @@ const RUN_V = 7.4;
 const PW = 0.5; // ancho del Matichico (casillas)
 const PH = 1.05; // alto
 const PH_BIG = 1.55; // alto con el hongo
+const CHOCO_SPLASH = [0x4a2412, 0x7a3f1d, 0xc98a5a, 0xfff0dc]; // salpicadura de chocolate (oscuro, con leche y crema)
 const COYOTE = 0.1;
 const BUFFER = 0.13;
 const BIG_V = 6; // rebote al pisar
@@ -368,6 +369,7 @@ export class AventuraGame extends Game3D {
     const plats = [];
     this.items = [];
     this.fireballs = [];
+    this._buildChocoBalls();
     this.warpSprites = [];
     this.solidMeshes = {};
     this.qBlocks = [];
@@ -406,10 +408,10 @@ export class AventuraGame extends Game3D {
     this.qBlocks.sort((a, b) => a.x - b.x);
     this.qBlocks.forEach((qb, i) => {
       if (L.bonus && qb.x === L.bonus.qx && qb.y === L.bonus.qy) qb.kind = "life";
-      else if (i === 0) qb.kind = "power";
+      else if (i === 0) { qb.kind = "power"; qb.first = true; } // el primero siempre da el hongo (para aprender)
       else {
         const r = rq();
-        qb.kind = r < 0.42 ? "coins" : r < 0.72 ? "power" : r < 0.9 ? "heart" : !lifeGiven ? "life" : "coins";
+        qb.kind = r < 0.36 ? "coins" : r < 0.74 ? "power" : r < 0.9 ? "heart" : !lifeGiven ? "life" : "coins";
         if (qb.kind === "life") lifeGiven = true;
       }
     });
@@ -832,7 +834,8 @@ export class AventuraGame extends Game3D {
       qb.bump = 0.25;
       let kind = qb.kind || "coins";
       if (kind === "heart" && this.hearts >= this.maxHearts) kind = "coins";
-      if (kind === "power") kind = this.player.power === 0 ? "mush" : "flower";
+      // poder: si eres chico, hongo o (la mitad de las veces) directo la flor de cacao; si ya eres grande, la flor
+      if (kind === "power") kind = this.player.power === 0 && (qb.first || Math.random() < 0.5) ? "mush" : "flower";
       if (kind === "mush" || kind === "flower" || kind === "life") this._spawnItem(kind, tx, ty);
       else if (kind === "heart") { this.hearts++; this.popups.add(new THREE.Vector3(tx + 0.5, ty + 1.4, 0.5), "❤ +1", "combo"); audio.playPowerup(); }
       else { this.coins += 3; this.score += 150; this.popups.add(new THREE.Vector3(tx + 0.5, ty + 1.4, 0.5), "+3 🍫", "combo"); audio.playCollect(); this._checkLifeCoins(); }
@@ -867,7 +870,7 @@ export class AventuraGame extends Game3D {
   _updateEnemies(dt) {
     const p = this.player;
     for (const e of this.enemies) {
-      if (e.dead > 0) { e.dead += dt; e.mesh.scale.y = Math.max(0.05, 1 - e.dead * 5); e.mesh.scale.x = 1 + e.dead * 3; if (e.dead > 0.35) { this.levelGroup.remove(e.mesh); e.gone = true; } continue; }
+      if (e.dead > 0) { e.dead += e.choco ? dt * 0.45 : dt; e.mesh.scale.y = Math.max(0.05, 1 - e.dead * 5); e.mesh.scale.x = 1 + e.dead * 3; if (e.dead > 0.35) { this.levelGroup.remove(e.mesh); e.gone = true; } continue; }
       e.t += dt;
       if (Math.abs(e.x - p.x) > 22) continue; // lejos: dormidos
       if (e.type === "V") {
@@ -955,7 +958,7 @@ export class AventuraGame extends Game3D {
   }
 
 
-  // ---------- poderes tipo Mario: hongo, flor de fuego, vida extra y tuberías ----------
+  // ---------- poderes: hongo, flor de cacao (chocolate caliente), vida extra y tuberías ----------
 
   _powTex(glyph, color) {
     this._pt = this._pt || {};
@@ -994,21 +997,21 @@ export class AventuraGame extends Game3D {
         g.add(t);
       }
     } else {
-      // flor de cacao (fuego)
+      // flor de cacao: pétalos crema y caramelo con un corazón de chocolate brillante (da el chocolate caliente)
       const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.5, 8), std(0x2fb85a));
       stem.position.y = 0.25;
       g.add(stem);
       for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2;
-        const pet = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), std(i % 2 ? 0xff7a3a : 0xffd34d, 0.4, { emissive: 0xff5a1a, emissiveIntensity: 0.3 }));
+        const pet = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), std(i % 2 ? 0xe9b48a : 0xfff0dc, 0.45, { emissive: 0xffd9a8, emissiveIntensity: 0.18 }));
         pet.position.set(Math.sin(a) * 0.22, 0.62 + Math.cos(a) * 0.22, 0.05);
         g.add(pet);
       }
-      const c = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), std(0x64321b, 0.4));
+      const c = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), this._chocoMaterial());
       c.position.set(0, 0.62, 0.12);
       g.add(c);
     }
-    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._glowTex(), color: kind === "life" ? 0x7dffb0 : kind === "flower" ? 0xffa040 : 0xff7ab8, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._glowTex(), color: kind === "life" ? 0x7dffb0 : kind === "flower" ? 0xffd9a8 : 0xff7ab8, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }));
     halo.scale.set(1.8, 1.8, 1);
     halo.position.y = 0.5;
     g.add(halo);
@@ -1083,8 +1086,8 @@ export class AventuraGame extends Game3D {
     } else if (kind === "flower") {
       p.power = 2;
       p.grow = Math.min(p.grow, 0.9);
-      this.banner("¡Flor de fuego! Toca 🔥 (o F) para lanzar bolas");
-      this.popups.add(at, "¡Fuego! 🔥", "combo");
+      this.banner("¡Flor de cacao! Toca 🍫 (o F) para lanzar chocolate");
+      this.popups.add(at, "¡Chocolate! 🍫", "combo");
     } else if (kind === "life") {
       this.lives++;
       this.banner("¡Vida extra! 🍀");
@@ -1096,18 +1099,41 @@ export class AventuraGame extends Game3D {
     this._updateHud();
   }
 
-  /** Lanza una bola de fuego (solo con la flor). */
+  /** Chocolate brillante compartido: las bolitas, el corazón de la flor y los malvaviscos bañados. */
+  _chocoMaterial() {
+    if (!this._chocoMat) this._chocoMat = new THREE.MeshStandardMaterial({ color: 0x4a2412, roughness: 0.22, metalness: 0.05, emissive: 0x2a1006, emissiveIntensity: 0.25 });
+    return this._chocoMat;
+  }
+
+  /** Dos bolitas de chocolate listas en el nivel (escondidas): así no se crea nada nuevo al disparar ni se congela el primer tiro. */
+  _buildChocoBalls() {
+    const geo = new THREE.SphereGeometry(0.19, 12, 10);
+    const dropGeo = new THREE.SphereGeometry(0.08, 8, 6);
+    this.chocoBalls = [];
+    for (let i = 0; i < 2; i++) {
+      const m = new THREE.Mesh(geo, this._chocoMaterial());
+      const drop = new THREE.Mesh(dropGeo, this._chocoMaterial()); // gotita que cuelga: se ve que es chocolate derretido
+      drop.position.set(0, -0.16, 0);
+      drop.scale.set(1, 1.5, 1);
+      m.add(drop);
+      m.visible = false;
+      this.levelGroup.add(m);
+      this.chocoBalls.push(m);
+    }
+    // muestras escondidas de cada premio: así sus materiales quedan preparados al cargar y no al salir del bloque ?
+    for (const k of ["mush", "flower", "life"]) { const it = this._itemMesh(k); it.visible = false; this.levelGroup.add(it); }
+  }
+
+  /** Lanza una bolita de chocolate caliente (solo con la flor de cacao): baña a los malvaviscos. */
   _shoot() {
     const p = this.player;
     if (p.power < 2 || p.fireCd > 0 || this.fireballs.length >= 2 || p.dead || p.win) return;
+    const m = (this.chocoBalls || []).find((b) => !b.visible);
+    if (!m) return;
     p.fireCd = 0.28;
-    const m = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff7a2a }));
-    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._glowTex(), color: 0xffa040, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
-    glow.scale.set(0.9, 0.9, 1);
-    m.add(glow);
+    m.visible = true;
     const fb = { mesh: m, x: p.x + p.face * 0.45, y: p.y + this.ph * 0.5, vx: p.face * 11 + p.vx * 0.25, vy: -1, t: 0 };
     m.position.set(fb.x, fb.y, 0.1);
-    this.levelGroup.add(m);
     this.fireballs.push(fb);
     audio.playHitEnemy?.();
   }
@@ -1121,16 +1147,19 @@ export class AventuraGame extends Game3D {
       fb.x += fb.vx * dt;
       fb.y += fb.vy * dt;
       if (fb.vy < 0 && (this._solid(fb.x, fb.y - 0.12) || this._tile(fb.x, fb.y - 0.12) === "=")) { fb.y = Math.floor(fb.y - 0.12) + 1.12; fb.vy = 8.6; }
-      if (this._solid(fb.x + Math.sign(fb.vx) * 0.2, fb.y) || fb.t > 2.4 || Math.abs(fb.x - p.x) > 22) { fb.dead = true; this.particles.burst(new THREE.Vector3(fb.x, fb.y, 0.5), [0xff7a2a, 0xffd34d], 6, 2.5, 0.4, 3); continue; }
+      if (this._solid(fb.x + Math.sign(fb.vx) * 0.2, fb.y) || fb.t > 2.4 || Math.abs(fb.x - p.x) > 22) { fb.dead = true; this.particles.burst(new THREE.Vector3(fb.x, fb.y, 0.5), CHOCO_SPLASH, 6, 2.5, 0.4, 3); continue; }
       fb.mesh.position.set(fb.x, fb.y, 0.1);
-      // quemar enemigos
+      fb.mesh.rotation.z -= fb.vx * dt * 0.8;
+      // bañar en chocolate a los malvaviscos
       for (const e of this.enemies) {
         if (e.dead > 0 || e.gone) continue;
         if (Math.abs(fb.x - e.x) < e.w / 2 + 0.2 && fb.y > e.y - 0.1 && fb.y < e.y + e.h + 0.15) {
-          e.dead = 0.001; fb.dead = true;
+          e.dead = 0.001; e.choco = true; fb.dead = true;
+          // queda bañado: el cuerpo pasa a chocolate brillante y se derrite despacio (ver la actualización de enemigos)
+          for (const part of e.mesh.children.slice(0, 2)) if (part.material) { part.material.color.setHex(0x5a2d16); part.material.roughness = 0.2; }
           this.score += 150;
-          this.popups.add(new THREE.Vector3(e.x, e.y + 1, 0.5), "+150 🔥", "combo");
-          this.particles.burst(new THREE.Vector3(e.x, e.y + 0.4, 0.6), [0xff7a2a, 0xffd34d, 0xfff6e6], 14, 4.5, 0.6, 6);
+          this.popups.add(new THREE.Vector3(e.x, e.y + 1, 0.5), "¡Bañado! +150 🍫", "combo");
+          this.particles.burst(new THREE.Vector3(e.x, e.y + 0.4, 0.6), CHOCO_SPLASH, 14, 4.5, 0.6, 6);
           audio.playHitEnemy();
           this._updateHud();
           break;
@@ -1140,11 +1169,11 @@ export class AventuraGame extends Game3D {
       if (!fb.dead && b && b.dead <= 0 && Math.abs(fb.x - b.x) < b.w / 2 + 0.2 && fb.y > b.y && fb.y < b.y + b.h) {
         fb.dead = true;
         b.fire = (b.fire || 0) + 1;
-        this.particles.burst(new THREE.Vector3(fb.x, fb.y, 0.6), [0xff7a2a, 0xffd34d], 10, 4, 0.5, 5);
+        this.particles.burst(new THREE.Vector3(fb.x, fb.y, 0.6), CHOCO_SPLASH, 10, 4, 0.5, 5);
         if (b.fire >= 4 && b.hurtT <= 0) { b.fire = 0; this._bossHit(); }
       }
     }
-    for (const fb of this.fireballs) if (fb.dead) this.levelGroup.remove(fb.mesh);
+    for (const fb of this.fireballs) if (fb.dead) fb.mesh.visible = false;
     this.fireballs = this.fireballs.filter((f) => !f.dead);
   }
 
@@ -1194,7 +1223,7 @@ export class AventuraGame extends Game3D {
     this.spawn = this.inBonus ? this.spawn : this.spawn;
   }
 
-  /** Daño al jefe (pisotón o fuego): le quita un punto de vida. */
+  /** Daño al jefe (pisotón o chocolate): le quita un punto de vida. */
   _bossHit() {
     const b = this.boss;
     b.hp--;
@@ -1237,7 +1266,7 @@ export class AventuraGame extends Game3D {
       p.ground = false;
       this.shake = 0.2;
       audio.playHurt();
-      this.banner(p.power === 1 ? "¡Perdiste la flor! 🌸" : "¡Te achicaste! 🍄");
+      this.banner(p.power === 1 ? "¡Se te acabó el chocolate! 🌸" : "¡Te achicaste! 🍄");
       this._updateHud();
       return;
     }
@@ -1360,6 +1389,7 @@ export class AventuraGame extends Game3D {
     this.popups.clear();
     this.state = "intro";
     this.reset();
+    this.warmUp(); // el nivel nuevo trae su castillo y su bandera: se preparan ahora y no al llegar a la meta
     this.beginPlaying();
   }
 
@@ -1367,7 +1397,7 @@ export class AventuraGame extends Game3D {
     this._won = false;
     const c = campaign(this.progress, GAME_ID);
     c.selected = Math.min(c.selected || c.unlocked, c.unlocked);
-    renderLevelPicker(this.q("lvlpick"), { id: GAME_ID, progress: this.progress, selected: c.selected, onSelect: (n) => { c.selected = n; saveProgress(this.progress); this.reset(); this._intro(); } });
+    renderLevelPicker(this.q("lvlpick"), { id: GAME_ID, progress: this.progress, selected: c.selected, onSelect: (n) => { c.selected = n; saveProgress(this.progress); this.reset(); this.warmUp(); this._intro(); } });
     this._intro();
   }
 
@@ -1418,11 +1448,11 @@ export class AventuraGame extends Game3D {
     const target = (p.power >= 1 ? 1.32 : 1) * (1 + (p.grow - 1) * 0.35);
     h.group.scale.setScalar(0.74 * target);
     if (!this.fireAura) {
-      this.fireAura = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._glowTex(), color: 0xff8a2a, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      this.fireAura = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._glowTex(), color: 0xffd9a8, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false }));
       this.fireAura.scale.set(2.2, 2.6, 1);
       this.scene.add(this.fireAura);
     }
-    this.fireAura.material.opacity = p.power >= 2 ? 0.55 + Math.sin(this.time * 9) * 0.15 : 0;
+    this.fireAura.material.opacity = p.power >= 2 ? 0.35 + Math.sin(this.time * 4) * 0.08 : 0;
     this.fireAura.position.set(p.x, p.y + this.ph * 0.5, -0.2);
     h.group.position.set(p.x, p.y, 0);
     h.group.rotation.y = Math.PI / 2 * p.face + (p.dead ? Math.sin(p.deadT * 10) * 0.3 : 0);
@@ -1467,7 +1497,7 @@ export class AventuraGame extends Game3D {
 
   _updateHud() {
     const set = (id, v) => { const el = this.q(id); if (el) el.textContent = v; };
-    set("hud-hearts", "❤".repeat(Math.max(0, this.hearts)) + "🤍".repeat(Math.max(0, this.maxHearts - this.hearts)) + (this.lives > 0 ? ` 🍀×${this.lives}` : "") + (this.player && this.player.power >= 2 ? " 🔥" : this.player && this.player.power === 1 ? " 🍄" : ""));
+    set("hud-hearts", "❤".repeat(Math.max(0, this.hearts)) + "🤍".repeat(Math.max(0, this.maxHearts - this.hearts)) + (this.lives > 0 ? ` 🍀×${this.lives}` : "") + (this.player && this.player.power >= 2 ? " 🍫" : this.player && this.player.power === 1 ? " 🍄" : ""));
     const fb = this.q("btn-fire");
     if (fb) fb.classList.toggle("hidden", !(this.player && this.player.power >= 2));
     set("hud-coins", this.coins);

@@ -7,7 +7,7 @@
 // Para sumar una temporada: poner sus imágenes en resources/temporadas/<id-del-evento>/, generar los recursos con
 // scripts/temporada-recursos.mjs (ver docs/TEMPORADAS.md) y agregar abajo el id del evento con su color de fondo.
 
-import { activeEvent } from "./events.js?v=d71cbaec54";
+import { activeEvent } from "./events.js?v=0b6ea6a745";
 
 /** Arte de la pantalla de carga de cada temporada (sin textos ni logo: esos van aparte, con los archivos reales). */
 const art = (id, bg) => ({

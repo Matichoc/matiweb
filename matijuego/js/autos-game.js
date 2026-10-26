@@ -7,11 +7,11 @@
 // volar y juntar alfajores en el aire, charcos de chocolate, poderes (nitro, imán, escudo),
 // combo de alfajores, un hito cada kilómetro y música.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting, makeLogo, disposeGeometries } from "./three-kit.js?v=d71cbaec54";
-import { createMatichico } from "./matichico3d.js?v=d71cbaec54";
-import { earnCoins, saveProgress } from "./storage.js?v=d71cbaec54";
-import * as audio from "./audio.js?v=d71cbaec54";
-import { renderModePicker } from "./campaign.js?v=d71cbaec54";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, roundedBox, makeBunting, makeLogo, disposeGeometries } from "./three-kit.js?v=0b6ea6a745";
+import { createMatichico } from "./matichico3d.js?v=0b6ea6a745";
+import { earnCoins, saveProgress } from "./storage.js?v=0b6ea6a745";
+import * as audio from "./audio.js?v=0b6ea6a745";
+import { renderModePicker } from "./campaign.js?v=0b6ea6a745";
 
 const LANE_W = 2.7;
 const LANES = [-LANE_W, 0, LANE_W];
@@ -25,7 +25,7 @@ const GRAV = 24;
 const ZONES = ["Mañana soleada", "Mediodía dulce", "Atardecer de caramelo", "Anochecer", "Noche de cacao", "Amanecer"];
 const RIVAL_COLORS = [0x3b8cff, 0x4fd09a, 0xffc800, 0x9a5cff, 0xff8a2a, 0x35f0ff];
 
-import { CARS, carById, garageOf, currentCar, buyCar, equipCar } from "./autos-garage.js?v=d71cbaec54";
+import { CARS, carById, garageOf, currentCar, buyCar, equipCar } from "./autos-garage.js?v=0b6ea6a745";
 const SPRITES = ["alf-frambuesa", "alf-menta", "alf-naranja", "alf-trufa", "alf-pie-limon", "alf-maracuya", "alf-almendra", "alf-capuchino"];
 
 // momentos del día: [color del cielo, color de la niebla, luz del sol, intensidad hemisférica]
