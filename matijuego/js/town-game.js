@@ -6,20 +6,20 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=f2ca533144";
-import { createMatichico } from "./matichico3d.js?v=f2ca533144";
-import { getOutfit } from "./characters.js?v=f2ca533144";
-import { GAMES_CATALOG } from "./games-catalog.js?v=f2ca533144";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=f2ca533144";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=f2ca533144";
-import { levelInfo } from "./progression.js?v=f2ca533144";
-import { bindStick } from "./stick.js?v=f2ca533144";
-import * as audio from "./audio.js?v=f2ca533144";
-import { TownFun } from "./town-fun.js?v=f2ca533144";
-import { TownFestival, PLACES } from "./town-festival.js?v=f2ca533144";
-import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=f2ca533144";
-import { talkTo, gossip, starsOf } from "./adventure.js?v=f2ca533144";
-import { TownZones } from "./town-zones.js?v=f2ca533144";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=a91b3b44ae";
+import { createMatichico } from "./matichico3d.js?v=a91b3b44ae";
+import { getOutfit } from "./characters.js?v=a91b3b44ae";
+import { GAMES_CATALOG } from "./games-catalog.js?v=a91b3b44ae";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=a91b3b44ae";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=a91b3b44ae";
+import { levelInfo } from "./progression.js?v=a91b3b44ae";
+import { bindStick } from "./stick.js?v=a91b3b44ae";
+import * as audio from "./audio.js?v=a91b3b44ae";
+import { TownFun } from "./town-fun.js?v=a91b3b44ae";
+import { TownFestival, PLACES } from "./town-festival.js?v=a91b3b44ae";
+import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=a91b3b44ae";
+import { talkTo, gossip, starsOf } from "./adventure.js?v=a91b3b44ae";
+import { TownZones } from "./town-zones.js?v=a91b3b44ae";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -1340,7 +1340,7 @@ export class TownGame extends Game3D {
     const spd = document.getElementById("town-btn-speed");
     if (spd) spd.addEventListener("pointerdown", (e) => { e.preventDefault(); this.cycleMove(); });
     const act = document.getElementById("town-btn-action");
-    if (act) act.addEventListener("pointerdown", (e) => { e.preventDefault(); this.act(); });
+    if (act) act.addEventListener("pointerdown", (e) => { e.preventDefault(); eatGhostClick(e); this.act(); });
     document.getElementById("town-dialog")?.addEventListener("pointerdown", () => this._closeDialog());
   }
 }

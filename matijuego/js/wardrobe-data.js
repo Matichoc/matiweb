@@ -365,7 +365,7 @@ export const ITEMS = [
   ev("dianino", 80, "pet", "ev_globito", "Globito feliz", "🎈", "legendario", { kind: "globito" }),
 ];
 
-import { levelInfo } from "./xp.js?v=f2ca533144";
+import { levelInfo } from "./xp.js?v=a91b3b44ae";
 
 /** Si la prenda todavía está bloqueada devuelve por qué ("" si ya se puede comprar). Lo exclusivo pide nivel o un logro. */
 export function lockReason(progress, item) {

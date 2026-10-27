@@ -3,12 +3,12 @@
 // más allá de la cerca están en js/town-zones.js). También: el "❗" sobre el vecino que te espera, la flecha que guía a la
 // zona, el globo de arriba con lo que sigue y la decoración del festival (con los colores del evento de temporada).
 
-import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=f2ca533144";
-import { activeEvent } from "./events.js?v=f2ca533144";
-import { ZONES, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentTask, taskDone, objective, starsOf } from "./adventure.js?v=f2ca533144";
-import { paintNeighbor } from "./neighbors.js?v=f2ca533144";
-import { zonePlaces } from "./town-zones.js?v=f2ca533144";
-import { GAMES_CATALOG } from "./games-catalog.js?v=f2ca533144";
+import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=a91b3b44ae";
+import { activeEvent } from "./events.js?v=a91b3b44ae";
+import { ZONES, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentTask, taskDone, objective, starsOf } from "./adventure.js?v=a91b3b44ae";
+import { paintNeighbor } from "./neighbors.js?v=a91b3b44ae";
+import { zonePlaces } from "./town-zones.js?v=a91b3b44ae";
+import { GAMES_CATALOG } from "./games-catalog.js?v=a91b3b44ae";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;

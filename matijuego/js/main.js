@@ -1,38 +1,38 @@
 // primero: si el navegador interno de la app perdió los datos, native.js restaura la copia antes de leer los perfiles
-import "./native.js?v=f2ca533144";
-import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=f2ca533144";
-import { SLOTS, RARITIES, getItem, itemsOfSlot, lockReason, CUSTOM_COLORS, CUSTOM_EMBLEMS, customizeOutfit, isHexColor } from "./wardrobe-data.js?v=f2ca533144";
-import * as audio from "./audio.js?v=f2ca533144";
-import { initSplash, markAppReady } from "./splash.js?v=f2ca533144";
-import { IS_DEMO, demoAllows, showDemoWall } from "./demo.js?v=f2ca533144";
-import { bindStick, joyMode, setJoyMode } from "./stick.js?v=f2ca533144";
-import { UNLOCK_COST, needsUnlock, isUnlocked, unlockGame } from "./unlocks.js?v=f2ca533144";
-import { GAMES_CATALOG } from "./games-catalog.js?v=f2ca533144";
+import "./native.js?v=a91b3b44ae";
+import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=a91b3b44ae";
+import { SLOTS, RARITIES, getItem, itemsOfSlot, lockReason, CUSTOM_COLORS, CUSTOM_EMBLEMS, customizeOutfit, isHexColor } from "./wardrobe-data.js?v=a91b3b44ae";
+import * as audio from "./audio.js?v=a91b3b44ae";
+import { initSplash, markAppReady } from "./splash.js?v=a91b3b44ae";
+import { IS_DEMO, demoAllows, showDemoWall } from "./demo.js?v=a91b3b44ae";
+import { bindStick, joyMode, setJoyMode } from "./stick.js?v=a91b3b44ae";
+import { UNLOCK_COST, needsUnlock, isUnlocked, unlockGame } from "./unlocks.js?v=a91b3b44ae";
+import { GAMES_CATALOG } from "./games-catalog.js?v=a91b3b44ae";
 import {
   loadProgress, saveProgress, storageKeyForProfile, ownsItem, getLook, equipItem, setOutfitCustom, buyItem, wearers, canWear, takeOff, wardrobeCopies,
   getBestScore, getLeaderboard, canClaimDailyReward, claimDailyReward, claimAchievement,
-} from "./storage.js?v=f2ca533144";
+} from "./storage.js?v=a91b3b44ae";
 import {
   listProfiles, createProfile, deleteProfile, updateProfileMeta,
   getLastActiveProfileId, setLastActiveProfileId, MAX_PROFILES,
-} from "./profiles.js?v=f2ca533144";
-import { ACHIEVEMENTS, ACHIEVEMENT_CHAINS, CATEGORIES as ACH_CATEGORIES, achievementProgress } from "./achievements.js?v=f2ca533144";
-import { activeEvent, eventById, eventEnd, nextEvent, eventTokens, eventItemAvailable, buyEventItem } from "./events.js?v=f2ca533144";
+} from "./profiles.js?v=a91b3b44ae";
+import { ACHIEVEMENTS, ACHIEVEMENT_CHAINS, CATEGORIES as ACH_CATEGORIES, achievementProgress } from "./achievements.js?v=a91b3b44ae";
+import { activeEvent, eventById, eventEnd, nextEvent, eventTokens, eventItemAvailable, buyEventItem } from "./events.js?v=a91b3b44ae";
 import {
   HOUSE_SPOTS, houseItemsOfSpot, getHouseItem, ownsHouseItem, buyHouseItem, placeHouseItem, placedWithDefaults,
   FURN_CATEGORIES, furnitureOf, isWallItem, houseLayout, layoutAdd, layoutRemove, buyFurniture, copiesOf, placedCount, HOUSE_SIZES, houseSize, roomSizeLevel, houseSizeCost, buyHouseSize, moveRoom,
   ROOM_TYPES, MAX_ROOMS, roomType, roomsOf, nextRoomOf, roomHasBed, switchRoom, buyRoom,
-} from "./house-data.js?v=f2ca533144";
+} from "./house-data.js?v=a91b3b44ae";
 import {
   levelInfo, LEVEL_GIFTS, ensureDaily, missionLabel, missionProgress, missionDone, claimMission,
   canClaimChest, claimChest, hasPending, STICKERS, PAGES, ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, onProgressEvent, GAME_NAMES,
   spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, TRADE_NORMAL, TRADE_FOIL,
-} from "./progression.js?v=f2ca533144";
-import { rankingEnabled, fetchRanking } from "./online.js?v=f2ca533144";
-import { energyInfo, claimEnergyChest, fmtSecs, ENERGY_COST, ENERGY_RULE, ENERGY_MISSION, startSleep, stopSleep, buyEnergy, buyOffer, BUY_ENERGY, REGEN_SECS, SLEEP_MULT, CHEST_EVERY, CHEST_ENERGY } from "./energy.js?v=f2ca533144";
-import { monthPlan, rewardInfo, calendarOf, canClaimCalendar, claimCalendar, daysInMonth } from "./calendar.js?v=f2ca533144";
-import { initAdventureUI } from "./adventure-ui.js?v=f2ca533144";
-import { adventureOf } from "./adventure.js?v=f2ca533144";
+} from "./progression.js?v=a91b3b44ae";
+import { rankingEnabled, fetchRanking } from "./online.js?v=a91b3b44ae";
+import { energyInfo, claimEnergyChest, fmtSecs, ENERGY_COST, ENERGY_RULE, ENERGY_MISSION, startSleep, stopSleep, buyEnergy, buyOffer, BUY_ENERGY, REGEN_SECS, SLEEP_MULT, CHEST_EVERY, CHEST_ENERGY } from "./energy.js?v=a91b3b44ae";
+import { monthPlan, rewardInfo, calendarOf, canClaimCalendar, claimCalendar, daysInMonth } from "./calendar.js?v=a91b3b44ae";
+import { initAdventureUI } from "./adventure-ui.js?v=a91b3b44ae";
+import { adventureOf } from "./adventure.js?v=a91b3b44ae";
 
 let progress = null;
 let selectedCharacter = null;
@@ -104,7 +104,7 @@ function showToast(message, ms = 2600) {
 function paintAvatar(canvas, char, lookOverride = null, prog = progress) {
   const look = lookOverride || getLook(prog, char.id);
   renderCharacterThumb(canvas, char, customizeOutfit(getOutfit(look.outfit), look));
-  import("./thumb3d.js?v=f2ca533144")
+  import("./thumb3d.js?v=a91b3b44ae")
     .then((m) => {
       m.renderHeroThumb(canvas, char, look);
       canvas.dispatchEvent(new Event("repainted"));
@@ -153,6 +153,14 @@ function checkOrientation() {
 window.addEventListener("resize", checkOrientation);
 window.addEventListener("orientationchange", checkOrientation);
 try { screen.orientation?.lock?.("landscape").catch(() => {}); } catch (e) { /* solo funciona en pantalla completa / app */ }
+
+/** Tocar el fondo de un cuadro lo cierra, pero solo si el toque empezó en el fondo: un botón que abre el cuadro al apoyar
+ *  el dedo recibe el clic al levantarlo sobre el fondo ya abierto, y lo cerraría al instante. */
+function closeOnBackdrop(dialog, close) {
+  let downOnBack = false;
+  dialog.addEventListener("pointerdown", (e) => { downOnBack = e.target === dialog; });
+  dialog.addEventListener("click", (e) => { const ok = downOnBack; downOnBack = false; if (e.target === dialog && ok) close(); });
+}
 
 function showScreen(target) {
   // sin Matichico elegido (perfil nuevo), el menú del celular abre en "Mi Matichico", donde se elige
@@ -203,7 +211,7 @@ async function syncLobby(visible) {
   try {
     if (lobbyFailed) { useFallback(); return; }
     if (!lobby) {
-      const { Lobby3D } = await import("./lobby3d.js?v=f2ca533144");
+      const { Lobby3D } = await import("./lobby3d.js?v=a91b3b44ae");
       lobby = new Lobby3D(cv);
       lobby.init();
     }
@@ -668,7 +676,7 @@ function housePlaced() {
 async function openHousePreview() {
   try {
     if (!house3d) {
-      const { House3D } = await import("./house3d.js?v=f2ca533144");
+      const { House3D } = await import("./house3d.js?v=a91b3b44ae");
       house3d = new House3D(document.getElementById("house-canvas"));
       house3d.init();
       bindHouseDrag();
@@ -1879,7 +1887,7 @@ document.getElementById("demo-wall-close")?.addEventListener("click", () => docu
   document.querySelectorAll(".legal-open").forEach((b) => b.addEventListener("click", () => show(b.dataset.legal)));
   swap.addEventListener("click", () => show(PAGES[current][3]));
   document.getElementById("legal-close").addEventListener("click", close);
-  dialog.addEventListener("click", (e) => { if (e.target === dialog) close(); });
+  closeOnBackdrop(dialog, close);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !dialog.classList.contains("hidden")) close(); });
 }
 
@@ -1987,7 +1995,7 @@ function closePause() {
 document.getElementById("pause-resume").addEventListener("click", closePause);
 pauseSound.addEventListener("click", () => { audio.setMuted(!audio.isMuted()); syncSoundLabels(); });
 document.getElementById("pause-exit").addEventListener("click", () => { closePause(); goToHub(); });
-pauseDialog.addEventListener("click", (e) => { if (e.target === pauseDialog) closePause(); });
+closeOnBackdrop(pauseDialog, closePause);
 let activeGame = null; // el juego 3D en pantalla (para que el "atrás" del celular abra su pausa)
 
 // ---------- TARJETA DE INICIO DE CADA JUEGO (rediseño, maqueta 3) ----------
@@ -2100,7 +2108,7 @@ function shopLook() {
 async function openShopPreview() {
   try {
     if (!shopLobby) {
-      const { Lobby3D } = await import("./lobby3d.js?v=f2ca533144");
+      const { Lobby3D } = await import("./lobby3d.js?v=a91b3b44ae");
       shopLobby = new Lobby3D(document.getElementById("shop-canvas"));
       shopLobby.init();
     }
@@ -2416,7 +2424,7 @@ async function launchOrResumeFps() {
   try {
     if (!instances.fps) {
       showToast("Cargando el mundo 3D…");
-      const { FpsGame } = await import("./fps-game.js?v=f2ca533144");
+      const { FpsGame } = await import("./fps-game.js?v=a91b3b44ae");
       const q = (id) => document.getElementById(id);
       const els = {
         wrap: q("fps-canvas-wrap"),
@@ -2487,23 +2495,23 @@ function errDetail(err) {
 // "<prefijo>-canvas", "-hud-<nombre>", "-overlay-<intro|win|gameover>", "-btn-*".
 
 const GAMES_3D = {
-  town: { module: "./town-game.js?v=f2ca533144", cls: "TownGame", hud: [] },
-  recolecta: { module: "./recolecta-game.js?v=f2ca533144", cls: "RecolectaGame", hud: [] },
-  basquet_tiros: { module: "./basquet3d-game.js?v=f2ca533144", cls: "Basquet3DGame", hud: [], prefix: "basquet" },
-  porristas: { module: "./porristas3d-game.js?v=f2ca533144", cls: "Porristas3DGame", hud: ["score", "combo", "coins"] },
-  parkour: { module: "./parkour-game.js?v=f2ca533144", cls: "ParkourGame", hud: [] },
-  tetris: { module: "./tetris3d-game.js?v=f2ca533144", cls: "Tetris3DGame", hud: ["score", "lines", "level", "combo", "coins"] },
-  salto: { module: "./salto-game.js?v=f2ca533144", cls: "SaltoGame", hud: ["score", "height", "hearts", "combo", "coins"] },
-  autos: { module: "./autos-game.js?v=f2ca533144", cls: "AutosGame", hud: ["score", "speed", "hearts", "combo", "power", "coins"] },
-  memoria: { module: "./memoria-game.js?v=f2ca533144", cls: "MemoriaGame", hud: ["level", "moves", "time", "score", "coins"] },
-  futbol: { module: "./futbol-game.js?v=f2ca533144", cls: "FutbolGame", hud: [] },
-  dulces: { module: "./dulces-game.js?v=f2ca533144", cls: "DulcesGame", hud: [] },
-  merge: { module: "./merge-game.js?v=f2ca533144", cls: "MergeGame", hud: [] },
-  aventura: { module: "./aventura-game.js?v=f2ca533144", cls: "AventuraGame", hud: [] },
-  ciudad: { module: "./ciudad-game.js?v=f2ca533144", cls: "CiudadGame", hud: [] },
-  creador: { module: "./creador-game.js?v=f2ca533144", cls: "CreadorGame", hud: ["score", "count", "coins"] },
-  pichanga: { module: "./pichanga-game.js?v=f2ca533144", cls: "PichangaGame", hud: [] },
-  basquet2v2: { module: "./basquet2v2-game.js?v=f2ca533144", cls: "Basquet2v2Game", hud: [], prefix: "bq2" },
+  town: { module: "./town-game.js?v=a91b3b44ae", cls: "TownGame", hud: [] },
+  recolecta: { module: "./recolecta-game.js?v=a91b3b44ae", cls: "RecolectaGame", hud: [] },
+  basquet_tiros: { module: "./basquet3d-game.js?v=a91b3b44ae", cls: "Basquet3DGame", hud: [], prefix: "basquet" },
+  porristas: { module: "./porristas3d-game.js?v=a91b3b44ae", cls: "Porristas3DGame", hud: ["score", "combo", "coins"] },
+  parkour: { module: "./parkour-game.js?v=a91b3b44ae", cls: "ParkourGame", hud: [] },
+  tetris: { module: "./tetris3d-game.js?v=a91b3b44ae", cls: "Tetris3DGame", hud: ["score", "lines", "level", "combo", "coins"] },
+  salto: { module: "./salto-game.js?v=a91b3b44ae", cls: "SaltoGame", hud: ["score", "height", "hearts", "combo", "coins"] },
+  autos: { module: "./autos-game.js?v=a91b3b44ae", cls: "AutosGame", hud: ["score", "speed", "hearts", "combo", "power", "coins"] },
+  memoria: { module: "./memoria-game.js?v=a91b3b44ae", cls: "MemoriaGame", hud: ["level", "moves", "time", "score", "coins"] },
+  futbol: { module: "./futbol-game.js?v=a91b3b44ae", cls: "FutbolGame", hud: [] },
+  dulces: { module: "./dulces-game.js?v=a91b3b44ae", cls: "DulcesGame", hud: [] },
+  merge: { module: "./merge-game.js?v=a91b3b44ae", cls: "MergeGame", hud: [] },
+  aventura: { module: "./aventura-game.js?v=a91b3b44ae", cls: "AventuraGame", hud: [] },
+  ciudad: { module: "./ciudad-game.js?v=a91b3b44ae", cls: "CiudadGame", hud: [] },
+  creador: { module: "./creador-game.js?v=a91b3b44ae", cls: "CreadorGame", hud: ["score", "count", "coins"] },
+  pichanga: { module: "./pichanga-game.js?v=a91b3b44ae", cls: "PichangaGame", hud: [] },
+  basquet2v2: { module: "./basquet2v2-game.js?v=a91b3b44ae", cls: "Basquet2v2Game", hud: [], prefix: "bq2" },
 };
 
 async function launchOrResume3d(key) {

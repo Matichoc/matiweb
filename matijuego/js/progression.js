@@ -6,11 +6,11 @@
 // Todo se guarda por perfil dentro de `progress` (xp, packs, album, daily) y se paga solo
 // con Matipuntos, sin compras reales.
 
-import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=f2ca533144";
-import { addEnergy } from "./energy.js?v=f2ca533144";
-import { getItem } from "./wardrobe-data.js?v=f2ca533144";
-import { activeEvent, addEventTokens } from "./events.js?v=f2ca533144";
-import { isUnlocked } from "./unlocks.js?v=f2ca533144";
+import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=a91b3b44ae";
+import { addEnergy } from "./energy.js?v=a91b3b44ae";
+import { getItem } from "./wardrobe-data.js?v=a91b3b44ae";
+import { activeEvent, addEventTokens } from "./events.js?v=a91b3b44ae";
+import { isUnlocked } from "./unlocks.js?v=a91b3b44ae";
 
 // ---------- partidas ----------
 
@@ -33,8 +33,8 @@ export const GAME_NAMES = {
 
 // ---------- niveles ----------
 
-import { MAX_LEVEL, xpForLevel, levelInfo } from "./xp.js?v=f2ca533144";
-import { onGamePlayed, seasonalOnPlay } from "./adventure.js?v=f2ca533144";
+import { MAX_LEVEL, xpForLevel, levelInfo } from "./xp.js?v=a91b3b44ae";
+import { onGamePlayed, seasonalOnPlay } from "./adventure.js?v=a91b3b44ae";
 export { MAX_LEVEL, xpForLevel, levelInfo };
 
 /** Regalos de nivel: objetos del guardarropa que se desbloquean gratis. */
@@ -199,7 +199,7 @@ export function hasPending(progress) {
 
 // ---------- álbum ----------
 // Las figuritas, los sobres y las repetidas viven en js/album.js (aquí se re-exportan para el resto de la app).
-export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=f2ca533144";
+export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL } from "./album.js?v=a91b3b44ae";
 
 // ---------- el gancho que se llama al terminar una partida ----------
 

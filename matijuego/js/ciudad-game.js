@@ -9,16 +9,16 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=f2ca533144";
-import { createMatichico } from "./matichico3d.js?v=f2ca533144";
-import { CHARACTERS, getOutfit } from "./characters.js?v=f2ca533144";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=f2ca533144";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=f2ca533144";
-import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=f2ca533144";
-import { recordRun } from "./progression.js?v=f2ca533144";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=f2ca533144";
-import * as audio from "./audio.js?v=f2ca533144";
-import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=f2ca533144";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=a91b3b44ae";
+import { createMatichico } from "./matichico3d.js?v=a91b3b44ae";
+import { CHARACTERS, getOutfit } from "./characters.js?v=a91b3b44ae";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=a91b3b44ae";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=a91b3b44ae";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=a91b3b44ae";
+import { recordRun } from "./progression.js?v=a91b3b44ae";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=a91b3b44ae";
+import * as audio from "./audio.js?v=a91b3b44ae";
+import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=a91b3b44ae";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60
@@ -2135,7 +2135,7 @@ export class CiudadGame extends Game3D {
     cv.addEventListener("pointerup", end);
     cv.addEventListener("pointercancel", end);
 
-    const on = (id, fn) => { const b = this.q(id); if (b) b.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); fn(); }); };
+    const on = (id, fn) => { const b = this.q(id); if (b) b.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); eatGhostClick(e); fn(); }); };
     on("btn-action", () => this.act());
     on("btn-horn", () => this.horn());
     on("btn-missions", () => (this.listOpen ? this._closeList() : this.openList()));
