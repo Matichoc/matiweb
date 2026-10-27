@@ -121,7 +121,7 @@ h1, h2, h3 {
   margin: 0;
   font-size: 2.2rem;
   letter-spacing: 1px;
-  color: var(--rosa);
+  color: #ff5fa2; /* rosado claro: el rosa de marca sobre el café de las cabeceras quedaba en 2.8:1 */
   text-shadow: 0 0 14px rgba(212,33,108,0.55), 2px 2px 0 var(--marron-osc);
 }
 .logo span {
@@ -1661,7 +1661,7 @@ details.how > :not(summary) { font-size: 0.85rem; margin: 6px 0 0; }
 .lb-energy .lv-dot { position: absolute; top: -3px; right: -3px; }
 .en-card { max-width: min(500px, 94vw); }
 .en-card p { margin: 0; }
-.en-bar { position: relative; height: 26px; border-radius: 999px; background: rgba(255,255,255,0.14); overflow: hidden; border: 2px solid var(--dorado, #ffc800); }
+.en-bar { position: relative; height: 26px; border-radius: 999px; background: #fff3dc; /* claro: con poca energía el número cae sobre la parte vacía */ overflow: hidden; border: 2px solid var(--dorado, #ffc800); }
 .en-bar i { position: absolute; inset: 0 auto 0 0; width: 100%; background: linear-gradient(90deg, #ffd34d, #ff9d00); transition: width 0.4s; }
 .en-bar span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #3d1f10; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
 .en-sub { font-size: 0.85rem; opacity: 0.85; }
@@ -2148,7 +2148,7 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
 .tq-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
 .tq-text b { font-family: var(--font-display); color: var(--joy-pink-osc); font-size: 0.95rem; }
 .tq-text span { font-size: 0.82rem; font-weight: 700; }
-.tq-btn { flex: none; border: none; border-radius: 999px; padding: 9px 12px; font: inherit; font-weight: 800; font-size: 0.85rem; color: #fff; background: linear-gradient(180deg, #ff7cb3, var(--joy-pink)); box-shadow: 0 4px 0 var(--joy-pink-osc); cursor: pointer; touch-action: manipulation; }
+.tq-btn { flex: none; border: none; border-radius: 999px; padding: 9px 12px; font: inherit; font-weight: 800; font-size: 0.85rem; color: #fff; background: linear-gradient(180deg, #ff4f9a, #d4216c); /* rosado más profundo: con el claro, la letra blanca no se leía */ box-shadow: 0 4px 0 var(--joy-pink-osc); cursor: pointer; touch-action: manipulation; }
 .tq-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--joy-pink-osc); }
 @media (max-height: 460px) { .town-goal { max-width: 60%; padding: 4px 6px 4px 4px; gap: 6px; } .tq-face { width: 40px; height: 40px; } .tq-text span { font-size: 0.72rem; } .tq-btn { padding: 7px 10px; font-size: 0.78rem; } }
 /* botón de la aventura del menú con la cara del vecino */
@@ -2193,9 +2193,9 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
 .lp-btn > * { position: relative; }
 .lp-ico { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.95); box-shadow: 0 3px 0 rgba(0,0,0,0.15); font-size: 1.7rem; }
 .lp-ico .lp-face { width: 100%; height: 100%; border: 0; }
-.lp-txt b { text-shadow: 0 2px 0 rgba(0,0,0,0.18); }
-.lp-adv { background: linear-gradient(160deg, #ffd04a, #ff9a2e 55%, #f0662a); }
-.lp-free { background: linear-gradient(160deg, #6fd3ff, #3b9fe0 55%, #2f74d0); }
+.lp-txt b, .lp-txt small { text-shadow: 0 1px 2px rgba(60, 20, 0, 0.45); }
+.lp-adv { background: linear-gradient(160deg, #ff9a2e, #ee6a24 55%, #c4501a); } /* letra blanca: el degradado claro anterior quedaba en 2.1:1 */
+.lp-free { background: linear-gradient(160deg, #3b9fe0, #2f74d0 55%, #2a5fb8); }
 .lp-me { background: linear-gradient(160deg, #ff8cc0, #ff4f9a 55%, #d4216c); }
 @media (max-height: 460px) and (orientation: landscape) { .lp-ico { width: 38px; height: 38px; font-size: 1.25rem; } .lp-btn { border-radius: 22px; } }
 
@@ -2221,8 +2221,8 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
 @media (prefers-reduced-motion: reduce) { .joy-card .adv-opt, .joy-card .me-opt { animation: none; } }
 
 /* Pueblo: el panel de actividades como una libretita alegre */
-.tf-head { border: 3px solid #fff; background: linear-gradient(180deg, #ff8cc0, #ff4f9a); color: #fff; border-radius: 999px; padding: 7px 14px; box-shadow: 0 4px 0 #c2185b, 0 6px 14px rgba(0,0,0,0.2); text-shadow: 0 1px 0 rgba(0,0,0,0.2); }
-.tf-head b { color: #fff; background: rgba(255,255,255,0.28); border-radius: 999px; padding: 0 7px; }
+.tf-head { border: 3px solid #fff; background: linear-gradient(180deg, #ff4f9a, #d4216c); color: #fff; border-radius: 999px; padding: 7px 14px; box-shadow: 0 4px 0 #c2185b, 0 6px 14px rgba(0,0,0,0.2); text-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+.tf-head b { color: #fff; background: rgba(90, 0, 40, 0.3); border-radius: 999px; padding: 0 7px; }
 .tf-list { background: #fffaf2; border: 3px solid #fff; border-radius: 20px; padding: 6px; box-shadow: 0 0 0 2px #ffb3d4, 0 8px 18px rgba(0,0,0,0.22); }
 .tf-task { background: #fff; color: var(--joy-ink); border-radius: 14px; font-weight: 700; box-shadow: 0 2px 0 rgba(120,40,70,0.1); }
 .tf-task .tf-ic { flex: none; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #ffe3ef; font-size: 0.95rem; }
@@ -2246,6 +2246,9 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
 .adv-steps li { background: #fff; box-shadow: 0 2px 0 rgba(120,40,70,0.08); }
 .adv-steps li.now { background: #fff6d6; outline: 2px solid var(--joy-yellow); }
 .adv-place, .adv-sport { background: #fff; border-radius: 18px; box-shadow: 0 2px 0 rgba(120,40,70,0.1); }
+/* botones claros sobre las tarjetas claras: letra oscura (venían con letra crema, pensados para fondo café) */
+.adv-now .btn-secondary, .adv-block .btn-secondary, .adv-now .btn-tiny, .adv-block .btn-tiny, .cd-quest .btn-secondary, .cd-quest .btn-tiny, .tf-task .btn-tiny { color: var(--joy-ink); background: #fff; border: 2px solid #ffb3d4; }
+.adv-now .btn-secondary:hover, .adv-block .btn-tiny:hover { background: #fff3f8; }
 .adv-goal { border-color: #ffb3d4; background: #fff; color: var(--joy-ink); }
 .adv-goal.on { background: var(--joy-yellow); color: var(--joy-ink); border-color: #fff; box-shadow: 0 0 0 2px #e8a400; }
 .adv-ch { border-radius: 20px; background: #fff; box-shadow: 0 0 0 2px #ffd0e4; }
@@ -2362,7 +2365,7 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
 @media (max-height: 520px) { .at-npc canvas { width: 42px; height: 42px; } .at-npc p { font-size: 0.78rem; padding: 5px 9px; } .at-task { padding: 4px 6px; } .at-ico { width: 28px; height: 28px; font-size: 1rem; } .at-how { display: none; } .adv-tasks-card { padding: 12px 14px; } }
 @media (prefers-reduced-motion: reduce) { .at-go:not([disabled]) { animation: none; } }
 /* globo del Pueblo: botón de la lista de tareas y botón "¡Hacer!" destacado */
-.tq-btn.go { background: linear-gradient(180deg, #8ff0c4, #2fbf86); box-shadow: 0 4px 0 #1c8a5e; animation: kw-pulse 1.2s ease-in-out infinite; }
+.tq-btn.go { background: linear-gradient(180deg, #2fbf86, #17855a); box-shadow: 0 4px 0 #1c8a5e; animation: kw-pulse 1.2s ease-in-out infinite; }
 .tq-list { flex: none; width: 38px; height: 38px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #ffd0e4, 0 3px 0 rgba(0,0,0,0.1); font-size: 1.1rem; cursor: pointer; touch-action: manipulation; }
 .hud-stars { background: linear-gradient(180deg, #ffe680, #f5b400) !important; color: #4a2615 !important; font-weight: 900; }
 @media (prefers-reduced-motion: reduce) { .tq-btn.go { animation: none; } }

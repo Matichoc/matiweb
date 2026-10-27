@@ -3,12 +3,12 @@
 // más allá de la cerca están en js/town-zones.js). También: el "❗" sobre el vecino que te espera, la flecha que guía a la
 // zona, el globo de arriba con lo que sigue y la decoración del festival (con los colores del evento de temporada).
 
-import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=a4d43c7898";
-import { activeEvent } from "./events.js?v=a4d43c7898";
-import { ZONES, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentTask, taskDone, objective, starsOf } from "./adventure.js?v=a4d43c7898";
-import { paintNeighbor } from "./neighbors.js?v=a4d43c7898";
-import { zonePlaces } from "./town-zones.js?v=a4d43c7898";
-import { GAMES_CATALOG } from "./games-catalog.js?v=a4d43c7898";
+import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=f2ca533144";
+import { activeEvent } from "./events.js?v=f2ca533144";
+import { ZONES, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentTask, taskDone, objective, starsOf } from "./adventure.js?v=f2ca533144";
+import { paintNeighbor } from "./neighbors.js?v=f2ca533144";
+import { zonePlaces } from "./town-zones.js?v=f2ca533144";
+import { GAMES_CATALOG } from "./games-catalog.js?v=f2ca533144";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -347,7 +347,7 @@ export class TownFestival {
     for (const c of this.colliders) { const i = this.g.colliders.indexOf(c); if (i >= 0) this.g.colliders.splice(i, 1); }
     this.colliders = [];
     if (!f.floor) {
-      this._mesh(grp, new THREE.PlaneGeometry(9, 8).rotateX(-Math.PI / 2), std(0xb59466, 1), 0, 0.04, 0);
+      this._mesh(grp, new THREE.PlaneGeometry(9, 8).rotateX(-Math.PI / 2), std(0xb59466, 1), 0, 0.055, 0); // un poco más alto que el pasto de la cancha, que lo toca
       this._weeds(grp, 12, 8, 7, 37);
       const pole = this._mesh(grp, new THREE.CylinderGeometry(0.1, 0.1, 3, 8), std(0x777777, 0.5), 1, 0.12, -2);
       pole.rotation.z = Math.PI / 2;

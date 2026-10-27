@@ -9,16 +9,16 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=a4d43c7898";
-import { createMatichico } from "./matichico3d.js?v=a4d43c7898";
-import { CHARACTERS, getOutfit } from "./characters.js?v=a4d43c7898";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=a4d43c7898";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=a4d43c7898";
-import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=a4d43c7898";
-import { recordRun } from "./progression.js?v=a4d43c7898";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=a4d43c7898";
-import * as audio from "./audio.js?v=a4d43c7898";
-import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=a4d43c7898";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture } from "./three-kit.js?v=f2ca533144";
+import { createMatichico } from "./matichico3d.js?v=f2ca533144";
+import { CHARACTERS, getOutfit } from "./characters.js?v=f2ca533144";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=f2ca533144";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=f2ca533144";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=f2ca533144";
+import { recordRun } from "./progression.js?v=f2ca533144";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=f2ca533144";
+import * as audio from "./audio.js?v=f2ca533144";
+import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=f2ca533144";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60
@@ -233,7 +233,7 @@ function buildCar({ body = 0xd4216c, roof = 0x64321b, trim = 0xffc800, logo = tr
 
 export class CiudadGame extends Game3D {
   constructor(character, progress, els) {
-    super(GAME_ID, character, progress, els, { fov: 55 });
+    super(GAME_ID, character, progress, els, { fov: 55, near: 0.3 });
     this.musicTheme = "chill";
     this.kawaii = true;
     this.ambientOpts = { petals: 34, hearts: 6, stars: 18, radius: 22, height: 11 };
@@ -422,7 +422,7 @@ export class CiudadGame extends Game3D {
       this.scene.add(pad);
       const lawn = new THREE.Mesh(new THREE.PlaneGeometry(45, 45), this.m.lawn);
       lawn.rotation.x = -Math.PI / 2;
-      lawn.position.set(sx * 30, 0.055, sz * 30);
+      lawn.position.set(sx * 30, 0.075, sz * 30); // 0.025 sobre la vereda (0.05): con menos, el celular dibuja rayas
       lawn.receiveShadow = true;
       this.scene.add(lawn);
     }

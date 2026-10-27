@@ -4,8 +4,8 @@
 // Rendimiento (teléfonos de gama media-baja): cada barrio se dibuja solo cuando estás cerca, los árboles y adornos van
 // agrupados (InstancedMesh) y no hay sombras reales nuevas.
 
-import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=a4d43c7898";
-import * as audio from "./audio.js?v=a4d43c7898";
+import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=f2ca533144";
+import * as audio from "./audio.js?v=f2ca533144";
 
 const RW = 11; // ancho de las calles (igual que en ciudad-game.js)
 const SEE = 100; // a esta distancia (o menos) del centro del barrio, se dibuja
@@ -23,6 +23,8 @@ export const EXTRA_ROADS = [
   { x0: -84, x1: -60, z0: -RW / 2, z1: RW / 2 },
 ];
 const SEA_X = 128; // desde aquí hacia el este es mar (menos el muelle)
+// suelo de los barrios: sobre el pasto (0) y bajo las calles (tope 0.03). Dos pisos a la misma altura se ven como rayas que parpadean en el celular
+const GROUND_Y = 0.015;
 const PIER = { x0: 122, x1: 146, z0: 8, z1: 13 };
 
 /** Vecinos de los barrios (se agregan a los de ciudad-game.js). */
@@ -154,7 +156,7 @@ export class CiudadBarrios {
 
   _parque() {
     const g = this._group("parque");
-    const lawn = this._mesh(g, new THREE.PlaneGeometry(92, 76), std(0x8fdc72, 1), 0, 0.03, -103);
+    const lawn = this._mesh(g, new THREE.PlaneGeometry(92, 76), std(0x8fdc72, 1), 0, GROUND_Y, -103);
     lawn.rotation.x = -Math.PI / 2;
     // sendero circular
     const ring = this._mesh(g, new THREE.RingGeometry(20, 23.5, 48), std(0xe9d2a2, 0.95), 0, 0.05, -108);
@@ -215,7 +217,7 @@ export class CiudadBarrios {
 
   _playa() {
     const g = this._group("playa");
-    const sand = this._mesh(g, new THREE.PlaneGeometry(SEA_X - 62 + 2, 96), std(0xf6dfa4, 0.95), (62 + SEA_X) / 2, 0.03, 0);
+    const sand = this._mesh(g, new THREE.PlaneGeometry(SEA_X - 62, 96), std(0xf6dfa4, 0.95), (62 + SEA_X) / 2, GROUND_Y, 0);
     sand.rotation.x = -Math.PI / 2;
     const sea = this._mesh(g, new THREE.PlaneGeometry(160, 260), std(0x3ea8e0, 0.15, { metalness: 0.15, emissive: 0x0f4a78, emissiveIntensity: 0.3 }), SEA_X + 80, 0.02, 0);
     sea.rotation.x = -Math.PI / 2;
@@ -271,7 +273,7 @@ export class CiudadBarrios {
 
   _colegio() {
     const g = this._group("colegio");
-    const yard = this._mesh(g, new THREE.PlaneGeometry(86, 94), std(0xb8d98f, 1), -106, 0.03, 0);
+    const yard = this._mesh(g, new THREE.PlaneGeometry(86, 94), std(0xb8d98f, 1), -106, GROUND_Y, 0);
     yard.rotation.x = -Math.PI / 2;
     // el edificio con su reloj y techo rojo
     const b = new THREE.Group();

@@ -6,20 +6,20 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=a4d43c7898";
-import { createMatichico } from "./matichico3d.js?v=a4d43c7898";
-import { getOutfit } from "./characters.js?v=a4d43c7898";
-import { GAMES_CATALOG } from "./games-catalog.js?v=a4d43c7898";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=a4d43c7898";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=a4d43c7898";
-import { levelInfo } from "./progression.js?v=a4d43c7898";
-import { bindStick } from "./stick.js?v=a4d43c7898";
-import * as audio from "./audio.js?v=a4d43c7898";
-import { TownFun } from "./town-fun.js?v=a4d43c7898";
-import { TownFestival, PLACES } from "./town-festival.js?v=a4d43c7898";
-import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=a4d43c7898";
-import { talkTo, gossip, starsOf } from "./adventure.js?v=a4d43c7898";
-import { TownZones } from "./town-zones.js?v=a4d43c7898";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars } from "./three-kit.js?v=f2ca533144";
+import { createMatichico } from "./matichico3d.js?v=f2ca533144";
+import { getOutfit } from "./characters.js?v=f2ca533144";
+import { GAMES_CATALOG } from "./games-catalog.js?v=f2ca533144";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=f2ca533144";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=f2ca533144";
+import { levelInfo } from "./progression.js?v=f2ca533144";
+import { bindStick } from "./stick.js?v=f2ca533144";
+import * as audio from "./audio.js?v=f2ca533144";
+import { TownFun } from "./town-fun.js?v=f2ca533144";
+import { TownFestival, PLACES } from "./town-festival.js?v=f2ca533144";
+import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=f2ca533144";
+import { talkTo, gossip, starsOf } from "./adventure.js?v=f2ca533144";
+import { TownZones } from "./town-zones.js?v=f2ca533144";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -59,7 +59,7 @@ const pol = (deg, r) => {
 
 export class TownGame extends Game3D {
   constructor(character, progress, els) {
-    super(GAME_ID, character, progress, els, { fov: 56 });
+    super(GAME_ID, character, progress, els, { fov: 56, near: 0.3 });
     this.musicTheme = "chill";
     this.kawaii = true; // ambiente kawaii: tonos pastel, sombreado por tonos, pétalos y estrellitas
     this.ambientOpts = { petals: 38, hearts: 8, stars: 24, radius: 20, height: 10 };
