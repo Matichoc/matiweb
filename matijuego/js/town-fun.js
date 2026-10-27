@@ -4,11 +4,11 @@
 //  · "Actividades del día": 5 desafíos con guía; al completarlos hay premio (Matipuntos, sobre de figuritas y energía).
 // El estado del día vive en progress.town.fun (se reinicia solo cada día, igual que el resto del pueblo).
 
-import { THREE, canvasTexture } from "./three-kit.js?v=c7f11ecb8c";
-import { earnCoins, saveProgress } from "./storage.js?v=c7f11ecb8c";
-import { addEnergy } from "./energy.js?v=c7f11ecb8c";
-import * as audio from "./audio.js?v=c7f11ecb8c";
-import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=c7f11ecb8c";
+import { THREE, canvasTexture } from "./three-kit.js?v=73aaf47357";
+import { earnCoins, saveProgress } from "./storage.js?v=73aaf47357";
+import { addEnergy } from "./energy.js?v=73aaf47357";
+import * as audio from "./audio.js?v=73aaf47357";
+import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=73aaf47357";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -515,8 +515,8 @@ export class TownFun {
   /** Altura del piso bajo (x, z): la plataforma más alta que está a los pies (o hasta 0,5 sobre ellos, como un escalón). */
   _groundAt(x, z, y) {
     let top = 0;
-    for (const p of this.platforms) {
-      if (p.top <= y + 0.5 && p.top > top && Math.hypot(x - p.x, z - p.z) < p.r) top = p.top;
+    for (const list of [this.platforms, this.g.zones ? this.g.zones.decks : []]) {
+      for (const p of list) if (p.top <= y + 0.5 && p.top > top && Math.hypot(x - p.x, z - p.z) < p.r) top = p.top;
     }
     return top;
   }
@@ -542,6 +542,7 @@ export class TownFun {
   jump() {
     const g = this.g;
     if (g.state !== "playing" || this.puzzleOpen) return;
+    if (g.sitting) { g._standUp(); return; } // sentado, saltar primero te levanta
     if (this.vy <= 0 && g.pos.y <= this.groundY + 0.08) {
       this.vy = JUMP_WALK;
       g.pos.y = this.groundY + 0.05;

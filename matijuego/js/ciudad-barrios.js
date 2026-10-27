@@ -4,8 +4,9 @@
 // Rendimiento (teléfonos de gama media-baja): cada barrio se dibuja solo cuando estás cerca, los árboles y adornos van
 // agrupados (InstancedMesh) y no hay sombras reales nuevas.
 
-import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=c7f11ecb8c";
-import * as audio from "./audio.js?v=c7f11ecb8c";
+import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=73aaf47357";
+import * as audio from "./audio.js?v=73aaf47357";
+import { binocularStand } from "./binoculars.js?v=73aaf47357";
 
 const RW = 11; // ancho de las calles (igual que en ciudad-game.js)
 const SEE = 100; // a esta distancia (o menos) del centro del barrio, se dibuja
@@ -233,6 +234,13 @@ export class CiudadBarrios {
     this.foam = foam;
     // el muelle
     this._mesh(g, roundedBox(PIER.x1 - PIER.x0, 0.3, PIER.z1 - PIER.z0, 0.06), std(0xa8743a, 0.7), (PIER.x0 + PIER.x1) / 2, 0.5, (PIER.z0 + PIER.z1) / 2);
+    // binoculares en la punta del muelle: miran mar adentro
+    const bz = (PIER.z0 + PIER.z1) / 2;
+    const stand = binocularStand();
+    stand.position.set(PIER.x1 - 1.2, 0.65, bz);
+    stand.rotation.y = Math.PI / 2;
+    g.add(stand);
+    (this.g.binocSpots = this.g.binocSpots || []).push({ x: PIER.x1 - 2.2, z: bz, eye: { x: PIER.x1 - 1.1, y: 2.3, z: bz, yaw: Math.PI / 2 } });
     const posts = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.18, 0.18, 1.6, 6), std(0x6b3a1e), 14);
     const o = new THREE.Object3D();
     for (let i = 0; i < 14; i++) { o.position.set(PIER.x0 + 1 + Math.floor(i / 2) * 3.6, 0, i % 2 ? PIER.z1 : PIER.z0); o.updateMatrix(); posts.setMatrixAt(i, o.matrix); }

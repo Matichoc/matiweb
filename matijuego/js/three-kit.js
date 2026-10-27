@@ -4,15 +4,15 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=c7f11ecb8c";
-import { IS_DEMO, demoAllows } from "./demo.js?v=c7f11ecb8c";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=c7f11ecb8c";
-import * as audio from "./audio.js?v=c7f11ecb8c";
-import { recordRun, runBonus } from "./progression.js?v=c7f11ecb8c";
-import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=c7f11ecb8c";
-import { missionFor } from "./missions.js?v=c7f11ecb8c";
-import { costOf, spendEnergy, energyOf } from "./energy.js?v=c7f11ecb8c";
-import { vibrate } from "./native.js?v=c7f11ecb8c";
+import { getOutfit } from "./characters.js?v=73aaf47357";
+import { IS_DEMO, demoAllows } from "./demo.js?v=73aaf47357";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=73aaf47357";
+import * as audio from "./audio.js?v=73aaf47357";
+import { recordRun, runBonus } from "./progression.js?v=73aaf47357";
+import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=73aaf47357";
+import { missionFor } from "./missions.js?v=73aaf47357";
+import { costOf, spendEnergy, energyOf } from "./energy.js?v=73aaf47357";
+import { vibrate } from "./native.js?v=73aaf47357";
 
 export { THREE };
 
@@ -118,9 +118,15 @@ export function logoTexture() {
  */
 export function makeLogo(size = 2, { lit = true } = {}) {
   const mat = lit
-    ? new THREE.MeshBasicMaterial({ map: logoTexture(), transparent: true, side: THREE.DoubleSide })
-    : new THREE.MeshStandardMaterial({ map: logoTexture(), transparent: true, side: THREE.DoubleSide, roughness: 0.6 });
-  return new THREE.Mesh(new THREE.PlaneGeometry(size, size), mat);
+    ? new THREE.MeshBasicMaterial({ map: logoTexture(), transparent: true })
+    : new THREE.MeshStandardMaterial({ map: logoTexture(), transparent: true, roughness: 0.6 });
+  // dos caras de un solo lado (no una con DoubleSide): por detrás el logo se leería al revés, como en un espejo
+  const geo = new THREE.PlaneGeometry(size, size);
+  const g = new THREE.Group();
+  const back = new THREE.Mesh(geo, mat);
+  back.rotation.y = Math.PI;
+  g.add(new THREE.Mesh(geo, mat), back);
+  return g;
 }
 
 let coinTex = null;

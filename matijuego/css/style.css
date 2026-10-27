@@ -2582,3 +2582,14 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
   .sk-card .sk-art { height: 96px; }
   .sk-card .sk-art .stk-art { width: 76px; font-size: 2.4rem; }
 }
+
+/* ===== Binoculares (Pueblo y Ciudad): vista redonda con borde oscuro, zoom y salir ===== */
+.binoc { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.binoc.hidden { display: none; }
+.binoc .bn-mask { position: absolute; inset: 0; pointer-events: auto; touch-action: none; background: radial-gradient(ellipse 46% 64% at 50% 50%, transparent 82%, rgba(12, 6, 3, 0.94) 100%); }
+.binoc .bn-bar { position: absolute; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; pointer-events: auto; }
+.binoc .bn-zoom { width: 48px; height: 48px; border-radius: 50%; border: 3px solid #fff; background: rgba(42, 127, 181, 0.92); color: #fff; font: 900 1.6rem/1 var(--font-display, inherit); cursor: pointer; }
+.binoc .bn-tip { padding: 6px 12px; border-radius: 999px; background: rgba(20, 10, 5, 0.75); color: #fff6e6; font-weight: 800; font-size: 0.9rem; white-space: nowrap; }
+.binoc .bn-exit { position: absolute; top: calc(var(--hud-top, 70px) + 6px); left: 50%; transform: translateX(-50%); pointer-events: auto; border: 3px solid #fff; border-radius: 999px; padding: 8px 16px; background: #d4216c; color: #fff; font: 800 0.95rem/1 inherit; cursor: pointer; }
+/* mientras miras por los binoculares solo quedan la vista, el joystick (para mirar) y el botón de acción (para salir) */
+.g3d-wrap.binoc-on > :not(canvas):not(.binoc):not(.pk-touch):not([id$="-btn-action"]) { visibility: hidden; }

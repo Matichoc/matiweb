@@ -2,7 +2,7 @@
 // acompañan en todos los juegos. `buildPet(params, ticks)` devuelve el grupo ya ubicado junto
 // al héroe; las animaciones (aleteo, cola, destellos) se agregan a `ticks`.
 
-import { THREE, roundedBox } from "./three-kit.js?v=c7f11ecb8c";
+import { THREE, roundedBox } from "./three-kit.js?v=73aaf47357";
 
 const std = (color, rough = 0.5, extra = {}) => {
   const m = new THREE.MeshStandardMaterial({ color, roughness: rough, ...extra });
