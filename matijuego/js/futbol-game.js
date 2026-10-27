@@ -9,12 +9,12 @@
 // para cargar la potencia y se SUELTA para patear. Con potencia alta la pelota va rápida y plana (pero se puede ir
 // afuera); con potencia baja va lenta y en arco (así se pasa por encima de la barrera, pero el arquero llega).
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeBunting, makeLogo } from "./three-kit.js?v=71c9378f5b";
-import { createMatichico } from "./matichico3d.js?v=71c9378f5b";
-import { CHARACTERS, getOutfit } from "./characters.js?v=71c9378f5b";
-import { saveProgress } from "./storage.js?v=71c9378f5b";
-import * as audio from "./audio.js?v=71c9378f5b";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=71c9378f5b";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeBunting, makeLogo } from "./three-kit.js?v=a4d43c7898";
+import { createMatichico } from "./matichico3d.js?v=a4d43c7898";
+import { CHARACTERS, getOutfit } from "./characters.js?v=a4d43c7898";
+import { saveProgress } from "./storage.js?v=a4d43c7898";
+import * as audio from "./audio.js?v=a4d43c7898";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=a4d43c7898";
 
 const GAME_ID = "futbol";
 const GW = 6; // ancho del arco

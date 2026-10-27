@@ -88,6 +88,7 @@ h1, h2, h3 {
   border-radius: 999px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.4);
   z-index: 10000; /* por encima de las ventanas (modal = 9000) para que los avisos se vean */
+  pointer-events: none; /* solo se lee: los toques pasan a los botones que tapa */
   max-width: 90vw;
   text-align: center;
   transition: opacity .3s ease, transform .3s ease;
