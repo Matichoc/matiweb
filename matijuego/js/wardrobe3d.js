@@ -2,9 +2,9 @@
 // sombreros, anteojos, cuello, espalda, zapatos, ropa y tono de chocolate. Solo usa primitivas
 // de Three.js. `applyLook(hero, look)` deja puesto exactamente lo que dice `look` y quita lo anterior.
 
-import { THREE, roundedBox, canvasTexture } from "./three-kit.js?v=0b6ea6a745";
-import { getItem, getOutfit, EMPTY_LOOK, customizeOutfit } from "./wardrobe-data.js?v=0b6ea6a745";
-import { buildPet } from "./wardrobe-pets.js?v=0b6ea6a745";
+import { THREE, roundedBox, canvasTexture } from "./three-kit.js?v=71c9378f5b";
+import { getItem, getOutfit, EMPTY_LOOK, customizeOutfit } from "./wardrobe-data.js?v=71c9378f5b";
+import { buildPet } from "./wardrobe-pets.js?v=71c9378f5b";
 
 export const HEAD_W = 0.78;
 export const HEAD_H = 0.72;

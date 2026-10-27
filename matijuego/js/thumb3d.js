@@ -2,9 +2,9 @@
 // el modelo 3D con todo lo que lleva puesto y se copia a un canvas 2D pequeño.
 // Usa un solo renderizador compartido, así que es barato pedir muchos retratos.
 
-import { THREE } from "./three-kit.js?v=0b6ea6a745";
-import { createMatichico } from "./matichico3d.js?v=0b6ea6a745";
-import { getOutfit } from "./wardrobe-data.js?v=0b6ea6a745";
+import { THREE } from "./three-kit.js?v=71c9378f5b";
+import { createMatichico } from "./matichico3d.js?v=71c9378f5b";
+import { getOutfit } from "./wardrobe-data.js?v=71c9378f5b";
 
 let renderer = null;
 let scene = null;

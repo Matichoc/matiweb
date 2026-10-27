@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=0b6ea6a745"><style>
+<link rel="stylesheet" href="css/style.css?v=71c9378f5b"><style>
 /* Enlaces del juego hacia matichoc.cl (solo en la web; la app no los lleva ni este estilo): discretos. Texto chico, sin íconos ni colores de marca,
    para que el juego no empuje hacia la tienda. Siguen siendo legibles (color de texto de cada pantalla) y accesibles. */
 .site-links { gap: 2px 14px; margin: 18px 0 6px; }
@@ -26,10 +26,11 @@
 
 <!-- Canje de un juego con Matipuntos -->
 <div id="unlock-dialog" class="modal hidden" role="dialog" aria-modal="true">
-  <div class="modal-card">
-    <div id="um-icon" class="um-icon"></div>
+  <div class="modal-card um-card">
+    <div id="um-art" class="um-art" aria-hidden="true"><span id="um-icon" class="um-icon"></span></div>
     <h2 id="um-title"></h2>
     <p id="um-text"></p>
+    <div class="um-prog" aria-hidden="true"><i id="um-fill"></i><em id="um-count"></em></div>
     <button id="um-buy" class="btn-primary" type="button"></button>
     <button id="um-cancel" data-back class="btn-secondary" type="button">Ahora no</button>
   </div>
@@ -144,6 +145,17 @@
       <button type="button" class="me-opt" id="me-town"><span>🏘️</span><b>Mis lugares y copas</b><small>Lo que arreglaste en el Pueblo, tus copas y tu meta</small></button>
     </div>
     <button id="me-close" data-back class="btn-secondary" type="button">Cerrar</button>
+  </div>
+</div>
+<!-- Pausa dentro de un juego: seguir, sonido o salir (el botón ⏸ de arriba a la izquierda y el "atrás" del celular) -->
+<div id="pause-dialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+  <div class="modal-card joy-card pause-card">
+    <h2 id="pause-title">Pausa</h2>
+    <button id="pause-resume" data-back class="btn-primary pause-big" type="button">▶ Seguir jugando</button>
+    <div class="pause-row">
+      <button id="pause-sound" class="btn-secondary" type="button">🔊 Sonido</button>
+      <button id="pause-exit" class="btn-secondary" type="button">🏠 Salir al menú</button>
+    </div>
   </div>
 </div>
 <!-- Cartel de la demo de la web: para seguir hay que bajar la app -->
@@ -273,6 +285,23 @@
       <p class="legal-links"><button type="button" class="legal-open" data-legal="privacy">🔒 Privacidad</button> · <button type="button" class="legal-open" data-legal="licenses">📜 Créditos y licencias</button></p>
         </main>
       </div>
+      <!-- celular: pestaña "Mi Matichico" (lo que antes estaba en la fila de botones de arriba) -->
+      <div class="lb-more" id="lb-more">
+        <button type="button" class="lm-big" data-click="btn-open-shop"><span>👕</span>Vestuario y Tienda</button>
+        <button type="button" class="lm-big" data-click="btn-open-house"><span>🏠</span>Mi Casa</button>
+        <button type="button" data-click="me-town"><span>🏘️</span>Mis lugares y copas</button>
+        <button type="button" data-click="btn-open-progress"><span>📒</span>Nivel, misiones y álbum</button>
+        <button type="button" data-click="btn-open-achievements"><span>🏅</span>Logros</button>
+        <button type="button" data-click="btn-open-leaderboard"><span>🏆</span>Puntajes</button>
+        <button type="button" data-click="btn-joystick"><span>🕹️</span>Joystick</button>
+      </div>
+      <!-- celular: barra de abajo (rediseño, maqueta 4) -->
+      <nav id="lb-tabs" class="lb-tabs" aria-label="Secciones del menú">
+        <button type="button" data-tab="home" class="on"><span>🏠</span>Inicio</button>
+        <button type="button" data-tab="games"><span>🎮</span>Juegos</button>
+        <button type="button" data-tab="town"><span>🏘️</span>Pueblo</button>
+        <button type="button" data-tab="me"><span>👕</span>Mi Matichico</button>
+      </nav>
     </div>
   </section>
 
@@ -451,7 +480,6 @@
         <div class="overlay-card">
           <h2 id="recolecta-intro-title">Nivel</h2>
           <p class="fps-tag">Ahora en 3D</p>
-          <button class="btn-secondary fb-newmode" id="basquet-btn-2v2" type="button">🏀 Nuevo: Básquet 2 contra 2 (partido)</button>
           <p id="recolecta-intro-text"></p>
           <details class="how"><summary>📖 Cómo se juega</summary>
           <p class="fps-hint">Mueve con el joystick (o ← ↑ ↓ → / W A S D). Salta con Espacio (o K). Impulso rápido con Shift (¡te hace inmune!). Cuidado con los guardias malvaviscos: quitan 4 segundos. Junta golosinas seguidas para hacer combo y toma ⏱ el reloj, 👟 las botas y 🧲 el imán. ¡Son 20 niveles!</p>
@@ -610,6 +638,7 @@
         <div class="overlay-card">
           <h2>Lanzamientos de Básquet 3D</h2>
           <p class="fps-tag">Ahora en 3D</p>
+          <button class="btn-secondary fb-newmode" id="basquet-btn-2v2" type="button">🏀 Nuevo: Básquet 2 contra 2 (partido)</button>
           <details class="how"><summary>📖 Cómo se juega</summary>
           <p>ESPACIO (o toca la pantalla) para fijar la barra de puntería, y de nuevo para
             fijar la de potencia. Encesta antes de que se acabe el tiempo —
@@ -1623,6 +1652,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=0b6ea6a745"></script>
+<script type="module" src="js/main.js?v=71c9378f5b"></script>
 </body>
 </html>
