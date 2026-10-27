@@ -4,9 +4,9 @@
 // Rendimiento (teléfonos de gama media-baja): cada barrio se dibuja solo cuando estás cerca, los árboles y adornos van
 // agrupados (InstancedMesh) y no hay sombras reales nuevas.
 
-import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=fe581e124f";
-import * as audio from "./audio.js?v=fe581e124f";
-import { binocularStand } from "./binoculars.js?v=fe581e124f";
+import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=5e39093371";
+import * as audio from "./audio.js?v=5e39093371";
+import { binocularStand } from "./binoculars.js?v=5e39093371";
 
 const RW = 11; // ancho de las calles (igual que en ciudad-game.js)
 const SEE = 100; // a esta distancia (o menos) del centro del barrio, se dibuja

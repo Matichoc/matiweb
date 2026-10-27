@@ -3,10 +3,10 @@
 // día: el vecino perdió 3 cosas en la pieza; al encontrarlas y volver a hablarle, da Matipuntos y una ⭐ de la aventura.
 // La pieza se arma lejos del mundo (no se ve desde afuera) solo mientras dura la visita, y se desarma al salir.
 // Cada juego entrega sus "ganchos": hablar (say), crear al vecino (makeHost), mostrar un aviso (popup) y su suelo (y0).
-import { THREE, roundedBox, canvasTexture, emojiSprite } from "./three-kit.js?v=fe581e124f";
-import * as audio from "./audio.js?v=fe581e124f";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=fe581e124f";
-import { addStars } from "./adventure.js?v=fe581e124f";
+import { THREE, roundedBox, canvasTexture, emojiSprite } from "./three-kit.js?v=5e39093371";
+import * as audio from "./audio.js?v=5e39093371";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=5e39093371";
+import { addStars } from "./adventure.js?v=5e39093371";
 
 const O = { x: 0, z: -900 }; // dónde se arma la pieza (lejos de todo)
 const W = 12; // ancho (x) y fondo (z) de la pieza; el frente queda abierto hacia la cámara, como una casa de muñecas

@@ -2,10 +2,10 @@
 // cuando está feliz, salta y suelta corazones al acariciarla, y va a buscar la pelota que le tiras y te la trae.
 // La lógica (hambre, ánimo, golosinas, premios) está en js/pet-care.js; aquí solo lo que se ve.
 // También arma la tarjeta "Mi mascota" con sus barras y botones (renderPetCard), igual en los dos lugares.
-import { THREE, emojiSprite } from "./three-kit.js?v=fe581e124f";
-import * as audio from "./audio.js?v=fe581e124f";
-import { getItem } from "./wardrobe-data.js?v=fe581e124f";
-import { TREATS, petState, feedPet, patPet, playedWithPet } from "./pet-care.js?v=fe581e124f";
+import { THREE, emojiSprite } from "./three-kit.js?v=5e39093371";
+import * as audio from "./audio.js?v=5e39093371";
+import { getItem } from "./wardrobe-data.js?v=5e39093371";
+import { TREATS, petState, feedPet, patPet, playedWithPet } from "./pet-care.js?v=5e39093371";
 
 const GRAV = 14;
 const v1 = new THREE.Vector3();
@@ -27,7 +27,7 @@ export class PetBuddy {
     this.hop = 0;
     this.spin = 0;
     this.danceT = 3;
-    this.fetch = null;
+    this.chase = null;
   }
 
   /** La mascota que lleva puesta (o null). */
@@ -38,7 +38,7 @@ export class PetBuddy {
   }
 
   _holder() {
-    if (this.fetch) return this.fetch.holder;
+    if (this.chase) return this.chase.holder;
     const h = this.o.hero();
     return h ? h.group.children.find((c) => c.userData.pet) || null : null;
   }
@@ -66,7 +66,7 @@ export class PetBuddy {
       audio.playPop?.();
       msg = `💖 ¡A ${it.name} le encanta!`;
     } else if (action === "ball") {
-      if (this.fetch) return "";
+      if (this.chase) return "";
       this._throw(holder);
       msg = `⚽ ¡Anda a buscarla, ${it.name}!`;
     } else {
@@ -114,12 +114,12 @@ export class PetBuddy {
     const home = { p: holder.position.clone(), q: holder.quaternion.clone(), s: holder.scale.clone() };
     holder.userData.free = true;
     scene.attach(holder);
-    this.fetch = { holder, ball, vel, home, phase: "chase", t: 0, rest: false, ground: g.position.y };
+    this.chase = { holder, ball, vel, home, phase: "chase", t: 0, rest: false, ground: g.position.y };
     audio.playWhoosh?.();
   }
 
-  _fetchTick(dt) {
-    const f = this.fetch;
+  _chaseTick(dt) {
+    const f = this.chase;
     const h = this.o.hero();
     f.t += dt;
     const r = f.ball.geometry.parameters.radius;
@@ -149,12 +149,12 @@ export class PetBuddy {
     }
     if (f.phase === "chase" && f.rest && d < 0.3 * k) { f.phase = "back"; audio.playPop?.(); }
     if (f.phase === "back") f.ball.position.copy(P).setY(P.y - 0.3 * k); // la trae en la boca
-    if ((f.phase === "back" && d < 0.25 * k) || f.t > 9 || !h) this._fetchDone(f.phase === "back" && f.t <= 9);
+    if ((f.phase === "back" && d < 0.25 * k) || f.t > 9 || !h) this._chaseDone(f.phase === "back" && f.t <= 9);
   }
 
-  _fetchDone(ok) {
-    const f = this.fetch;
-    this.fetch = null;
+  _chaseDone(ok) {
+    const f = this.chase;
+    this.chase = null;
     const h = this.o.hero();
     if (f.ball.parent) f.ball.parent.remove(f.ball);
     f.ball.geometry.dispose();
@@ -192,7 +192,7 @@ export class PetBuddy {
   update(dt) {
     this.t += dt;
     const holder = this._holder();
-    if (this.fetch) this._fetchTick(dt);
+    if (this.chase) this._chaseTick(dt);
     // los efectos siguen aunque la mascota ya no esté
     for (let i = this.fx.length - 1; i >= 0; i--) {
       const f = this.fx[i];
@@ -208,7 +208,7 @@ export class PetBuddy {
     const st = this.state;
     const inner = holder.children[0];
     // saltito (al comer, al acariciarla, al traer la pelota) y baile cuando está feliz
-    if (!this.fetch) {
+    if (!this.chase) {
       if (this.hop > 0) { this.hop = Math.max(0, this.hop - dt); holder.position.y += Math.sin((1 - this.hop / 0.5) * Math.PI) * 0.35; }
       if (st && st.mood === "feliz") {
         if ((this.danceT -= dt) <= 0) { this.danceT = 6; this.spin = 0.8; }
@@ -221,7 +221,7 @@ export class PetBuddy {
       }
     }
     // el globito con lo que pide
-    const ask = st && !this.fetch ? st.ask : null;
+    const ask = st && !this.chase ? st.ask : null;
     if (ask !== this.ask) {
       this.ask = ask;
       if (this.bubble) { this.o.scene.remove(this.bubble); this.bubble.material.map.dispose(); this.bubble.material.dispose(); this.bubble = null; }
@@ -237,7 +237,7 @@ export class PetBuddy {
 
   /** Al salir del juego: suelta la pelota, borra los efectos y deja la mascota en su lugar. */
   dispose() {
-    if (this.fetch) this._fetchDone(false);
+    if (this.chase) this._chaseDone(false);
     for (const f of this.fx) { this.o.scene.remove(f.s); f.s.material.map.dispose(); f.s.material.dispose(); }
     this.fx = [];
     if (this.bubble) { this.o.scene.remove(this.bubble); this.bubble.material.map.dispose(); this.bubble.material.dispose(); this.bubble = null; }

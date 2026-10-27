@@ -1,8 +1,8 @@
 // Binoculares de los mundos abiertos (Pueblo y Ciudad): desde un mirador o la punta de un muelle se mira el horizonte
 // con zoom. Mientras miras no te mueves: el joystick (o arrastrar el dedo) gira la vista; + y − acercan y alejan.
 // Cada juego llama a apply(camera) en lugar de su cámara de siempre mientras `on` es verdadero.
-import { THREE } from "./three-kit.js?v=fe581e124f";
-import * as audio from "./audio.js?v=fe581e124f";
+import { THREE } from "./three-kit.js?v=5e39093371";
+import * as audio from "./audio.js?v=5e39093371";
 
 const ZOOMS = [1.8, 2.8, 4.2];
 const PITCH = [-0.35, 0.25]; // cuánto se puede mirar hacia abajo y hacia arriba

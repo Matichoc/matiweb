@@ -2,7 +2,7 @@
 // Se le dan golosinas (se compran con Matipuntos), se la acaricia y se juega a tirarle la pelota. Cuando está feliz
 // (bien comida y contenta) baila y a veces encuentra Matipuntos (hasta 3 veces al día).
 // El estado de cada mascota se guarda en progress.petCare[idDeLaMascota] = { food, joy, at, day, pats, plays, finds }.
-import { earnCoins, spendCoins, saveProgress, todayKey } from "./storage.js?v=fe581e124f";
+import { earnCoins, spendCoins, saveProgress, todayKey } from "./storage.js?v=5e39093371";
 
 export const TREATS = [
   { id: "galleta", icon: "🍪", name: "Galletita", cost: 15, food: 30, joy: 0 },
