@@ -2593,3 +2593,32 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
 .binoc .bn-exit { position: absolute; top: calc(var(--hud-top, 70px) + 6px); left: 50%; transform: translateX(-50%); pointer-events: auto; border: 3px solid #fff; border-radius: 999px; padding: 8px 16px; background: #d4216c; color: #fff; font: 800 0.95rem/1 inherit; cursor: pointer; }
 /* mientras miras por los binoculares solo quedan la vista, el joystick (para mirar) y el botón de acción (para salir) */
 .g3d-wrap.binoc-on > :not(canvas):not(.binoc):not(.pk-touch):not([id$="-btn-action"]) { visibility: hidden; }
+
+/* ---- Mascota con vida (js/pet-buddy.js): botón 🐾 del Pueblo y tarjeta "Mi mascota" (Pueblo y Mi Casa) ---- */
+.town-pet { position: absolute; right: 154px; bottom: 120px; z-index: 6; width: 58px; height: 58px; border-radius: 50%; border: 3px solid #fff; background: linear-gradient(180deg, #ff8ab8, #d4216c); font-size: 1.6rem; line-height: 1; box-shadow: 0 4px 0 #8a1046; cursor: pointer; touch-action: manipulation; }
+.town-pet:active { transform: translateY(2px); box-shadow: 0 2px 0 #8a1046; }
+.canvas-wrap:has(.overlay:not(.hidden)) :is(.town-pet, .town-petcard) { display: none !important; }
+.pet-card { background: #fff8ef; color: #3a1f12; border: 3px solid #ffc800; border-radius: 18px; padding: 10px 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); display: grid; gap: 8px; }
+.pet-card.hidden { display: none; }
+.town-petcard { position: absolute; right: 12px; top: 60px; z-index: 7; width: min(340px, 62vw); max-height: calc(100% - 196px); overflow: auto; padding: 8px 10px; gap: 6px; }
+.town-petcard .pc-acts { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.town-petcard .pc-btn { padding: 5px 2px; font-size: 0.74rem; }
+.town-petcard .pc-i { font-size: 1.15rem; }
+.pc-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pc-ico { font-size: 1.7rem; line-height: 1; }
+.pc-head b { font-size: 1.05rem; }
+.pc-mood { margin-left: auto; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: #e9f7ee; color: #1d6b3d; }
+.pc-mood.hambre, .pc-mood.aburrida { background: #fff0d6; color: #8a4a00; }
+.pc-mood.feliz { background: #ffe3ef; color: #a0174f; }
+.pc-bars { display: grid; gap: 5px; }
+.pc-bar { display: flex; align-items: center; gap: 6px; }
+.pc-bar i { flex: 1; height: 12px; border-radius: 999px; background: #ecdccb; overflow: hidden; }
+.pc-bar em { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #ffb347, #f08a00); transition: width 0.4s; }
+.pc-bar.joy em { background: linear-gradient(90deg, #ff8ab8, #d4216c); }
+.pc-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pc-btn { border: 0; border-radius: 12px; padding: 8px 6px; font-weight: 800; font-size: 0.9rem; background: #ffc800; color: #3a1f12; box-shadow: 0 3px 0 #b88a00; cursor: pointer; touch-action: manipulation; }
+.pc-btn small { display: block; font-size: 0.72rem; color: #5a3a1a; }
+.pc-i { display: block; font-size: 1.3rem; line-height: 1.1; }
+.pc-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #b88a00; }
+.pc-btn:disabled { opacity: 0.55; cursor: default; }
+.sh-grid > .pet-card { grid-column: 1 / -1; }

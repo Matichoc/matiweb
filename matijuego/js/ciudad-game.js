@@ -9,17 +9,18 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=73aaf47357";
-import { createMatichico } from "./matichico3d.js?v=73aaf47357";
-import { CHARACTERS, getOutfit } from "./characters.js?v=73aaf47357";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=73aaf47357";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=73aaf47357";
-import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=73aaf47357";
-import { recordRun } from "./progression.js?v=73aaf47357";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=73aaf47357";
-import * as audio from "./audio.js?v=73aaf47357";
-import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=73aaf47357";
-import { Binoculars } from "./binoculars.js?v=73aaf47357";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=fe581e124f";
+import { createMatichico } from "./matichico3d.js?v=fe581e124f";
+import { CHARACTERS, getOutfit } from "./characters.js?v=fe581e124f";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=fe581e124f";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=fe581e124f";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=fe581e124f";
+import { recordRun } from "./progression.js?v=fe581e124f";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=fe581e124f";
+import * as audio from "./audio.js?v=fe581e124f";
+import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=fe581e124f";
+import { Binoculars } from "./binoculars.js?v=fe581e124f";
+import { Interiors } from "./interiors.js?v=fe581e124f";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60
@@ -334,6 +335,7 @@ export class CiudadGame extends Game3D {
     this._buildMarkers();
     this._buildCars();
     this._buildPeople();
+    this._buildVisits();
     this._buildGolds();
     this._buildMinimap();
     this._ensureHero();
@@ -950,6 +952,31 @@ export class CiudadGame extends Game3D {
     this.dog = { g: dog, x: 0, z: 0, state: "hidden", t: 0 };
   }
 
+  /** Visitas por dentro a las casas de Doña Rosa y Don Pepe (js/interiors.js): se entra por la puerta. */
+  _buildVisits() {
+    // delante de cada puerta (la casa de Rosa mira al norte y la de Pepe al sur)
+    this.homeDoors = [
+      { id: "rosa", x: -30, z: 46.9, yaw: Math.PI },
+      { id: "pepe", x: -31, z: -42.9, yaw: 0 },
+    ];
+    const ids = Object.keys(GIVERS);
+    this.visits = new Interiors(this, {
+      y0: Y0,
+      say: (name, lines, onEnd) => this._openDialog(name, lines, onEnd),
+      popup: (text, kind) => this.popups.add(new THREE.Vector3(this.pos.x, 3.2, this.pos.z), text, kind),
+      addBench: (b) => (this.benches = this.benches || []).push(b),
+      removeBench: (b) => { const i = (this.benches || []).indexOf(b); if (i >= 0) this.benches.splice(i, 1); if (this.sitting === b) this.sitting = null; },
+      onReward: () => this._updateHud(true),
+      onLeave: () => { this.camYaw = this.heroYaw + 0.6; this.camFocus = null; }, // de frente y en diagonal (sin el vecino de la puerta tapando), con la casa al fondo
+      makeHost: (key) => {
+        const d = GIVERS[key];
+        const h = this._makeNpc(d.char, 40 + ids.indexOf(key), d.name); // igual que el vecino de la calle
+        h.group.userData.anim = (t) => h.animate(t, "idle", 1);
+        return h.group;
+      },
+    });
+  }
+
   _buildGolds() {
     const tex = goldCoinTexture();
     const spots = [];
@@ -1024,6 +1051,7 @@ export class CiudadGame extends Game3D {
   // ---------- partida ----------
 
   reset() {
+    if (this.visits && this.visits.active) this.visits.leave();
     this.sitting = null;
     if (this.binoc) this.binoc.close();
     this._ensureHero();
@@ -1118,8 +1146,11 @@ export class CiudadGame extends Game3D {
       if (this.lock > 0) this.lock -= dt;
       if (this.inCar) this._driveCar(dt);
       else this._walk(dt);
-      this._golds(dt);
-      this._missionTick(dt);
+      if (this.visits && this.visits.active) this.visits.update(dt, this.pos); // de visita: las misiones de la calle esperan
+      else {
+        this._golds(dt);
+        this._missionTick(dt);
+      }
       this._pickTarget();
     }
     if (this.barrios) this.barrios.update(dt, this._playerXZ());
@@ -1184,13 +1215,15 @@ export class CiudadGame extends Game3D {
     const yaw = this.camYaw;
     const dx = -Math.sin(yaw) * inp.iy + Math.cos(yaw) * inp.ix;
     const dz = -Math.cos(yaw) * inp.iy - Math.sin(yaw) * inp.ix;
-    const top = (this.keys.sprint ? 9 : 4.6 + 3.2 * Math.max(0, inp.mag - 0.55) / 0.45) * Math.min(1, inp.mag / 0.55 + 0.35);
+    const inRoom = this.visits && this.visits.active;
+    const top = (this.keys.sprint && !inRoom ? 9 : 4.6 + (inRoom ? 0.8 : 3.2) * Math.max(0, inp.mag - 0.55) / 0.45) * Math.min(1, inp.mag / 0.55 + 0.35);
     const acc = 46 * dt;
     this.vel.x += clamp(dx * top - this.vel.x, -acc, acc);
     this.vel.z += clamp(dz * top - this.vel.z, -acc, acc);
     if (inp.mag > 0.1) this.heroYaw = Math.atan2(dx, dz);
     this.pos.x += this.vel.x * dt;
     this.pos.z += this.vel.z * dt;
+    if (inRoom) { this.visits.clamp(this.pos); return; }
     this._collide(this.pos, HERO_R);
     // el auto es un obstáculo para quien va a pie
     for (const c of this._carCircles(this.car)) this._pushCircle(this.pos, HERO_R, c.x, c.z, c.r);
@@ -1604,6 +1637,7 @@ export class CiudadGame extends Game3D {
 
   _updateCamera(dt) {
     if (this.binoc && this.binoc.on) { this.binoc.apply(this.camera, dt); return; }
+    if (this.visits && this.visits.active) { this.camYaw = 0; this.visits.camera(this.camera, this.pos, dt); return; }
     const k = 1 - Math.exp(-(this.inCar ? 14 : 9) * Math.max(dt, 0.001));
     const t = this.inCar ? new THREE.Vector3(this.car.x, 1.2, this.car.z) : new THREE.Vector3(this.pos.x, 1.4, this.pos.z);
     if (!this.camFocus) this.camFocus = t.clone();
@@ -1915,7 +1949,14 @@ export class CiudadGame extends Game3D {
     if (this.dialog) { this.actionTarget = { label: "Seguir ▶", icon: "▶", short: "Seguir", fn: () => this._advanceDialog() }; this._updateActionBtn(); return; }
     if (this.binoc && this.binoc.on) t = { label: "🔭 Dejar de mirar", icon: "🔭", short: "Salir", fn: () => this.binoc.close() };
     else if (this.sitting) t = { label: "🚶 Levantarse", icon: "🚶", short: "Pararse", fn: () => this._standUp() };
-    else if (this.inCar) {
+    else if (this.visits && this.visits.active) {
+      // adentro de una casa: hablar con el vecino, salir o sentarse en el sillón
+      t = this.visits.target(this.pos);
+      if (!t) {
+        const b = (this.benches || []).find((q) => Math.hypot(pl.x - q.x, pl.z - q.z) < 1.9);
+        if (b) t = { label: "🪑 Sentarse", icon: "🪑", short: "Sentarse", fn: () => this._sitDown(b) };
+      }
+    } else if (this.inCar) {
       if (Math.abs(this.car.speed) < 7) t = { label: "🚪 Bajar del auto", icon: "🚪", short: "Bajar", fn: () => this._leaveCar() };
     } else {
       const a = this.active;
@@ -1923,6 +1964,15 @@ export class CiudadGame extends Game3D {
         let best = null;
         for (const p of this.pots) if (!p.watered && Math.hypot(pl.x - p.x, pl.z - p.z) < 2.8 && (!best || Math.hypot(pl.x - p.x, pl.z - p.z) < Math.hypot(pl.x - best.x, pl.z - best.z))) best = p;
         if (best) t = { label: "💧 Regar", icon: "💧", short: "Regar", fn: () => this._waterPot(best, true) };
+      }
+      if (!t) {
+        // la puerta de Rosa o de Pepe (si estás más cerca de la puerta que del vecino que está al frente)
+        const door = (this.homeDoors || []).find((q) => Math.hypot(pl.x - q.x, pl.z - q.z) < 1.3);
+        const host = door && this.npcs[door.id];
+        if (door && (!host || Math.hypot(pl.x - door.x, pl.z - door.z) < Math.hypot(pl.x - host.x, pl.z - host.z))) {
+          const name = GIVERS[door.id].name;
+          t = { label: `🚪 Visitar a ${name}`, icon: "🚪", short: "Visitar", fn: () => this.visits.enter(door.id, { x: door.x, z: door.z, yaw: door.yaw }) };
+        }
       }
       if (!t) {
         let bestN = null;

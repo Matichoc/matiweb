@@ -4,11 +4,12 @@
 //  · "Actividades del día": 5 desafíos con guía; al completarlos hay premio (Matipuntos, sobre de figuritas y energía).
 // El estado del día vive en progress.town.fun (se reinicia solo cada día, igual que el resto del pueblo).
 
-import { THREE, canvasTexture } from "./three-kit.js?v=73aaf47357";
-import { earnCoins, saveProgress } from "./storage.js?v=73aaf47357";
-import { addEnergy } from "./energy.js?v=73aaf47357";
-import * as audio from "./audio.js?v=73aaf47357";
-import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=73aaf47357";
+import { THREE, canvasTexture } from "./three-kit.js?v=fe581e124f";
+import { earnCoins, saveProgress } from "./storage.js?v=fe581e124f";
+import { addEnergy } from "./energy.js?v=fe581e124f";
+import * as audio from "./audio.js?v=fe581e124f";
+import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=fe581e124f";
+import { VISITS } from "./interiors.js?v=fe581e124f";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -29,6 +30,12 @@ const DOORS = [
   { id: "gato", name: "El Gato", icon: "🐱", wall: 0xffb0d0, roof: 0xd4216c, sign: "#d4216c", beacon: "#ff5fa8" },
   { id: "sudoku", name: "Sudoku", icon: "🔢", wall: 0xbfe6ff, roof: 0x2a8fd6, sign: "#2a8fd6", beacon: "#35c8ff" },
   { id: "cachipun", name: "Cachipún", icon: "✊", wall: 0xd6f5b8, roof: 0x3d9a4a, sign: "#3d9a4a", beacon: "#4fd09a" },
+];
+// casitas de los vecinos que se pueden visitar por dentro (js/interiors.js)
+const HOMES = [
+  { id: "bombi", name: "Casa de Bombi", icon: "🌷", wall: 0xffd6e8, roof: 0xd4216c, sign: "#d4216c" },
+  { id: "capi", name: "Casa de Capi", icon: "⚽", wall: 0xd6f5e0, roof: 0x2fa86a, sign: "#2fa86a" },
+  { id: "cuchufli", name: "Don Cuchufli", icon: "🍫", wall: 0xffefc2, roof: 0xe8742a, sign: "#e8742a" },
 ];
 const PASTEL = [0xff7aa8, 0x35c8ff, 0xffd34d, 0x9a5cff, 0x4fd09a];
 const CHEST_GOAL = 3;
@@ -378,6 +385,23 @@ export class TownFun {
       it.puzzle = def.id;
       it.beacon = [def.beacon, def.icon, def.name];
       this.doorSpots.push({ id: def.id, x: it.x, z: it.z });
+    });
+  }
+
+  /** Casitas de los vecinos para visitar por dentro: van después de los rincones de la aventura (no se pisan). */
+  buildHomes() {
+    const g = this.g;
+    const SPACING = 14;
+    const spot = this._findSpot((deg, r) => HOMES.map((_, k) => pol(deg + k * SPACING, r)), 7.5, [30, 44, 34, 40]);
+    if (!spot) return;
+    HOMES.forEach((def, k) => {
+      const deg = spot.deg + k * SPACING;
+      const p = pol(deg, spot.r);
+      this.claimed.push({ x: p.x, z: p.z, r: 5 });
+      g._addBuilding({ deg, r: spot.r, w: 7, d: 6, h: 4.5, color: def.wall, roof: def.roof, name: def.name, icon: def.icon, signColor: def.sign, kind: "visit", label: "" });
+      const it = g.interact[g.interact.length - 1];
+      it.visit = def.id;
+      it.label = `🚪 Visitar a ${VISITS[def.id].host}`;
     });
   }
 

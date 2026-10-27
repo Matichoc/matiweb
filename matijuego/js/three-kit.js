@@ -4,15 +4,15 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=73aaf47357";
-import { IS_DEMO, demoAllows } from "./demo.js?v=73aaf47357";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=73aaf47357";
-import * as audio from "./audio.js?v=73aaf47357";
-import { recordRun, runBonus } from "./progression.js?v=73aaf47357";
-import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=73aaf47357";
-import { missionFor } from "./missions.js?v=73aaf47357";
-import { costOf, spendEnergy, energyOf } from "./energy.js?v=73aaf47357";
-import { vibrate } from "./native.js?v=73aaf47357";
+import { getOutfit } from "./characters.js?v=fe581e124f";
+import { IS_DEMO, demoAllows } from "./demo.js?v=fe581e124f";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=fe581e124f";
+import * as audio from "./audio.js?v=fe581e124f";
+import { recordRun, runBonus } from "./progression.js?v=fe581e124f";
+import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=fe581e124f";
+import { missionFor } from "./missions.js?v=fe581e124f";
+import { costOf, spendEnergy, energyOf } from "./energy.js?v=fe581e124f";
+import { vibrate } from "./native.js?v=fe581e124f";
 
 export { THREE };
 
@@ -164,6 +164,20 @@ export function canvasTexture(w, h, draw) {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
   return tex;
+}
+
+/** Un emoji dibujado en un sprite (globitos, cosas para recoger, corazones). */
+export function emojiSprite(emoji, size = 0.8) {
+  const tex = canvasTexture(128, 128, (g, w, h) => {
+    g.clearRect(0, 0, w, h);
+    g.font = "96px sans-serif";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText(emoji, w / 2, h / 2 + 6);
+  });
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+  s.scale.set(size, size, 1);
+  return s;
 }
 
 export function roundedRectShape(w, h, r) {

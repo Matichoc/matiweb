@@ -6,21 +6,23 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=73aaf47357";
-import { createMatichico } from "./matichico3d.js?v=73aaf47357";
-import { Binoculars } from "./binoculars.js?v=73aaf47357";
-import { getOutfit } from "./characters.js?v=73aaf47357";
-import { GAMES_CATALOG } from "./games-catalog.js?v=73aaf47357";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=73aaf47357";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=73aaf47357";
-import { levelInfo } from "./progression.js?v=73aaf47357";
-import { bindStick } from "./stick.js?v=73aaf47357";
-import * as audio from "./audio.js?v=73aaf47357";
-import { TownFun } from "./town-fun.js?v=73aaf47357";
-import { TownFestival, PLACES } from "./town-festival.js?v=73aaf47357";
-import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=73aaf47357";
-import { talkTo, gossip, starsOf } from "./adventure.js?v=73aaf47357";
-import { TownZones } from "./town-zones.js?v=73aaf47357";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=fe581e124f";
+import { createMatichico } from "./matichico3d.js?v=fe581e124f";
+import { Binoculars } from "./binoculars.js?v=fe581e124f";
+import { getOutfit } from "./characters.js?v=fe581e124f";
+import { GAMES_CATALOG } from "./games-catalog.js?v=fe581e124f";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=fe581e124f";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=fe581e124f";
+import { levelInfo } from "./progression.js?v=fe581e124f";
+import { bindStick } from "./stick.js?v=fe581e124f";
+import * as audio from "./audio.js?v=fe581e124f";
+import { TownFun } from "./town-fun.js?v=fe581e124f";
+import { TownFestival, PLACES } from "./town-festival.js?v=fe581e124f";
+import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=fe581e124f";
+import { talkTo, gossip, starsOf } from "./adventure.js?v=fe581e124f";
+import { TownZones } from "./town-zones.js?v=fe581e124f";
+import { Interiors } from "./interiors.js?v=fe581e124f";
+import { PetBuddy, renderPetCard } from "./pet-buddy.js?v=fe581e124f";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -139,11 +141,22 @@ export class TownGame extends Game3D {
     this.fun.buildWorld(); // casitas y recorridos de parkour van antes que los árboles, para que nada quede dentro de uno
     this.festival = new TownFestival(this); // rincón de la plaza, cancha y aro de la aventura del festival (js/adventure.js)
     this.festival.buildWorld();
+    this.fun.buildHomes(); // casitas de Bombi, Capi Menta y Don Cuchufli: se entra a visitarlos (js/interiors.js)
     this._buildDecor();
     this._buildCollectibles();
     this._buildNeighbors();
+    this._buildVisits();
     this._buildEvent();
     this._ensureHero();
+    // la mascota con vida: pide comida o jugar, baila feliz y va a buscar la pelota (js/pet-buddy.js)
+    this.pet = new PetBuddy({
+      scene: this.scene,
+      hero: () => this.hero,
+      progress: () => this.progress,
+      popup: (text, kind) => this.popups.add(new THREE.Vector3(this.pos.x, 3.6, this.pos.z), text, kind),
+      onChange: () => { this._updateHud(true); if (!this.q("petcard").classList.contains("hidden")) this._petCard(true); },
+      clamp: (v) => { if (this.visits && this.visits.active) this.visits.clamp(v); },
+    });
     this.fun.build();
     this.zones.build();
     this.festival.build();
@@ -602,6 +615,36 @@ export class TownGame extends Game3D {
     });
   }
 
+  /** Visitas por dentro: el vecino de la pieza es igual al que pasea por el pueblo (misma ropa). */
+  _buildVisits() {
+    const looks = neighborLooks();
+    this.visits = new Interiors(this, {
+      y0: 0,
+      say: (name, lines, onEnd) => this._say(name, lines, onEnd),
+      popup: (text, kind) => this.popups.add(new THREE.Vector3(this.pos.x, 3.2, this.pos.z), text, kind),
+      addBench: (b) => this.addBench(b),
+      removeBench: (b) => this.removeBench(b),
+      onReward: () => this._updateHud(true),
+      onLeave: () => { this._closeDialog(); this.camYaw = this.heroYaw + 0.6; }, // de frente y en diagonal, con la casa al fondo (detrás quedaría dentro de la pared)
+      makeHost: (key) => {
+        const name = { bombi: "Bombi", capi: "Capi Menta", cuchufli: "Don Cuchufli" }[key];
+        const i = Math.max(0, NEIGHBORS.findIndex((n) => n.name === name));
+        const { char, look } = looks[i];
+        const h = createMatichico(char, getOutfit(look.outfit), look);
+        h.group.scale.setScalar(1.08);
+        h.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+        h.group.userData.anim = (t) => h.animate(t, "idle", 1);
+        return h.group;
+      },
+    });
+  }
+
+  /** Entra a la casa de un vecino; al salir vuelve frente a la puerta mirando hacia la plaza. */
+  _enterVisit(it) {
+    this.visits.enter(it.visit, { x: it.x, z: it.z, yaw: Math.atan2(-it.x, -it.z) });
+    this.camYaw = 0; // adentro la cámara mira la pieza de frente
+  }
+
   // ---------- evento de temporada ----------
 
   /** Un coleccionable del evento (calabaza, regalo, corazón, huevo, volantín o globo). */
@@ -738,9 +781,13 @@ export class TownGame extends Game3D {
   // ---------- partida ----------
 
   reset() {
+    if (this.visits && this.visits.active) this.visits.leave();
+    if (this.pet) this.pet.dispose();
+    this._petCard(false);
     this.sitting = null;
     if (this.binoc) this.binoc.close();
     this._ensureHero();
+    this.q("btn-pet")?.classList.toggle("hidden", !(this.pet && this.pet.item)); // el botón 🐾 solo si lleva una mascota puesta
     this._daily();
     this.hudCache = "";
     this.camPitch = 0.46;
@@ -783,6 +830,7 @@ export class TownGame extends Game3D {
     this.running = false;
     this.state = "paused";
     this._closeDialog();
+    this._petCard(false);
   }
 
   retry() {}
@@ -798,6 +846,7 @@ export class TownGame extends Game3D {
       this._collectEvent(dt);
       if (this.fun) this.fun.update(dt);
       if (this.zones) this.zones.update(dt);
+      if (this.visits && this.visits.active) this.visits.update(dt, this.pos);
       this._pickTarget();
     } else {
       this._updateNeighbors(dt);
@@ -805,6 +854,7 @@ export class TownGame extends Game3D {
     if (this.festival) this.festival.update(dt);
     this._animateWorld(dt);
     this._syncHero(dt);
+    if (this.pet) this.pet.update(dt);
     this._updateCamera(dt);
     this._updateSky();
     this._updateHud();
@@ -833,6 +883,8 @@ export class TownGame extends Game3D {
     }
     const mv = this._move_();
     let top = mv.speed * (this.keys.sprint ? 1.35 : 1);
+    const inRoom = this.visits && this.visits.active;
+    if (inRoom) top = Math.min(top, 5.5); // en la pieza se camina, no se corre
     if (this.fun && this.fun.airborne) top = Math.min(top, 7); // en el aire se controla mejor: los saltos de parkour no se pasan de largo
     const acc = (mv.id === "skates" || mv.id === "board" ? 34 : 60) * dt;
     this.vel.x += clamp(inp.x * top - this.vel.x, -acc, acc);
@@ -842,6 +894,7 @@ export class TownGame extends Game3D {
     const prevZ = this.pos.z;
     this.pos.x += this.vel.x * dt;
     this.pos.z += this.vel.z * dt;
+    if (inRoom) { this.visits.clamp(this.pos); return; }
     this._collide(this.pos, HERO_R);
     // el pueblo, los caminos de entrada y los barrios nuevos (si te sales, te deslizas por el borde)
     if (!this.zones.inside(this.pos.x, this.pos.z, WORLD_R)) {
@@ -1086,6 +1139,14 @@ export class TownGame extends Game3D {
     } else if (this.sitting) {
       best = { kind: "stand", label: "🚶 Levantarse" };
       bestD = -1;
+    } else if (this.visits && this.visits.active) {
+      // adentro de una casa: el sillón, hablar con el vecino o salir (lo de afuera no cuenta)
+      const t = this.visits.target(P);
+      if (t) { best = { kind: "fn", fn: t.fn, label: t.label }; bestD = t.d; }
+      for (const b of this.benches || []) {
+        const d = Math.hypot(b.x - P.x, b.z - P.z);
+        if (d < 1.9 && d < bestD) { best = { kind: "bench", bench: b, label: "🪑 Sentarse" }; bestD = d; }
+      }
     } else {
       for (const b of this.benches || []) {
         const d = Math.hypot(b.x - P.x, b.z - P.z);
@@ -1096,11 +1157,12 @@ export class TownGame extends Game3D {
         if (d < 2.4 && d < bestD) { best = { kind: "binoc", spot: s, label: "🔭 Mirar el horizonte" }; bestD = d; }
       }
     }
-    for (const it of this.interact) {
+    const outside = !(this.visits && this.visits.active);
+    for (const it of outside ? this.interact : []) {
       const d = Math.hypot(it.x - P.x, it.z - P.z);
       if (d < it.radius && d < bestD) { best = it; bestD = d; }
     }
-    for (const n of this.npcs) {
+    for (const n of outside ? this.npcs : []) {
       const d = Math.hypot(n.x - P.x, n.z - P.z);
       if (d < 3.4 && d < bestD) { best = { kind: "npc", npc: n, label: `💬 Hablar con ${n.def.name}` }; bestD = d; }
     }
@@ -1118,11 +1180,13 @@ export class TownGame extends Game3D {
   /** Botón o tecla de acción: usa lo que tienes cerca. */
   act() {
     if (this.state !== "playing") return;
-    if (this.dialogOpen) { this._closeDialog(); return; }
+    if (this.dialogOpen) { this._nextLine(); return; }
     const t = this.target;
     if (!t) return;
     audio.playPurchase();
     if (t.kind === "npc") this._talk(t.npc);
+    else if (t.kind === "fn") t.fn();
+    else if (t.kind === "visit") this._enterVisit(t);
     else if (t.kind === "bench") this._sitDown(t.bench);
     else if (t.kind === "binoc") (this.binoc = this.binoc || new Binoculars(this)).open(t.spot.eye);
     else if (t.kind === "binoc-exit") this.binoc && this.binoc.close();
@@ -1231,7 +1295,48 @@ export class TownGame extends Game3D {
     }
   }
 
+  setPaused(on) {
+    super.setPaused(on);
+    if (on) this._petCard(false); // la pausa ⏸ cierra la tarjeta de la mascota
+  }
+
+  /** Abre o cierra la tarjeta de la mascota (botón 🐾). */
+  _petCard(open) {
+    const card = this.q("petcard");
+    if (!card) return;
+    if (!open || !this.pet || !this.pet.item) { card.classList.add("hidden"); return; }
+    renderPetCard(card, this.pet, (msg) => this.banner(msg));
+  }
+
+  /** Un vecino dice varias frases seguidas (cada toque pasa a la siguiente) y al terminar sigue con onEnd. */
+  _say(name, lines, onEnd) {
+    this._sayQ = { name, lines, i: 0, onEnd };
+    this._showLine();
+  }
+
+  _showLine() {
+    const q = this._sayQ;
+    const box = this.q("dialog");
+    if (!box) { this._sayQ = null; q.onEnd && q.onEnd(); return; }
+    box.querySelector(".td-name").textContent = q.name;
+    box.querySelector(".td-text").textContent = q.lines[q.i];
+    const hint = box.querySelector("small");
+    if (hint) hint.textContent = q.i < q.lines.length - 1 ? "toca para seguir ▶" : "toca para cerrar";
+    this._dialogButtons(null);
+    box.classList.remove("hidden");
+    this.dialogOpen = true;
+  }
+
+  /** Tocar el diálogo: la frase siguiente o, si no quedan, se cierra. */
+  _nextLine() {
+    const q = this._sayQ;
+    if (q && q.i < q.lines.length - 1) { q.i++; this._showLine(); return; }
+    this._closeDialog();
+    if (q && q.onEnd) q.onEnd();
+  }
+
   _closeDialog() {
+    this._sayQ = null;
     this.dialogOpen = false;
     clearTimeout(this._dialogTimer);
     const box = this.q("dialog");
@@ -1348,6 +1453,7 @@ export class TownGame extends Game3D {
 
   _updateCamera(dt) {
     if (this.binoc && this.binoc.on) { this.binoc.apply(this.camera, dt); return; }
+    if (this.visits && this.visits.active) { this.camYaw = 0; this.visits.camera(this.camera, this.pos, dt); return; }
     const k = 1 - Math.exp(-9 * Math.max(dt, 0.001));
     const t = new THREE.Vector3(this.pos.x, 1.4 + this.pos.y * 0.75, this.pos.z);
     if (!this.camFocus) this.camFocus = t.clone();
@@ -1428,8 +1534,11 @@ export class TownGame extends Game3D {
     if (jump) jump.addEventListener("pointerdown", (e) => { e.preventDefault(); this.fun && this.fun.jump(); });
     const spd = document.getElementById("town-btn-speed");
     if (spd) spd.addEventListener("pointerdown", (e) => { e.preventDefault(); this.cycleMove(); });
+    const petBtn = document.getElementById("town-btn-pet");
+    if (petBtn) petBtn.addEventListener("click", (e) => { e.stopPropagation(); this._petCard(this.q("petcard").classList.contains("hidden")); });
+    document.getElementById("town-petcard")?.addEventListener("pointerdown", (e) => e.stopPropagation());
     const act = document.getElementById("town-btn-action");
     if (act) act.addEventListener("pointerdown", (e) => { e.preventDefault(); eatGhostClick(e); this.act(); });
-    document.getElementById("town-dialog")?.addEventListener("pointerdown", () => this._closeDialog());
+    document.getElementById("town-dialog")?.addEventListener("pointerdown", () => this._nextLine());
   }
 }
