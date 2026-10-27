@@ -2567,3 +2567,18 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
   .um-card #um-buy { min-height: 42px; }
   .um-card .btn-secondary { min-height: 34px; padding: 4px; }
 }
+
+/* ===== Álbum: figuritas que faltan (taller y kiosco) y páginas de temporada ===== */
+.pg-sticker.missing { cursor: pointer; }
+.pg-sticker.missing:active { transform: scale(0.96); }
+.pg-page-title.season { color: #ff9d4d; }
+.sk-card .sk-art { display: flex; align-items: center; justify-content: center; height: 150px; background: radial-gradient(circle at 50% 40%, #6b3a22, #2a140c); }
+.sk-card .sk-art .stk-art { width: 112px; font-size: 3.4rem; border-radius: 16px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 0 0 4px rgba(255, 255, 255, 0.5); }
+.sk-card .sk-art.foil .stk-art { box-shadow: 0 0 18px rgba(255, 200, 0, 0.8), inset 0 0 0 4px #ffd34d; }
+.sk-card #sk-trade, .sk-card #sk-buy { min-height: 50px; font-size: 1.05rem; margin-bottom: 8px; }
+.sk-card .sk-buy { background: linear-gradient(180deg, #3fcf9a, #1c8a5e); }
+.sk-card button:disabled { opacity: 0.55; }
+@media (max-height: 520px) {
+  .sk-card .sk-art { height: 96px; }
+  .sk-card .sk-art .stk-art { width: 76px; font-size: 2.4rem; }
+}

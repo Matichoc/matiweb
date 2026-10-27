@@ -2,7 +2,7 @@
 // sin mezclar su progreso (personaje, monedas, puntajes). Cada perfil guarda
 // su propio progreso bajo storageKeyForProfile(id) (ver js/storage.js).
 
-import { storageKeyForProfile } from "./storage.js?v=a91b3b44ae";
+import { storageKeyForProfile } from "./storage.js?v=6b749dd883";
 
 const PROFILES_KEY = "matichoc_profiles_v1";
 const LEGACY_FLAT_KEY = "matichoc_save_v3"; // guardado de antes de que existieran los perfiles

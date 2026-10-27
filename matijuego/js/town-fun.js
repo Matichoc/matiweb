@@ -4,11 +4,11 @@
 //  · "Actividades del día": 5 desafíos con guía; al completarlos hay premio (Matipuntos, sobre de figuritas y energía).
 // El estado del día vive en progress.town.fun (se reinicia solo cada día, igual que el resto del pueblo).
 
-import { THREE, canvasTexture } from "./three-kit.js?v=a91b3b44ae";
-import { earnCoins, saveProgress } from "./storage.js?v=a91b3b44ae";
-import { addEnergy } from "./energy.js?v=a91b3b44ae";
-import * as audio from "./audio.js?v=a91b3b44ae";
-import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=a91b3b44ae";
+import { THREE, canvasTexture } from "./three-kit.js?v=6b749dd883";
+import { earnCoins, saveProgress } from "./storage.js?v=6b749dd883";
+import { addEnergy } from "./energy.js?v=6b749dd883";
+import * as audio from "./audio.js?v=6b749dd883";
+import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=6b749dd883";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;

@@ -4,8 +4,8 @@
 // Precio: ~1 semana de juego (se ganan unos 250–350 Matipuntos al día; ver docs/ECONOMIA.md).
 // Para probar rápido se puede bajar a 300 (una sola línea: UNLOCK_PRICE).
 
-import { spendCoins, saveProgress } from "./storage.js?v=a91b3b44ae";
-import { IS_DEMO } from "./demo.js?v=a91b3b44ae";
+import { spendCoins, saveProgress } from "./storage.js?v=6b749dd883";
+import { IS_DEMO } from "./demo.js?v=6b749dd883";
 
 const UNLOCK_PRICE = 2000; // ≈ una semana de juego
 

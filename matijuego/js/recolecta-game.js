@@ -7,13 +7,13 @@
 // cintas transportadoras, combo de golosinas, poderes (reloj, botas turbo, imán), impulso
 // con Shift, estrellas por nivel y música. Ahora son 8 canchas.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, makeBunting, makeLogo, disposeTree } from "./three-kit.js?v=a91b3b44ae";
-import { createMatichico } from "./matichico3d.js?v=a91b3b44ae";
-import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=a91b3b44ae";
-import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=a91b3b44ae";
-import { recordRun } from "./progression.js?v=a91b3b44ae";
-import * as audio from "./audio.js?v=a91b3b44ae";
-import { campaign, campaignWin, campaignComplete, campaignStartOver, renderLevelPicker } from "./campaign.js?v=a91b3b44ae";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, makeBunting, makeLogo, disposeTree } from "./three-kit.js?v=6b749dd883";
+import { createMatichico } from "./matichico3d.js?v=6b749dd883";
+import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=6b749dd883";
+import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=6b749dd883";
+import { recordRun } from "./progression.js?v=6b749dd883";
+import * as audio from "./audio.js?v=6b749dd883";
+import { campaign, campaignWin, campaignComplete, campaignStartOver, renderLevelPicker } from "./campaign.js?v=6b749dd883";
 
 const GAME_ID = "recolecta";
 const S = 0.04; // píxeles del nivel -> unidades 3D
@@ -764,10 +764,11 @@ export class RecolectaGame extends Game3D {
       const ny = clamp(this.p.y + (dy / len) * 14, 26, CANVAS_H - 26);
       if (!this._hits(nx, this.p.y, false)) this.p.x = nx;
       if (!this._hits(this.p.x, ny, false)) this.p.y = ny;
-      audio.playBounce();
-    } else {
-      audio.playBump();
+      // rebote suave, a lo más dos veces por segundo
+      const now = performance.now();
+      if (!(this._bounceAt > now - 500)) { this._bounceAt = now; audio.playBounce(); }
     }
+    // contra una pared fija no suena nada: solo se detiene o se desliza (antes zumbaba en cada cuadro mientras se empujaba)
   }
 
   update(dt) {

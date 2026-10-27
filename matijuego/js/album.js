@@ -2,7 +2,11 @@
 // (sin "siempre una nueva": completar el álbum cuesta). Las repetidas se pueden vender por Matipuntos o juntar en el
 // «taller» para cambiarlas por la figurita que te falta (12 repetidas; una brillante, 36).
 // Los ids de la primera página y de sus brillantes (con "*") son los del álbum anterior: el avance de antes se conserva.
-import { earnCoins, saveProgress } from "./storage.js?v=a91b3b44ae";
+// Temporadas: durante cada evento (js/events.js) aparece su página de 12 figuritas + 2 brillantes, que solo salen en los
+// sobres mientras dura el evento (y vuelven el año siguiente). Completarla da Matipuntos y fichas del evento.
+// Kiosco: una figurita que falte se puede comprar con Matipuntos a precio alto (las de temporada, solo durante su evento).
+import { earnCoins, spendCoins, saveProgress } from "./storage.js?v=6b749dd883";
+import { activeEvent, addEventTokens } from "./events.js?v=6b749dd883";
 
 const P = (id, name, emoji, color) => ({ id, name, emoji, color });
 const PRODUCT_PAGE = [
@@ -58,6 +62,36 @@ export const STICKERS = [
   ...SPECIAL_FOILS,
 ];
 export const TOTAL = STICKERS.length;
+
+// ---------- páginas de temporada ----------
+const SEASON_DEFS = {
+  sanvalentin: ["💝", "Amor de Chocolate", "#d4216c", [["corazon", "Corazón de cacao", "💝"], ["bombon", "Bombón de amor", "💘"], ["carta", "Carta de amor", "💌"], ["rosa", "Rosa", "🌹"], ["osito", "Osito", "🧸"], ["abrazo", "Abrazo", "🫂"], ["globo", "Globo corazón", "🎈"], ["anillo", "Anillo de caramelo", "💍"], ["cupido", "Flecha de Cupido", "🏹"], ["chocolatina", "Chocolatina enamorada", "🥰"], ["bombones", "Caja de bombones", "🎁"], ["paloma", "Paloma", "🕊️"]]],
+  pascua: ["🥚", "Huevos de Chocolate", "#9a5cff", [["huevo", "Huevo de chocolate", "🥚"], ["conejo", "Conejo", "🐰"], ["canasta", "Canasta", "🧺"], ["pollito", "Pollito", "🐣"], ["zanahoria", "Zanahoria", "🥕"], ["tulipan", "Tulipán", "🌷"], ["huella", "Huellas de conejo", "🐾"], ["mariposa", "Mariposa", "🦋"], ["arcoiris", "Arcoíris", "🌈"], ["cesped", "Pasto escondite", "🌱"], ["lazo", "Lazo", "🎀"], ["sol", "Sol de otoño", "🌤️"]]],
+  patrias: ["🪁", "Fiestas Patrias", "#c0392b", [["volantin", "Volantín", "🪁"], ["empanada", "Empanada", "🥟"], ["panuelo", "Pañuelo de cueca", "🧣"], ["trompo", "Trompo", "🌀"], ["guitarra", "Guitarra", "🎸"], ["caballo", "Caballo", "🐴"], ["sombrero", "Sombrero de huaso", "🤠"], ["ramada", "Ramada", "🏕️"], ["anticucho", "Anticucho", "🍢"], ["copihue", "Copihue", "🌺"], ["estrella", "Estrella solitaria", "⭐"], ["fuegos", "Fuegos artificiales", "🎆"]]],
+  dianino: ["🎈", "Día de las Niñas y Niños", "#ff7a1a", [["globo", "Globo", "🎈"], ["regalo", "Regalo", "🎁"], ["torta", "Torta", "🎂"], ["pelota", "Pelota", "⚽"], ["burbujas", "Burbujas", "🫧"], ["pinata", "Piñata", "🪅"], ["cohete", "Cohete", "🚀"], ["dino", "Dinosaurio", "🦖"], ["unicornio", "Unicornio", "🦄"], ["cometa", "Cometa", "☄️"], ["bloques", "Bloques", "🧩"], ["corona", "Corona de cumpleaños", "👑"]]],
+  halloween: ["🎃", "Noche de Cacao", "#e86a10", [["calabaza", "Calabaza", "🎃"], ["fantasma", "Fantasma", "👻"], ["murcielago", "Murciélago", "🦇"], ["gato", "Gato negro", "🐈‍⬛"], ["bruja", "Sombrero de bruja", "🧙"], ["escoba", "Escoba voladora", "🧹"], ["arana", "Arañita", "🕷️"], ["luna", "Luna llena", "🌕"], ["dulces", "Dulces", "🍬"], ["vampiro", "Vampiro", "🧛"], ["vela", "Vela", "🕯️"], ["telarana", "Telaraña", "🕸️"]]],
+  navidad: ["🎄", "Navidad Chocolatera", "#2fa86a", [["arbol", "Arbolito", "🎄"], ["pascuero", "Viejito Pascuero", "🎅"], ["regalo", "Regalo", "🎁"], ["reno", "Reno", "🦌"], ["estrella", "Estrella", "⭐"], ["calcetin", "Calcetín", "🧦"], ["campana", "Campana", "🔔"], ["galleta", "Galleta de jengibre", "🍪"], ["mono", "Mono de nieve", "⛄"], ["trineo", "Trineo", "🛷"], ["vela", "Vela", "🕯️"], ["pandepascua", "Pan de pascua", "🍞"]]],
+};
+export const SEASON_REWARD = 300; // Matipuntos por completar la página de temporada
+export const SEASON_TOKENS = 30; // ... y fichas del evento (para sus objetos exclusivos)
+export const SEASON_CHANCE = 0.4; // en cada figurita del sobre, durante el evento, probabilidad de que sea de temporada
+/** Páginas de temporada: { id: "t-halloween", event, title, icon, items } */
+export const SEASON_PAGES = Object.entries(SEASON_DEFS).map(([event, [icon, title, color, items]]) => ({
+  id: `t-${event}`, event, title, icon, reward: SEASON_REWARD,
+  items: items.map(([k, name, emoji]) => ({ id: `t:${event}:${k}`, name, emoji, color })),
+}));
+/** Figuritas de temporada: las 12 de cada página + 2 brillantes (las dos primeras). */
+export const SEASON_STICKERS = SEASON_PAGES.flatMap((pg) => [
+  ...pg.items.map((x) => ({ ...x, page: pg.id, event: pg.event, foil: false })),
+  ...pg.items.slice(0, 2).map((x) => ({ ...x, id: `${x.id}*`, name: `${x.name} brillante`, page: pg.id, event: pg.event, foil: true })),
+]);
+const ALL = [...STICKERS, ...SEASON_STICKERS];
+export const stickerById = (id) => ALL.find((s) => s.id === id) || null;
+/** La página de temporada del evento activo (o null). */
+export const activeSeasonPage = () => { const e = activeEvent(); return e ? SEASON_PAGES.find((pg) => pg.event === e.id) || null : null; };
+/** ¿Esta figurita se puede conseguir ahora? (las de temporada, solo durante su evento) */
+export const obtainable = (s) => !s.event || (activeEvent() || {}).id === s.event;
+
 export const FOIL_CHANCE = 0.1;
 export const SELL_NORMAL = 1; // Matipuntos por cada repetida
 export const SELL_FOIL = 6;
@@ -68,7 +102,7 @@ const FOIL_VALUE = 3;
 const albumOf = (p) => (p.album = p.album || {});
 export const albumCount = (progress) => STICKERS.filter((s) => (progress.album || {})[s.id] > 0).length;
 export const pageStatus = (progress, pg) => {
-  const list = STICKERS.filter((s) => s.page === pg.id);
+  const list = ALL.filter((s) => s.page === pg.id);
   return { have: list.filter((s) => (progress.album || {})[s.id] > 0).length, total: list.length };
 };
 
@@ -106,10 +140,20 @@ function claimRewards(progress) {
       rewards.push({ text: `Página «${pg.title}» completa`, coins: pg.reward });
     }
   }
+  for (const pg of SEASON_PAGES) {
+    const key = `page:${pg.id}`;
+    const st = pageStatus(progress, pg);
+    if (st.have >= st.total && !progress.albumClaimed.includes(key)) {
+      progress.albumClaimed.push(key);
+      earnCoins(progress, pg.reward);
+      addEventTokens(progress, pg.event, SEASON_TOKENS);
+      rewards.push({ text: `Página de temporada «${pg.title}» completa (+${SEASON_TOKENS} fichas)`, coins: pg.reward });
+    }
+  }
   return rewards;
 }
 
-/** Abre un sobre: 3 figuritas al azar (el 10 % son brillantes). */
+/** Abre un sobre: 3 figuritas al azar (el 10 % son brillantes; durante un evento, el 40 % son de su página). */
 export function openPack(progress) {
   if ((progress.packs || 0) <= 0) return null;
   progress.packs--;
@@ -117,9 +161,14 @@ export function openPack(progress) {
   const album = albumOf(progress);
   const normals = STICKERS.filter((s) => !s.foil);
   const foils = STICKERS.filter((s) => s.foil);
+  const season = activeSeasonPage();
+  const sNormals = season ? SEASON_STICKERS.filter((s) => s.page === season.id && !s.foil) : [];
+  const sFoils = season ? SEASON_STICKERS.filter((s) => s.page === season.id && s.foil) : [];
   const out = [];
   for (let i = 0; i < 3; i++) {
-    const pool = Math.random() < FOIL_CHANCE ? foils : normals;
+    const fromSeason = season && Math.random() < SEASON_CHANCE;
+    const foil = Math.random() < FOIL_CHANCE;
+    const pool = fromSeason ? (foil ? sFoils : sNormals) : foil ? foils : normals;
     const s = pool[Math.floor(Math.random() * pool.length)];
     const isNew = !(album[s.id] > 0) && !out.some((o) => o.id === s.id);
     album[s.id] = (album[s.id] || 0) + 1;
@@ -136,12 +185,12 @@ export function openPack(progress) {
 export const spareOf = (progress, s) => Math.max(0, ((progress.album || {})[s.id] || 0) - 1);
 /** "Puntos de repetidas": una normal vale 1, una brillante 3 (sirve para el taller). */
 export function sparePoints(progress) {
-  return STICKERS.reduce((a, s) => a + spareOf(progress, s) * (s.foil ? FOIL_VALUE : 1), 0);
+  return ALL.reduce((a, s) => a + spareOf(progress, s) * (s.foil ? FOIL_VALUE : 1), 0);
 }
 export function sellValue(progress) {
-  return STICKERS.reduce((a, s) => a + spareOf(progress, s) * (s.foil ? SELL_FOIL : SELL_NORMAL), 0);
+  return ALL.reduce((a, s) => a + spareOf(progress, s) * (s.foil ? SELL_FOIL : SELL_NORMAL), 0);
 }
-export const spareCount = (progress) => STICKERS.reduce((a, s) => a + spareOf(progress, s), 0);
+export const spareCount = (progress) => ALL.reduce((a, s) => a + spareOf(progress, s), 0);
 
 /** Vende todas las repetidas por Matipuntos (se queda una de cada figurita). */
 export function sellSpares(progress) {
@@ -149,7 +198,7 @@ export function sellSpares(progress) {
   if (coins <= 0) return null;
   const album = albumOf(progress);
   let n = 0;
-  for (const s of STICKERS) {
+  for (const s of ALL) {
     const sp = spareOf(progress, s);
     if (sp) { n += sp; album[s.id] -= sp; }
   }
@@ -163,20 +212,39 @@ export const tradeCost = (s) => (s.foil ? TRADE_FOIL : TRADE_NORMAL);
 
 /** Taller: cambia repetidas por la figurita que te falta. */
 export function tradeFor(progress, id) {
-  const s = STICKERS.find((x) => x.id === id);
+  const s = stickerById(id);
   const album = albumOf(progress);
-  if (!s || album[id] > 0) return null;
+  if (!s || album[id] > 0 || !obtainable(s)) return null;
   const cost = tradeCost(s);
   if (sparePoints(progress) < cost) return null;
   let need = cost;
   // se gastan primero las que más repetidas tienen
-  const list = STICKERS.filter((x) => spareOf(progress, x) > 0).sort((a, b) => spareOf(progress, b) - spareOf(progress, a));
+  const list = ALL.filter((x) => spareOf(progress, x) > 0).sort((a, b) => spareOf(progress, b) - spareOf(progress, a));
   for (const x of list) {
     const v = x.foil ? FOIL_VALUE : 1;
     while (need > 0 && spareOf(progress, x) > 0) { album[x.id]--; need -= v; }
     if (need <= 0) break;
   }
   album[id] = 1;
+  const rewards = claimRewards(progress);
+  saveProgress(progress);
+  return { sticker: s, rewards };
+}
+
+// ---------- kiosco: comprar la figurita que falta ----------
+
+export const BUY_NORMAL = 400; // Matipuntos por una figurita normal que falte (≈ un día y algo de juego)
+export const BUY_FOIL = 1200; // ... por una brillante
+export const buyCost = (s) => (s.foil ? BUY_FOIL : BUY_NORMAL);
+
+/** Compra una figurita que falta con Matipuntos (las de temporada, solo durante su evento). */
+export function buySticker(progress, id) {
+  const s = stickerById(id);
+  const album = albumOf(progress);
+  if (!s || album[id] > 0 || !obtainable(s)) return null;
+  if (!spendCoins(progress, buyCost(s))) return null;
+  album[id] = 1;
+  progress.stats.albumBought = (progress.stats.albumBought || 0) + 1;
   const rewards = claimRewards(progress);
   saveProgress(progress);
   return { sticker: s, rewards };

@@ -9,16 +9,16 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=a91b3b44ae";
-import { createMatichico } from "./matichico3d.js?v=a91b3b44ae";
-import { CHARACTERS, getOutfit } from "./characters.js?v=a91b3b44ae";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=a91b3b44ae";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=a91b3b44ae";
-import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=a91b3b44ae";
-import { recordRun } from "./progression.js?v=a91b3b44ae";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=a91b3b44ae";
-import * as audio from "./audio.js?v=a91b3b44ae";
-import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=a91b3b44ae";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=6b749dd883";
+import { createMatichico } from "./matichico3d.js?v=6b749dd883";
+import { CHARACTERS, getOutfit } from "./characters.js?v=6b749dd883";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=6b749dd883";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6b749dd883";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=6b749dd883";
+import { recordRun } from "./progression.js?v=6b749dd883";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=6b749dd883";
+import * as audio from "./audio.js?v=6b749dd883";
+import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=6b749dd883";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60
@@ -403,11 +403,18 @@ export class CiudadGame extends Game3D {
     }
     s.add(zebra);
     // grandes manchas de pasto más claro afuera, para no ver un plano liso
+    // (nunca sobre la playa, el parque ni el colegio, ni en el mar: antes asomaban sobre la arena)
+    const hillMat = new THREE.MeshStandardMaterial({ color: 0x74c262, roughness: 1 });
     for (let i = 0; i < 14; i++) {
       const a = (i / 14) * Math.PI * 2;
-      const hill = new THREE.Mesh(new THREE.SphereGeometry(rand(9, 16), 14, 10), new THREE.MeshStandardMaterial({ color: 0x74c262, roughness: 1 }));
+      const r = rand(9, 16);
+      const x = Math.cos(a) * rand(112, 130);
+      const z = Math.sin(a) * rand(112, 130);
+      const m = r + 4;
+      if (x > 62 - m || AREAS.some((b) => x > b.x0 - m && x < b.x1 + m && z > b.z0 - m && z < b.z1 + m)) continue;
+      const hill = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), hillMat);
       hill.scale.y = rand(0.25, 0.45);
-      hill.position.set(Math.cos(a) * rand(112, 130), -1, Math.sin(a) * rand(112, 130));
+      hill.position.set(x, -1, z);
       s.add(hill);
     }
   }

@@ -5,10 +5,10 @@
 // Rendimiento (teléfonos de gama media-baja): cada barrio se dibuja solo cuando estás cerca, los árboles y cercas van
 // agrupados (InstancedMesh) y no hay sombras reales nuevas.
 
-import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=a91b3b44ae";
-import { taskDone, addStars } from "./adventure.js?v=a91b3b44ae";
-import { earnCoins, saveProgress } from "./storage.js?v=a91b3b44ae";
-import * as audio from "./audio.js?v=a91b3b44ae";
+import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=6b749dd883";
+import { taskDone, addStars } from "./adventure.js?v=6b749dd883";
+import { earnCoins, saveProgress } from "./storage.js?v=6b749dd883";
+import * as audio from "./audio.js?v=6b749dd883";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -43,6 +43,8 @@ export const ZONE_DEFS = {
 export const ZONE_IDS = Object.keys(ZONE_DEFS);
 const ZONE_Y = { bosque: 0.02, granja: 0.035, lago: 0.05 };
 const LAKE = { x: 0, z: -8, r: 12.6 }; // el agua del lago (coordenadas del barrio)
+const DOCK = { half: 1.3, z: LAKE.z + LAKE.r - 3.5, len: 9 }; // el muelle: ancho 2.6, entra desde la orilla hacia el agua
+const DOCK_END = DOCK.z - DOCK.len / 2 + 0.4; // la punta del muelle (más allá es agua)
 const HOME = { x: 3, z: 17 }; // dónde espera el vecino de cada barrio (a la entrada, junto al camino)
 
 /** Centro de un barrio en el mundo. */
@@ -120,7 +122,7 @@ export class TownZones {
       if (r <= ZONE_R) {
         if (id === "lago" && Math.hypot(l.x - LAKE.x, l.z - LAKE.z) < LAKE.r) {
           // al agua no se entra; por el muelle sí (cuando está arreglado)
-          return taskDone(this.progress, "lago.muelle") && Math.abs(l.x) < 1.3 && l.z > LAKE.z - 2;
+          return taskDone(this.progress, "lago.muelle") && Math.abs(l.x) < DOCK.half && l.z > DOCK_END; // antes llegaba 6 m más allá de la punta
         }
         return true;
       }
@@ -482,8 +484,8 @@ export class TownZones {
     // el muelle
     const dock = new THREE.Group();
     if (f.muelle) {
-      this._mesh(dock, roundedBox(2.6, 0.2, 9, 0.05), std(0xa8743a, 0.7), 0, 0.45, LAKE.z + LAKE.r - 3.5);
-      for (const z of [-1, 1.6, 4.2]) for (const sx of [-1.2, 1.2]) this._mesh(dock, new THREE.CylinderGeometry(0.12, 0.12, 1, 6), std(0x6b3a1e), sx, 0.3, LAKE.z + LAKE.r - 3.5 + z);
+      this._mesh(dock, roundedBox(DOCK.half * 2, 0.2, DOCK.len, 0.05), std(0xa8743a, 0.7), 0, 0.45, DOCK.z);
+      for (const z of [-1, 1.6, 4.2]) for (const sx of [-1.2, 1.2]) this._mesh(dock, new THREE.CylinderGeometry(0.12, 0.12, 1, 6), std(0x6b3a1e), sx, 0.3, DOCK.z + z);
     } else {
       for (const [x, z] of [[-1, 4], [1.1, 3], [-0.9, 1.5]]) this._mesh(dock, new THREE.CylinderGeometry(0.12, 0.12, 0.9, 6), std(0x6b3a1e), x, 0.3, z);
       const plank = this._mesh(dock, new THREE.BoxGeometry(2.2, 0.1, 0.5), std(0x8a5a2a), 0.4, 0.12, 6.5);
