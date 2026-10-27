@@ -4,15 +4,15 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=a4d43c7898";
-import { IS_DEMO, demoAllows } from "./demo.js?v=a4d43c7898";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=a4d43c7898";
-import * as audio from "./audio.js?v=a4d43c7898";
-import { recordRun, runBonus } from "./progression.js?v=a4d43c7898";
-import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=a4d43c7898";
-import { missionFor } from "./missions.js?v=a4d43c7898";
-import { costOf, spendEnergy, energyOf } from "./energy.js?v=a4d43c7898";
-import { vibrate } from "./native.js?v=a4d43c7898";
+import { getOutfit } from "./characters.js?v=f2ca533144";
+import { IS_DEMO, demoAllows } from "./demo.js?v=f2ca533144";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=f2ca533144";
+import * as audio from "./audio.js?v=f2ca533144";
+import { recordRun, runBonus } from "./progression.js?v=f2ca533144";
+import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=f2ca533144";
+import { missionFor } from "./missions.js?v=f2ca533144";
+import { costOf, spendEnergy, energyOf } from "./energy.js?v=f2ca533144";
+import { vibrate } from "./native.js?v=f2ca533144";
 
 export { THREE };
 
@@ -346,7 +346,7 @@ export class Popups {
  * Subclases: build() crea la escena, reset() prepara una partida, update(dt) la avanza.
  */
 export class Game3D {
-  constructor(gameId, character, progress, els, { fov = 50, bloom = true } = {}) {
+  constructor(gameId, character, progress, els, { fov = 50, bloom = true, near = 0.1 } = {}) {
     this.gameId = gameId;
     this.bloom = bloom === true ? LOOK.bloom : bloom;
     this.kawaii = false; // los mundos con estilo kawaii lo encienden en su constructor (ver kawaiiStyle)
@@ -355,6 +355,7 @@ export class Game3D {
     this.progress = progress;
     this.els = els;
     this.fov = fov;
+    this.near = near; // mundos abiertos: más alto = el celular distingue mejor los pisos casi a la misma altura
     this.ready = false;
     this.running = false;
     this.state = "intro"; // intro | playing | gameover | paused
@@ -385,7 +386,7 @@ export class Game3D {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(this.fov, 1.6, 0.1, 600);
+    this.camera = new THREE.PerspectiveCamera(this.fov, 1.6, this.near, 600);
     this.scene.add(this.camera);
     this.particles = new Particles(this.scene);
     this.popups = new Popups(this.els.popups, wrap, this.camera);

@@ -5,10 +5,10 @@
 // Rendimiento (teléfonos de gama media-baja): cada barrio se dibuja solo cuando estás cerca, los árboles y cercas van
 // agrupados (InstancedMesh) y no hay sombras reales nuevas.
 
-import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=a4d43c7898";
-import { taskDone, addStars } from "./adventure.js?v=a4d43c7898";
-import { earnCoins, saveProgress } from "./storage.js?v=a4d43c7898";
-import * as audio from "./audio.js?v=a4d43c7898";
+import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=f2ca533144";
+import { taskDone, addStars } from "./adventure.js?v=f2ca533144";
+import { earnCoins, saveProgress } from "./storage.js?v=f2ca533144";
+import * as audio from "./audio.js?v=f2ca533144";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -41,6 +41,7 @@ export const ZONE_DEFS = {
   },
 };
 export const ZONE_IDS = Object.keys(ZONE_DEFS);
+const ZONE_Y = { bosque: 0.02, granja: 0.035, lago: 0.05 };
 const LAKE = { x: 0, z: -8, r: 12.6 }; // el agua del lago (coordenadas del barrio)
 const HOME = { x: 3, z: 17 }; // dónde espera el vecino de cada barrio (a la entrada, junto al camino)
 
@@ -221,7 +222,8 @@ export class TownZones {
   _buildBase(id) {
     const d = ZONE_DEFS[id];
     const grp = this._group(id);
-    const ground = this._mesh(grp, new THREE.CircleGeometry(ZONE_R + 5, 40), std(d.ground, 0.95), 0, 0.02, 0);
+    // cada barrio a su altura: los suelos de barrios vecinos se tocan y a la misma altura parpadean en el celular
+    const ground = this._mesh(grp, new THREE.CircleGeometry(ZONE_R + 5, 40), std(d.ground, 0.95), 0, ZONE_Y[id], 0);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     // cerca alrededor (sin postes en la entrada, que mira al pueblo: +z)
@@ -285,8 +287,8 @@ export class TownZones {
       grp.add(tr);
     } else {
       // el lago: arena alrededor y agua
-      this._mesh(grp, new THREE.CircleGeometry(LAKE.r + 3, 40), std(0xf2dca0, 0.95), LAKE.x, 0.03, LAKE.z).rotation.x = -Math.PI / 2;
-      const water = this._mesh(grp, new THREE.CircleGeometry(LAKE.r, 40), std(0x4fb3e8, 0.15, { metalness: 0.15, emissive: 0x13507a, emissiveIntensity: 0.3 }), LAKE.x, 0.07, LAKE.z);
+      this._mesh(grp, new THREE.CircleGeometry(LAKE.r + 3, 40), std(0xf2dca0, 0.95), LAKE.x, 0.065, LAKE.z).rotation.x = -Math.PI / 2;
+      const water = this._mesh(grp, new THREE.CircleGeometry(LAKE.r, 40), std(0x4fb3e8, 0.15, { metalness: 0.15, emissive: 0x13507a, emissiveIntensity: 0.3 }), LAKE.x, 0.085, LAKE.z);
       water.rotation.x = -Math.PI / 2;
       this.water = water;
       // juncos y piedras en la orilla

@@ -5,8 +5,8 @@
 // Para probar un evento fuera de fecha: agregar ?event=halloween (o navidad, sanvalentin,
 // pascua, patrias, dianino) a la dirección.
 
-import { saveProgress } from "./storage.js?v=a4d43c7898";
-import { getItem } from "./wardrobe-data.js?v=a4d43c7898";
+import { saveProgress } from "./storage.js?v=f2ca533144";
+import { getItem } from "./wardrobe-data.js?v=f2ca533144";
 
 const day = (y, m, d) => new Date(y, m - 1, d);
 
