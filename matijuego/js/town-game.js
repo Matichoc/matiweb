@@ -6,20 +6,20 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=6b749dd883";
-import { createMatichico } from "./matichico3d.js?v=6b749dd883";
-import { getOutfit } from "./characters.js?v=6b749dd883";
-import { GAMES_CATALOG } from "./games-catalog.js?v=6b749dd883";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6b749dd883";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=6b749dd883";
-import { levelInfo } from "./progression.js?v=6b749dd883";
-import { bindStick } from "./stick.js?v=6b749dd883";
-import * as audio from "./audio.js?v=6b749dd883";
-import { TownFun } from "./town-fun.js?v=6b749dd883";
-import { TownFestival, PLACES } from "./town-festival.js?v=6b749dd883";
-import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=6b749dd883";
-import { talkTo, gossip, starsOf } from "./adventure.js?v=6b749dd883";
-import { TownZones } from "./town-zones.js?v=6b749dd883";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=c7f11ecb8c";
+import { createMatichico } from "./matichico3d.js?v=c7f11ecb8c";
+import { getOutfit } from "./characters.js?v=c7f11ecb8c";
+import { GAMES_CATALOG } from "./games-catalog.js?v=c7f11ecb8c";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=c7f11ecb8c";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=c7f11ecb8c";
+import { levelInfo } from "./progression.js?v=c7f11ecb8c";
+import { bindStick } from "./stick.js?v=c7f11ecb8c";
+import * as audio from "./audio.js?v=c7f11ecb8c";
+import { TownFun } from "./town-fun.js?v=c7f11ecb8c";
+import { TownFestival, PLACES } from "./town-festival.js?v=c7f11ecb8c";
+import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=c7f11ecb8c";
+import { talkTo, gossip, starsOf } from "./adventure.js?v=c7f11ecb8c";
+import { TownZones } from "./town-zones.js?v=c7f11ecb8c";
 
 const GAME_ID = "town";
 const SPEED = 6.4;

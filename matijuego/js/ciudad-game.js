@@ -9,16 +9,16 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=6b749dd883";
-import { createMatichico } from "./matichico3d.js?v=6b749dd883";
-import { CHARACTERS, getOutfit } from "./characters.js?v=6b749dd883";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=6b749dd883";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6b749dd883";
-import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=6b749dd883";
-import { recordRun } from "./progression.js?v=6b749dd883";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=6b749dd883";
-import * as audio from "./audio.js?v=6b749dd883";
-import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=6b749dd883";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=c7f11ecb8c";
+import { createMatichico } from "./matichico3d.js?v=c7f11ecb8c";
+import { CHARACTERS, getOutfit } from "./characters.js?v=c7f11ecb8c";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=c7f11ecb8c";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=c7f11ecb8c";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=c7f11ecb8c";
+import { recordRun } from "./progression.js?v=c7f11ecb8c";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=c7f11ecb8c";
+import * as audio from "./audio.js?v=c7f11ecb8c";
+import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=c7f11ecb8c";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60
