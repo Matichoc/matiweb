@@ -3,12 +3,12 @@
 // más allá de la cerca están en js/town-zones.js). También: el "❗" sobre el vecino que te espera, la flecha que guía a la
 // zona, el globo de arriba con lo que sigue y la decoración del festival (con los colores del evento de temporada).
 
-import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=f2ca533144";
-import { activeEvent } from "./events.js?v=f2ca533144";
-import { ZONES, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentTask, taskDone, objective, starsOf } from "./adventure.js?v=f2ca533144";
-import { paintNeighbor } from "./neighbors.js?v=f2ca533144";
-import { zonePlaces } from "./town-zones.js?v=f2ca533144";
-import { GAMES_CATALOG } from "./games-catalog.js?v=f2ca533144";
+import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=5e39093371";
+import { activeEvent } from "./events.js?v=5e39093371";
+import { ZONES, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentTask, taskDone, objective, starsOf } from "./adventure.js?v=5e39093371";
+import { paintNeighbor } from "./neighbors.js?v=5e39093371";
+import { zonePlaces } from "./town-zones.js?v=5e39093371";
+import { GAMES_CATALOG } from "./games-catalog.js?v=5e39093371";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -246,8 +246,15 @@ export class TownFestival {
     }
     // la banca: rota y ladeada hasta que la arreglas (del color del estilo elegido)
     const benchCol = { jardin: 0x7a3f22, guirnaldas: 0xff6fb0, lectura: 0xffc800 }[style] || 0x7a3f22;
-    if (f.bench) this._bench(grp, 0, style === "lectura" ? 1.9 : 0.5, benchCol, Math.PI);
-    else { const b = this._bench(grp, 0.4, -1.2, 0x8a7a6a, 0.1); b.rotation.z = 0.18; }
+    this.g.removeBench(this.plazaBench);
+    this.plazaBench = null;
+    if (f.bench) {
+      const bz = style === "lectura" ? 1.9 : 0.5;
+      this._bench(grp, 0, bz, benchCol, Math.PI);
+      // arreglada, se puede usar: su lugar en el mundo (el grupo está girado hacia la fuente)
+      const a = grp.rotation.y;
+      this.plazaBench = this.g.addBench({ x: grp.position.x + Math.sin(a) * bz, z: grp.position.z + Math.cos(a) * bz, yaw: a + Math.PI, seat: 0.57 });
+    } else { const b = this._bench(grp, 0.4, -1.2, 0x8a7a6a, 0.1); b.rotation.z = 0.18; }
     // faroles de colores alrededor
     if (f.lamps) {
       const cols = [0xff3b6b, 0xffe14a, 0x4fd0ff, 0x9a5cff];

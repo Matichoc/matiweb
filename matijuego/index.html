@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=f2ca533144"><style>
+<link rel="stylesheet" href="css/style.css?v=5e39093371"><style>
 /* Enlaces del juego hacia matichoc.cl (solo en la web; la app no los lleva ni este estilo): discretos. Texto chico, sin íconos ni colores de marca,
    para que el juego no empuje hacia la tienda. Siguen siendo legibles (color de texto de cada pantalla) y accesibles. */
 .site-links { gap: 2px 14px; margin: 18px 0 6px; }
@@ -33,6 +33,18 @@
     <div class="um-prog" aria-hidden="true"><i id="um-fill"></i><em id="um-count"></em></div>
     <button id="um-buy" class="btn-primary" type="button"></button>
     <button id="um-cancel" data-back class="btn-secondary" type="button">Ahora no</button>
+  </div>
+</div>
+
+<!-- Figurita que falta: cambiarla por repetidas (taller) o comprarla con Matipuntos (kiosco) -->
+<div id="sticker-dialog" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-card um-card sk-card">
+    <div id="sk-art" class="um-art sk-art" aria-hidden="true"></div>
+    <h2 id="sk-title"></h2>
+    <p id="sk-text"></p>
+    <button id="sk-trade" class="btn-primary" type="button"></button>
+    <button id="sk-buy" class="btn-primary sk-buy" type="button"></button>
+    <button id="sk-close" data-back class="btn-secondary" type="button">Ahora no</button>
   </div>
 </div>
 
@@ -844,6 +856,8 @@
       <button id="town-btn-action" class="town-action hidden" type="button"></button>
       <button id="town-btn-jump" class="town-jump" type="button" aria-label="Saltar">⤴️</button>
       <button id="town-btn-speed" class="town-speed" type="button" aria-label="Cambiar cómo te mueves (correr, patines…)">🏃</button>
+      <button id="town-btn-pet" class="town-pet hidden" type="button" aria-label="Mi mascota">🐾</button>
+      <div id="town-petcard" class="pet-card town-petcard hidden"></div>
       <span id="town-speed-hint" class="town-speed-hint"></span>
       <div class="pk-touch" id="town-touch">
         <div class="pk-joy" id="town-joy"><div class="pk-knob" id="town-knob"></div></div>
@@ -1652,6 +1666,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=f2ca533144"></script>
+<script type="module" src="js/main.js?v=5e39093371"></script>
 </body>
 </html>

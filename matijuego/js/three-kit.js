@@ -4,15 +4,15 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=f2ca533144";
-import { IS_DEMO, demoAllows } from "./demo.js?v=f2ca533144";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=f2ca533144";
-import * as audio from "./audio.js?v=f2ca533144";
-import { recordRun, runBonus } from "./progression.js?v=f2ca533144";
-import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=f2ca533144";
-import { missionFor } from "./missions.js?v=f2ca533144";
-import { costOf, spendEnergy, energyOf } from "./energy.js?v=f2ca533144";
-import { vibrate } from "./native.js?v=f2ca533144";
+import { getOutfit } from "./characters.js?v=5e39093371";
+import { IS_DEMO, demoAllows } from "./demo.js?v=5e39093371";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=5e39093371";
+import * as audio from "./audio.js?v=5e39093371";
+import { recordRun, runBonus } from "./progression.js?v=5e39093371";
+import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=5e39093371";
+import { missionFor } from "./missions.js?v=5e39093371";
+import { costOf, spendEnergy, energyOf } from "./energy.js?v=5e39093371";
+import { vibrate } from "./native.js?v=5e39093371";
 
 export { THREE };
 
@@ -118,9 +118,15 @@ export function logoTexture() {
  */
 export function makeLogo(size = 2, { lit = true } = {}) {
   const mat = lit
-    ? new THREE.MeshBasicMaterial({ map: logoTexture(), transparent: true, side: THREE.DoubleSide })
-    : new THREE.MeshStandardMaterial({ map: logoTexture(), transparent: true, side: THREE.DoubleSide, roughness: 0.6 });
-  return new THREE.Mesh(new THREE.PlaneGeometry(size, size), mat);
+    ? new THREE.MeshBasicMaterial({ map: logoTexture(), transparent: true })
+    : new THREE.MeshStandardMaterial({ map: logoTexture(), transparent: true, roughness: 0.6 });
+  // dos caras de un solo lado (no una con DoubleSide): por detrás el logo se leería al revés, como en un espejo
+  const geo = new THREE.PlaneGeometry(size, size);
+  const g = new THREE.Group();
+  const back = new THREE.Mesh(geo, mat);
+  back.rotation.y = Math.PI;
+  g.add(new THREE.Mesh(geo, mat), back);
+  return g;
 }
 
 let coinTex = null;
@@ -158,6 +164,20 @@ export function canvasTexture(w, h, draw) {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
   return tex;
+}
+
+/** Un emoji dibujado en un sprite (globitos, cosas para recoger, corazones). */
+export function emojiSprite(emoji, size = 0.8) {
+  const tex = canvasTexture(128, 128, (g, w, h) => {
+    g.clearRect(0, 0, w, h);
+    g.font = "96px sans-serif";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText(emoji, w / 2, h / 2 + 6);
+  });
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+  s.scale.set(size, size, 1);
+  return s;
 }
 
 export function roundedRectShape(w, h, r) {
@@ -338,6 +358,31 @@ export class Popups {
     for (const p of this.items) p.el.remove();
     this.items = [];
   }
+}
+
+/**
+ * Botones de juego que actúan al apoyar el dedo (pointerdown): si abren algo (un cuadro, la tienda, otro juego), el clic
+ * que el celular envía al levantar el dedo cae sobre lo recién abierto y lo toca sin querer. Esto descarta ese clic.
+ * Se sigue a ese mismo dedo (y no un plazo fijo: abrir la tienda puede tardar más de un segundo en un celular modesto).
+ */
+let ghost = 0; // 0: nada · 1: esperando que se levante ese dedo · 2: el próximo clic es el fantasma
+let ghostPointer = null;
+let ghostArmed = false;
+export function eatGhostClick(e) {
+  ghost = 1;
+  ghostPointer = e ? e.pointerId : null;
+  if (ghostArmed) return;
+  ghostArmed = true;
+  const same = (ev) => ghostPointer === null || ev.pointerId === ghostPointer;
+  document.addEventListener("pointerup", (ev) => { if (ghost === 1 && same(ev)) ghost = 2; }, true);
+  document.addEventListener("pointercancel", (ev) => { if (same(ev)) ghost = 0; }, true);
+  document.addEventListener("pointerdown", () => { if (ghost === 2) ghost = 0; }, true); // un toque nuevo: ya no viene el fantasma
+  document.addEventListener("click", (ev) => {
+    if (ghost !== 2 || !ev.isTrusted) return; // los clics que genera el propio juego (el.click()) pasan
+    ghost = 0;
+    ev.stopPropagation();
+    ev.preventDefault();
+  }, true);
 }
 
 /**

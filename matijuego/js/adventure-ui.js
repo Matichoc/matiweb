@@ -8,15 +8,15 @@ import {
   ZONES, CHOICES, GOALS, adventureOf, currentTask, zoneDone, zoneProgress, objective, doTask, choose, choiceOf, choiceOption,
   placeOpen, setGoal, goalStatus, returnSummary, seasonalChallenge, setTownDest, stepPlace, startAdventure, adventureComplete,
   markIntroSeen, starsOf, taskDone,
-} from "./adventure.js?v=f2ca533144";
-import { paintNeighbor } from "./neighbors.js?v=f2ca533144";
-import { sportOf, cupsWon, cupRival, DIFF_NAMES } from "./sports-progress.js?v=f2ca533144";
-import { activeEvent } from "./events.js?v=f2ca533144";
-import { GAMES_CATALOG } from "./games-catalog.js?v=f2ca533144";
-import { isUnlocked } from "./unlocks.js?v=f2ca533144";
-import { earnCoins, saveProgress } from "./storage.js?v=f2ca533144";
-import { addXp, onProgressEvent } from "./progression.js?v=f2ca533144";
-import * as audio from "./audio.js?v=f2ca533144";
+} from "./adventure.js?v=5e39093371";
+import { paintNeighbor } from "./neighbors.js?v=5e39093371";
+import { sportOf, cupsWon, cupRival, DIFF_NAMES } from "./sports-progress.js?v=5e39093371";
+import { activeEvent } from "./events.js?v=5e39093371";
+import { GAMES_CATALOG } from "./games-catalog.js?v=5e39093371";
+import { isUnlocked } from "./unlocks.js?v=5e39093371";
+import { earnCoins, saveProgress } from "./storage.js?v=5e39093371";
+import { addXp, onProgressEvent } from "./progression.js?v=5e39093371";
+import * as audio from "./audio.js?v=5e39093371";
 
 const $ = (id) => document.getElementById(id);
 const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

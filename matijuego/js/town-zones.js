@@ -5,10 +5,11 @@
 // Rendimiento (teléfonos de gama media-baja): cada barrio se dibuja solo cuando estás cerca, los árboles y cercas van
 // agrupados (InstancedMesh) y no hay sombras reales nuevas.
 
-import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=f2ca533144";
-import { taskDone, addStars } from "./adventure.js?v=f2ca533144";
-import { earnCoins, saveProgress } from "./storage.js?v=f2ca533144";
-import * as audio from "./audio.js?v=f2ca533144";
+import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=5e39093371";
+import { taskDone, addStars } from "./adventure.js?v=5e39093371";
+import { earnCoins, saveProgress } from "./storage.js?v=5e39093371";
+import * as audio from "./audio.js?v=5e39093371";
+import { binocularStand } from "./binoculars.js?v=5e39093371";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -43,6 +44,11 @@ export const ZONE_DEFS = {
 export const ZONE_IDS = Object.keys(ZONE_DEFS);
 const ZONE_Y = { bosque: 0.02, granja: 0.035, lago: 0.05 };
 const LAKE = { x: 0, z: -8, r: 12.6 }; // el agua del lago (coordenadas del barrio)
+const DOCK = { half: 1.3, z: LAKE.z + LAKE.r - 3.5, len: 9 }; // el muelle: ancho 2.6, entra desde la orilla hacia el agua
+const DOCK_END = DOCK.z - DOCK.len / 2 + 0.4; // la punta del muelle (más allá es agua)
+const CREEK = { z: 2, half: 1.75 }; // el arroyo del bosque (coordenadas del barrio): de lado a lado
+const BRIDGE_HALF = 1.5; // el arroyo solo se cruza por el puente (o, antes de arreglarlo, por los tablones del mismo lugar)
+const DECK_TOP = 0.48; // sobre el puente y el muelle se camina por encima (bajo 0,5: se sube sin saltar)
 const HOME = { x: 3, z: 17 }; // dónde espera el vecino de cada barrio (a la entrada, junto al camino)
 
 /** Centro de un barrio en el mundo. */
@@ -120,8 +126,9 @@ export class TownZones {
       if (r <= ZONE_R) {
         if (id === "lago" && Math.hypot(l.x - LAKE.x, l.z - LAKE.z) < LAKE.r) {
           // al agua no se entra; por el muelle sí (cuando está arreglado)
-          return taskDone(this.progress, "lago.muelle") && Math.abs(l.x) < 1.3 && l.z > LAKE.z - 2;
+          return taskDone(this.progress, "lago.muelle") && Math.abs(l.x) < DOCK.half && l.z > DOCK_END; // antes llegaba 6 m más allá de la punta
         }
+        if (id === "bosque" && Math.abs(l.z - CREEK.z) < CREEK.half && Math.abs(l.x) >= BRIDGE_HALF) return false; // al arroyo no se entra
         return true;
       }
       // el camino de entrada: de la cerca del pueblo hasta el barrio
@@ -312,6 +319,34 @@ export class TownZones {
     for (const id of ZONE_IDS) this._zone(id);
   }
 
+  /** Pisos elevados (puente y muelle) para la gravedad del Pueblo: { x, z, top, r } como las plataformas de parkour. */
+  get decks() {
+    return Object.values(this._decks || {}).flat();
+  }
+
+  /** Lugares con binoculares: { x, z, eye: { x, y, z, yaw } } en coordenadas del mundo. */
+  get binocSpots() {
+    return Object.values(this._binoc || {}).flat();
+  }
+
+  _setBinoc(id, list) {
+    this._binoc = this._binoc || {};
+    const a = (ZONE_DEFS[id].deg * Math.PI) / 180;
+    this._binoc[id] = list.map(({ at, eye, y, look }) => {
+      const w = toWorld(id, at[0], at[1]);
+      const e = toWorld(id, eye[0], eye[1]);
+      // la dirección local (look) girada como el barrio
+      const dx = look[0] * Math.cos(a) - look[1] * Math.sin(a);
+      const dz = look[0] * Math.sin(a) + look[1] * Math.cos(a);
+      return { x: w.x, z: w.z, eye: { x: e.x, y, z: e.z, yaw: Math.atan2(dx, dz) } };
+    });
+  }
+
+  _setDecks(id, list) {
+    this._decks = this._decks || {};
+    this._decks[id] = list.map(([lx, lz, r]) => ({ ...toWorld(id, lx, lz), top: DECK_TOP, r }));
+  }
+
   _flags(id) {
     const t = (k) => (taskDone(this.progress, `${id}.${k}`) ? 1 : 0);
     if (id === "bosque") return { sendero: t("sendero"), puente: t("puente"), casita: t("casita"), luces: t("luces") };
@@ -338,6 +373,14 @@ export class TownZones {
     if (id === "bosque") this._bosque(grp, f, mark, col);
     else if (id === "granja") this._granja(grp, f, mark, col);
     else this._lago(grp, f, mark, col);
+    // se camina por encima del puente y del muelle (círculos que cubren la tabla)
+    if (id === "bosque") this._setDecks(id, f.puente ? [0.4, 1.47, 2.53, 3.6].map((z) => [0, z, 1.2]) : []);
+    if (id === "lago") this._setDecks(id, f.muelle ? [-2.8, -1.6, -0.4, 0.8, 2, 3.2, 4.4].map((z) => [0, z, 1.25]) : []);
+    // binoculares: en la punta del muelle (mirando el lago) y desde arriba del mirador
+    if (id === "lago") this._setBinoc(id, [
+      ...(f.muelle ? [{ at: [0, DOCK_END + 1.2], eye: [0, DOCK_END - 0.2], y: 2.2, look: [0, -1] }] : []),
+      ...(f.mirador ? [{ at: [-17 + 2.6, 2], eye: [-17, 2], y: 6.4, look: [17, -10] }] : []),
+    ]);
     if (this.g.kawaii) toonify(grp);
     this.g.scene.add(grp);
     this.groups[id] = grp;
@@ -482,8 +525,12 @@ export class TownZones {
     // el muelle
     const dock = new THREE.Group();
     if (f.muelle) {
-      this._mesh(dock, roundedBox(2.6, 0.2, 9, 0.05), std(0xa8743a, 0.7), 0, 0.45, LAKE.z + LAKE.r - 3.5);
-      for (const z of [-1, 1.6, 4.2]) for (const sx of [-1.2, 1.2]) this._mesh(dock, new THREE.CylinderGeometry(0.12, 0.12, 1, 6), std(0x6b3a1e), sx, 0.3, LAKE.z + LAKE.r - 3.5 + z);
+      this._mesh(dock, roundedBox(DOCK.half * 2, 0.2, DOCK.len, 0.05), std(0xa8743a, 0.7), 0, 0.45, DOCK.z);
+      const stand = binocularStand(); // binoculares en la punta, mirando el lago
+      stand.position.set(0, 0.55, DOCK_END + 0.1);
+      stand.rotation.y = Math.PI;
+      dock.add(stand);
+      for (const z of [-1, 1.6, 4.2]) for (const sx of [-1.2, 1.2]) this._mesh(dock, new THREE.CylinderGeometry(0.12, 0.12, 1, 6), std(0x6b3a1e), sx, 0.3, DOCK.z + z);
     } else {
       for (const [x, z] of [[-1, 4], [1.1, 3], [-0.9, 1.5]]) this._mesh(dock, new THREE.CylinderGeometry(0.12, 0.12, 0.9, 6), std(0x6b3a1e), x, 0.3, z);
       const plank = this._mesh(dock, new THREE.BoxGeometry(2.2, 0.1, 0.5), std(0x8a5a2a), 0.4, 0.12, 6.5);

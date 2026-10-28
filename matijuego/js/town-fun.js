@@ -4,11 +4,12 @@
 //  · "Actividades del día": 5 desafíos con guía; al completarlos hay premio (Matipuntos, sobre de figuritas y energía).
 // El estado del día vive en progress.town.fun (se reinicia solo cada día, igual que el resto del pueblo).
 
-import { THREE, canvasTexture } from "./three-kit.js?v=f2ca533144";
-import { earnCoins, saveProgress } from "./storage.js?v=f2ca533144";
-import { addEnergy } from "./energy.js?v=f2ca533144";
-import * as audio from "./audio.js?v=f2ca533144";
-import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=f2ca533144";
+import { THREE, canvasTexture } from "./three-kit.js?v=5e39093371";
+import { earnCoins, saveProgress } from "./storage.js?v=5e39093371";
+import { addEnergy } from "./energy.js?v=5e39093371";
+import * as audio from "./audio.js?v=5e39093371";
+import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=5e39093371";
+import { VISITS } from "./interiors.js?v=5e39093371";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -29,6 +30,12 @@ const DOORS = [
   { id: "gato", name: "El Gato", icon: "🐱", wall: 0xffb0d0, roof: 0xd4216c, sign: "#d4216c", beacon: "#ff5fa8" },
   { id: "sudoku", name: "Sudoku", icon: "🔢", wall: 0xbfe6ff, roof: 0x2a8fd6, sign: "#2a8fd6", beacon: "#35c8ff" },
   { id: "cachipun", name: "Cachipún", icon: "✊", wall: 0xd6f5b8, roof: 0x3d9a4a, sign: "#3d9a4a", beacon: "#4fd09a" },
+];
+// casitas de los vecinos que se pueden visitar por dentro (js/interiors.js)
+const HOMES = [
+  { id: "bombi", name: "Casa de Bombi", icon: "🌷", wall: 0xffd6e8, roof: 0xd4216c, sign: "#d4216c" },
+  { id: "capi", name: "Casa de Capi", icon: "⚽", wall: 0xd6f5e0, roof: 0x2fa86a, sign: "#2fa86a" },
+  { id: "cuchufli", name: "Don Cuchufli", icon: "🍫", wall: 0xffefc2, roof: 0xe8742a, sign: "#e8742a" },
 ];
 const PASTEL = [0xff7aa8, 0x35c8ff, 0xffd34d, 0x9a5cff, 0x4fd09a];
 const CHEST_GOAL = 3;
@@ -381,6 +388,23 @@ export class TownFun {
     });
   }
 
+  /** Casitas de los vecinos para visitar por dentro: van después de los rincones de la aventura (no se pisan). */
+  buildHomes() {
+    const g = this.g;
+    const SPACING = 14;
+    const spot = this._findSpot((deg, r) => HOMES.map((_, k) => pol(deg + k * SPACING, r)), 7.5, [30, 44, 34, 40]);
+    if (!spot) return;
+    HOMES.forEach((def, k) => {
+      const deg = spot.deg + k * SPACING;
+      const p = pol(deg, spot.r);
+      this.claimed.push({ x: p.x, z: p.z, r: 5 });
+      g._addBuilding({ deg, r: spot.r, w: 7, d: 6, h: 4.5, color: def.wall, roof: def.roof, name: def.name, icon: def.icon, signColor: def.sign, kind: "visit", label: "" });
+      const it = g.interact[g.interact.length - 1];
+      it.visit = def.id;
+      it.label = `🚪 Visitar a ${VISITS[def.id].host}`;
+    });
+  }
+
   /** Abre una puerta: un cuadro con el juego. El premio del día se entrega solo la primera vez que se gana. */
   openDoor(id) {
     const g = this.g;
@@ -515,8 +539,8 @@ export class TownFun {
   /** Altura del piso bajo (x, z): la plataforma más alta que está a los pies (o hasta 0,5 sobre ellos, como un escalón). */
   _groundAt(x, z, y) {
     let top = 0;
-    for (const p of this.platforms) {
-      if (p.top <= y + 0.5 && p.top > top && Math.hypot(x - p.x, z - p.z) < p.r) top = p.top;
+    for (const list of [this.platforms, this.g.zones ? this.g.zones.decks : []]) {
+      for (const p of list) if (p.top <= y + 0.5 && p.top > top && Math.hypot(x - p.x, z - p.z) < p.r) top = p.top;
     }
     return top;
   }
@@ -542,6 +566,7 @@ export class TownFun {
   jump() {
     const g = this.g;
     if (g.state !== "playing" || this.puzzleOpen) return;
+    if (g.sitting) { g._standUp(); return; } // sentado, saltar primero te levanta
     if (this.vy <= 0 && g.pos.y <= this.groundY + 0.08) {
       this.vy = JUMP_WALK;
       g.pos.y = this.groundY + 0.05;

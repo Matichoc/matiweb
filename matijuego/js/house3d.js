@@ -2,10 +2,11 @@
 // con tu Matichico y su mascota adentro. Lo que hay en cada lugar viene de
 // js/house-data.js; aquí solo se dibuja. Es liviano y solo corre cuando la pantalla está visible.
 
-import { THREE, canvasTexture, roundedBox, createRenderer, glAcquire, toonify, makeAmbient } from "./three-kit.js?v=f2ca533144";
-import { createMatichico } from "./matichico3d.js?v=f2ca533144";
-import { getOutfit } from "./wardrobe-data.js?v=f2ca533144";
-import { getHouseItem, houseItemsOfSpot, isWallItem } from "./house-data.js?v=f2ca533144";
+import { THREE, canvasTexture, roundedBox, createRenderer, glAcquire, toonify, makeAmbient } from "./three-kit.js?v=5e39093371";
+import { createMatichico } from "./matichico3d.js?v=5e39093371";
+import { getOutfit } from "./wardrobe-data.js?v=5e39093371";
+import { getHouseItem, houseItemsOfSpot, isWallItem } from "./house-data.js?v=5e39093371";
+import { PetBuddy, renderPetCard } from "./pet-buddy.js?v=5e39093371";
 
 let W = 10; // ancho del cuarto (10, 14 o 18 según cuánto lo agrandes); el alto es siempre 5.2
 const H = 5.2;
@@ -1386,6 +1387,25 @@ export class House3D {
     L.walkT = 0;
   }
 
+  /** La mascota con vida (js/pet-buddy.js): main.js le pasa el progreso, qué hacer al cambiar y cómo avisar. */
+  setPetCare(progress, onChange, popup) {
+    if (this.pet) this.pet.dispose();
+    this.pet = new PetBuddy({
+      scene: this.scene,
+      hero: () => this.hero,
+      progress,
+      onChange,
+      popup,
+      throwDist: 2.6, // la pieza es chica
+      clamp: (v) => { const half = W / 2 - 0.6; v.x = Math.max(-half, Math.min(half, v.x)); v.z = Math.max(-half, Math.min(half, v.z)); },
+    });
+  }
+
+  /** Dibuja la tarjeta "Mi mascota" en `el` (main.js no carga los módulos 3D hasta abrir la casa). */
+  petCard(el, say) {
+    if (this.pet) renderPetCard(el, this.pet, say);
+  }
+
   /** Despierta o deja lo que hacía y se queda de pie. */
   wake() {
     if (this.life.state === "act" || this.life.state === "enter") this._leaveAct(true);
@@ -1583,6 +1603,7 @@ export class House3D {
     if (this.hero) this._lifeTick(dt);
     for (const f of this.ticks) f(this.time, dt);
     if (this.nTicks) for (const f of this.nTicks) f(this.time, dt);
+    if (this.pet && this.hero) this.pet.update(dt);
     const sl = this._slide;
     const goal = sl ? sl.x : 0;
     if (Math.abs(this._camX - goal) > 0.01) {
