@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=5e39093371"><style>
+<link rel="stylesheet" href="css/style.css?v=abd0c6da60"><style>
 /* Enlaces del juego hacia matichoc.cl (solo en la web; la app no los lleva ni este estilo): discretos. Texto chico, sin íconos ni colores de marca,
    para que el juego no empuje hacia la tienda. Siguen siendo legibles (color de texto de cada pantalla) y accesibles. */
 .site-links { gap: 2px 14px; margin: 18px 0 6px; }
@@ -329,7 +329,7 @@
         <section id="adv-now" class="adv-now" aria-live="polite"></section>
         <section class="adv-block"><h2>🏗️ Lo que construiste</h2><div id="adv-built" class="adv-built"></div></section>
         <section class="adv-block"><h2>🏆 Deportes del Pueblo</h2><div id="adv-sports" class="adv-sports"></div></section>
-        <section class="adv-block"><h2>🎯 Mi meta</h2><div id="adv-goals" class="adv-goals"></div></section>
+        <section class="adv-block"><h2>🎯 Metas de la semana</h2><div id="adv-goals" class="adv-goals"></div></section>
         <section id="adv-season" class="adv-block hidden"></section>
       </div>
     </div>
@@ -694,7 +694,7 @@
         <img id="porristas-hud-avatar" class="hud-avatar" alt="">
         <div>
           <div class="hud-level">Saltos de Porristas</div>
-          <div class="hud-mission">Mueve la rebotadora y no la dejes caer</div>
+          <div class="hud-mission">Toca al ritmo: lanza, figura y atrapa</div>
         </div>
       </div>
       <div class="hud-right">
@@ -709,16 +709,22 @@
       <canvas id="porristas-canvas"></canvas>
       <div id="porristas-banner" class="fps-banner" aria-live="polite"></div>
       <div id="porristas-popups" class="fps-popups" aria-hidden="true"></div>
+      <div id="porristas-rhythm" class="pr-rhythm hidden" aria-hidden="true">
+        <div id="porristas-cue" class="pr-cue"></div>
+        <div id="porristas-beats" class="pr-beats"></div>
+        <div id="porristas-hearts" class="pr-hearts"></div>
+      </div>
 
       <div id="porristas-overlay-intro" class="overlay hidden">
         <div class="overlay-card">
           <h2>Saltos de Porristas 3D</h2>
           <p class="fps-tag">Ahora en 3D</p>
           <details class="how"><summary>📖 Cómo se juega</summary>
-          <p>Mueve la rebotadora con ← → (o arrastra el dedo / mouse) para que
-            quede justo debajo de tu Matichica cada vez que cae. Rebotar
-            centrado suma combo; recoge los pompones para puntos extra.
-            ¡Si cae fuera de la rebotadora, se acaba la partida! En los 20 niveles hay que dar cierta cantidad de rebotes.</p>
+          <p>Tu Matichica es la voladora del equipo. Toca la pantalla (o el botón 👏, o la barra
+            espaciadora) justo cuando el aro dorado se cierra, al ritmo de la música: 👐 ¡Arriba! para
+            que las bases la lancen, la figura (⭐ estrella, 🌀 giro, 🤸 split…) en lo más alto y
+            🤲 ¡Atrapa! para recibirla. Si no la reciben a tiempo pierdes un ❤️ (tienes 3).
+            En los 20 niveles hay que terminar la rutina con la pirámide final.</p>
           </details>
           <div id="porristas-lvlpick" class="lvl-pick"></div>
           <button class="btn-primary" id="porristas-btn-start">¡Vamos!</button>
@@ -746,8 +752,7 @@
     </div>
 
     <div id="porristas-touch-controls">
-      <button class="tetris-btn" id="porristas-btn-left">◀</button>
-      <button class="tetris-btn" id="porristas-btn-right">▶</button>
+      <button class="tetris-btn pr-tap" id="porristas-btn-tap" aria-label="Tocar al ritmo">👏</button>
     </div>
   </section>
 
@@ -1612,7 +1617,7 @@
         <img id="creador-hud-avatar" class="hud-avatar" alt="">
         <div>
           <div class="hud-level">Crea tu Chocolate</div>
-          <div class="hud-mission">Diseña tu producto y su etiqueta</div>
+          <div class="hud-mission">Diseña tu chocolate y hazlo a mano en la cocina</div>
         </div>
       </div>
       <div class="hud-right">
@@ -1635,8 +1640,9 @@
             <h2>Crea tu Chocolate</h2>
             <p class="fps-tag">Nuevo · en 3D</p>
             <p>Elige el producto, el chocolate, el relleno, los toppings, el envoltorio y
-              diseña tu propia etiqueta. Mientras eliges ves tu creación en 3D. Los
-              maridajes que combinan dan más puntos, y cada día hay un reto con Matipuntos.</p>
+              diseña tu propia etiqueta. Después, ¡a la cocina! Junta los ingredientes en la despensa,
+              llévalos a la olla, derrite, revuelve, vierte en el molde y decora. Cocinando se
+              desbloquean ingredientes especiales, y cada día hay un reto con Matipuntos.</p>
             <button class="btn-primary" id="creador-btn-start">¡A crear!</button>
           </div>
         </div>
@@ -1666,6 +1672,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=5e39093371"></script>
+<script type="module" src="js/main.js?v=abd0c6da60"></script>
 </body>
 </html>

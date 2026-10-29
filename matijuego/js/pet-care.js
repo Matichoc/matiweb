@@ -2,7 +2,7 @@
 // Se le dan golosinas (se compran con Matipuntos), se la acaricia y se juega a tirarle la pelota. Cuando está feliz
 // (bien comida y contenta) baila y a veces encuentra Matipuntos (hasta 3 veces al día).
 // El estado de cada mascota se guarda en progress.petCare[idDeLaMascota] = { food, joy, at, day, pats, plays, finds }.
-import { earnCoins, spendCoins, saveProgress, todayKey } from "./storage.js?v=5e39093371";
+import { earnCoins, spendCoins, saveProgress, todayKey } from "./storage.js?v=abd0c6da60";
 
 export const TREATS = [
   { id: "galleta", icon: "🍪", name: "Galletita", cost: 15, food: 30, joy: 0 },
@@ -65,6 +65,7 @@ export function feedPet(progress, petId, treatId, rnd = Math.random) {
   if (!spendCoins(progress, t.cost)) return { ok: false, need: t.cost - progress.coins };
   s.food = clamp100(s.food + t.food);
   s.joy = clamp100(s.joy + t.joy);
+  if (progress.stats) progress.stats.petTreats = (progress.stats.petTreats || 0) + 1; // metas de la semana
   const found = maybeFind(progress, petId, s, rnd);
   saveProgress(progress);
   return { ok: true, treat: t, found };
@@ -84,6 +85,7 @@ export function playedWithPet(progress, petId, rnd = Math.random) {
   const s = care(progress, petId);
   if (s.plays < PLAYS_A_DAY) { s.plays++; s.joy = clamp100(s.joy + PLAY_JOY); }
   s.food = clamp100(s.food - 2); // jugar da hambre
+  if (progress.stats) progress.stats.petPlays = (progress.stats.petPlays || 0) + 1; // metas de la semana
   const found = maybeFind(progress, petId, s, rnd);
   saveProgress(progress);
   return { ok: true, found };

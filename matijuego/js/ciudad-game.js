@@ -9,18 +9,18 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=5e39093371";
-import { createMatichico } from "./matichico3d.js?v=5e39093371";
-import { CHARACTERS, getOutfit } from "./characters.js?v=5e39093371";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=5e39093371";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=5e39093371";
-import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=5e39093371";
-import { recordRun } from "./progression.js?v=5e39093371";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=5e39093371";
-import * as audio from "./audio.js?v=5e39093371";
-import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=5e39093371";
-import { Binoculars } from "./binoculars.js?v=5e39093371";
-import { Interiors } from "./interiors.js?v=5e39093371";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=abd0c6da60";
+import { createMatichico } from "./matichico3d.js?v=abd0c6da60";
+import { CHARACTERS, getOutfit } from "./characters.js?v=abd0c6da60";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=abd0c6da60";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=abd0c6da60";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=abd0c6da60";
+import { recordRun } from "./progression.js?v=abd0c6da60";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=abd0c6da60";
+import * as audio from "./audio.js?v=abd0c6da60";
+import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=abd0c6da60";
+import { Binoculars } from "./binoculars.js?v=abd0c6da60";
+import { Interiors, VISITS } from "./interiors.js?v=abd0c6da60";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60
@@ -954,10 +954,20 @@ export class CiudadGame extends Game3D {
 
   /** Visitas por dentro a las casas de Doña Rosa y Don Pepe (js/interiors.js): se entra por la puerta. */
   _buildVisits() {
-    // delante de cada puerta (la casa de Rosa mira al norte y la de Pepe al sur)
+    // delante de cada puerta: las casas de arriba del barrio miran al sur (z −42,9) y las de abajo al norte (z −18,1);
+    // el Kiosco y la Panadería al sur, la Fábrica y la casa de Rosa al norte, y el Colegio hacia la Ciudad (este)
     this.homeDoors = [
       { id: "rosa", x: -30, z: 46.9, yaw: Math.PI },
       { id: "pepe", x: -31, z: -42.9, yaw: 0 },
+      { id: "lucho", x: -45, z: -42.9, yaw: 0 },
+      { id: "vale", x: -17, z: -42.9, yaw: 0 },
+      { id: "nibs", x: -45, z: -18.1, yaw: Math.PI },
+      { id: "mimi", x: -31, z: -18.1, yaw: Math.PI },
+      { id: "pancho", x: -17, z: -18.1, yaw: Math.PI },
+      { id: "kiosco", x: 14, z: -11.4, yaw: 0 },
+      { id: "panaderia", x: 46, z: 17.8, yaw: 0 },
+      { id: "fabrica", x: 28, z: 41.7, yaw: Math.PI },
+      { id: "colegio", x: -120.1, z: 0, yaw: Math.PI / 2 },
     ];
     const ids = Object.keys(GIVERS);
     this.visits = new Interiors(this, {
@@ -969,8 +979,10 @@ export class CiudadGame extends Game3D {
       onReward: () => this._updateHud(true),
       onLeave: () => { this.camYaw = this.heroYaw + 0.6; this.camFocus = null; }, // de frente y en diagonal (sin el vecino de la puerta tapando), con la casa al fondo
       makeHost: (key) => {
-        const d = GIVERS[key];
-        const h = this._makeNpc(d.char, 40 + ids.indexOf(key), d.name); // igual que el vecino de la calle
+        const v = VISITS[key];
+        const d = v.npc && GIVERS[v.npc];
+        // el vecino de la calle (Rosa, Pepe, la profesora Paz) sale igual adentro; los demás tienen su propia ropa
+        const h = d ? this._makeNpc(d.char, 40 + ids.indexOf(v.npc), d.name) : this._makeNpc(v.char || 0, v.seed || 70, v.host);
         h.group.userData.anim = (t) => h.animate(t, "idle", 1);
         return h.group;
       },
@@ -1968,10 +1980,11 @@ export class CiudadGame extends Game3D {
       if (!t) {
         // la puerta de Rosa o de Pepe (si estás más cerca de la puerta que del vecino que está al frente)
         const door = (this.homeDoors || []).find((q) => Math.hypot(pl.x - q.x, pl.z - q.z) < 1.3);
-        const host = door && this.npcs[door.id];
+        const v = door && VISITS[door.id];
+        const host = v && v.npc && this.npcs[v.npc];
         if (door && (!host || Math.hypot(pl.x - door.x, pl.z - door.z) < Math.hypot(pl.x - host.x, pl.z - host.z))) {
-          const name = GIVERS[door.id].name;
-          t = { label: `🚪 Visitar a ${name}`, icon: "🚪", short: "Visitar", fn: () => this.visits.enter(door.id, { x: door.x, z: door.z, yaw: door.yaw }) };
+          const label = v.place ? `🚪 Entrar: ${v.place}` : `🚪 Visitar a ${v.host}`;
+          t = { label, icon: "🚪", short: v.place ? "Entrar" : "Visitar", fn: () => this.visits.enter(door.id, { x: door.x, z: door.z, yaw: door.yaw }) };
         }
       }
       if (!t) {

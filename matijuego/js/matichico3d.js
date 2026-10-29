@@ -2,8 +2,8 @@
 // con surcos), ojos azules grandes, sonrisa con dientes, polera negra de Matichoc con cuello rosado y su
 // logo, jeans y zapatillas. Matichico trae un rulo de pelo; Chocolatina, un moño con flores.
 
-import { THREE, roundedBox, loadTexture } from "./three-kit.js?v=5e39093371";
-import { applyLook, HEAD_W, HEAD_H, HEAD_D } from "./wardrobe3d.js?v=5e39093371";
+import { THREE, roundedBox, loadTexture } from "./three-kit.js?v=abd0c6da60";
+import { applyLook, HEAD_W, HEAD_H, HEAD_D } from "./wardrobe3d.js?v=abd0c6da60";
 
 const LIFT = 0.26; // largo extra de las piernas: da las proporciones de los personajes de la web
 
@@ -299,6 +299,15 @@ export function createMatichico(character, outfit, look = null) {
       armL = [0.6 * k, 0, -0.5];
       armR = [-0.6 * k, 0, 0.5];
       lean = -0.12 * k;
+    } else if (mode === "climb") {
+      // escalar un muro: brazos arriba que se turnan para agarrarse y piernas que empujan
+      const c = Math.sin(t * 9 * speed);
+      armL = [-2.7 + c * 0.45, 0, -0.25];
+      armR = [-2.7 - c * 0.45, 0, 0.25];
+      legL = -0.5 + c * 0.6;
+      legR = -0.5 - c * 0.6;
+      bob = Math.abs(c) * 0.04;
+      lean = -0.08;
     } else if (mode === "drive") {
       armL = [-1.25, 0, -0.35];
       armR = [-1.25, 0, 0.35];

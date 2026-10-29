@@ -5,8 +5,8 @@
 // Para probar un evento fuera de fecha: agregar ?event=halloween (o navidad, sanvalentin,
 // pascua, patrias, dianino) a la dirección.
 
-import { saveProgress } from "./storage.js?v=5e39093371";
-import { getItem } from "./wardrobe-data.js?v=5e39093371";
+import { saveProgress } from "./storage.js?v=abd0c6da60";
+import { getItem } from "./wardrobe-data.js?v=abd0c6da60";
 
 const day = (y, m, d) => new Date(y, m - 1, d);
 
@@ -109,6 +109,27 @@ export function addEventTokens(progress, id, n) {
   progress.eventTokens = progress.eventTokens || {};
   progress.eventTokens[id] = (progress.eventTokens[id] || 0) + n;
   saveProgress(progress);
+}
+
+/** Matipuntos que vale cada ficha que sobra cuando termina su evento. */
+export const TOKEN_REFUND = 2;
+
+/**
+ * Al terminar un evento, las fichas que no se gastaron vuelven como Matipuntos (pedido de la persona dueña, 29-oct-2026).
+ * Se llama al cargar el perfil: devuelve [{ event, tokens, coins }] con lo que se cambió (vacío si nada), para avisar.
+ */
+export function settleEventTokens(progress, now = new Date()) {
+  const act = activeEvent(now);
+  const out = [];
+  for (const [id, n] of Object.entries(progress.eventTokens || {})) {
+    if (!(n > 0) || (act && act.id === id) || !byId[id]) continue;
+    const coins = n * TOKEN_REFUND;
+    progress.eventTokens[id] = 0;
+    progress.coins += coins;
+    progress.stats.totalCoinsEarned += coins;
+    out.push({ event: byId[id], tokens: n, coins });
+  }
+  return out;
 }
 
 /** ¿Se puede comprar ahora este objeto de evento? */

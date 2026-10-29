@@ -86,7 +86,7 @@ const ALL_GAMES = [
     orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
     name: "Saltos de Porristas",
     icon: "🤸",
-    tagline: "Mueve la rebotadora, haz volteretas y mantén a tu Matichica rebotando.",
+    tagline: "Rutina con tu equipo: toca al ritmo para lanzar, hacer figuras en el aire y armar la pirámide.",
     status: "available",
     tag: "3D",
   },

@@ -4,12 +4,12 @@
 //  · "Actividades del día": 5 desafíos con guía; al completarlos hay premio (Matipuntos, sobre de figuritas y energía).
 // El estado del día vive en progress.town.fun (se reinicia solo cada día, igual que el resto del pueblo).
 
-import { THREE, canvasTexture } from "./three-kit.js?v=5e39093371";
-import { earnCoins, saveProgress } from "./storage.js?v=5e39093371";
-import { addEnergy } from "./energy.js?v=5e39093371";
-import * as audio from "./audio.js?v=5e39093371";
-import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=5e39093371";
-import { VISITS } from "./interiors.js?v=5e39093371";
+import { THREE, canvasTexture } from "./three-kit.js?v=abd0c6da60";
+import { earnCoins, saveProgress } from "./storage.js?v=abd0c6da60";
+import { addEnergy } from "./energy.js?v=abd0c6da60";
+import * as audio from "./audio.js?v=abd0c6da60";
+import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=abd0c6da60";
+import { VISITS } from "./interiors.js?v=abd0c6da60";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -392,6 +392,8 @@ export class TownFun {
   buildHomes() {
     const g = this.g;
     const SPACING = 14;
+    // los aros del circuito se arman después (build): se apartan sus lugares para que ninguna casita quede encima de uno
+    for (let i = 0; i < RING_COUNT; i++) this.claimed.push({ ...pol(10 + i * 45, 26), r: 2.5 });
     const spot = this._findSpot((deg, r) => HOMES.map((_, k) => pol(deg + k * SPACING, r)), 7.5, [30, 44, 34, 40]);
     if (!spot) return;
     HOMES.forEach((def, k) => {

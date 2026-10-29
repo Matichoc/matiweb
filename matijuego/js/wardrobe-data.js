@@ -363,9 +363,41 @@ export const ITEMS = [
   ev("dianino", 30, "hat", "ev_fiesta", "Gorro de cumpleaños", "🥳", "raro", { kind: "fiesta", a: "#4fd0ff", b: "#9a5cff" }),
   ev("dianino", 50, "back", "ev_globos", "Globos", "🎈", "epico", { kind: "globos" }),
   ev("dianino", 80, "pet", "ev_globito", "Globito feliz", "🎈", "legendario", { kind: "globito" }),
+  // más cosas por temporada (29-oct-2026): mismos modelos, con los colores de cada fiesta. Lo que no se gaste de fichas
+  // vuelve como Matipuntos al terminar el evento (js/events.js, settleEventTokens).
+  ev("halloween", 25, "hat", "ev_gorro_calabaza", "Gorro de calabaza", "🎃", "raro", { kind: "fiesta", a: "#ff7a1a", b: "#1c1c26" }),
+  ev("halloween", 25, "neck", "ev_bufanda_calabaza", "Bufanda de calabaza", "🧣", "raro", { kind: "bufanda", color: "#ff7a1a" }),
+  ev("halloween", 35, "hand", "ev_varita_bruja", "Varita embrujada", "🪄", "epico", { kind: "varita", color: "#9a5cff" }),
+  ev("halloween", 35, "shoes", "ev_zap_fosfo", "Zapatillas fosforescentes", "👟", "epico", { color: "#2a2a30", glow: "#7cff4f" }),
+  ev("halloween", 45, "back", "ev_capa_vampiro", "Capa de vampiro", "🧛", "epico", { kind: "capa", color: "#5a1048" }),
+  ev("navidad", 25, "hat", "ev_gorro_duende", "Gorro de duende", "🧝", "raro", { kind: "fiesta", a: "#2fa86a", b: "#e83a3a" }),
+  ev("navidad", 20, "glasses", "ev_lentes_estrella", "Lentes de estrella navideña", "⭐", "raro", { kind: "estrella" }),
+  ev("navidad", 35, "hand", "ev_varita_dulce", "Bastón de dulce", "🍭", "epico", { kind: "varita", color: "#e83a3a" }),
+  ev("navidad", 35, "shoes", "ev_zap_duende", "Zapatillas de duende", "👟", "epico", { color: "#2fa86a", glow: "#ffd34d" }),
+  ev("navidad", 45, "back", "ev_capa_noel", "Capa de Papá Noel", "🦸", "epico", { kind: "capa", color: "#d32f2f" }),
+  ev("sanvalentin", 20, "glasses", "ev_lentes_corazon", "Lentes de corazón", "😍", "raro", { kind: "corazon" }),
+  ev("sanvalentin", 25, "neck", "ev_bufanda_rosa", "Bufanda de San Valentín", "🧣", "raro", { kind: "bufanda", color: "#ff8ab8" }),
+  ev("sanvalentin", 35, "hand", "ev_varita_amor", "Varita del amor", "🪄", "epico", { kind: "varita", color: "#ff3b6b" }),
+  ev("sanvalentin", 35, "shoes", "ev_zap_rosa", "Zapatillas de brillo rosa", "👟", "epico", { color: "#ff6fb0", glow: "#ff9ac6" }),
+  ev("sanvalentin", 45, "back", "ev_capa_corazones", "Capa de corazones", "🦸", "epico", { kind: "capa", color: "#ff6fb0" }),
+  ev("pascua", 25, "hat", "ev_gorro_huevito", "Gorro de huevito", "🥚", "raro", { kind: "fiesta", a: "#ffd1e3", b: "#c8f0ff" }),
+  ev("pascua", 25, "neck", "ev_bufanda_pastel", "Bufanda pastel", "🧣", "raro", { kind: "bufanda", color: "#c8a8ff" }),
+  ev("pascua", 30, "hand", "ev_paraguas_primavera", "Paraguas de primavera", "🌂", "raro", { kind: "paraguas", color: "#ffd34d" }),
+  ev("pascua", 35, "shoes", "ev_zap_pascua", "Zapatillas de Pascua", "👟", "epico", { color: "#ffd1e3", glow: "#fff6a8" }),
+  ev("pascua", 45, "back", "ev_capa_primavera", "Capa de primavera", "🦸", "epico", { kind: "capa", color: "#b6e34a" }),
+  ev("patrias", 25, "hat", "ev_gorro_tricolor", "Gorro de fiesta tricolor", "🥳", "raro", { kind: "fiesta", a: "#0039a6", b: "#d52b1e" }),
+  ev("patrias", 20, "glasses", "ev_lentes_tricolor", "Lentes de fonda", "🕶️", "raro", { kind: "cuadrados", color: "#d52b1e" }),
+  ev("patrias", 30, "hand", "ev_paraguas_tricolor", "Quitasol de la ramada", "⛱️", "raro", { kind: "paraguas", color: "#0039a6" }),
+  ev("patrias", 35, "shoes", "ev_zap_cueca", "Zapatos de cueca", "👞", "epico", { color: "#d52b1e" }),
+  ev("patrias", 45, "back", "ev_manta", "Manta tricolor", "🦸", "epico", { kind: "capa", color: "#0039a6" }),
+  ev("dianino", 20, "glasses", "ev_lentes_fiesta", "Lentes de estrella", "⭐", "raro", { kind: "estrella" }),
+  ev("dianino", 25, "neck", "ev_bufanda_fiesta", "Bufanda de fiesta", "🧣", "raro", { kind: "bufanda", color: "#ffc800" }),
+  ev("dianino", 35, "hand", "ev_varita_colores", "Varita de colores", "🪄", "epico", { kind: "varita", color: "#4fd0ff" }),
+  ev("dianino", 35, "shoes", "ev_zap_luces", "Zapatillas de luces", "👟", "epico", { color: "#ffffff", glow: "#4fd0ff" }),
+  ev("dianino", 45, "back", "ev_capa_heroe", "Capa de superhéroe", "🦸", "epico", { kind: "capa", color: "#4fd0ff" }),
 ];
 
-import { levelInfo } from "./xp.js?v=5e39093371";
+import { levelInfo } from "./xp.js?v=abd0c6da60";
 
 /** Si la prenda todavía está bloqueada devuelve por qué ("" si ya se puede comprar). Lo exclusivo pide nivel o un logro. */
 export function lockReason(progress, item) {
