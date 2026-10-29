@@ -3,17 +3,19 @@
 // maridajes, guarda las creaciones en el perfil y permite pedir algo parecido
 // por WhatsApp (solo un mensaje, sin precios ni promesas).
 
-import { THREE, Game3D, canvasTexture, makeBunting } from "./three-kit.js?v=5e39093371";
-import { createMatichico } from "./matichico3d.js?v=5e39093371";
-import { saveProgress, earnCoins, reportScore, addToLeaderboard, saveCreation, deleteCreation, todayKey } from "./storage.js?v=5e39093371";
-import { recordRun } from "./progression.js?v=5e39093371";
-import * as audio from "./audio.js?v=5e39093371";
+import { THREE, Game3D, canvasTexture, makeBunting } from "./three-kit.js?v=abd0c6da60";
+import { createMatichico } from "./matichico3d.js?v=abd0c6da60";
+import { saveProgress, earnCoins, reportScore, addToLeaderboard, saveCreation, deleteCreation, todayKey } from "./storage.js?v=abd0c6da60";
+import { recordRun } from "./progression.js?v=abd0c6da60";
+import * as audio from "./audio.js?v=abd0c6da60";
 import {
   PRODUCTS, CHOCOLATES, FLAVORS, TOPPINGS, WRAPS, WRAP_COLORS, MOTIFS, STEPS,
   defaultCreation, sanitize, scoreCreation, comboKey, dailyChallenge, matchesChallenge,
   describeChallenge, describeCreation, whatsappUrl, drawLabel, getProduct, getFlavor,
-} from "./creador-data.js?v=5e39093371";
-import { buildCreation } from "./creador-3d.js?v=5e39093371";
+  chefLevel, isUnlocked, unlockedAt, starsFor,
+} from "./creador-data.js?v=abd0c6da60";
+import { buildCreation } from "./creador-3d.js?v=abd0c6da60";
+import { Kitchen } from "./creador-cocina.js?v=abd0c6da60";
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -125,6 +127,7 @@ export class CreadorGame extends Game3D {
     this.mascotRoot = new THREE.Group();
     s.add(this.mascotRoot);
     this._ensureMascot();
+    this.kitchen = new Kitchen(this);
   }
 
   _ensureMascot() {
@@ -146,21 +149,33 @@ export class CreadorGame extends Game3D {
     this._dragBound = true;
     const wrap = this.els.wrap;
     let drag = null;
-    wrap.addEventListener("pointerdown", (e) => { if (e.target.closest("button, .overlay, .cr-drag-hint")) return; drag = { x: e.clientX }; wrap.setPointerCapture?.(e.pointerId); });
+    const cooking = () => this.view === "kitchen" && this.kitchen.active;
+    wrap.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("button, .overlay, .cr-drag-hint")) return;
+      wrap.setPointerCapture?.(e.pointerId);
+      if (cooking()) { e.preventDefault(); this.kitchen.pointer("down", e); return; }
+      drag = { x: e.clientX };
+    });
     wrap.addEventListener("pointermove", (e) => {
+      if (cooking()) { this.kitchen.pointer("move", e); return; }
       if (!drag) return;
       this.userYaw += (e.clientX - drag.x) * 0.012;
       drag.x = e.clientX;
       this.touched = true;
     });
-    const end = () => { drag = null; };
+    const end = (e) => { drag = null; if (cooking()) this.kitchen.pointer("up", e); };
     wrap.addEventListener("pointerup", end);
     wrap.addEventListener("pointercancel", end);
+    // en la cocina, la barra espaciadora también sirve para "mantener apretado" (calentar y verter)
+    window.addEventListener("keydown", (e) => { if (e.key === " " && cooking() && this.running) { e.preventDefault(); if (!e.repeat) this.kitchen.hold(true); } });
+    window.addEventListener("keyup", (e) => { if (e.key === " " && cooking()) this.kitchen.hold(false); });
   }
 
   // ---------- partida ----------
 
   reset() {
+    if (this.kitchen && this.kitchen.active) this.kitchen.stop();
+    if (this.holder) this.holder.visible = true;
     this.cfg = defaultCreation();
     this.step = 0;
     this.view = "wizard";
@@ -210,7 +225,8 @@ export class CreadorGame extends Game3D {
   }
 
   onResize() {
-    if (this.creation) this._frame();
+    if (this.kitchen && this.kitchen.active) this.kitchen.frame();
+    else if (this.creation) this._frame();
   }
 
   _frame() {
@@ -232,6 +248,12 @@ export class CreadorGame extends Game3D {
   }
 
   update(dt) {
+    if (this.kitchen && this.kitchen.active) {
+      this.kitchen.update(dt, this.time);
+      if (this.mascotTimer > 0) this.mascotTimer -= dt;
+      this.mascot.animate(this.time, this.mascotMode || "idle", 1);
+      return;
+    }
     const sway = this.touched ? 0 : Math.sin(this.time * 0.6) * 0.5;
     if (this.spin > 0) this.spin = Math.max(0, this.spin - dt * 4.2);
     this.holder.rotation.y = this.userYaw + sway + this.spin * Math.PI * 2;
@@ -251,12 +273,17 @@ export class CreadorGame extends Game3D {
     this._renderPanel();
   }
 
-  _optionButton(inner, selected, onClick, extra = "") {
-    const b = el("button", `cr-opt${selected ? " sel" : ""} ${extra}`);
+  _optionButton(inner, selected, onClick, extra = "", item = null) {
+    const locked = item && !isUnlocked(item, this.progress);
+    const b = el("button", `cr-opt${selected ? " sel" : ""}${locked ? " locked" : ""} ${extra}`);
     b.type = "button";
     b.setAttribute("aria-pressed", selected ? "true" : "false");
     b.append(...inner);
-    b.addEventListener("click", onClick);
+    if (locked) {
+      // ingrediente especial: se desbloquea cocinando (nunca con Matipuntos)
+      b.append(el("small", "cr-lock", `🔒 Cocina ${item.unlock - 1} chocolate${item.unlock - 1 > 1 ? "s" : ""}`));
+      b.addEventListener("click", () => this._toast(`🔒 Se desbloquea cuando hayas cocinado ${item.unlock - 1} chocolate${item.unlock - 1 > 1 ? "s" : ""} (llevas ${chefLevel(this.progress) - 1}).`));
+    } else b.addEventListener("click", onClick);
     return b;
   }
 
@@ -270,6 +297,7 @@ export class CreadorGame extends Game3D {
     chBox.append(el("span", "cr-ch-text", `Crea ${describeChallenge(ch)} (+5 🍫✨)`));
     panel.append(chBox);
 
+    if (this.view === "kitchen") return this.kitchen.renderPanel(panel);
     if (this.view === "gallery") return this._renderGallery(panel);
     if (this.view === "result") return this._renderResult(panel);
 
@@ -297,7 +325,7 @@ export class CreadorGame extends Game3D {
       CHOCOLATES.forEach((x) => {
         const sw = el("span", "cr-swatch");
         sw.style.background = x.color;
-        grid.append(this._optionButton([sw, el("b", null, x.name)], c.chocolate === x.id, () => this._set("chocolate", x.id)));
+        grid.append(this._optionButton([sw, el("b", null, x.name)], c.chocolate === x.id, () => this._set("chocolate", x.id), "", x));
       });
       body.append(grid);
     } else if (id === "sabor") {
@@ -306,7 +334,7 @@ export class CreadorGame extends Game3D {
       FLAVORS.forEach((x) => {
         const sw = el("span", "cr-swatch");
         sw.style.background = x.color;
-        grid.append(this._optionButton([sw, el("b", null, x.name)], c.flavor === x.id, () => this._set("flavor", x.id)));
+        grid.append(this._optionButton([sw, el("b", null, x.name)], c.flavor === x.id, () => this._set("flavor", x.id), "", x));
       });
       body.append(grid);
     } else if (id === "toppings") {
@@ -321,7 +349,7 @@ export class CreadorGame extends Game3D {
           audio.playCollect();
           this._rebuild(true);
           this._renderPanel();
-        }));
+        }, "", x));
       });
       body.append(grid);
     } else if (id === "envoltorio") {
@@ -380,7 +408,7 @@ export class CreadorGame extends Game3D {
     prev.type = "button";
     prev.disabled = this.step === 0;
     prev.addEventListener("click", () => { this.step = Math.max(0, this.step - 1); this._renderPanel(); });
-    const next = el("button", "btn-primary", this.step === STEPS.length - 1 ? "¡Crear mi chocolate!" : "Siguiente →");
+    const next = el("button", "btn-primary", this.step === STEPS.length - 1 ? "👩‍🍳 ¡A la cocina!" : "Siguiente →");
     next.type = "button";
     next.addEventListener("click", () => {
       if (this.step === STEPS.length - 1) this._create();
@@ -401,10 +429,30 @@ export class CreadorGame extends Game3D {
 
   // ---------- resultado ----------
 
+  /** "¡A la cocina!": antes de ver el resultado, el chocolate se hace a mano (ver js/creador-cocina.js). */
   _create() {
     this.cfg = sanitize(this.cfg);
+    this.view = "kitchen";
+    this.holder.visible = false;
+    this.mascotMode = "cheer";
+    this.mascotTimer = 1.2;
+    this.kitchen.start(this.cfg, (k) => this._cooked(k));
+    this._renderPanel();
+  }
+
+  _cooked(kitchen) {
+    this.holder.visible = true;
+    this._frame();
+    const before = chefLevel(this.progress);
+    this.progress.stats.creatorCooks = (this.progress.stats.creatorCooks || 0) + 1;
+    const after = chefLevel(this.progress);
+    const fresh = after > before ? unlockedAt(after) : [];
+    saveProgress(this.progress);
     const claimedBonus = matchesChallenge(this.cfg, this.challenge) && !this.challengeClaimed;
-    this.result = { ...scoreCreation(this.cfg, { challengeDone: claimedBonus }), challenge: claimedBonus, saved: false };
+    const base = scoreCreation(this.cfg, { challengeDone: claimedBonus });
+    const score = base.score + kitchen.score;
+    this.result = { ...base, score, stars: starsFor(score), notes: [...base.notes, ...kitchen.notes], challenge: claimedBonus, saved: false };
+    if (fresh.length) this.result.notes.push(`🔓 ¡Nuevo ingrediente para tus recetas: ${fresh.map((x) => x.name).join(", ")}!`);
     this.score = Math.max(this.score || 0, this.result.score);
     this.view = "result";
     this.touched = false;

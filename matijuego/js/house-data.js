@@ -4,7 +4,8 @@
 //
 // Objeto: { id, spot, name, icon, rarity, price, params }   (price 0 = viene con la casa)
 
-import { spendCoins, saveProgress } from "./storage.js?v=5e39093371";
+import { spendCoins, saveProgress } from "./storage.js?v=abd0c6da60";
+import { eventItemAvailable, eventTokens } from "./events.js?v=abd0c6da60";
 
 export const HOUSE_SPOTS = [
   { id: "floor", name: "Piso", icon: "🟫" },
@@ -26,6 +27,9 @@ const P = { comun: 30, raro: 110, epico: 260, legendario: 520 };
 const soon = (item) => ({ ...item, soon: true });
 const HOUSE_X = { comun: 2, raro: 2, epico: 3.5, legendario: 4 };
 const it = (spot, id, name, icon, rarity, params = {}, price) => { const base = price ?? P[rarity]; return { id, spot, name, icon, rarity, price: base > 0 ? Math.round((base * HOUSE_X[rarity]) / 5) * 5 : 0, params }; };
+
+// De temporada: se compran con las fichas del evento, solo mientras dura (como la ropa de temporada).
+const evh = (event, tokens, spot, id, name, icon, rarity, params) => ({ ...it(spot, id, name, icon, rarity, params, 1), price: 99999, event, tokens });
 
 export const HOUSE_ITEMS = [
   // ---- Piso ----
@@ -173,6 +177,19 @@ export const HOUSE_ITEMS = [
   it("ceiling", "ce_banderines", "Banderines de fiesta", "🎉", "raro", { kind: "banderines" }),
   it("ceiling", "ce_luna", "Luna y estrellas", "🌙", "epico", { kind: "luna" }),
   it("ceiling", "ce_disco", "Bola disco", "🪩", "legendario", { kind: "disco" }),
+  // ---- De temporada (fichas del evento) ----
+  evh("halloween", 35, "wall", "ev_wl_calabazas", "Pared de calabazas", "🎃", "epico", { style: "lunares", a: "#2a1838", b: "#ff7a1a" }),
+  evh("halloween", 30, "rug", "ev_rg_embrujada", "Alfombra embrujada", "🕸️", "epico", { kind: "estrella", a: "#ff7a1a", b: "#3a1048" }),
+  evh("navidad", 35, "wall", "ev_wl_baston", "Rayas de bastón dulce", "🍭", "epico", { style: "rayas", a: "#d32f2f", b: "#fff6e6" }),
+  evh("navidad", 30, "rug", "ev_rg_navidad", "Estrella navideña", "⭐", "epico", { kind: "estrella", a: "#2fa86a", b: "#ffd34d" }),
+  evh("sanvalentin", 35, "wall", "ev_wl_amor", "Pared de San Valentín", "💌", "epico", { style: "corazones", a: "#ffe3ef", b: "#e83a6a" }),
+  evh("sanvalentin", 30, "rug", "ev_rg_amor", "Alfombra de corazón", "💝", "epico", { kind: "corazon", a: "#ff3b6b", b: "#ffd1e3" }),
+  evh("pascua", 35, "wall", "ev_wl_huevitos", "Huevitos pastel", "🥚", "epico", { style: "lunares", a: "#fff6e6", b: "#ffb3d1" }),
+  evh("pascua", 30, "rug", "ev_rg_primavera", "Alfombra de primavera", "🌼", "epico", { kind: "redonda", a: "#b6e34a", b: "#fff6a8" }),
+  evh("patrias", 35, "wall", "ev_wl_patrias", "Pared de Fiestas Patrias", "🇨🇱", "epico", { style: "rayas", a: "#d52b1e", b: "#ffffff" }),
+  evh("patrias", 30, "rug", "ev_rg_estrella", "Estrella solitaria", "⭐", "epico", { kind: "estrella", a: "#ffffff", b: "#0039a6" }),
+  evh("dianino", 35, "wall", "ev_wl_cumple", "Pared de cumpleaños", "🎈", "epico", { style: "lunares", a: "#c8f0ff", b: "#9a5cff" }),
+  evh("dianino", 30, "rug", "ev_rg_fiesta", "Alfombra de fiesta", "🥳", "epico", { kind: "redonda", a: "#4fd0ff", b: "#ffc800" }),
 ];
 
 const BY_ID = new Map(HOUSE_ITEMS.map((i) => [i.id, i]));
@@ -196,7 +213,11 @@ export function ownsHouseItem(progress, id) {
 export function buyHouseItem(progress, id) {
   const item = getHouseItem(id);
   if (!item || item.soon || ownsHouseItem(progress, id)) return false;
-  if (!spendCoins(progress, item.price)) return false;
+  if (item.event) {
+    // de temporada: con las fichas del evento y solo mientras dura
+    if (!eventItemAvailable(item) || eventTokens(progress, item.event) < item.tokens) return false;
+    progress.eventTokens[item.event] -= item.tokens;
+  } else if (!spendCoins(progress, item.price)) return false;
   progress.house.owned.push(id);
   progress.house.placed[item.spot] = id;
   saveProgress(progress);

@@ -7,8 +7,8 @@
 // Se agrega como "mixin" a ParkourGame (ver el final de parkour-game.js) y usa sus
 // métodos de siempre (_makePlatform, _makeItem, _makeFlag, _makeSpinner...).
 
-import { THREE, clamp, lerp } from "./three-kit.js?v=5e39093371";
-import * as audio from "./audio.js?v=5e39093371";
+import { THREE, clamp, lerp } from "./three-kit.js?v=abd0c6da60";
+import * as audio from "./audio.js?v=abd0c6da60";
 
 export const ZONE_LEN = 140; // metros por mundo
 export const MAX_LIVES = 5;
@@ -144,6 +144,17 @@ export function installInfinite(Cls, STAGES) {
     };
     let last = null;
     const dir = (o.dir || (rnd() < 0.5 ? -1 : 1));
+    if (kind === "climb") {
+      // muro para escalar: pegado al borde de la plataforma; se trepa empujando hacia él y arriba sigue el camino
+      const rise = o.rise || 3 + Math.round(rnd() * 2);
+      const w = Math.max(3.6, c0.sx); // tan ancho como la plataforma: no se puede rodear
+      const wall = ctx.put("climb", { sx: w, sz: 3.2, gap: 0, dx: 0, dy: rise, hy: (rise + 3) / 2 });
+      ctx.item?.(wall.base.x, c0.top + rise * 0.55, wall.base.z + 1.6 + 0.55, "item"); // un dulce a media subida
+      ctx.onTop(wall);
+      last = ctx.put("normal", { sx: size + 0.6, sz: size + 0.6, gap: gap, dx: 0, dy: 0 });
+      ctx.onTop(last);
+      return last;
+    }
     if (kind === "sidewalk") {
       // una fila de plataformas hacia un lado, un giro, y de vuelta por otra fila (una "S")
       const n = o.n || 4;
@@ -348,8 +359,9 @@ export function installInfinite(Cls, STAGES) {
     inf.sinceFig = (inf.sinceFig || 0) + 1;
     if (inf.count > 6 && !inf.lastHard) {
       const mustDescend = cur.top > 7;
-      if (mustDescend || (inf.sinceFig >= 9 && rnd() < 0.32)) {
-        const fw = mustDescend ? { descent: 1 } : { sidewalk: 3, zigzag: 2.2, diag: 2.2, spiral: cur.top <= 3 ? 2 : 0, house: zone >= 1 && cur.top <= 2 ? 5 : 0 };
+      // figuras más seguido (pedido de la persona dueña: que se vean la casa, la bajada y los muros para escalar)
+      if (mustDescend || (inf.sinceFig >= 6 && rnd() < 0.45)) {
+        const fw = mustDescend ? { descent: 1 } : { sidewalk: 2.4, zigzag: 2, diag: 2, spiral: cur.top <= 3 ? 2 : 0, house: zone >= 1 && cur.top <= 3 ? 5 : 0, climb: cur.top <= 4 ? 4 : 0, descent: cur.top >= 3 ? 3 : 0 };
         const fe = Object.entries(fw).filter(([, v]) => v > 0);
         let rr2 = rnd() * fe.reduce((a, [, v]) => a + v, 0);
         let kind = fe[0][0];
@@ -551,8 +563,9 @@ export function installInfinite(Cls, STAGES) {
     const side = rnd() < 0.5 ? -1 : 1;
     const s = 0.8 + rnd() * 0.7;
     g.scale.setScalar(s);
+    // adornos lejos del camino y más abajo: así no tapan la vista ni parece que se pueda pasar por ellos
     const z = p.base.z + (rnd() - 0.5) * 6;
-    g.position.set(side * (14 + rnd() * 12), p.base.y - 4 + (rnd() - 0.5) * 8, z);
+    g.position.set(p.base.x + side * (p.h.x + 15 + rnd() * 12), p.base.y - 7 - rnd() * 6, z);
     this.course.add(g);
     this.props.push({ mesh: g, z });
   };

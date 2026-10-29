@@ -1,37 +1,55 @@
-// Saltos de Porristas 3D: tu Matichica rebota en una rebotadora (trampolín) sobre el
-// escenario del gimnasio. Mueve la rebotadora para que quede justo debajo cada vez que
-// cae; rebotar centrado suma combo (¡y hace volteretas!), los pompones dan puntos extra.
-// Si cae fuera de la rebotadora, se acaba la partida. Las reglas son las de siempre.
+// Saltos de Porristas 3D: una rutina de porristas al ritmo de la música (pedido de la persona dueña, 29-oct-2026).
+// Tu Matichica es la "voladora" de un equipo: las bases la cargan, la lanzan, hace una figura en el aire (estrella,
+// giro, split...) y la reciben; al final arman una pirámide. Se juega tocando (la pantalla, el botón 👏 o la barra
+// espaciadora) justo cuando lo marca el ritmo: ¡Arriba! (lanzar), la figura (en lo más alto) y ¡Atrapa! (recibirla).
+// Si no la reciben a tiempo se pierde un ❤️; con los 3 ❤️ perdidos se acaba. En los 20 niveles hay que terminar la
+// rutina; en el modo infinito la música se va apurando.
+//
+// Para cuidar los celulares de gama media-baja, las compañeras del equipo se dibujan con piezas agrupadas
+// (InstancedMesh: una sola llamada de dibujo por pieza para todo el equipo) y solo la Matichica es un personaje completo.
 
-import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=5e39093371";
-import { createMatichico } from "./matichico3d.js?v=5e39093371";
-import { saveProgress, earnCoins } from "./storage.js?v=5e39093371";
-import * as audio from "./audio.js?v=5e39093371";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=5e39093371";
+import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=abd0c6da60";
+import { createMatichico } from "./matichico3d.js?v=abd0c6da60";
+import { saveProgress, earnCoins } from "./storage.js?v=abd0c6da60";
+import * as audio from "./audio.js?v=abd0c6da60";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=abd0c6da60";
 
 const GAME_ID = "porristas";
-const PX_W = 800;
-const GRAVITY = 900;
-const BASE_BOUNCE = 560;
-const PADDLE_Y = 420;
-const PADDLE_SPEED = 300;
-const PADDLE_BASE_W = 110;
-const PADDLE_MIN_W = 70;
-const U = 0.0195; // unidades 3D por píxel de la versión 2D
-const wx = (px) => (px - PX_W / 2) * U;
-const wy = (py) => (PADDLE_Y - py) * U + 0.62; // 0.62 = altura de la rebotadora
+const HEARTS = 3;
+const PERFECT = 0.085; // segundos de diferencia con el tiempo justo
+const GOOD = 0.19;
+const EARLY = 0.4; // tocar antes de esto cuenta como "muy pronto" (así no sirve tocar sin parar)
+const SQ = 1.15; // tamaño de las compañeras
+const SHOULDER = (0.75 + 0.55) * SQ; // altura de los hombros (≈1.5)
+const ARM = 0.55 * SQ;
+const HOLD_Y = 1.1; // altura de las manos de las bases con la voladora cargada
+const EXT_Y = 2.05; // brazos estirados (cuando la sueltan y cuando la reciben)
+const PEAK = 2.6; // cuánto sube sobre EXT_Y en el lanzamiento
+const PYR_MID_Y = 1.45; // la fila del medio de la pirámide, parada en los hombros de la de abajo
+const PYR_TOP_Y = PYR_MID_Y + SHOULDER + ARM * 0.98;
+
+/** Las figuras en el aire; `from` es el nivel desde el que aparecen. */
+const FIGS = [
+  { id: "estrella", name: "Estrella", icon: "⭐", from: 1 },
+  { id: "giro", name: "Giro", icon: "🌀", from: 1 },
+  { id: "split", name: "Split", icon: "🤸", from: 2 },
+  { id: "doble", name: "Doble giro", icon: "💫", from: 5 },
+  { id: "mortal", name: "Mortal", icon: "🔄", from: 8 },
+];
+
+const ease = (t) => t * t * (3 - 2 * t);
+const lerp = (a, b, t) => a + (b - a) * t;
+/** Ángulo del brazo (0 = abajo, π = arriba) para que la mano quede a la altura `y` desde un hombro a `sh`. */
+const armFor = (y, sh) => Math.acos(clamp((sh - y) / ARM, -1, 1));
 
 export class Porristas3DGame extends Game3D {
   constructor(character, progress, els) {
     super(GAME_ID, character, progress, els, { fov: 40 });
     this.kawaii = true; // ambiente kawaii: pastel, sombreado por tonos, pétalos y estrellitas
     this.ambientOpts = { petals: 18, hearts: 5, stars: 13, radius: 9, height: 9 };
-    this.keys = {};
-    this.pointerX = null;
-    this.dip = 0;
     this.cheer = 0;
-    this.flipT = 0;
-    this.musicTheme = "sport";
+    this.musicTheme = null; // la música la marca el juego tiempo a tiempo (ver audio.playCheerBeat)
+    this.taps = 0;
   }
 
   // ---------- escena ----------
@@ -46,11 +64,11 @@ export class Porristas3DGame extends Game3D {
     this.key.castShadow = true;
     this.key.shadow.mapSize.set(this.coarse ? 1024 : 2048, this.coarse ? 1024 : 2048);
     const sc = this.key.shadow.camera;
-    sc.left = -12; sc.right = 12; sc.top = 12; sc.bottom = -4; sc.near = 2; sc.far = 40;
+    sc.left = -9; sc.right = 9; sc.top = 10; sc.bottom = -3; sc.near = 2; sc.far = 40;
     this.key.shadow.bias = -0.0005;
     this.key.shadow.normalBias = 0.04;
     s.add(this.key, this.key.target);
-    this.key.target.position.set(0, 3, 0);
+    this.key.target.position.set(0, 2, 0);
     this.onLowQuality = () => { this.key.castShadow = false; };
     // focos de escenario
     this.spots = [];
@@ -61,17 +79,9 @@ export class Porristas3DGame extends Game3D {
       s.add(sp, sp.target);
       this.spots.push(sp);
     }
-
-    this.m = {
-      pink: new THREE.MeshStandardMaterial({ color: 0xd4216c, roughness: 0.4 }),
-      gold: new THREE.MeshStandardMaterial({ color: 0xffc800, roughness: 0.25, metalness: 0.7, emissive: 0x6a4a00, emissiveIntensity: 0.4 }),
-      cream: new THREE.MeshStandardMaterial({ color: 0xfff6e6, roughness: 0.5 }),
-      steel: new THREE.MeshStandardMaterial({ color: 0xcfcfd4, roughness: 0.25, metalness: 0.85 }),
-    };
-
     this._buildStage();
-    this._buildTrampoline();
-    this._buildPompoms();
+    this._buildSquad();
+    this._buildCue();
     this._ensureHero();
   }
 
@@ -90,10 +100,20 @@ export class Porristas3DGame extends Game3D {
     floor.position.set(0, 0, 2);
     floor.receiveShadow = true;
     s.add(floor);
-    // el logo de Matichoc en el centro del escenario
-    const floorLogo = makeLogo(7, { lit: false });
+    // colchoneta de la rutina (una caja con alto: no se pelea con el piso) y el logo de Matichoc pintado encima
+    const matTex = canvasTexture(1024, 512, (g, w, h) => {
+      g.fillStyle = "#2f7fd0"; g.fillRect(0, 0, w, h);
+      g.strokeStyle = "rgba(255,255,255,0.35)"; g.lineWidth = 6;
+      for (let i = 1; i < 6; i++) { g.beginPath(); g.moveTo((i * w) / 6, 0); g.lineTo((i * w) / 6, h); g.stroke(); }
+      g.fillStyle = "#d4216c"; g.fillRect(0, 0, w, 26); g.fillRect(0, h - 26, w, 26);
+    });
+    const mat = new THREE.Mesh(roundedBox(9, 0.08, 4.2, 0.04, 0.02), new THREE.MeshStandardMaterial({ map: matTex, roughness: 0.7 }));
+    mat.position.set(0, 0.04, 0.6);
+    mat.receiveShadow = true;
+    s.add(mat);
+    const floorLogo = makeLogo(3.2, { lit: false });
     floorLogo.rotation.x = -Math.PI / 2;
-    floorLogo.position.set(0, 0.02, 3.2);
+    floorLogo.position.set(0, 0.085, 1.6);
     s.add(floorLogo);
     const apron = new THREE.Mesh(new THREE.PlaneGeometry(80, 60), new THREE.MeshStandardMaterial({ color: 0x2a120a, roughness: 0.4, metalness: 0.2 }));
     apron.rotation.x = -Math.PI / 2;
@@ -143,7 +163,7 @@ export class Porristas3DGame extends Game3D {
     s.add(makeBunting(new THREE.Vector3(-16, 13.5, -4.5), new THREE.Vector3(16, 13.5, -4.5), { count: 34, sag: 1.6, size: 0.65 }));
     s.add(makeStars(120, 50));
 
-    // pompones gigantes decorativos a los lados + hinchada
+    // hinchada
     const palette = [0xd4216c, 0xffc800, 0xcfd767, 0xfff6e6, 0x2fa8d6];
     const crowdGeo = new THREE.BoxGeometry(0.7, 0.8, 0.5);
     const headGeo = new THREE.SphereGeometry(0.28, 10, 8);
@@ -182,88 +202,107 @@ export class Porristas3DGame extends Game3D {
     this.crowdHead.instanceMatrix.needsUpdate = true;
   }
 
-  _buildTrampoline() {
-    // 1 unidad de ancho = 110 px (ancho base); se escala según el ancho de la rebotadora
-    const g = new THREE.Group();
-    const W = PADDLE_BASE_W * U;
-    const D = 2.2;
-    this.matGroup = new THREE.Group();
-    const mat = new THREE.Mesh(roundedBox(W, 0.12, D, 0.1, 0.04), new THREE.MeshStandardMaterial({ color: 0x1c1c26, roughness: 0.7 }));
-    mat.receiveShadow = true;
-    const top = new THREE.Mesh(roundedBox(W - 0.3, 0.05, D - 0.3, 0.08, 0.02), new THREE.MeshStandardMaterial({ color: 0xfff6e6, roughness: 0.55 }));
-    top.position.y = 0.075;
-    top.receiveShadow = true;
-    this.matGroup.add(mat, top);
-    const stripe = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.5, 0.35), new THREE.MeshBasicMaterial({ color: 0xd4216c }));
-    stripe.rotation.x = -Math.PI / 2;
-    stripe.position.y = 0.102;
-    this.matGroup.add(stripe);
-    this.matGroup.position.y = 0.5;
-    // marco dorado
-    const frame = new THREE.Mesh(roundedBox(W + 0.3, 0.22, D + 0.3, 0.15, 0.05), this.m.gold);
-    frame.position.y = 0.36;
-    frame.castShadow = true;
-    // patas
-    const legs = [];
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.4, 10), this.m.pink);
-      leg.position.set(sx * (W / 2 + 0.05), 0.2, sz * (D / 2 - 0.1));
-      leg.castShadow = true;
-      legs.push(leg);
+  /**
+   * El equipo: 2 bases (se miran, cargan y lanzan), 1 de atrás (ayuda y recibe) y 2 a los lados (animan con pompones y
+   * suben a la fila del medio de la pirámide). Cada compañera es un esqueleto de Object3D sin mallas; sus piezas se
+   * dibujan con un InstancedMesh por pieza (13 dibujos para las 5).
+   */
+  _buildSquad() {
+    const std = (c, r = 0.6) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
+    const choco = std(0x6b3a1e, 0.55);
+    const leg = new THREE.CapsuleGeometry(0.095, 0.56, 4, 8).translate(0, -0.37, 0);
+    const arm = new THREE.CapsuleGeometry(0.065, 0.4, 4, 8).translate(0, -0.27, 0);
+    const face = canvasTexture(256, 256, (g, w, h) => {
+      g.clearRect(0, 0, w, h);
+      g.fillStyle = "#2b1a10";
+      for (const x of [0.32, 0.68]) { g.beginPath(); g.ellipse(w * x, h * 0.45, 16, 24, 0, 0, 7); g.fill(); }
+      g.fillStyle = "#fff"; for (const x of [0.34, 0.7]) { g.beginPath(); g.arc(w * x, h * 0.4, 6, 0, 7); g.fill(); }
+      g.strokeStyle = "#2b1a10"; g.lineWidth = 9; g.lineCap = "round";
+      g.beginPath(); g.arc(w / 2, h * 0.6, 26, 0.2, Math.PI - 0.2); g.stroke();
+      g.fillStyle = "rgba(212,33,108,0.45)"; for (const x of [0.2, 0.8]) { g.beginPath(); g.arc(w * x, h * 0.62, 18, 0, 7); g.fill(); }
+    });
+    const pom = new THREE.IcosahedronGeometry(0.17, 1);
+    const PARTS = {
+      leg: [leg, choco], shoe: [roundedBox(0.17, 0.09, 0.28, 0.04, 0.02).translate(0, 0, 0.04), std(0xfff6e6)],
+      skirt: [new THREE.CylinderGeometry(0.24, 0.36, 0.26, 12, 1, true), new THREE.MeshStandardMaterial({ color: 0xffc800, roughness: 0.5, side: THREE.DoubleSide })],
+      torso: [roundedBox(0.46, 0.5, 0.3, 0.09, 0.03), std(0xd4216c, 0.5)],
+      arm: [arm, choco],
+      pomL: [pom, new THREE.MeshStandardMaterial({ color: 0xffc800, roughness: 0.8, flatShading: true, emissive: 0xffc800, emissiveIntensity: 0.25 })],
+      pomR: [pom, new THREE.MeshStandardMaterial({ color: 0xd4216c, roughness: 0.8, flatShading: true, emissive: 0xd4216c, emissiveIntensity: 0.25 })],
+      head: [roundedBox(0.5, 0.44, 0.36, 0.12, 0.04), choco],
+      face: [new THREE.PlaneGeometry(0.36, 0.3), new THREE.MeshBasicMaterial({ map: face, transparent: true })],
+      bow: [new THREE.TorusGeometry(0.09, 0.04, 6, 12), std(0xfff6e6, 0.5)],
+    };
+    const N = 5;
+    this.inst = {};
+    for (const [k, [geo, m]] of Object.entries(PARTS)) {
+      const im = new THREE.InstancedMesh(geo, m, k === "leg" || k === "shoe" || k === "arm" ? N * 2 : N);
+      im.castShadow = k !== "face" && k !== "bow";
+      im.frustumCulled = false; // se mueven por todo el escenario (y suben en la pirámide)
+      this.scene.add(im);
+      this.inst[k] = im;
     }
-    // resortes
-    this.springs = [];
-    const sGeo = new THREE.TorusGeometry(0.07, 0.015, 6, 10);
-    for (let i = 0; i < 8; i++) {
-      const sp = new THREE.Mesh(sGeo, this.m.steel);
-      sp.position.set(-W / 2 + ((i + 0.5) / 8) * W, 0.4, D / 2 + 0.1);
-      sp.rotation.y = Math.PI / 2;
-      g.add(sp);
-      this.springs.push(sp);
+    const slot = (parent, part, x = 0, y = 0, z = 0) => {
+      const o = new THREE.Object3D();
+      o.position.set(x, y, z);
+      o.userData.part = part;
+      parent.add(o);
+      return o;
+    };
+    this.squad = [];
+    for (let i = 0; i < N; i++) {
+      const root = new THREE.Object3D();
+      root.scale.setScalar(SQ);
+      const legs = [-1, 1].map((sx) => {
+        const p = slot(root, null, sx * 0.11, 0.75, 0);
+        slot(p, "leg");
+        slot(p, "shoe", 0, -0.72, 0);
+        return p;
+      });
+      const hips = slot(root, null, 0, 0.75, 0);
+      slot(hips, "skirt", 0, 0.05, 0);
+      slot(hips, "torso", 0, 0.33, 0);
+      const arms = [-1, 1].map((sx) => {
+        const p = slot(hips, null, sx * 0.29, 0.55, 0);
+        slot(p, "arm");
+        slot(p, sx < 0 ? "pomL" : "pomR", 0, -0.6, 0);
+        return p;
+      });
+      const head = slot(hips, null, 0, 0.84, 0);
+      slot(head, "head");
+      slot(head, "face", 0, 0.01, 0.182);
+      const bow = slot(head, "bow", 0, 0.27, -0.02);
+      bow.scale.set(1.4, 0.8, 1);
+      const slots = [];
+      root.traverse((o) => { if (o.userData.part) slots.push(o); });
+      this.squad.push({ root, legs, hips, arms, head, slots, x: 0, y: 0, z: 0, yaw: 0, from: null });
     }
-    g.add(this.matGroup, frame, ...legs);
-    this.tramp = g;
-    this.tramp.userData.W = W;
-    this.scene.add(g);
-
-    this.blob = new THREE.Mesh(new THREE.CircleGeometry(0.7, 22), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false }));
-    this.blob.rotation.x = -Math.PI / 2;
-    this.blob.position.y = 0.66;
-    this.scene.add(this.blob);
+    this._squadPose(0);
   }
 
-  _fluffy(color, size, emissive = 0) {
-    const g = new THREE.Group();
-    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.8, flatShading: true, emissive: color, emissiveIntensity: emissive });
-    for (let i = 0; i < 5; i++) {
-      const m = new THREE.Mesh(new THREE.IcosahedronGeometry(size * (i === 0 ? 1 : 0.7), 1), mat);
-      if (i) m.position.set(rand(-1, 1) * size * 0.5, rand(-1, 1) * size * 0.5, rand(-1, 1) * size * 0.5);
-      m.castShadow = true;
-      g.add(m);
+  /** Pasa los esqueletos del equipo a las piezas agrupadas. */
+  _flushSquad() {
+    const count = {};
+    for (const m of this.squad) {
+      m.root.position.set(m.x, m.y + 0.08, m.z);
+      m.root.rotation.y = m.yaw;
+      m.root.updateMatrixWorld(true);
+      for (const s of m.slots) {
+        const k = s.userData.part;
+        const i = count[k] || 0;
+        this.inst[k].setMatrixAt(i, s.matrixWorld);
+        count[k] = i + 1;
+      }
     }
-    return g;
+    for (const im of Object.values(this.inst)) im.instanceMatrix.needsUpdate = true;
   }
 
-  _buildPompoms() {
-    this.pompomMesh = new THREE.Group();
-    this.pompomMesh.visible = false;
-    this.pomNormal = this._fluffy(0xd4216c, 0.38, 0.25);
-    this.pomGold = this._fluffy(0xffc800, 0.38, 0.8);
-    this.pomNet = this._fluffy(0x2fa8d6, 0.38, 0.6);
-    this.pomWide = this._fluffy(0x7ddc4a, 0.38, 0.6);
-    this.pompomMesh.add(this.pomNormal, this.pomGold, this.pomNet, this.pomWide);
-    // red de seguridad (se ve solo mientras la tienes)
-    this.safetyNet = new THREE.Mesh(
-      new THREE.PlaneGeometry(26, 2.6, 26, 3),
-      new THREE.MeshBasicMaterial({ color: 0x4fd0ff, wireframe: true, transparent: true, opacity: 0.55 }),
-    );
-    this.safetyNet.position.set(0, 0.55, 0.2);
-    this.safetyNet.rotation.x = -Math.PI / 2;
-    this.safetyNet.visible = false;
-    this.scene.add(this.safetyNet);
-    this.pomLight = new THREE.PointLight(0xffc800, 0, 5);
-    this.pompomMesh.add(this.pomLight);
-    this.scene.add(this.pompomMesh);
+  /** Aro que se va cerrando hasta el aro fijo: cuando calzan, ¡hay que tocar! */
+  _buildCue() {
+    const ringMat = (c, o) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthTest: false, side: THREE.DoubleSide });
+    this.cueTarget = new THREE.Mesh(new THREE.RingGeometry(0.86, 1, 40), ringMat(0xfff6e6, 0.5));
+    this.cueRing = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 40), ringMat(0xffc800, 0.95));
+    for (const r of [this.cueTarget, this.cueRing]) { r.renderOrder = 20; r.visible = false; this.scene.add(r); }
   }
 
   _ensureHero() {
@@ -271,16 +310,23 @@ export class Porristas3DGame extends Game3D {
       this.hero.setLook(this.look);
       return;
     }
-    if (this.hero) this.scene.remove(this.hero.group);
+    if (this.hero) this.scene.remove(this.heroPivot);
     this.hero = createMatichico(this.character, this.outfit, this.look);
     this.heroId = this.character.id;
     this.hero.group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-    this.hero.group.scale.setScalar(1.45);
+    this.hero.group.scale.setScalar(1.3);
     // pompones en las manos
     this.hero.arms.forEach((arm, i) => {
-      const p = this._fluffy(i ? 0xffc800 : 0xd4216c, 0.14, 0.3);
-      p.position.set(0, -0.3, 0);
-      arm.add(p);
+      const g = new THREE.Group();
+      const m = new THREE.MeshStandardMaterial({ color: i ? 0xffc800 : 0xd4216c, roughness: 0.8, flatShading: true, emissive: i ? 0xffc800 : 0xd4216c, emissiveIntensity: 0.3 });
+      for (let k = 0; k < 3; k++) {
+        const b = new THREE.Mesh(new THREE.IcosahedronGeometry(k ? 0.1 : 0.14, 1), m);
+        if (k) b.position.set(rand(-0.07, 0.07), rand(-0.07, 0.07), rand(-0.07, 0.07));
+        b.castShadow = true;
+        g.add(b);
+      }
+      g.position.set(0, -0.42, 0);
+      arm.add(g);
     });
     this.hero.group.position.y = -0.95;
     this.heroPivot = new THREE.Group();
@@ -291,11 +337,12 @@ export class Porristas3DGame extends Game3D {
   onResize(w, h) {
     const aspect = w / h;
     const vfov = THREE.MathUtils.degToRad(this.fov / 2);
-    const needW = 15.8;
-    const needH = 10.2;
+    // de la colchoneta (abajo queda la barrita del ritmo) hasta la cabeza de la Matichica en lo más alto del lanzamiento
+    const needW = 10.4;
+    const needH = 9.6;
     this.camDist = Math.max(needH / 2 / Math.tan(vfov), needW / 2 / (Math.tan(vfov) * aspect));
-    this.camera.position.set(0, 4.3, this.camDist);
-    this.camera.lookAt(0, aspect < 0.9 ? 4.9 : 3.55, 0);
+    this.camera.position.set(0, 3.7, this.camDist);
+    this.camera.lookAt(0, 3.3, 0);
   }
 
   // ---------- partida ----------
@@ -306,174 +353,189 @@ export class Porristas3DGame extends Game3D {
     this.coinsEarned = 0;
     this.mode = campaignMode(this.progress, GAME_ID);
     this.level = this.mode === "levels" ? campaignLevel(this.progress, GAME_ID) : 0;
-    this.goal = this.level ? Math.round(14 + 3.5 * this.level) : 0; // rebotes que hay que dar en el nivel (sube parejo: 18 a 84)
-    this.bounces = 0;
-    this.centered = 0;
-    this.paddle = { x: PX_W / 2, w: PADDLE_BASE_W };
-    this.pompom = null;
-    this._prevC = null;
-    this.pompomTimer = rand(3, 5);
-    this.net = false;
-    this.wideT = 0;
-    this.windT = 0;
-    this.windDir = 0;
-    this.windNext = rand(14, 20);
-    this.nextMilestone = 5;
-    this.char = { x: PX_W / 2, y: 120, vx: rand(-60, 60), vy: 0 };
-    this.dip = 0;
+    this.goal = this.level ? 3 + Math.ceil(this.level / 2.5) : 0; // figuras antes de la pirámide (4 a 11)
+    this.stunts = 0; // figuras ya hechas
+    this.pyramids = 0;
+    this.hearts = HEARTS;
+    this.hits = { perfect: 0, good: 0, miss: 0 };
+    this.rt = 0; // tiempo de la rutina (segundos)
+    this._rtAt = 0;
+    this.parts = [];
+    this.lastFig = null;
+    this.endT = 0;
+    this.fail = false;
     this.cheer = 0;
-    this.flipT = 0;
-    this.flip = false;
-    this.pointerX = null;
-    this.keys = {};
-    this.pompomMesh.visible = false;
-    this.safetyNet.visible = false;
+    this.taps = 0;
+    this.wobble = 0;
+    this.fly = { x: 0, y: HOLD_Y, z: 0.05 };
     this._ensureHero();
+    this._addPart("count");
+    this._renderStrip();
     this._updateHud();
     this._sync(0);
   }
 
-  _driftRange() { return this.level ? Math.min(230, 60 + this.level * 9 + this.bounces * 2) : Math.min(200, 60 + this.score * 4); }
-  _bounceStrength() { return this.level ? Math.min(720, BASE_BOUNCE + this.level * 6 + this.bounces * 2) : Math.min(720, BASE_BOUNCE + this.score * 4); }
+  _bpm() {
+    if (this.level) return Math.min(132, 86 + this.level * 2.3);
+    return Math.min(140, 88 + Math.floor(this.stunts / 2) * 3);
+  }
+
+  _pickFig() {
+    const top = this.level || 1 + Math.floor(this.stunts / 2);
+    const pool = FIGS.filter((f) => f.from <= top && f !== this.lastFig);
+    const f = pool[Math.floor(Math.random() * pool.length)];
+    this.lastFig = f;
+    return f;
+  }
+
+  /** Agrega el siguiente tramo de la rutina: "count" (5, 6, 7, 8), "stunt" (una figura) o "pyramid". */
+  _addPart(kind) {
+    const prev = this.parts[this.parts.length - 1];
+    const spb = 60 / this._bpm();
+    const t0 = prev ? prev.t0 + prev.beats * prev.spb : 0.6;
+    const beats = kind === "count" ? 4 : 8;
+    const part = { kind, t0, spb, beats, hits: [], started: false, lastBeat: -1 };
+    const hit = (beat, label, icon, y) => part.hits.push({ beat, t: t0 + beat * spb, label, icon, y, res: null });
+    if (kind === "stunt") {
+      part.fig = this._pickFig();
+      hit(2, "¡Arriba!", "👐", EXT_Y + 0.9);
+      hit(4, part.fig.name, part.fig.icon, EXT_Y + PEAK + 0.9);
+      hit(6, "¡Atrapa!", "🤲", EXT_Y + 0.9);
+    } else if (kind === "pyramid") {
+      hit(1, "¡Base!", "🧱", 1.3);
+      hit(3, "¡Suben!", "⬆️", PYR_MID_Y + 1.2);
+      hit(5, "¡A la cima!", "🔺", PYR_TOP_Y + 0.9);
+      hit(7, "¡Ta-dá!", "🎉", PYR_TOP_Y + 1.2);
+    }
+    this.parts.push(part);
+    return part;
+  }
+
+  /** Qué viene después de un tramo. */
+  _nextKind() {
+    if (this.level) return this.stunts >= this.goal ? (this.pyramids ? null : "pyramid") : "stunt";
+    return this.stunts > 0 && this.stunts % 5 === 0 && this.pyramids < this.stunts / 5 ? "pyramid" : "stunt";
+  }
+
+  _part() {
+    for (const p of this.parts) if (this.rt < p.t0 + p.beats * p.spb) return p;
+    return this.parts[this.parts.length - 1];
+  }
 
   update(dt) {
     this.cheer = Math.max(0, this.cheer - dt * 0.8);
+    this.wobble = Math.max(0, this.wobble - dt * 1.4);
     this._animateCrowd();
     const wob = Math.sin(this.time * 0.9);
     this.spots.forEach((sp, i) => { sp.target.position.x = (i - 1) * 2 + wob * 2 * (i - 1 || 1); });
 
     if (this.state === "playing") {
-      this.wideT = Math.max(0, this.wideT - dt);
-      const baseW = this.level ? Math.max(62, PADDLE_BASE_W - this.level * 1.6 - this.bounces * 0.4) : Math.max(PADDLE_MIN_W, PADDLE_BASE_W - this.score * 1.2);
-      this.paddle.w = baseW * (this.wideT > 0 ? 1.55 : 1);
-      const halfW = this.paddle.w / 2;
-      if (this.keys.left) this.paddle.x -= PADDLE_SPEED * dt;
-      if (this.keys.right) this.paddle.x += PADDLE_SPEED * dt;
-      if (this.stickX) this.paddle.x += this.stickX * PADDLE_SPEED * 1.5 * dt;
-      if (this.pointerX != null && !this.keys.left && !this.keys.right) {
-        const d = this.pointerX - this.paddle.x;
-        this.paddle.x += clamp(d, -PADDLE_SPEED * 1.4 * dt, PADDLE_SPEED * 1.4 * dt);
-      }
-      this.paddle.x = clamp(this.paddle.x, 40 + halfW, PX_W - 40 - halfW);
-
-      const c = this.char;
-      // ráfagas de viento desde los 40 puntos: empujan a la porrista hacia un lado
-      if (this.windT > 0) {
-        this.windT -= dt;
-        c.vx += this.windDir * 260 * dt;
-        c.vx = clamp(c.vx, -240, 240);
-        if (this.windT <= 0) this.windNext = rand(14, 22);
-      } else if (this.level ? this.level >= 5 : this.score >= 40) {
-        this.windNext -= dt;
-        if (this.windNext <= 0) {
-          this.windDir = Math.random() < 0.5 ? -1 : 1;
-          this.windT = 4;
-          this.banner(this.windDir < 0 ? "¡Viento hacia la izquierda! 💨" : "¡Viento hacia la derecha! 💨");
-          audio.playWhoosh();
-        }
-      }
-      this._prevC = { x: c.x, y: c.y };
-      c.vy += GRAVITY * dt;
-      c.x += c.vx * dt;
-      c.y += c.vy * dt;
-      if (c.x < 30 || c.x > PX_W - 30) c.vx *= -1;
-      c.x = clamp(c.x, 30, PX_W - 30);
-
-      this._updatePompom(dt);
-
-      if (c.vy > 0 && c.y >= PADDLE_Y) {
-        if (Math.abs(c.x - this.paddle.x) <= this.paddle.w / 2 + 14) this._onBounce();
-        else this._onMiss();
+      if (this.endT > 0) {
+        this.endT -= dt;
+        if (this.endT <= 0) { if (this.fail) this._onFail(); else this._levelDone(); return; }
+      } else {
+        this.rt += dt;
+        this._rtAt = performance.now();
+        this._tick();
       }
     }
     this._sync(dt);
   }
 
-  _updatePompom(dt) {
-    if (this.pompom) {
-      // se mide contra el cuerpo de la porrista (no contra los pies) y a lo largo de todo el trayecto del cuadro,
-      // para que pasar por encima del premio, aunque sea rápido, lo tome
-      const c = this.char;
-      const BODY = 50; // px desde los pies hasta el centro del cuerpo
-      const prev = this._prevC || { x: c.x, y: c.y };
-      const ax = prev.x, ay = prev.y - BODY, bx = c.x, by = c.y - BODY;
-      const sx = bx - ax, sy = by - ay, len2 = sx * sx + sy * sy;
-      const k = len2 > 0 ? clamp(((this.pompom.x - ax) * sx + (this.pompom.y - ay) * sy) / len2, 0, 1) : 0;
-      const d = Math.hypot(this.pompom.x - (ax + sx * k), this.pompom.y - (ay + sy * k));
-      if (d < 46) {
-        const golden = this.pompom.kind === "golden";
-        const kind = this.pompom.kind;
-        this.score += golden ? 15 : 5;
-        if (kind === "net") {
-          this.net = true;
-          this.banner("¡Red de seguridad! Te salva una caída 🛟");
-          audio.playPowerup();
-        } else if (kind === "wide") {
-          this.wideT = 9;
-          this.banner("¡Rebotadora gigante por 9 s!");
-          audio.playPowerup();
-        }
-        if (golden) {
-          earnCoins(this.progress, 10);
-          this.coinsEarned += 10;
-          saveProgress(this.progress);
-        }
-        audio.playBonusCollect();
-        const at = new THREE.Vector3(wx(this.pompom.x), wy(this.pompom.y) + 0.8, 0.6);
-        this.popups.add(at, golden ? "+10 🍫✨" : kind === "net" ? "¡Red!" : kind === "wide" ? "¡Gigante!" : "+5", golden ? "coin" : "kill");
-        this.particles.burst(new THREE.Vector3(wx(this.pompom.x), wy(this.pompom.y), 0.3), golden ? [0xffc800, 0xfff6e6] : kind === "net" ? [0x4fd0ff, 0xfff6e6] : kind === "wide" ? [0x7ddc4a, 0xfff6e6] : [0xd4216c, 0xfff6e6], 22, 4.5, 0.9, 6, 1.2);
-        this._updateHud();
-        this.pompom = null;
-        this.pompomTimer = rand(4, 7);
-        return;
-      }
-      this.pompom.timer -= dt;
-      if (this.pompom.timer <= 0) {
-        this.pompom = null;
-        this.pompomTimer = rand(3, 6);
-      }
-    } else {
-      this.pompomTimer -= dt;
-      if (this.pompomTimer <= 0) {
-        const r = Math.random();
-        const kind = r < 0.2 ? "golden" : r < 0.34 && !this.net ? "net" : r < 0.5 && this.wideT <= 0 ? "wide" : "normal";
-        this.pompom = { x: rand(80, PX_W - 80), y: rand(140, 260), timer: 5, kind };
-      }
+  /** Avanza la rutina: suena cada tiempo, se marcan los toques que pasaron de largo y se arma el tramo siguiente. */
+  _tick() {
+    const part = this._part();
+    if (!part.started) this._startPart(part);
+    const u = (this.rt - part.t0) / part.spb;
+    const beat = Math.floor(u);
+    if (beat !== part.lastBeat && beat >= 0 && beat < part.beats) {
+      part.lastBeat = beat;
+      audio.playCheerBeat(beat, part.hits.some((h) => h.beat === beat));
+      if (part.kind === "count") this.popups.add(new THREE.Vector3(0, EXT_Y + 2.6, 0.5), String(beat + 5), "combo");
+      this._renderStrip();
     }
+    for (const h of part.hits) if (!h.res && this.rt > h.t + GOOD) this._judge(h, null);
+    // el tramo que sigue se arma un poco antes, para que su primer toque ya se vea venir
+    const end = part.t0 + part.beats * part.spb;
+    if (part === this.parts[this.parts.length - 1] && this.rt > end - part.spb * 1.5) {
+      if (part.kind === "stunt") this.stunts++;
+      if (part.kind === "pyramid") this.pyramids++;
+      if (part.kind === "stunt") this.countEnergy("fig", 2); // 1 ⚡ cada 2 figuras
+      const next = this._nextKind();
+      if (next) this._addPart(next);
+      else part.last = true;
+      if (this.parts.length > 4) this.parts.shift(); // los tramos viejos ya no hacen falta
+      this._updateHud();
+    }
+    if (part.last && this.rt >= end - 0.05 && !this.fail) this.endT = 0.9;
   }
 
-  _onBounce() {
-    const c = this.char;
-    c.y = PADDLE_Y;
-    c.vy = -this._bounceStrength();
-    const centered = Math.abs(c.x - this.paddle.x) <= this.paddle.w * 0.3;
-    this.combo = centered ? this.combo + 1 : 0;
-    this.bounces++;
-    this.countEnergy("reb", 6); // 1 ⚡ cada 6 rebotes
-    if (centered) this.centered++;
-    const gained = 10 + (centered ? Math.min(this.combo * 2, 20) : 0);
-    this.score += gained;
-    c.vx = rand(-this._driftRange(), this._driftRange());
-    audio.playBounce();
-    this.dip = 1;
-    this.flip = this.combo >= 2;
-    const at = new THREE.Vector3(wx(c.x), wy(PADDLE_Y) + 1.4, 0.6);
-    this.popups.add(at, this.combo >= 3 ? `x${this.combo} +${gained}` : `+${gained}`, this.combo >= 3 ? "combo" : "kill");
-    this.particles.burst(new THREE.Vector3(wx(c.x), 0.75, 0.3), centered ? [0xffc800, 0xd4216c, 0xfff6e6] : [0xfff6e6], centered ? 14 : 6, 4, 0.6, 7, 1);
-    if (this.combo >= 2) audio.playCombo(Math.min(this.combo, 12));
-    if (this.combo >= 5 && this.combo % 5 === 0) {
-      this.cheer = 1;
-      this.banner(this.combo >= 20 ? `¡Súper estrella! x${this.combo} 🌟` : this.combo >= 10 ? `¡Increíble! x${this.combo} 🔥` : `¡Racha de ${this.combo}!`);
-      this.haptic(40);
+  _startPart(part) {
+    part.started = true;
+    part.flyFrom = { ...this.fly };
+    for (const m of this.squad) m.from = { x: m.x, y: m.y, z: m.z };
+    if (part.kind === "pyramid") this.banner("¡Ahora la pirámide! 🔺");
+  }
+
+  /** Toque del jugador (pantalla, botón 👏 o teclado). */
+  tap() {
+    if (this.state !== "playing" || this.endT > 0) return;
+    this.taps++;
+    const t = this.rt + clamp((performance.now() - this._rtAt) / 1000, 0, 0.05);
+    let best = null;
+    for (const p of this.parts) for (const h of p.hits) {
+      if (h.res || h.t - t > EARLY) continue;
+      if (!best || Math.abs(h.t - t) < Math.abs(best.t - t)) best = h;
     }
-    // hitos de altura: cada 100 puntos, ovación
-    if (this.score >= this.nextMilestone * 20) {
-      this.nextMilestone = Math.floor(this.score / 20) + 5;
-      this.banner(`¡${Math.floor(this.score / 100) * 100} puntos! Gran rutina 🎉`);
-      this.cheer = 1;
+    if (!best) return;
+    const d = Math.abs(best.t - t);
+    if (d <= GOOD) this._judge(best, d <= PERFECT ? "perfect" : "good");
+    else if (best.t > t) this._judge(best, null, "¡Muy pronto!");
+  }
+
+  _judge(h, res, why) {
+    h.res = res || "miss";
+    this.hits[h.res]++;
+    const at = new THREE.Vector3(1.6, h.y + 0.3, 0.6);
+    if (res) {
+      this.combo++;
+      const pts = res === "perfect" ? 10 + Math.min(this.combo, 10) : 6 + Math.floor(Math.min(this.combo, 10) / 2);
+      this.score += pts;
+      this.popups.add(at, `${res === "perfect" ? "¡Perfecto!" : "¡Bien!"} +${pts}`, res === "perfect" ? "combo" : "kill");
+      this.particles.burst(new THREE.Vector3(0, h.y, 0.4), res === "perfect" ? [0xffc800, 0xd4216c, 0xfff6e6] : [0xfff6e6, 0x7ddc4a], res === "perfect" ? 18 : 9, 4, 0.7, 6, 1);
+      if (res === "perfect") audio.playCombo(Math.min(this.combo, 12));
+      else audio.playBounce();
+      if (this.combo >= 5 && this.combo % 5 === 0) {
+        this.cheer = 1;
+        this.banner(this.combo >= 20 ? `¡Súper estrella! x${this.combo} 🌟` : this.combo >= 10 ? `¡Increíble! x${this.combo} 🔥` : `¡Racha de ${this.combo}!`);
+        this.haptic(40);
+      }
+      if (h.label === "¡Ta-dá!") {
+        this.cheer = 1;
+        audio.playStar();
+        this.particles.burst(new THREE.Vector3(0, PYR_TOP_Y + 1, 0.4), [0xffc800, 0xd4216c, 0x2fa8d6, 0xfff6e6], 40, 6, 1.2, 5, 1.3);
+        if (this.parts.find((p) => p.hits.includes(h)).hits.every((x) => x.res && x.res !== "miss")) {
+          earnCoins(this.progress, 10); // pirámide sin errores: premio como el pompón dorado de antes
+          this.coinsEarned += 10;
+          saveProgress(this.progress);
+          this.popups.add(new THREE.Vector3(-1.6, PYR_TOP_Y + 1.4, 0.6), "+10 🍫✨", "coin");
+        }
+      }
+    } else {
+      this.combo = 0;
+      this.popups.add(at, why || "¡Fuera de ritmo!", "kill");
+      audio.playBump();
+      if (h.label === "¡Atrapa!") {
+        // no alcanzaron a recibirla bien: se tambalea y se pierde un ❤️
+        this.hearts--;
+        this.wobble = 1;
+        this.haptic(60);
+        this.banner(this.hearts > 0 ? `¡Uy, casi se cae! Te quedan ${"❤️".repeat(this.hearts)}` : "¡Se cayó!");
+        if (this.hearts <= 0) { this.fail = true; this.endT = 1.1; audio.playLose(); }
+      }
     }
+    this._renderStrip();
     this._updateHud();
-    if (this.level && this.bounces >= this.goal) this._levelDone();
   }
 
   /** En la tarjeta de inicio se elige entre "Infinito" y los 20 niveles. */
@@ -490,103 +552,254 @@ export class Porristas3DGame extends Game3D {
     this.beginPlaying();
   }
 
+  _accuracy() {
+    const n = this.hits.perfect + this.hits.good + this.hits.miss;
+    return n ? (this.hits.perfect + this.hits.good * 0.6) / n : 0;
+  }
+
   _levelDone() {
-    const ratio = this.centered / Math.max(1, this.bounces);
+    if (!this.level) return;
+    const ratio = this._accuracy();
     const stars = ratio >= 0.8 ? 3 : ratio >= 0.55 ? 2 : 1;
     this.cheer = 1;
+    const text = `${this.stunts} figuras y la pirámide: ${this.hits.perfect} perfectos, ${this.hits.good} bien y ${this.hits.miss} fuera de ritmo. ${this.score} puntos.`;
     if (this.level >= LEVELS_PER_GAME) {
       campaignWin(this.progress, GAME_ID, this.level, stars);
       const t = this.els.q("gameover-title");
       if (t) t.textContent = `¡Completaste los ${LEVELS_PER_GAME} niveles! 🏆`;
       audio.playVictory();
-      this.finish(`Superaste el nivel final con ${this.score} puntos.`);
+      this.finish(text);
       return;
     }
-    this.levelWin({ level: this.level, stars, text: `${this.bounces} rebotes (${Math.round(ratio * 100)}% bien centrados) y ${this.score} puntos.` });
+    this.levelWin({ level: this.level, stars, text });
   }
 
-  _onMiss() {
-    if (this.net) {
-      // la red te atrapa y te devuelve al aire
-      this.net = false;
-      const c = this.char;
-      c.y = PADDLE_Y;
-      c.vy = -this._bounceStrength() * 1.05;
-      c.vx = rand(-80, 80);
-      this.combo = 0;
-      this.flip = false;
-      this.dip = 1;
-      audio.playBounce();
-      this.banner("¡La red te salvó! 🛟");
-      this.particles.burst(new THREE.Vector3(wx(c.x), 0.8, 0.3), [0x4fd0ff, 0xfff6e6], 24, 5, 0.9, 6);
-      this._updateHud();
-      return;
-    }
-    audio.playLose();
+  _onFail() {
     this.cheer = 0;
     const t = this.els.q("gameover-title");
     if (t) t.textContent = "¡Se cayó!";
-    this.finish(`${this.level ? `Nivel ${this.level}: ` : ""}Llegaste a ${this.score} puntos rebotando` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."));
+    this.finish(`${this.level ? `Nivel ${this.level}: ` : ""}hiciste ${this.stunts} figuras y ${this.score} puntos` + (this.coinsEarned > 0 ? `, ganando ${this.coinsEarned} Matipuntos.` : "."));
   }
 
   _updateHud() {
-    this.els.hudScore.textContent = this.goal ? `${Math.min(this.bounces, this.goal)}/${this.goal} 🤸` : String(this.score);
+    this.els.hudScore.textContent = this.goal ? `${Math.min(this.stunts, this.goal)}/${this.goal}` : String(this.score);
     this.els.hudCombo.textContent = String(this.combo);
     this.els.hudCoins.textContent = String(this.progress.coins);
+    const hearts = this.els.q && this.els.q("hearts");
+    if (hearts) hearts.textContent = "❤️".repeat(Math.max(0, this.hearts)) + "🤍".repeat(Math.max(0, HEARTS - this.hearts));
+  }
+
+  /** La barrita de abajo: los 8 tiempos del tramo, el que suena ahora y en cuáles hay que tocar. */
+  _renderStrip() {
+    const wrap = this.els.q && this.els.q("rhythm");
+    if (!wrap) return;
+    const part = this.parts.length ? this._part() : null;
+    if (!part) return;
+    const beats = this.els.q("beats");
+    const now = part.lastBeat;
+    let html = "";
+    for (let b = 0; b < part.beats; b++) {
+      const h = part.hits.find((x) => x.beat === b);
+      const cls = ["pr-beat", b === now ? "now" : "", h ? "hit" : "", h && h.res ? h.res : ""].join(" ");
+      html += `<span class="${cls}">${h ? h.icon : part.kind === "count" ? b + 5 : b + 1}</span>`;
+    }
+    beats.innerHTML = html;
+    const next = part.hits.find((x) => !x.res) || this.parts.flatMap((p) => p.hits).find((x) => !x.res);
+    this.els.q("cue").textContent = part.kind === "count" ? "¡Prepárate! 5, 6, 7, 8…" : next ? `Toca en ${next.icon}: ${next.label}` : part.hits.some((x) => x.res === "miss") ? "¡Sigue el ritmo!" : "¡Bien hecho!";
   }
 
   // ---------- sincronizar 3D ----------
 
+  _showStrip(vis) {
+    if (vis === this._stripVis || !this.els.q) return;
+    this._stripVis = vis;
+    const wrap = this.els.q("rhythm");
+    if (wrap) wrap.classList.toggle("hidden", !vis);
+  }
+
   _sync(dt) {
-    const c = this.char;
-    // rebotadora
-    const sx = this.paddle.w / PADDLE_BASE_W;
-    this.dip = Math.max(0, this.dip - dt * 4.5);
-    const dipY = Math.sin(this.dip * Math.PI) * 0.22;
-    this.tramp.position.x = wx(this.paddle.x);
-    this.tramp.scale.x = sx;
-    this.matGroup.position.y = 0.5 - dipY;
-    this.springs.forEach((sp) => { sp.scale.y = 1 - dipY * 1.4; });
-    // personaje
-    const feet = wy(c.y);
-    const rising = c.vy < 0;
-    let squash = 1;
-    if (this.dip > 0.4) squash = 0.82;
-    this.heroPivot.position.set(wx(c.x), feet - dipY * 0.8 + 0.95, 0);
-    this.heroPivot.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
-    const B = this._bounceStrength();
-    const t = clamp((c.vy + B) / (2 * B), 0, 1); // 0 = recién rebotó, 1 = por caer
-    this.heroPivot.rotation.x = this.flip && this.state === "playing" ? -t * Math.PI * 2 : 0;
-    this.hero.group.rotation.y = Math.sin(this.time * 2) * 0.1 + clamp(c.vx / 400, -0.5, 0.5);
-    const mode = this.state === "gameover" ? "sad" : this.cheer > 0.2 ? "cheer" : rising || t < 0.85 ? "jump" : "cheer";
-    this.hero.animate(this.time, mode, 1);
-    // sombra
-    const h = clamp((PADDLE_Y - c.y) * U, 0, 8);
-    this.blob.position.set(wx(c.x), 0.68, 0);
-    this.blob.scale.setScalar(clamp(1 - h / 9, 0.3, 1));
-    this.blob.material.opacity = 0.35 * clamp(1 - h / 9, 0.2, 1);
-    this.safetyNet.visible = this.net && this.state === "playing";
-    if (this.safetyNet.visible) this.safetyNet.material.opacity = 0.4 + Math.sin(this.time * 6) * 0.15;
-    // pompón
-    if (this.pompom) {
-      this.pompomMesh.visible = true;
-      this.pompomMesh.position.set(wx(this.pompom.x), wy(this.pompom.y) + Math.sin(this.time * 4) * 0.12, 0);
-      this.pompomMesh.rotation.y += dt * 2;
-      const k = this.pompom.kind;
-      this.pomGold.visible = k === "golden";
-      this.pomNet.visible = k === "net";
-      this.pomWide.visible = k === "wide";
-      this.pomNormal.visible = k === "normal";
-      this.pomLight.intensity = k === "golden" ? 18 : k === "normal" ? 0 : 8;
-      this.pompomMesh.scale.setScalar(this.pompom.timer < 1.2 ? 0.7 + Math.abs(Math.sin(this.time * 18)) * 0.3 : 1);
+    this._showStrip(this.state === "playing" && !(this.endT > 0));
+    const playing = (this.state === "playing" || this.endT > 0) && this.parts.length;
+    const part = playing ? this._part() : null;
+    const u = part ? clamp((this.rt - part.t0) / part.spb, 0, part.beats) : 0;
+    this._squadPose(dt, part, u);
+    this._flyerPose(part, u);
+    this._flushSquad();
+    this._cue(part);
+  }
+
+  /** Dónde va cada compañera según el tramo y el tiempo (u en tiempos dentro del tramo). */
+  _squadPose(dt, part, u) {
+    const sq = this.squad;
+    if (!sq) return;
+    const t = this.time;
+    const kind = part ? part.kind : "idle";
+    const wob = this.wobble * Math.sin(t * 22) * 0.12;
+    // formación de las figuras: bases enfrentadas, la de atrás y las dos de los lados
+    const home = [
+      { x: -0.62, z: 0.05, yaw: Math.PI / 2 }, { x: 0.62, z: 0.05, yaw: -Math.PI / 2 }, { x: 0, z: -0.72, yaw: 0 },
+      { x: -3.1, z: 0.5, yaw: 0.25 }, { x: 3.1, z: 0.5, yaw: -0.25 },
+    ];
+    const hands = this._handY(part, u);
+    sq.forEach((m, i) => {
+      let tx = home[i].x, ty = 0, tz = home[i].z, yaw = home[i].yaw;
+      let dip = 0, aL = 0.2, aR = 0.2, sL = -0.15, sR = 0.15, leg = 0;
+      if (kind === "pyramid") {
+        const k1 = ease(clamp(u, 0, 1)), k2 = ease(clamp(u - 2, 0, 1));
+        if (i < 3) {
+          // fila de abajo: las tres de frente, hombro con hombro, brazos arriba sujetando a las de arriba
+          const px = [-1.25, 1.25, 0][i];
+          tx = lerp(m.from.x, px, k1); tz = lerp(m.from.z, 0.05, k1); yaw = lerp(home[i].yaw, 0, k1);
+          dip = 0.12 * k1;
+          aL = aR = lerp(0.2, 2.95, k2);
+          sL = -0.05; sR = 0.05;
+        } else {
+          // fila del medio: se acercan por atrás, suben a los hombros y estiran el brazo de afuera
+          const px = i === 3 ? -0.62 : 0.62;
+          const k0 = ease(clamp(u - 0.6, 0, 1.4) / 1.4);
+          tx = lerp(m.from.x, px, k0); tz = lerp(m.from.z, -0.45, k0); yaw = lerp(home[i].yaw, 0, k0);
+          ty = PYR_MID_Y * k2 + Math.sin(k2 * Math.PI) * 0.6;
+          tz = lerp(tz, 0.02, k2);
+          const inner = lerp(0.3, 3.0, ease(clamp(u - 4, 0, 1)));
+          const outer = lerp(0.3, 2.45, k2);
+          if (i === 3) { aR = inner; sR = 0.35; aL = 0; sL = -outer; } else { aL = inner; sL = -0.35; aR = 0; sR = outer; }
+          leg = Math.sin(k2 * Math.PI) * -0.8;
+        }
+        if (u > 7) { const c = Math.sin(t * 9) * 0.15; sL -= c; sR += c; }
+      } else if (i < 3) {
+        // bases y la de atrás: las manos siguen a los pies de la voladora
+        if (part && part.flyFrom && kind !== "count" && m.from) {
+          const k = ease(clamp(u, 0, 1));
+          tx = lerp(m.from.x, home[i].x, k); tz = lerp(m.from.z, home[i].z, k); ty = lerp(m.from.y, 0, k);
+        }
+        dip = hands.dip;
+        const reach = armFor(hands.y, SHOULDER - dip);
+        aL = aR = i === 2 ? Math.min(reach + 0.1, 3) : reach;
+        sL = -0.08; sR = 0.08;
+        if (hands.free) { aL = aR = 0.25; sL = -0.25 - Math.max(0, Math.sin(t * 8)) * 0.6; sR = -sL; }
+      } else {
+        // las de los lados animan: saltitos al ritmo y pompones arriba
+        if (part && m.from && kind !== "count") {
+          const k = ease(clamp(u, 0, 1));
+          tx = lerp(m.from.x, home[i].x, k); tz = lerp(m.from.z, home[i].z, k); ty = lerp(m.from.y, 0, k);
+        }
+        const bt = part ? (u % 1) : (t * 1.6) % 1;
+        const hop = Math.max(0, Math.sin(bt * Math.PI)) * (0.12 + this.cheer * 0.35);
+        ty += hop;
+        sL = -2.3 - Math.sin(t * 6 + i) * 0.4; sR = 2.3 + Math.sin(t * 6 + i) * 0.4;
+        aL = aR = 0.3;
+        leg = hop * 1.5;
+      }
+      m.x = tx + (i < 2 ? wob : 0); m.y = ty; m.z = tz; m.yaw = yaw;
+      const spread = Math.acos(clamp((0.75 - dip / SQ) / 0.75, -1, 1));
+      for (const lg of m.legs) lg.position.y = 0.75 - dip / SQ;
+      m.legs[0].rotation.set(leg, 0, -spread);
+      m.legs[1].rotation.set(-leg, 0, spread);
+      m.hips.position.y = 0.75 - dip / SQ;
+      m.hips.rotation.x = dip * 0.6;
+      m.head.rotation.x = -dip * 0.5;
+      m.arms[0].rotation.set(-aL, 0, sL);
+      m.arms[1].rotation.set(-aR, 0, sR);
+    });
+  }
+
+  /** Altura de las manos de las bases (y cuánto se agachan) en un tramo de figura. free = tienen las manos libres. */
+  _handY(part, u) {
+    const kind = part ? part.kind : "idle";
+    if (kind === "idle" || kind === "count") return { y: HOLD_Y + Math.sin(this.time * 4) * 0.03, dip: 0.05 };
+    if (kind !== "stunt") return { y: HOLD_Y, dip: 0 };
+    if (u < 1.4) return { y: lerp(HOLD_Y, HOLD_Y - 0.25, ease(clamp(u / 1.4, 0, 1))), dip: 0.28 * ease(clamp(u / 1.4, 0, 1)) }; // cargan
+    if (u < 2) { const k = ease((u - 1.4) / 0.6); return { y: lerp(HOLD_Y - 0.25, EXT_Y, k), dip: 0.28 * (1 - k) }; } // ¡arriba!
+    if (u < 2.6) return { y: lerp(EXT_Y, HOLD_Y, ease((u - 2) / 0.6)), dip: 0 };
+    if (u < 5) return { y: HOLD_Y, dip: 0, free: u > 2.6 && u < 4.8 };
+    if (u < 6) return { y: lerp(HOLD_Y, EXT_Y, ease(u - 5)), dip: 0 }; // preparan los brazos para recibirla
+    if (u < 7) { const k = ease(u - 6); return { y: lerp(EXT_Y, HOLD_Y, k), dip: 0.25 * Math.sin(k * Math.PI) }; } // la reciben y amortiguan
+    return { y: HOLD_Y, dip: 0 };
+  }
+
+  /** La voladora: parada en las manos, en el aire (con su figura) o en la cima de la pirámide. */
+  _flyerPose(part, u) {
+    const h = this.hero;
+    if (!h) return;
+    const kind = part ? part.kind : "idle";
+    let x = 0, y = HOLD_Y, z = 0.05, rx = 0, ry = 0, rz = 0, mode = "cheer";
+    let legsZ = [0, 0], legsX = null, armsZ = null;
+    if (kind === "stunt") {
+      const hands = this._handY(part, u);
+      const figHit = part.hits[1];
+      if (u < 2) { y = hands.y; mode = u > 1.3 ? "jump" : "idle"; }
+      else if (u < 6) {
+        const k = (u - 4) / 2;
+        y = EXT_Y + PEAK * (1 - k * k);
+        mode = "jump";
+        const f = clamp((u - 3.3) / 1.6, 0, 1); // la figura dura de 3,3 a 4,9 tiempos
+        if (f > 0 && f < 1 && figHit.res && figHit.res !== "miss") {
+          const id = part.fig.id;
+          const s = Math.sin(f * Math.PI);
+          if (id === "estrella") { armsZ = [-2.4 * s - 0.2, 2.4 * s + 0.2]; legsZ = [-0.6 * s, 0.6 * s]; legsX = [0, 0]; }
+          else if (id === "giro") { ry = ease(f) * Math.PI * 2; armsZ = [-0.25, 0.25]; legsX = [0, 0]; }
+          else if (id === "doble") { ry = ease(f) * Math.PI * 4; armsZ = [-0.2, 0.2]; legsX = [0, 0]; }
+          else if (id === "split") { legsX = [-1.45 * s, 1.35 * s]; armsZ = [-1.6, 1.6]; }
+          else if (id === "mortal") { rx = -ease(f) * Math.PI * 2; legsX = [-1.3 * s, -1.3 * s]; }
+        }
+      } else { y = hands.y; mode = u < 7 ? "jump" : "cheer"; }
+      if (this.wobble > 0) rz = Math.sin(this.time * 18) * 0.35 * this.wobble;
+    } else if (kind === "pyramid") {
+      // baja de un saltito a la colchoneta (adelante) mientras se arma la base, y en el 5 salta a la cima
+      const from = part.flyFrom || this.fly;
+      if (u < 1) { const k = ease(u); y = lerp(from.y, 0, k) + Math.sin(k * Math.PI) * 0.5; z = lerp(from.z, 0.95, k); mode = "jump"; }
+      else if (u < 4) { y = 0; z = 0.95; mode = "cheer"; }
+      else if (u < 5) { const k = ease(u - 4); y = lerp(0, PYR_TOP_Y, k) + Math.sin(k * Math.PI) * 1.2; z = lerp(0.95, -0.1, k); mode = "jump"; }
+      else { y = PYR_TOP_Y; z = -0.1; mode = u > 7 ? "cheer" : "idle"; if (u > 5 && u < 7) armsZ = [-2.3, 2.3]; }
     } else {
-      this.pompomMesh.visible = false;
+      // tramo de cuenta / antes de empezar: arriba de las manos, animando; al pasar de la pirámide a una figura, baja
+      if (part && part.flyFrom && part.flyFrom.y > HOLD_Y + 0.5) {
+        const k = ease(clamp(u, 0, 1));
+        y = lerp(part.flyFrom.y, HOLD_Y, k) + Math.sin(k * Math.PI) * 0.5;
+      }
     }
+    if (kind === "stunt" && part.flyFrom && part.flyFrom.y > HOLD_Y + 0.5 && u < 1.4) {
+      // venía de la cima de la pirámide: baja de un salto a las manos de las bases
+      const k = ease(clamp(u / 1.2, 0, 1));
+      y = lerp(part.flyFrom.y, y, k) + Math.sin(k * Math.PI) * 0.5;
+      z = lerp(part.flyFrom.z, z, k);
+    }
+    if (this.fail && this.endT > 0) {
+      // se cae a la colchoneta
+      const k = clamp(1 - this.endT / 1.1, 0, 1);
+      y = lerp(this.fly.y, 0.1, ease(k));
+      mode = "sad";
+      rz = 0.4 * k;
+    } else this.fly = { x, y, z };
+    this.heroPivot.position.set(x, y + 0.95 + 0.08, z);
+    this.heroPivot.rotation.set(rx, ry, rz);
+    h.group.rotation.y = 0;
+    h.animate(this.time, this.state === "gameover" ? "sad" : mode, 1);
+    if (legsX) { h.legs[0].rotation.x = legsX[0]; h.legs[1].rotation.x = legsX[1]; }
+    h.legs[0].rotation.z = legsZ[0];
+    h.legs[1].rotation.z = legsZ[1];
+    if (armsZ) { h.arms[0].rotation.set(0, 0, armsZ[0]); h.arms[1].rotation.set(0, 0, armsZ[1]); }
+  }
+
+  /** El aro que se cierra hacia el próximo toque (desde un tiempo y medio antes). */
+  _cue(part) {
+    const next = part && this.state === "playing" && this.endT <= 0 ? this.parts.flatMap((p) => p.hits).find((x) => !x.res) : null;
+    const spb = part ? part.spb : 0.6;
+    const lead = next ? (next.t - this.rt) / (spb * 1.5) : 2;
+    const show = next && lead <= 1 && lead > -0.4;
+    this.cueRing.visible = this.cueTarget.visible = !!show;
+    if (!show) return;
+    const r = 0.75;
+    this.cueTarget.position.set(0, next.y, 0.9);
+    this.cueTarget.scale.setScalar(r);
+    this.cueRing.position.set(0, next.y, 0.9);
+    this.cueRing.scale.setScalar(r * (1 + Math.max(0, lead) * 1.8));
+    const near = Math.abs(next.t - this.rt) <= GOOD;
+    this.cueRing.material.color.setHex(near ? 0x7ddc4a : next.label === "¡Atrapa!" ? 0x4fd0ff : 0xffc800);
+    this.cueTarget.material.opacity = near ? 0.9 : 0.45;
   }
 
   // ---------- entrada ----------
-
-  setStick(x) { this.stickX = x; }
 
   async init() {
     const first = !this.ready;
@@ -594,49 +807,22 @@ export class Porristas3DGame extends Game3D {
     if (first) this._bindInput();
   }
 
+  beginPlaying() {
+    super.beginPlaying();
+    this._showStrip(this.state === "playing");
+    this._renderStrip();
+  }
+
   _bindInput() {
-    const setKey = (key, value) => {
-      if (key === "ArrowLeft" || key === "a" || key === "A") this.keys.left = value;
-      if (key === "ArrowRight" || key === "d" || key === "D") this.keys.right = value;
-    };
     window.addEventListener("keydown", (e) => {
-      if (!this.running) return;
-      if (["ArrowLeft", "ArrowRight", "a", "A", "d", "D"].includes(e.key)) e.preventDefault();
-      setKey(e.key, true);
+      if (!this.running || e.repeat) return;
+      if ([" ", "Spacebar", "Enter", "ArrowUp", "ArrowDown", "w", "W", "s", "S"].includes(e.key)) {
+        if (this.state === "playing") e.preventDefault();
+        this.tap();
+      }
     });
-    window.addEventListener("keyup", (e) => setKey(e.key, false));
-
-    const bindHold = (id, dir) => {
-      const btn = document.getElementById(id);
-      if (!btn) return;
-      const press = (e) => { e.preventDefault(); this.keys[dir] = true; this.pointerX = null; };
-      const release = (e) => { e.preventDefault(); this.keys[dir] = false; };
-      btn.addEventListener("pointerdown", press);
-      btn.addEventListener("pointerup", release);
-      btn.addEventListener("pointerleave", release);
-      btn.addEventListener("pointercancel", release);
-    };
-    bindHold("porristas-btn-left", "left");
-    bindHold("porristas-btn-right", "right");
-
-    // arrastrar con el dedo / mouse sobre el escenario
-    const cv = this.els.canvas;
-    const toPx = (e) => {
-      const r = cv.getBoundingClientRect();
-      const nx = (e.clientX - r.left) / r.width; // 0..1 en pantalla
-      // proyecta con la cámara al plano z=0
-      const v = new THREE.Vector3((nx * 2 - 1), 0, 0.5).unproject(this.camera);
-      const dir = v.sub(this.camera.position).normalize();
-      const k = -this.camera.position.z / dir.z;
-      const wxPos = this.camera.position.x + dir.x * k;
-      return wxPos / U + PX_W / 2;
-    };
-    let down = false;
-    cv.addEventListener("pointerdown", (e) => { down = true; this.pointerX = toPx(e); });
-    cv.addEventListener("pointermove", (e) => { if (down) this.pointerX = toPx(e); });
-    const up = () => { down = false; this.pointerX = null; };
-    cv.addEventListener("pointerup", up);
-    cv.addEventListener("pointercancel", up);
-    cv.addEventListener("pointerleave", up);
+    const btn = document.getElementById("porristas-btn-tap");
+    if (btn) btn.addEventListener("pointerdown", (e) => { e.preventDefault(); this.tap(); });
+    this.els.canvas.addEventListener("pointerdown", () => this.tap());
   }
 }

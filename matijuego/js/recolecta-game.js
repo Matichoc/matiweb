@@ -7,13 +7,13 @@
 // cintas transportadoras, combo de golosinas, poderes (reloj, botas turbo, imán), impulso
 // con Shift, estrellas por nivel y música. Ahora son 8 canchas.
 
-import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, makeBunting, makeLogo, disposeTree } from "./three-kit.js?v=5e39093371";
-import { createMatichico } from "./matichico3d.js?v=5e39093371";
-import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=5e39093371";
-import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=5e39093371";
-import { recordRun } from "./progression.js?v=5e39093371";
-import * as audio from "./audio.js?v=5e39093371";
-import { campaign, campaignWin, campaignComplete, campaignStartOver, renderLevelPicker } from "./campaign.js?v=5e39093371";
+import { THREE, Game3D, clamp, lerp, rand, loadTexture, canvasTexture, makeBunting, makeLogo, disposeTree } from "./three-kit.js?v=abd0c6da60";
+import { createMatichico } from "./matichico3d.js?v=abd0c6da60";
+import { LEVELS, CANVAS_W, CANVAS_H, generateChocolates, findFreeSpot, getObstacles, getSpawn, pathLength, pointOnPath } from "./levels.js?v=abd0c6da60";
+import { saveProgress, addToLeaderboard, reportScore, earnCoins } from "./storage.js?v=abd0c6da60";
+import { recordRun } from "./progression.js?v=abd0c6da60";
+import * as audio from "./audio.js?v=abd0c6da60";
+import { campaign, campaignWin, campaignComplete, campaignStartOver, renderLevelPicker } from "./campaign.js?v=abd0c6da60";
 
 const GAME_ID = "recolecta";
 const S = 0.04; // píxeles del nivel -> unidades 3D
@@ -139,7 +139,7 @@ function mergeWalls(cells) {
 
 export class RecolectaGame extends Game3D {
   constructor(character, progress, els) {
-    super(GAME_ID, character, progress, els, { fov: 46 });
+    super(GAME_ID, character, progress, els, { fov: 46, near: 0.5 }); // la cámara nunca está a menos de ~6 m: más precisión para el piso
     this.kawaii = true; // ambiente kawaii: pastel, sombreado por tonos, pétalos y estrellitas
     this.ambientOpts = { petals: 28, hearts: 5, stars: 18, radius: 14, height: 9 };
     this.musicTheme = "arcade";
@@ -271,7 +271,7 @@ export class RecolectaGame extends Game3D {
       const at = pointOnPath(level.path, total * (0.3 + 0.2 * ((this.levelIndex || 0) % 3)));
       const logo = makeLogo(Math.min(3.4, level.corridorWidth * S * 0.8), { lit: false });
       logo.rotation.x = -Math.PI / 2;
-      logo.position.set(wx(at.x), 0.03, wz(at.y));
+      logo.position.set(wx(at.x), 0.045, wz(at.y)); // sobre los puntos guía (0,02) y bajo las cintas (0,12)
       g.add(logo);
     }
 
@@ -358,9 +358,13 @@ export class RecolectaGame extends Game3D {
         const m = new THREE.Mesh(new THREE.PlaneGeometry(c.w * S, c.h * S), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }));
         m.rotation.x = -Math.PI / 2;
         m.rotation.z = Math.atan2(c.dx, -c.dy) * -1; // las flechas apuntan hacia donde empuja
-        m.position.set(wx(c.x + c.w / 2), 0.03, wz(c.y + c.h / 2));
+        // la cinta va sobre un marco de 10 cm: así se ve como una cinta de verdad y no se mezcla con el piso ni con el logo
+        m.position.set(wx(c.x + c.w / 2), 0.12, wz(c.y + c.h / 2));
         m.receiveShadow = true;
-        g.add(m);
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(c.w * S + 0.16, 0.1, c.h * S + 0.16), this.conveyorFrameMat || (this.conveyorFrameMat = new THREE.MeshStandardMaterial({ color: 0x55555f, roughness: 0.5, metalness: 0.3 })));
+        frame.position.set(m.position.x, 0.05, m.position.z);
+        frame.receiveShadow = true;
+        g.add(frame, m);
         c.tex = tex;
       }
     }
@@ -828,7 +832,9 @@ export class RecolectaGame extends Game3D {
     // dibujo del héroe
     const jp = p.isJumping ? 1 - p.jumpTimer / p.jumpDuration : 0;
     const jy = p.isJumping ? Math.sin(jp * Math.PI) * 1.3 : 0;
-    this.hero.group.position.set(wx(p.x), jy, wz(p.y));
+    const onBelt = (this.conveyors || []).some((c) => p.x > c.x && p.x < c.x + c.w && p.y > c.y && p.y < c.y + c.h);
+    this._beltY = lerp(this._beltY || 0, onBelt ? 0.12 : 0, 1 - Math.exp(-20 * dt)); // sobre la cinta se pisa su superficie
+    this.hero.group.position.set(wx(p.x), jy + this._beltY, wz(p.y));
     this.hero.group.rotation.y = lerp(this.hero.group.rotation.y, p.facing, 1 - Math.exp(-14 * dt));
     this.hero.animate(this.time, p.isJumping ? "jump" : p.isMoving || p.dash > 0 ? "run" : "idle", p.boots > 0 || p.dash > 0 ? 1.4 : 0.9);
     if (playing && (p.dash > 0 || p.boots > 0) && Math.random() < 0.6) this.particles.burst(new THREE.Vector3(wx(p.x), 0.3, wz(p.y)), p.dash > 0 ? [0xffffff, 0x7ee0ff] : [0xffc800, 0xff9ac6], 1, 1.2, 0.4, 2, 0.4);

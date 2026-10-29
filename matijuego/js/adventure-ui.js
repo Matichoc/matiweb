@@ -5,18 +5,19 @@
 // La lógica (qué tarea toca, cuántas ⭐ hay, qué se cobró) está en js/adventure.js; aquí solo se muestra y se conecta.
 
 import {
-  ZONES, CHOICES, GOALS, adventureOf, currentTask, zoneDone, zoneProgress, objective, doTask, choose, choiceOf, choiceOption,
-  placeOpen, setGoal, goalStatus, returnSummary, seasonalChallenge, setTownDest, stepPlace, startAdventure, adventureComplete,
+  ZONES, CHOICES, adventureOf, currentTask, zoneDone, zoneProgress, objective, doTask, choose, choiceOf, choiceOption,
+  placeOpen, returnSummary, seasonalChallenge, setTownDest, stepPlace, startAdventure, adventureComplete,
   markIntroSeen, starsOf, taskDone,
-} from "./adventure.js?v=5e39093371";
-import { paintNeighbor } from "./neighbors.js?v=5e39093371";
-import { sportOf, cupsWon, cupRival, DIFF_NAMES } from "./sports-progress.js?v=5e39093371";
-import { activeEvent } from "./events.js?v=5e39093371";
-import { GAMES_CATALOG } from "./games-catalog.js?v=5e39093371";
-import { isUnlocked } from "./unlocks.js?v=5e39093371";
-import { earnCoins, saveProgress } from "./storage.js?v=5e39093371";
-import { addXp, onProgressEvent } from "./progression.js?v=5e39093371";
-import * as audio from "./audio.js?v=5e39093371";
+} from "./adventure.js?v=abd0c6da60";
+import { paintNeighbor } from "./neighbors.js?v=abd0c6da60";
+import { sportOf, cupRival, DIFF_NAMES } from "./sports-progress.js?v=abd0c6da60";
+import { weeklyState, claimWeekly, openWeeklyChest, GOAL_REWARD, CHEST_REWARD } from "./weekly.js?v=abd0c6da60";
+import { activeEvent } from "./events.js?v=abd0c6da60";
+import { GAMES_CATALOG } from "./games-catalog.js?v=abd0c6da60";
+import { isUnlocked } from "./unlocks.js?v=abd0c6da60";
+import { earnCoins, saveProgress } from "./storage.js?v=abd0c6da60";
+import { addXp, onProgressEvent } from "./progression.js?v=abd0c6da60";
+import * as audio from "./audio.js?v=abd0c6da60";
 
 const $ = (id) => document.getElementById(id);
 const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -252,10 +253,14 @@ export function initAdventureUI(ctx) {
         else ico.textContent = "🎪";
       }
     }
-    const g = goalStatus(p, { furniture: furnitureCount(p), cups: { pichanga: cupsWon(p, "pichanga"), basquet2v2: cupsWon(p, "basquet2v2") } });
+    // las metas de la semana, en una línea del menú
+    const wk = weeklyState(p);
     const goalEl = $("lb-goal");
-    goalEl.classList.toggle("hidden", !g);
-    if (g) goalEl.textContent = g.done ? `${g.icon} ¡Meta cumplida: ${g.text.toLowerCase()}! Elige otra en tu aventura.` : `${g.icon} Mi meta: ${g.text} (${g.have}/${g.need})`;
+    const doneN = wk.goals.filter((x) => x.done).length;
+    goalEl.classList.remove("hidden");
+    goalEl.textContent = wk.chestTaken ? "🎉 ¡Metas de la semana listas! El lunes salen nuevas."
+      : wk.ready || wk.chestReady ? "🎁 ¡Tienes premios de las metas de la semana para cobrar! (en Renovar el Pueblo)"
+      : `🎯 Metas de la semana: ${doneN}/${wk.goals.length} · ${wk.goals.find((x) => !x.done)?.text || ""}`;
   }
 
   /** Resumen corto al volver después de un rato (no es un cuadro que tape: una franja que se cierra). */
@@ -427,24 +432,41 @@ export function initAdventureUI(ctx) {
       m.textContent = `🏅 Medallas: ${medals.map((x) => ({ pichanga_desafio: "Copa Pichanga en Desafío", basquet2v2_desafio: "Copa de Básquet en Desafío" }[x] || x)).join(" · ")}`;
       sp.appendChild(m);
     }
-    // meta personal
+    // metas de la semana (js/weekly.js): 3 nuevas cada lunes, cada una con premio, y el cofre si se cobran las 3
     const goals = $("adv-goals");
     goals.innerHTML = "";
-    const st = goalStatus(p, { furniture: furnitureCount(p), cups: { pichanga: cupsWon(p, "pichanga"), basquet2v2: cupsWon(p, "basquet2v2") } });
+    const wk = weeklyState(p);
     const intro = document.createElement("p");
     intro.className = "adv-hint";
-    intro.textContent = st ? (st.done ? `${st.icon} ¡Cumpliste tu meta! Puedes elegir otra.` : `${st.icon} Vas ${st.have} de ${st.need}. La verás en el menú.`) : "Elige una meta propia (si quieres): la verás en el menú.";
+    intro.textContent = wk.chestTaken ? `🎉 ¡Cumpliste todas las metas de la semana! El lunes salen nuevas.` : `Cada meta da +${GOAL_REWARD.coins} 🍫✨ y ⭐. Si cobras las 3, abres el cofre de la semana. Quedan ${wk.daysLeft} ${wk.daysLeft === 1 ? "día" : "días"}.`;
     goals.appendChild(intro);
-    const cur = adventureOf(p).goal;
-    for (const g of GOALS) {
-      const b = btn(`${g.icon} ${g.text}`, `adv-goal${cur === g.id ? " on" : ""}`, () => {
-        setGoal(p, cur === g.id ? null : g.id);
-        saveProgress(p);
+    for (const g of wk.goals) {
+      const row = document.createElement("div");
+      row.className = "wk-goal" + (g.claimed ? " claimed" : g.done ? " done" : "");
+      row.innerHTML = `<span class="wk-ico">${g.icon}</span><span class="wk-body"><b></b><i><em style="width:${Math.round((g.have / g.need) * 100)}%"></em></i><small>${g.have.toLocaleString("es-CL")} / ${g.need.toLocaleString("es-CL")}</small></span>`;
+      row.querySelector("b").textContent = g.text;
+      if (g.done && !g.claimed) {
+        row.appendChild(btn("🎁 Cobrar", "btn-primary wk-claim", () => {
+          const r = claimWeekly(p, g.id);
+          if (r) { audio.playVictory?.(); ctx.showToast(`+${r.coins} 🍫✨ y +${r.stars} ⭐ por «${g.text}»`); }
+          renderRest(p);
+          renderPaths();
+        }));
+      } else if (g.claimed) {
+        const ok = document.createElement("span");
+        ok.className = "wk-ok";
+        ok.textContent = "✅";
+        row.appendChild(ok);
+      }
+      goals.appendChild(row);
+    }
+    if (wk.chestReady) {
+      goals.appendChild(btn(`🧰 Abrir el cofre de la semana (+${CHEST_REWARD.coins} 🍫✨ y un sobre de figuritas)`, "btn-primary wk-chest", () => {
+        const r = openWeeklyChest(p);
+        if (r) { audio.playVictory?.(); ctx.showToast(`🧰 ¡Cofre de la semana! +${r.coins} 🍫✨ y +${r.packs} sobre de figuritas`); }
         renderRest(p);
         renderPaths();
-      });
-      b.setAttribute("aria-pressed", String(cur === g.id));
-      goals.appendChild(b);
+      }));
     }
     // temporada
     const seasonEl = $("adv-season");

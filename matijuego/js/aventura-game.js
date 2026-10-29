@@ -6,11 +6,11 @@
 //
 // Controles: ← → / A D para moverte, ESPACIO / ↑ / W para saltar. En el celular: ◀ ▶ y ⤴.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeLogo, goldCoinTexture, disposeGeometries } from "./three-kit.js?v=5e39093371";
-import { createMatichico } from "./matichico3d.js?v=5e39093371";
-import { saveProgress } from "./storage.js?v=5e39093371";
-import * as audio from "./audio.js?v=5e39093371";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=5e39093371";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeLogo, goldCoinTexture, disposeGeometries } from "./three-kit.js?v=abd0c6da60";
+import { createMatichico } from "./matichico3d.js?v=abd0c6da60";
+import { saveProgress } from "./storage.js?v=abd0c6da60";
+import * as audio from "./audio.js?v=abd0c6da60";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=abd0c6da60";
 
 const GAME_ID = "aventura";
 const H = 18; // alto del mapa en casillas
@@ -27,14 +27,43 @@ const BUFFER = 0.13;
 const BIG_V = 6; // rebote al pisar
 
 const WORLDS = [
-  { name: "Pradera Cacao", sky: 0x7ec8f0, fog: 0xbfe3f7, dirt: 0x8a5a36, grass: 0x6fc24a, brick: 0xc86a3a, hill: 0x8cd05a, hill2: 0x6fb24a, music: "adventure" },
-  { name: "Desierto de Azúcar", sky: 0xffd9a0, fog: 0xffe8c4, dirt: 0xe0b878, grass: 0xf6e0a0, brick: 0xd4916a, hill: 0xf2c878, hill2: 0xe0aa5a, music: "adventure" },
-  { name: "Cueva de Chocolate", sky: 0x3a2318, fog: 0x4a2c1e, dirt: 0x5a3320, grass: 0x8a5a36, brick: 0x7a4a2a, hill: 0x4e2c1c, hill2: 0x3e2216, music: "chill" },
-  { name: "Cielo de Algodón", sky: 0xffc2dc, fog: 0xffdcea, dirt: 0xf7e6f0, grass: 0xffffff, brick: 0xd4216c, hill: 0xffe0ee, hill2: 0xffc8de, music: "chill" },
-  { name: "Castillo Dulce", sky: 0x5a3a8a, fog: 0x7a5aa6, dirt: 0x6a4a8a, grass: 0x9a7ac0, brick: 0xd4216c, hill: 0x4a2a6a, hill2: 0x3a1f5a, music: "sport" },
+  { name: "Pradera Cacao", sky: 0x7ec8f0, fog: 0xbfe3f7, dirt: 0x8a5a36, grass: 0x6fc24a, brick: 0xc86a3a, hill: 0x8cd05a, hill2: 0x6fb24a, music: "adventure", tree: 0x3f9a3a, trunk: 0x7a4a2a },
+  { name: "Desierto de Azúcar", sky: 0xffd9a0, fog: 0xffe8c4, dirt: 0xe0b878, grass: 0xf6e0a0, brick: 0xd4916a, hill: 0xf2c878, hill2: 0xe0aa5a, music: "adventure", tree: 0x8cbf4a, trunk: 0xc98a4b },
+  { name: "Cueva de Chocolate", sky: 0x3a2318, fog: 0x4a2c1e, dirt: 0x5a3320, grass: 0x8a5a36, brick: 0x7a4a2a, hill: 0x4e2c1c, hill2: 0x3e2216, music: "chill", tree: 0x7a4a2a, trunk: 0x4a2a18, spikes: true },
+  { name: "Cielo de Algodón", sky: 0xffc2dc, fog: 0xffdcea, dirt: 0xf7e6f0, grass: 0xffffff, brick: 0xd4216c, hill: 0xffe0ee, hill2: 0xffc8de, music: "chill", tree: 0xffb3d1, trunk: 0xffffff, puffs: true },
+  { name: "Castillo Dulce", sky: 0x5a3a8a, fog: 0x7a5aa6, dirt: 0x6a4a8a, grass: 0x9a7ac0, brick: 0xd4216c, hill: 0x4a2a6a, hill2: 0x3a1f5a, music: "sport", tree: 0x9a7ac0, trunk: 0x4a2a6a },
 ];
 
 const SOLID = new Set(["#", "B", "?", "U", "P"]);
+const DEPTH = 3; // fondo del camino (antes 1,5): se ve más 3D con la cámara un poco desde arriba
+
+/** Lado del suelo: capas de galleta y chocolate con chispitas (se tiñe con el color de cada mundo). */
+let groundTex = null;
+function groundTexture() {
+  if (!groundTex) {
+    groundTex = canvasTexture(128, 128, (g, w, h) => {
+      g.fillStyle = "#ffffff"; g.fillRect(0, 0, w, h);
+      g.fillStyle = "rgba(0,0,0,0.13)"; g.fillRect(0, h * 0.5, w, h * 0.12);
+      g.fillStyle = "rgba(0,0,0,0.08)"; g.fillRect(0, h * 0.82, w, h * 0.1);
+      g.fillStyle = "rgba(60,25,10,0.35)";
+      for (let i = 0; i < 9; i++) { g.beginPath(); g.ellipse((i * 47) % w, (i * 71) % h, 5, 3.5, i, 0, 7); g.fill(); }
+    });
+  }
+  return groundTex;
+}
+let grassTex = null;
+function grassTexture() {
+  if (!grassTex) {
+    grassTex = canvasTexture(128, 128, (g, w, h) => {
+      g.fillStyle = "#ffffff"; g.fillRect(0, 0, w, h);
+      g.fillStyle = "rgba(0,0,0,0.07)";
+      for (let i = 0; i < 4; i++) g.fillRect(0, (i * h) / 4, w, h / 8);
+      g.fillStyle = "rgba(255,255,255,0.6)";
+      for (let i = 0; i < 14; i++) g.fillRect((i * 37) % w, (i * 53) % h, 4, 10);
+    });
+  }
+  return grassTex;
+}
 
 function mulberry32(a) {
   return function () {
@@ -352,13 +381,14 @@ export class AventuraGame extends Game3D {
     this.scene.background.setHex(th.sky);
     this.scene.fog.color.setHex(th.fog);
     const std = (c, r = 0.7, extra = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: r, ...extra });
-    const dirtMat = std(th.dirt, 0.9);
-    const grassMat = std(th.grass, 0.8);
+    const dirtMat = std(th.dirt, 0.9, { map: groundTexture() });
+    const grassMat = std(th.grass, 0.8, { map: grassTexture() });
     const brickMat = std(th.brick, 0.6);
     this._brickMat = brickMat;
     const pipeMat = std(0x2fb85a, 0.4);
     const box = new THREE.BoxGeometry(1, 1, 1.5);
-    const cap = new THREE.BoxGeometry(1.02, 0.22, 1.54);
+    const dirtBox = new THREE.BoxGeometry(1, 1, DEPTH);
+    const cap = new THREE.BoxGeometry(1.02, 0.22, DEPTH + 0.04);
     const map = L.map;
     const W = L.bonus ? L.bonus.x1 + 6 : L.W + 10;
     const dirt = [];
@@ -393,12 +423,13 @@ export class AventuraGame extends Game3D {
       this.levelGroup.add(im);
       return im;
     };
-    inst(box, dirtMat, dirt);
+    inst(dirtBox, dirtMat, dirt);
     inst(cap, grassMat, grass, 1.0 - 0.02, false);
     inst(box, brickMat, brick);
     inst(new THREE.CylinderGeometry(0.5, 0.5, 1, 14), pipeMat, pipes);
     inst(new THREE.CylinderGeometry(0.5, 0.5, 1, 14), std(0x35c8ff, 0.35, { emissive: 0x0a5a7a, emissiveIntensity: 0.35 }), warpPipes); // tuberías mágicas: ⬇ para entrar
-    inst(new THREE.BoxGeometry(1, 0.28, 1.4), std(0xfff6e6, 0.5), plats, 0.86);
+    inst(new THREE.BoxGeometry(1, 0.28, 2.0), std(0xfff6e6, 0.5), plats, 0.86);
+    this._buildDecor(th, grass);
     // bloques ?
     const qMat = new THREE.MeshStandardMaterial({ map: this.qTex, roughness: 0.4, emissive: 0x6a4a00, emissiveIntensity: 0.3 });
     this.usedMat = std(0x8a7a6a, 0.8);
@@ -465,6 +496,63 @@ export class AventuraGame extends Game3D {
       for (let y = 2; y < 6; y++) { this.bossWall.push([L.arenaX + 33, y]); }
     }
     this._refreshCoins();
+  }
+
+  /**
+   * Pastito y florcitas sobre el borde del camino (adelante y atrás, no donde se camina) y un prado más abajo con árboles:
+   * le dan profundidad. Todo agrupado (InstancedMesh): pocas llamadas de dibujo.
+   */
+  _buildDecor(th, grass) {
+    const r = mulberry32(this.level * 97 + 3);
+    const m4 = new THREE.Matrix4();
+    const col = new THREE.Color();
+    const tufts = [];
+    const flowers = [];
+    for (const [x, y] of grass) {
+      for (const side of [-1, 1]) {
+        if (r() < 0.75) tufts.push([x + 0.15 + r() * 0.7, y + 1.08, side * (0.85 + r() * 0.55)]);
+        if (r() < 0.22) flowers.push([x + 0.2 + r() * 0.6, y + 1.08, side * (0.8 + r() * 0.6)]);
+      }
+    }
+    if (tufts.length) {
+      // en el cielo de algodón son motitas (unos conos blancos se confundirían con los pinchos)
+      const geo = th.puffs ? new THREE.SphereGeometry(0.1, 7, 5).translate(0, 0.06, 0) : new THREE.ConeGeometry(0.09, 0.32, 5).translate(0, 0.16, 0);
+      const im = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: th.puffs ? 0xffd6e8 : new THREE.Color(th.grass).multiplyScalar(0.82), roughness: 0.9 }), tufts.length * 3);
+      let i = 0;
+      for (const [x, y, z] of tufts) for (let k = 0; k < 3; k++) {
+        m4.makeRotationZ((k - 1) * 0.35).setPosition(x + (k - 1) * 0.07, y, z + (k % 2) * 0.05);
+        im.setMatrixAt(i++, m4);
+      }
+      this.levelGroup.add(im);
+    }
+    if (flowers.length && !th.spikes) {
+      const im = new THREE.InstancedMesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 }), flowers.length);
+      const pal = [0xff7aa8, 0xffc800, 0xffffff, 0xb08aff];
+      flowers.forEach(([x, y, z], i) => { m4.makeTranslation(x, y + 0.2, z); im.setMatrixAt(i, m4); im.setColorAt(i, col.setHex(pal[i % pal.length])); });
+      this.levelGroup.add(im);
+    }
+    // prado de atrás (más abajo que el camino) con árboles; en la cueva, estalagmitas
+    const W = this.lv.W + 30;
+    const meadow = new THREE.Mesh(new THREE.PlaneGeometry(W + 40, 30), new THREE.MeshStandardMaterial({ color: th.hill2, roughness: 1 }));
+    meadow.rotation.x = -Math.PI / 2;
+    meadow.position.set(W / 2 - 10, -2.6, -16.5);
+    meadow.receiveShadow = true;
+    this.levelGroup.add(meadow);
+    const trees = [];
+    for (let x = -6; x < W; x += 2.6 + r() * 2.8) trees.push([x, -3.4 - r() * 6, 0.8 + r() * 0.6]);
+    const trunkGeo = new THREE.CylinderGeometry(0.16, 0.24, 2.6, 7).translate(0, 1.3, 0);
+    const crownGeo = th.spikes ? new THREE.ConeGeometry(0.8, 3.2, 7).translate(0, 2.4, 0) : new THREE.IcosahedronGeometry(1.15, 1).translate(0, 3.2, 0);
+    const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: th.trunk, roughness: 0.9 }), trees.length);
+    const crowns = new THREE.InstancedMesh(crownGeo, new THREE.MeshStandardMaterial({ color: th.tree, roughness: 0.8, flatShading: true }), trees.length);
+    trees.forEach(([x, z, sc], i) => {
+      m4.makeScale(sc, sc, sc).setPosition(x, -2.6, z);
+      trunks.setMatrixAt(i, m4);
+      crowns.setMatrixAt(i, m4);
+      crowns.setColorAt(i, col.setHex(th.tree).offsetHSL(0, 0, (r() - 0.5) * 0.12));
+    });
+    crowns.castShadow = true;
+    if (!th.spikes) this.levelGroup.add(trunks);
+    this.levelGroup.add(crowns);
   }
 
   _buildFlag(fx) {
@@ -643,7 +731,7 @@ export class AventuraGame extends Game3D {
     if (!this._bossWallMesh) this._bossWallMesh = null;
     if (this._bossWallMesh) { this.levelGroup.remove(this._bossWallMesh); this._bossWallMesh = null; }
     if (closed) {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(1, 7, 1.5), new THREE.MeshStandardMaterial({ color: 0x8a5a36, roughness: 0.8 }));
+      const m = new THREE.Mesh(new THREE.BoxGeometry(1, 7, DEPTH), new THREE.MeshStandardMaterial({ color: 0x8a5a36, roughness: 0.8 }));
       m.position.set(x + 0.5, 2 + 3.5, 0);
       this.levelGroup.add(m);
       this._bossWallMesh = m;
@@ -751,6 +839,7 @@ export class AventuraGame extends Game3D {
       p.coyote = 0;
       p.buffer = 0;
       p.jumpHeld = true;
+      p.stretch = 1; // se estira al despegar
       audio.playJump();
       this.particles.burst(new THREE.Vector3(p.x, p.y + 0.1, 0.5), [0xfff6e6, 0xffc800], 4, 2, 0.3, 4, 0.8);
     }
@@ -763,9 +852,21 @@ export class AventuraGame extends Game3D {
     p.x += p.vx * dt;
     this._collideX(p);
     const prevY = p.y;
+    const wasGround = p.ground;
+    const fallV = p.vy;
     p.y += p.vy * dt;
     p.ground = false;
     this._collideY(p, prevY);
+    if (p.ground && !wasGround && fallV < -5) {
+      // aterriza: se aplasta un poquito y levanta polvito
+      p.squash = Math.min(1, -fallV / 18);
+      this.particles.burst(new THREE.Vector3(p.x, p.y + 0.05, 0.3), [0xfff6e6, 0xe8d8c0], 5, 1.8, 0.35, 3, 0.7);
+    }
+    if (p.ground && Math.abs(p.vx) > 2.5) {
+      // polvito de los pasos al correr
+      p.stepT = (p.stepT || 0) + dt * Math.abs(p.vx);
+      if (p.stepT > 1.6) { p.stepT = 0; this.particles.burst(new THREE.Vector3(p.x - p.face * 0.2, p.y + 0.05, 0.25), [0xfff6e6, 0xe8d8c0], 2, 1, 0.3, 2, 0.55); }
+    }
     p.x = clamp(p.x, this.inBonus ? this.lv.bonus.x0 + 0.4 : 0.4, this.inBonus ? this.lv.bonus.x1 - 0.4 : this.lv.W - 0.4);
     // al pie de los pinchos
     for (const [sx, sy] of this.spikes) {
@@ -1413,7 +1514,7 @@ export class AventuraGame extends Game3D {
     if (!this.camera) return;
     const aspect = this.camera.aspect;
     const vf = (this.camera.fov * Math.PI) / 180;
-    const halfH = 4.1;
+    const halfH = 3.85;
     const halfW = 7.2 / 1; // mínimo de casillas visibles a cada lado
     const dist = Math.max(halfH / Math.tan(vf / 2), (halfW * 0.62) / (Math.tan(vf / 2) * aspect));
     this.camDist = dist;
@@ -1430,8 +1531,9 @@ export class AventuraGame extends Game3D {
     this.camX = lerp(this.camX, tx, k);
     this.camY = lerp(this.camY, ty, 1 - Math.exp(-3 * dt));
     const sh = this.shake > 0 ? this.shake : 0;
-    this.camera.position.set(this.camX + (sh ? rand(-sh, sh) * 0.5 : 0), this.camY + 1 + (sh ? rand(-sh, sh) * 0.5 : 0), this.camDist);
-    this.camera.lookAt(this.camX, this.camY, 0);
+    // un poco desde arriba y apenas de lado: se ve el borde de arriba del camino y el fondo del mundo (más 3D)
+    this.camera.position.set(this.camX - 1.3 + (sh ? rand(-sh, sh) * 0.5 : 0), this.camY + 2.9 + (sh ? rand(-sh, sh) * 0.5 : 0), this.camDist);
+    this.camera.lookAt(this.camX, this.camY - 0.15, 0);
     this.shake = Math.max(0, (this.shake || 0) - dt * 1.6);
     this.sun.position.set(this.camX - 6, 14, 12);
     this.sun.target.position.set(this.camX, 3, 0);
@@ -1446,7 +1548,13 @@ export class AventuraGame extends Game3D {
     // tamaño: más grande con el hongo (con un saltito elástico al crecer/achicarse)
     p.grow = lerp(p.grow, 1, 1 - Math.exp(-8 * (dt || 0.016)));
     const target = (p.power >= 1 ? 1.32 : 1) * (1 + (p.grow - 1) * 0.35);
-    h.group.scale.setScalar(0.74 * target);
+    // estirarse al saltar y aplastarse al caer (con un rebotito)
+    const k = dt || 0.016;
+    p.squash = Math.max(0, (p.squash || 0) - k * 5);
+    p.stretch = Math.max(0, (p.stretch || 0) - k * 4);
+    const sy = 1 - Math.sin(p.squash * Math.PI) * 0.22 + Math.sin(p.stretch * Math.PI) * 0.14;
+    const sxz = 1 / Math.sqrt(sy);
+    h.group.scale.set(0.74 * target * sxz, 0.74 * target * sy, 0.74 * target * sxz);
     if (!this.fireAura) {
       this.fireAura = new THREE.Sprite(new THREE.SpriteMaterial({ map: this._glowTex(), color: 0xffd9a8, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false }));
       this.fireAura.scale.set(2.2, 2.6, 1);
@@ -1455,7 +1563,13 @@ export class AventuraGame extends Game3D {
     this.fireAura.material.opacity = p.power >= 2 ? 0.35 + Math.sin(this.time * 4) * 0.08 : 0;
     this.fireAura.position.set(p.x, p.y + this.ph * 0.5, -0.2);
     h.group.position.set(p.x, p.y, 0);
-    h.group.rotation.y = Math.PI / 2 * p.face + (p.dead ? Math.sin(p.deadT * 10) * 0.3 : 0);
+    // de tres cuartos (se le ve la cara) y gira suave al cambiar de dirección; quieto, mira más hacia la cámara
+    const moving = Math.abs(p.vx) > 0.8 || !p.ground;
+    const yawT = p.win ? 0 : p.face * (moving ? 1.05 : 0.45);
+    p.yaw = p.yaw == null ? yawT : lerp(p.yaw, yawT, 1 - Math.exp(-12 * k));
+    h.group.rotation.y = p.yaw + (p.dead ? Math.sin(p.deadT * 10) * 0.3 : 0);
+    // en el aire se inclina según suba o baje; corriendo, hacia adelante
+    h.group.rotation.z = !p.ground && !p.dead ? clamp(-p.vy * 0.012, -0.18, 0.18) * p.face : 0;
     if (p.win) h.animate(this.time, "cheer", 1);
     else if (p.dead) h.animate(this.time, "sad", 1);
     else h.animate(this.time, p.anim, p.anim === "run" ? Math.min(1.4, Math.abs(p.vx) / RUN_V + 0.3) : 1);

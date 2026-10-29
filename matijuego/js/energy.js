@@ -11,7 +11,7 @@
 //   bought    veces que compró energía con Matipuntos hoy
 //   sleepUntil mientras el Matichico duerme en su cama la recarga es más rápida
 
-import { saveProgress, earnCoins, spendCoins, dayKey } from "./storage.js?v=5e39093371";
+import { saveProgress, earnCoins, spendCoins, dayKey } from "./storage.js?v=abd0c6da60";
 
 export const ENERGY_VERSION = 2; // al subirla, la energía de todos los perfiles se reinicia (llena) una sola vez
 export const ENERGY_MAX = 200; // lo que se llena solo (por día y con el tiempo)
@@ -36,7 +36,7 @@ export const ENERGY_COST = {
 export const ENERGY_RULE = {
   basquet_tiros: "1 por tiro", futbol: "1 por tiro", tetris: "1 cada 4 piezas", dulces: "1 por movimiento",
   memoria: "1 cada 2 intentos", autos: "1 cada 250 m", parkour: "1 cada 60 m", salto: "1 cada 15 m alto",
-  porristas: "1 cada 6 rebotes", recolecta: "1 cada 12 s", aventura: "1 cada 20 s", merge: "1 por producto nuevo",
+  porristas: "1 cada 2 figuras", recolecta: "1 cada 12 s", aventura: "1 cada 20 s", merge: "1 por producto nuevo",
 };
 export const ENERGY_MISSION = 2; // misión de Ciudad Choco
 export const costOf = (gameId) => (gameId in ENERGY_COST ? ENERGY_COST[gameId] : 5);

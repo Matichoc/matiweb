@@ -15,30 +15,30 @@ export const CHOCOLATES = [
   { id: "leche", name: "Leche", color: "#7b4a2a" },
   { id: "oscuro", name: "Oscuro", color: "#3a1f12" },
   { id: "blanco", name: "Blanco", color: "#f1e2c4" },
-  { id: "rosa", name: "Rosa", color: "#e58fb0" },
+  { id: "rosa", name: "Rosa", color: "#e58fb0", unlock: 2 },
 ];
 
 export const FLAVORS = [
   { id: "manjar", name: "Manjar", color: "#d9923a" },
   { id: "frambuesa", name: "Frambuesa", color: "#d4216c" },
-  { id: "maracuya", name: "Maracuyá", color: "#f7a600" },
+  { id: "maracuya", name: "Maracuyá", color: "#f7a600", unlock: 3 },
   { id: "menta", name: "Menta", color: "#2f9e6a" },
   { id: "naranja", name: "Naranja", color: "#f08a3c" },
   { id: "pie-limon", name: "Pie de limón", color: "#e8d44d" },
   { id: "trufa", name: "Trufa", color: "#5a2d16" },
   { id: "almendra", name: "Almendra", color: "#c9a27a" },
-  { id: "pistacho", name: "Pistacho", color: "#a4c05a" },
+  { id: "pistacho", name: "Pistacho", color: "#a4c05a", unlock: 4 },
   { id: "nutella", name: "Avellana", color: "#6b3a1e" },
 ];
 
 export const TOPPINGS = [
   { id: "pistacho", name: "Pistacho picado", icon: "🟢", color: "#9ab84c" },
-  { id: "kataifi", name: "Kataifi crocante", icon: "🟡", color: "#e0a63a" },
+  { id: "kataifi", name: "Kataifi crocante", icon: "🟡", color: "#e0a63a", unlock: 3 },
   { id: "almendras", name: "Almendras", icon: "🌰", color: "#d8b88a" },
   { id: "coco", name: "Coco rallado", icon: "⚪", color: "#ffffff" },
   { id: "chispas", name: "Chispas de colores", icon: "🌈", color: "#ff6fa8" },
-  { id: "frambuesa", name: "Frambuesa liofilizada", icon: "🔴", color: "#d4216c" },
-  { id: "oro", name: "Hojuelas doradas", icon: "✨", color: "#ffc800" },
+  { id: "frambuesa", name: "Frambuesa liofilizada", icon: "🔴", color: "#d4216c", unlock: 2 },
+  { id: "oro", name: "Hojuelas doradas", icon: "✨", color: "#ffc800", unlock: 5 },
 ];
 
 export const WRAPS = [
@@ -56,6 +56,23 @@ export const WRAP_COLORS = [
   { id: "rojo", name: "Rojo", color: "#d63a3a" },
   { id: "cafe", name: "Café", color: "#6b3a1e" },
 ];
+
+/** Con qué se ve cada sabor cuando hay que juntarlo en la cocina (ver js/creador-cocina.js). */
+export const FLAVOR_ICON = {
+  manjar: "🍯", frambuesa: "🍓", maracuya: "🥭", menta: "🌿", naranja: "🍊",
+  "pie-limon": "🍋", trufa: "🟤", almendra: "🌰", pistacho: "🟢", nutella: "🌰",
+};
+
+/**
+ * Nivel de chocolatero/a: cuántos chocolates cocinó a mano (los que ya tenía guardados también cuentan).
+ * Algunos ingredientes especiales se desbloquean cocinando (campo `unlock`); nunca se pagan con Matipuntos.
+ */
+export function chefLevel(progress) {
+  return 1 + Math.max((progress.stats && progress.stats.creatorCooks) || 0, (progress.creations || []).length);
+}
+export const isUnlocked = (item, progress) => !item.unlock || chefLevel(progress) >= item.unlock;
+/** Lo que se desbloquea justo al llegar a este nivel. */
+export const unlockedAt = (level) => [...CHOCOLATES, ...FLAVORS, ...TOPPINGS].filter((x) => x.unlock === level);
 
 export const MOTIFS = ["❤️", "⭐", "🍫", "⚽", "🏀", "🎀", "🌸", "🎉"];
 
@@ -154,9 +171,11 @@ export function scoreCreation(c, { challengeDone = false } = {}) {
     score += 100;
     notes.push("¡Cumpliste el reto del día!");
   }
-  const stars = score >= 520 ? 5 : score >= 420 ? 4 : score >= 320 ? 3 : score >= 220 ? 2 : 1;
-  return { score, stars, notes, perfect };
+  return { score, stars: starsFor(score), notes, perfect };
 }
+
+/** Estrellas según el puntaje (con lo hecho a mano en la cocina se llega más fácil a 5). */
+export const starsFor = (score) => (score >= 560 ? 5 : score >= 440 ? 4 : score >= 320 ? 3 : score >= 220 ? 2 : 1);
 
 /** Clave que identifica la "receta" (para no dar monedas dos veces por la misma). */
 export function comboKey(c) {
@@ -174,11 +193,14 @@ function hash(str) {
 
 /** Reto del día (igual para todos los perfiles ese día). */
 export function dailyChallenge(dateKey) {
+  // solo con ingredientes que todos tienen desde el comienzo
   const h = hash(`matichoc-${dateKey}`);
+  const flavors = FLAVORS.filter((x) => !x.unlock);
+  const tops = TOPPINGS.filter((x) => !x.unlock);
   return {
     product: PRODUCTS[h % PRODUCTS.length].id,
-    flavor: FLAVORS[(h >>> 3) % FLAVORS.length].id,
-    topping: TOPPINGS[(h >>> 7) % TOPPINGS.length].id,
+    flavor: flavors[(h >>> 3) % flavors.length].id,
+    topping: tops[(h >>> 7) % tops.length].id,
   };
 }
 

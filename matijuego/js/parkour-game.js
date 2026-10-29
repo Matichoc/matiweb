@@ -4,19 +4,20 @@
 // checkpoints y llega a la cumbre. Al avanzar, tu Matichico desbloquea accesorios
 // (capa, gafas brillantes y corona) además del atuendo que compraste en la tienda.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars, makeLogo } from "./three-kit.js?v=5e39093371";
-import { createMatichico } from "./matichico3d.js?v=5e39093371";
-import { earnCoins, saveProgress } from "./storage.js?v=5e39093371";
-import { bindStick } from "./stick.js?v=5e39093371";
-import { trailColors } from "./wardrobe-data.js?v=5e39093371";
-import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=5e39093371";
-import * as audio from "./audio.js?v=5e39093371";
-import { campaign, renderLevelPicker } from "./campaign.js?v=5e39093371";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars, makeLogo } from "./three-kit.js?v=abd0c6da60";
+import { createMatichico } from "./matichico3d.js?v=abd0c6da60";
+import { earnCoins, saveProgress } from "./storage.js?v=abd0c6da60";
+import { bindStick } from "./stick.js?v=abd0c6da60";
+import { trailColors } from "./wardrobe-data.js?v=abd0c6da60";
+import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=abd0c6da60";
+import * as audio from "./audio.js?v=abd0c6da60";
+import { campaign, renderLevelPicker } from "./campaign.js?v=abd0c6da60";
 
 const GAME_ID = "parkour";
 const R = 0.34; // radio del héroe
 const H = 1.55; // alto del héroe
 const GRAV = 30;
+const CLIMB_V = 4.2; // velocidad al trepar un muro de escalada
 const JUMP_V = 11.6;
 const DOUBLE_V = 10;
 const PAD_V = 21;
@@ -206,6 +207,7 @@ export class ParkourGame extends Game3D {
       if (i === 3) prev = fig(0, "diag", { size: 4.2, gap: 2.0, dir: 1 }); // primer tramo en diagonal
     }
     prev = fig(0, "zigzag", { size: 4.2, gap: 2.0, n: 4, dir: -1, types: ["normal", "moving"] });
+    prev = fig(0, "climb", { size: 4.2, gap: 2.0, rise: 3 }); // primer muro para escalar: se trepa empujando hacia él
     // ---- Etapa 2: Camino de Caramelo ----
     let p = place(1, "normal", { sx: 7, sz: 7, gap: 2.2 });
     stageStart(1, p, 0);
@@ -278,6 +280,7 @@ export class ParkourGame extends Game3D {
       prev = w;
     });
     prev = fig(3, "zigzag", { size: 4.2, gap: 2.0, n: 4, dir: 1, types: ["normal", "moving"] });
+    prev = fig(3, "climb", { size: 4.2, gap: 2.2, rise: 4 }); // muro de escalada entre los molinos
     q = place(3, "normal", { sx: 7, sz: 7, gap: 2.4, dx: 0 }); // pared que barre la plataforma
     this._addWall(q, { w: 2.6, slide: 2.2, speed: 1.3 });
     onTop(q, 2, 2.2);
@@ -320,6 +323,7 @@ export class ParkourGame extends Game3D {
       prev = w;
     });
     prev = fig(6, "spiral", { size: 3.8, gap: 2.2, dir: 1, climb: 1.0 }); // última subida en espiral hasta la cumbre
+    prev = fig(6, "climb", { size: 4.6, gap: 2.2, rise: 5 }); // y el muro más alto, antes de la meta
     for (let i = 0; i < 3; i++) {
       const w = place(6, "normal", { sx: 5.4, sz: 5.4, gap: 2.4, dx: rr(-1.2, 1.2), dy: 0 });
       onTop(w, 2);
@@ -374,6 +378,7 @@ export class ParkourGame extends Game3D {
     else if (type === "wall") { top = 0xffe2c0; side = 0xd05a2a; }
     else if (type === "line") { top = 0xff2a2a; side = 0x8a1010; }
     else if (type === "start") { top = 0x6cc04a; side = 0x3f8a2d; }
+    else if (type === "climb") { top = th.top; side = 0xffffff; } // el costado lleva la textura del muro de escalada
     return { top, side };
   }
 
@@ -393,6 +398,23 @@ export class ParkourGame extends Game3D {
     }
     const topMat = new THREE.MeshStandardMaterial({ color: col.top, map: tex, roughness: 0.42, metalness: 0.02, transparent: type === "blink", opacity: 1 });
     const sideMat = new THREE.MeshStandardMaterial({ color: col.side, roughness: 0.6, transparent: type === "blink", opacity: 1 });
+    if (type === "climb") {
+      // muro de escalada: tablas con agarres de colores (la misma textura para todos; se repite según el alto)
+      if (!this.climbTex) {
+        this.climbTex = canvasTexture(128, 128, (c, w, h) => {
+          c.fillStyle = "#c98a4b"; c.fillRect(0, 0, w, h);
+          c.fillStyle = "#a86a36"; for (let i = 0; i < 4; i++) c.fillRect(0, i * 32, w, 3);
+          const holds = ["#ff3b6b", "#ffc800", "#4fd09a", "#4fd0ff", "#9a5cff", "#ff8a2a"];
+          [[20, 18], [84, 30], [44, 58], [104, 74], [24, 96], [70, 110]].forEach(([x, y], i) => { c.fillStyle = holds[i]; c.beginPath(); c.ellipse(x, y, 11, 8, i, 0, Math.PI * 2); c.fill(); });
+        });
+        this.climbTex.wrapS = this.climbTex.wrapT = THREE.RepeatWrapping;
+        this._shared.add(this.climbTex);
+      }
+      const t = this.climbTex.clone();
+      t.needsUpdate = true;
+      t.repeat.set(Math.max(1, Math.round(o.sx / 1.6)), Math.max(1, Math.round((hy * 2) / 1.6)));
+      sideMat.map = t;
+    }
     const body = new THREE.Mesh(new THREE.BoxGeometry(o.sx, hy * 2, o.sz), [sideMat, sideMat, topMat, sideMat, sideMat, sideMat]);
     const camYaw = o.camYaw; // hacia dónde mira la cámara cuando estás aquí (figuras)
     body.castShadow = true;
@@ -947,6 +969,7 @@ export class ParkourGame extends Game3D {
     P.z += V.z * dt;
 
     let landed = null;
+    let climbN = null;
     for (const p of this.platforms) {
       if (!p.active) continue;
       const b = p.box;
@@ -985,7 +1008,20 @@ export class ParkourGame extends Game3D {
       P.z += nz * push;
       const dot = V.x * nx + V.z * nz;
       if (dot < 0) { V.x -= dot * nx; V.z -= dot * nz; }
+      // muro de escalada: si empujas hacia él, trepas
+      if (p.type === "climb" && inp.mag > 0.3 && -(inp.x * nx + inp.z * nz) > 0.35 * inp.mag) climbN = { nx, nz };
     }
+
+    // trepando: sube de a poco, mirando al muro; al llegar arriba se pasa por encima y se aterriza en la cima
+    if (climbN) {
+      // se puede empezar a trepar desde el suelo: se queda a la altura del piso y desde ahí sube
+      if (landed) { P.y = Math.max(P.y, landed.box.maxY); landed = null; }
+      if (!this.climbing) audio.playPop?.();
+      this.climbing = true;
+      V.y = Math.max(V.y, CLIMB_V);
+      this.heroYaw = Math.atan2(-climbN.nx, -climbN.nz);
+      this.doubleAvail = true;
+    } else this.climbing = false;
 
     if (landed) {
       const impact = V.y;
@@ -1313,6 +1349,7 @@ export class ParkourGame extends Game3D {
       if (!this.grounded) mode = this.vel.y > 1 || this.state === "playing" ? "jump" : "idle";
       else if (sp > 0.8) mode = "run";
     }
+    if (this.climbing && this.state === "playing") mode = "climb";
     if (this.heroMode) mode = this.heroMode;
     if (this.state === "gameover" && this.finished) mode = "cheer";
     this.hero.animate(this.time, mode, clamp(sp / RUN, 0.4, 1.3));
