@@ -1,10 +1,10 @@
 // Contador de visitas de Matichoc: anónimo y SIN cookies (GoatCounter, https://www.goatcounter.com).
-// Apagado hasta que se escriba el código de la cuenta en CODIGO (p. ej. 'matichoc' → matichoc.goatcounter.com).
+// Encendido: CODIGO es la cuenta de GoatCounter (matichoc → matichoc.goatcounter.com). Para apagarlo, dejar CODIGO vacío ('').
 // No guarda nada en el navegador, no identifica a nadie y respeta "No rastrear". No corre en localhost ni en el panel,
-// Mi cuenta ni el Matijuego (esas páginas no cargan este script). Si se enciende, la política de privacidad debe decirlo
-// (ver docs/SEO.md) y las páginas deben permitir https://*.goatcounter.com en img-src (ya está).
+// Mi cuenta ni el Matijuego (esas páginas no cargan este script). La política de privacidad ya lo dice (pages/privacidad.html);
+// si se apaga, quitar ese texto; las páginas permiten https://*.goatcounter.com en img-src.
 (function () {
-  const CODIGO = '';
+  const CODIGO = 'matichoc';
   if (!CODIGO) return;
   if (navigator.doNotTrack === '1' || window.doNotTrack === '1') return;
   if (/^(localhost|127\.|\[::1\])/.test(location.hostname)) return;

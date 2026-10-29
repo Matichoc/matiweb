@@ -64,7 +64,7 @@ guion (`SABE`) y `pages/bases-matilover.html`. Imágenes: `assets/personajes/` (
 
 El menú, el `h1` y los enlaces legales también van escritos como respaldo (`.seo-fallback`) dentro de los contenedores `#header`, `#page-banner`,
 `#banner` y `#footer` de cada página: si se cambia el menú o el título de una página, cambiar también ese respaldo. `js/analitica.js` (GoatCounter, sin
-cookies) está **apagado** hasta poner su código; al encenderlo hay que agregar el párrafo de `docs/SEO.md` a la política de privacidad. Al cambiar una página,
+cookies, cuenta `matichoc`) está **encendido** y `pages/privacidad.html` lo declara; si se apaga o cambia, actualizar ese texto. Al cambiar una página,
 actualizar su `lastmod` en `sitemap.xml`. Imagen para compartir: `assets/brand/og-matichoc.jpg` (logo oficial vertical, sin deformar).
 
 ## Datos legales (entregados por el dueño)
