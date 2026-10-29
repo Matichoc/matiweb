@@ -60,6 +60,13 @@ productos** (Ley 20.606, personajes + alimentos "ALTO EN"); ingredientes, alérg
 escribe (solo `sessionStorage` si lo despidieron; al despedirlo queda un botón redondo con su carita para volver a llamarlo). **Accesible**: habla con la voz del navegador (SpeechSynthesis: lee sus respuestas, los pasos del recorrido y, si se lo piden, la página; apagada por defecto), enlace de salto al inicio de la página para lectores de pantalla/teclado, "Letra grande", aria-live; sin voz en el navegador, esos botones no aparecen. Cualquier cambio al guía debe mantener esas pruebas (voz, teclado, Escape detiene la voz). Si cambian las reglas del programa, el reparto o los datos legales, actualizar también su
 guion (`SABE`) y `pages/bases-matilover.html`. Imágenes: `assets/personajes/` (Matichico de pie con polera negra de Matichoc, dos poses sin fondo, recortadas de la hoja de poses del dueño; el guía cambia de pose al saludar, responder y recorrer).
 
+## SEO y medición (`docs/SEO.md`)
+
+El menú, el `h1` y los enlaces legales también van escritos como respaldo (`.seo-fallback`) dentro de los contenedores `#header`, `#page-banner`,
+`#banner` y `#footer` de cada página: si se cambia el menú o el título de una página, cambiar también ese respaldo. `js/analitica.js` (GoatCounter, sin
+cookies) está **apagado** hasta poner su código; al encenderlo hay que agregar el párrafo de `docs/SEO.md` a la política de privacidad. Al cambiar una página,
+actualizar su `lastmod` en `sitemap.xml`. Imagen para compartir: `assets/brand/og-matichoc.jpg` (logo oficial vertical, sin deformar).
+
 ## Datos legales (entregados por el dueño)
 
 Chocolatería Matichoc Inés Saavedra EIRL · RUT 77.877.372-4 · Guayacán 1409, La Ligua · i.saavedra.nu@gmail.com ·
