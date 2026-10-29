@@ -7,8 +7,8 @@
 // Se agrega como "mixin" a ParkourGame (ver el final de parkour-game.js) y usa sus
 // métodos de siempre (_makePlatform, _makeItem, _makeFlag, _makeSpinner...).
 
-import { THREE, clamp, lerp } from "./three-kit.js?v=abd0c6da60";
-import * as audio from "./audio.js?v=abd0c6da60";
+import { THREE, clamp, lerp } from "./three-kit.js?v=fe364939c0";
+import * as audio from "./audio.js?v=fe364939c0";
 
 export const ZONE_LEN = 140; // metros por mundo
 export const MAX_LIVES = 5;

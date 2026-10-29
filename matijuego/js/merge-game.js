@@ -3,15 +3,15 @@
 // ¡Mati Dubai! Los 4 generadores sacan productos nuevos (1 ⚡ cada uno) y los clientes piden productos para entregar.
 // El tablero se guarda en tu perfil.
 
-import { THREE, Game3D, lerp, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=abd0c6da60";
-import * as audio from "./audio.js?v=abd0c6da60";
-import { recordRun } from "./progression.js?v=abd0c6da60";
-import { saveProgress } from "./storage.js?v=abd0c6da60";
-import { addStars } from "./adventure.js?v=abd0c6da60";
-import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, orderHave, emptyCells } from "./merge-data.js?v=abd0c6da60";
-import { drawItem } from "./merge-art.js?v=abd0c6da60";
-import { makeItemMesh } from "./merge-models.js?v=abd0c6da60";
-import { paintNeighbor } from "./neighbors.js?v=abd0c6da60";
+import { THREE, Game3D, lerp, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=fe364939c0";
+import * as audio from "./audio.js?v=fe364939c0";
+import { recordRun } from "./progression.js?v=fe364939c0";
+import { saveProgress } from "./storage.js?v=fe364939c0";
+import { addStars } from "./adventure.js?v=fe364939c0";
+import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, orderHave, emptyCells } from "./merge-data.js?v=fe364939c0";
+import { drawItem } from "./merge-art.js?v=fe364939c0";
+import { makeItemMesh } from "./merge-models.js?v=fe364939c0";
+import { paintNeighbor } from "./neighbors.js?v=fe364939c0";
 
 const GAME_ID = "merge";
 const CELL = 1.1;
@@ -109,7 +109,7 @@ export class MergeGame extends Game3D {
     this.sel.rotation.x = Math.PI / 2;
     this.sel.visible = false;
     s.add(this.sel);
-    try { this._thumb = (await import("./thumb3d.js?v=abd0c6da60")).renderObjectThumb; } catch (e) { /* quedan los dibujos 2D */ }
+    try { this._thumb = (await import("./thumb3d.js?v=fe364939c0")).renderObjectThumb; } catch (e) { /* quedan los dibujos 2D */ }
   }
 
   /**

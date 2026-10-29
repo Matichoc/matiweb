@@ -44,6 +44,7 @@ function tone(freq, duration, type = "sine", startGain = 0.18, delay = 0) {
   osc.connect(gain);
   gain.connect(out());
   const t0 = audio.currentTime + delay;
+  gain.gain.setValueAtTime(startGain, t0); // si suena más adelante (delay), parte con su volumen y recién ahí se apaga
   osc.start(t0);
   gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
   osc.stop(t0 + duration + 0.02);
@@ -208,16 +209,22 @@ export function playIntro() {
  * cuando en ese tiempo hay que tocar.
  */
 const CHEER_PROG = [0, 7, 9, 5];
-export function playCheerBeat(beat, cue = false) {
+export function playCheerBeat(beat, cue = false, delay = 0) {
   if (muted) return;
   try {
-    tone(62, 0.16, "sine", 0.32); // bombo
-    if (beat % 2 === 1) noise(0.09, 0.13, 2600); // aplauso
+    tone(62, 0.16, "sine", 0.32, delay); // bombo
+    if (beat % 2 === 1) noise(0.09, 0.13, 2600, delay); // aplauso
     const root = 48 + CHEER_PROG[Math.floor(beat / 2) % 4];
-    tone(MIDI(root), 0.32, "triangle", 0.13);
-    if (beat % 2 === 0) [0, 4, 7].forEach((st) => tone(MIDI(root + 12 + st + (CHEER_PROG[Math.floor(beat / 2) % 4] === 9 && st === 4 ? -1 : 0)), 0.22, "sine", 0.035));
-    if (cue) { tone(1318, 0.14, "triangle", 0.1); tone(1760, 0.18, "triangle", 0.07, 0.04); }
+    tone(MIDI(root), 0.32, "triangle", 0.13, delay);
+    if (beat % 2 === 0) [0, 4, 7].forEach((st) => tone(MIDI(root + 12 + st + (CHEER_PROG[Math.floor(beat / 2) % 4] === 9 && st === 4 ? -1 : 0)), 0.22, "sine", 0.035, delay));
+    if (cue) { tone(1318, 0.14, "triangle", 0.1, delay); tone(1760, 0.18, "triangle", 0.07, delay + 0.04); }
   } catch (e) { /* sin audio */ }
+}
+
+/** Cuánto tarda en oírse lo que suena (el celular lo informa; 0 si no se sabe o aún no hay audio). */
+export function latency() {
+  if (!ctx) return 0;
+  return (ctx.outputLatency || 0) + (ctx.baseLatency || 0);
 }
 
 export function playStar() {

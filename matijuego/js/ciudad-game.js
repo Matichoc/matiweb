@@ -9,18 +9,18 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=abd0c6da60";
-import { createMatichico } from "./matichico3d.js?v=abd0c6da60";
-import { CHARACTERS, getOutfit } from "./characters.js?v=abd0c6da60";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=abd0c6da60";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=abd0c6da60";
-import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=abd0c6da60";
-import { recordRun } from "./progression.js?v=abd0c6da60";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=abd0c6da60";
-import * as audio from "./audio.js?v=abd0c6da60";
-import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=abd0c6da60";
-import { Binoculars } from "./binoculars.js?v=abd0c6da60";
-import { Interiors, VISITS } from "./interiors.js?v=abd0c6da60";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=fe364939c0";
+import { createMatichico } from "./matichico3d.js?v=fe364939c0";
+import { CHARACTERS, getOutfit } from "./characters.js?v=fe364939c0";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=fe364939c0";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=fe364939c0";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=fe364939c0";
+import { recordRun } from "./progression.js?v=fe364939c0";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=fe364939c0";
+import * as audio from "./audio.js?v=fe364939c0";
+import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=fe364939c0";
+import { Binoculars } from "./binoculars.js?v=fe364939c0";
+import { Interiors, VISITS } from "./interiors.js?v=fe364939c0";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60

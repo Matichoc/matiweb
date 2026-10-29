@@ -2,8 +2,8 @@
 // con surcos), ojos azules grandes, sonrisa con dientes, polera negra de Matichoc con cuello rosado y su
 // logo, jeans y zapatillas. Matichico trae un rulo de pelo; Chocolatina, un moño con flores.
 
-import { THREE, roundedBox, loadTexture } from "./three-kit.js?v=abd0c6da60";
-import { applyLook, HEAD_W, HEAD_H, HEAD_D } from "./wardrobe3d.js?v=abd0c6da60";
+import { THREE, roundedBox, loadTexture } from "./three-kit.js?v=fe364939c0";
+import { applyLook, HEAD_W, HEAD_H, HEAD_D } from "./wardrobe3d.js?v=fe364939c0";
 
 const LIFT = 0.26; // largo extra de las piernas: da las proporciones de los personajes de la web
 

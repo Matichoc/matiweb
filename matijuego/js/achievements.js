@@ -11,11 +11,11 @@
 // `progress.bestScores`…) y se reclama una sola vez. Para agregar uno basta sumar una línea abajo.
 // La lista completa en texto está en docs/LOGROS.md (se genera con `node scripts/logros-doc.mjs`).
 
-import { getBestScore } from "./storage.js?v=abd0c6da60";
-import { levelInfo } from "./progression.js?v=abd0c6da60";
-import { PAGES } from "./album.js?v=abd0c6da60";
-import { chaptersDone } from "./adventure.js?v=abd0c6da60";
-import { cupsWon as sportCups } from "./sports-progress.js?v=abd0c6da60";
+import { getBestScore } from "./storage.js?v=fe364939c0";
+import { levelInfo } from "./progression.js?v=fe364939c0";
+import { PAGES } from "./album.js?v=fe364939c0";
+import { chaptersDone } from "./adventure.js?v=fe364939c0";
+import { cupsWon as sportCups } from "./sports-progress.js?v=fe364939c0";
 
 const IN_APP = typeof document !== "undefined" && document.documentElement.dataset.app === "1";
 
