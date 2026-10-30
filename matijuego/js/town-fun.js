@@ -4,12 +4,12 @@
 //  · "Actividades del día": 5 desafíos con guía; al completarlos hay premio (Matipuntos, sobre de figuritas y energía).
 // El estado del día vive en progress.town.fun (se reinicia solo cada día, igual que el resto del pueblo).
 
-import { THREE, canvasTexture } from "./three-kit.js?v=2926c82843";
-import { earnCoins, saveProgress } from "./storage.js?v=2926c82843";
-import { addEnergy } from "./energy.js?v=2926c82843";
-import * as audio from "./audio.js?v=2926c82843";
-import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=2926c82843";
-import { VISITS } from "./interiors.js?v=2926c82843";
+import { THREE, canvasTexture } from "./three-kit.js?v=6d55b24c3a";
+import { earnCoins, saveProgress } from "./storage.js?v=6d55b24c3a";
+import { addEnergy } from "./energy.js?v=6d55b24c3a";
+import * as audio from "./audio.js?v=6d55b24c3a";
+import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=6d55b24c3a";
+import { VISITS } from "./interiors.js?v=6d55b24c3a";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -104,6 +104,7 @@ export class TownFun {
     this.rings = [];
     this.platforms = []; // plataformas de parkour: { x, z, top, r }
     this.pillars = []; // columnas de las torres: { x, z, r, top }
+    this.blocks = []; // bloques con techo (escenario del festival): { x, z, yaw, hw, hd, top }; se sube si el borde es un escalón
     this.courses = []; // recorridos: { id, name, start, top: { x, z, top, r }, done }
     this.doorSpots = [];
     this.puzzleOpen = false;
@@ -111,6 +112,7 @@ export class TownFun {
     this.claimed = []; // lugares ya usados por las casitas y los recorridos
     this.circuit = null; // { idx, t } mientras corre
     this.danceT = 0;
+    this.showT = 0;
     this.heroMode = null;
     this.vy = 0;
     this.tip = "";
@@ -544,7 +546,34 @@ export class TownFun {
     for (const list of [this.platforms, this.g.zones ? this.g.zones.decks : []]) {
       for (const p of list) if (p.top <= y + 0.5 && p.top > top && Math.hypot(x - p.x, z - p.z) < p.r) top = p.top;
     }
+    for (const b of this.blocks) if (b.top <= y + 0.5 && b.top > top && this._inBlock(b, x, z, 0)) top = b.top;
     return top;
+  }
+
+  /** ¿(x, z) cae dentro del bloque (agrandado en `pad`)? Devuelve sus coordenadas locales. */
+  _inBlock(b, x, z, pad) {
+    const sin = Math.sin(b.yaw), cos = Math.cos(b.yaw);
+    const dx = x - b.x, dz = z - b.z;
+    const lx = dx * cos - dz * sin, lz = dx * sin + dz * cos;
+    return Math.abs(lx) < b.hw + pad && Math.abs(lz) < b.hd + pad ? { lx, lz, sin, cos } : null;
+  }
+
+  /** Un bloque más alto que un escalón es una pared: empuja hacia afuera por el lado más cercano (no se atraviesa). */
+  _pushOutBlocks(P) {
+    const R = 0.45;
+    // pisando el borde de un escalón ya cuenta como estar a su altura (en patineta se pasa rápido por encima)
+    let y = P.y;
+    for (const b of this.blocks) if (b.top <= P.y + 0.5 && b.top > y && this._inBlock(b, P.x, P.z, R)) y = b.top;
+    for (const b of this.blocks) {
+      if (y >= b.top - 0.5) continue; // a esta altura se sube (o ya está encima)
+      const L = this._inBlock(b, P.x, P.z, R);
+      if (!L) continue;
+      let { lx, lz } = L;
+      const ox = b.hw + R - Math.abs(lx), oz = b.hd + R - Math.abs(lz);
+      if (ox < oz) lx = Math.sign(lx || 1) * (b.hw + R); else lz = Math.sign(lz || 1) * (b.hd + R);
+      P.x = b.x + lx * L.cos + lz * L.sin;
+      P.z = b.z - lx * L.sin + lz * L.cos;
+    }
   }
 
   /** Gravedad: el Matichico cae al piso o a la plataforma que tenga abajo (las plataformas se atraviesan al subir). */
@@ -556,6 +585,7 @@ export class TownFun {
       const dx = P.x - c.x, dz = P.z - c.z, d = Math.hypot(dx, dz), min = c.r + 0.45;
       if (d < min) { const k = d > 1e-4 ? min / d : 1; P.x = c.x + (d > 1e-4 ? dx * k : min); P.z = c.z + (d > 1e-4 ? dz * k : 0); }
     }
+    this._pushOutBlocks(P);
     const gy = this._groundAt(P.x, P.z, P.y);
     this.groundY = gy;
     if (this.vy > 0 || P.y > gy + 0.001) {
@@ -729,6 +759,23 @@ export class TownFun {
     this.tiles.forEach((tile, i) => tile.material.color.setHSL(((t * 0.4 + i / this.tiles.length) % 1), 0.9, this.dancing ? 0.6 : 0.5));
     this.ball.rotation.y = t * 1.2;
     this.speakers.forEach((c) => c.scale.setScalar(1 + Math.max(0, Math.sin(t * 8)) * (this.dancing ? 0.5 : 0.15)));
+    if (this.showT > 0) {
+      // show en el escenario: gira bailando con papel picado y termina con aplausos
+      this.showT -= dt;
+      this.heroMode = "dance";
+      g.heroYaw += dt * 3;
+      if (Math.random() < dt * 5) g.particles.burst(new THREE.Vector3(g.pos.x, g.pos.y + 2.6, g.pos.z), [0xff4fd0, 0xffd34d, 0x35f0ff, 0xffffff], 10, 3, 0.8, 4);
+      if (this.showT <= 0) {
+        g.popups.add(new THREE.Vector3(g.pos.x, g.pos.y + 3.2, g.pos.z), "👏 ¡Bravo!", "combo");
+        if (st.danceCoins < 10) {
+          st.danceCoins++;
+          earnCoins(g.progress, 1);
+          g.popups.add(new THREE.Vector3(g.pos.x, g.pos.y + 2.4, g.pos.z), "+1 🍫✨", "coin");
+          saveProgress(g.progress);
+        }
+      }
+      return;
+    }
     const d = Math.hypot(g.pos.x - DANCE_AT.x, g.pos.z - DANCE_AT.z);
     const speed = Math.hypot(g.vel.x, g.vel.z);
     const on = d < 5 && g.pos.y < 0.6 && speed < 2.2;
@@ -750,6 +797,16 @@ export class TownFun {
         saveProgress(g.progress);
       }
     }
+  }
+
+  /** «🎤 Dar un show» arriba del escenario del festival. */
+  startShow() {
+    if (this.showT > 0) return;
+    this.showT = 3.5;
+    this._say("🎤 ¡Qué show! El Pueblo te aplaude", 2.4);
+    audio.playVictory?.();
+    const P = this.g.pos;
+    this.g.particles.burst(new THREE.Vector3(P.x, P.y + 2.4, P.z), [0xff4fd0, 0xffd34d, 0x35f0ff, 0xffffff], 30, 5, 1, 5);
   }
 
   _updatePads(dt, st) {

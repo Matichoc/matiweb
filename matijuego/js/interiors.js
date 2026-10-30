@@ -4,10 +4,10 @@
 // Hay varios tipos de pieza (LAYOUTS): casa, kiosco, panadería, fábrica y sala de clases, cada una con sus muebles,
 // escondites y cosas para mirar. La pieza se arma lejos del mundo solo mientras dura la visita y se desarma al salir.
 // Cada juego entrega sus "ganchos": hablar (say), crear al vecino (makeHost), mostrar un aviso (popup) y su suelo (y0).
-import { THREE, roundedBox, canvasTexture, emojiSprite, makeLogo } from "./three-kit.js?v=2926c82843";
-import * as audio from "./audio.js?v=2926c82843";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=2926c82843";
-import { addStars } from "./adventure.js?v=2926c82843";
+import { THREE, roundedBox, canvasTexture, emojiSprite, makeLogo } from "./three-kit.js?v=6d55b24c3a";
+import * as audio from "./audio.js?v=6d55b24c3a";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6d55b24c3a";
+import { addStars } from "./adventure.js?v=6d55b24c3a";
 
 const O = { x: 0, z: -900 }; // dónde se arma la pieza (lejos de todo)
 const REWARD = 40; // Matipuntos por la misión del día (y una ⭐), salvo que el lugar diga otra cosa

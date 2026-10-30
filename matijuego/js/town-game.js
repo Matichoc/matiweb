@@ -6,23 +6,23 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=2926c82843";
-import { createMatichico } from "./matichico3d.js?v=2926c82843";
-import { Binoculars } from "./binoculars.js?v=2926c82843";
-import { getOutfit } from "./characters.js?v=2926c82843";
-import { GAMES_CATALOG } from "./games-catalog.js?v=2926c82843";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=2926c82843";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=2926c82843";
-import { levelInfo } from "./progression.js?v=2926c82843";
-import { bindStick } from "./stick.js?v=2926c82843";
-import * as audio from "./audio.js?v=2926c82843";
-import { TownFun } from "./town-fun.js?v=2926c82843";
-import { TownFestival, PLACES } from "./town-festival.js?v=2926c82843";
-import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=2926c82843";
-import { talkTo, gossip, starsOf } from "./adventure.js?v=2926c82843";
-import { TownZones } from "./town-zones.js?v=2926c82843";
-import { Interiors } from "./interiors.js?v=2926c82843";
-import { PetBuddy, renderPetCard } from "./pet-buddy.js?v=2926c82843";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=6d55b24c3a";
+import { createMatichico } from "./matichico3d.js?v=6d55b24c3a";
+import { Binoculars } from "./binoculars.js?v=6d55b24c3a";
+import { getOutfit } from "./characters.js?v=6d55b24c3a";
+import { GAMES_CATALOG } from "./games-catalog.js?v=6d55b24c3a";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6d55b24c3a";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=6d55b24c3a";
+import { levelInfo } from "./progression.js?v=6d55b24c3a";
+import { bindStick } from "./stick.js?v=6d55b24c3a";
+import * as audio from "./audio.js?v=6d55b24c3a";
+import { TownFun } from "./town-fun.js?v=6d55b24c3a";
+import { TownFestival, PLACES } from "./town-festival.js?v=6d55b24c3a";
+import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=6d55b24c3a";
+import { talkTo, gossip, starsOf } from "./adventure.js?v=6d55b24c3a";
+import { TownZones } from "./town-zones.js?v=6d55b24c3a";
+import { Interiors } from "./interiors.js?v=6d55b24c3a";
+import { PetBuddy, renderPetCard } from "./pet-buddy.js?v=6d55b24c3a";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -1250,6 +1250,8 @@ export class TownGame extends Game3D {
     const outside = !(this.visits && this.visits.active);
     const tree = outside ? this._treeTarget(P) : null;
     if (tree && tree.d < bestD + 0.5) { best = tree; bestD = tree.d - 0.5; } // la escalera y la puerta ganan a lo que haya cerca
+    const stage = outside && this.festival ? this.festival.stageTarget(P) : null;
+    if (stage && stage.d < bestD) { best = stage; bestD = stage.d; }
     for (const it of outside ? this.interact : []) {
       const d = Math.hypot(it.x - P.x, it.z - P.z);
       if (d < it.radius && d < bestD) { best = it; bestD = d; }
