@@ -397,7 +397,7 @@ export const ITEMS = [
   ev("dianino", 45, "back", "ev_capa_heroe", "Capa de superhéroe", "🦸", "epico", { kind: "capa", color: "#4fd0ff" }),
 ];
 
-import { levelInfo } from "./xp.js?v=fe364939c0";
+import { levelInfo } from "./xp.js?v=cfffb722e8";
 
 /** Si la prenda todavía está bloqueada devuelve por qué ("" si ya se puede comprar). Lo exclusivo pide nivel o un logro. */
 export function lockReason(progress, item) {

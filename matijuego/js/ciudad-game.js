@@ -9,18 +9,18 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=fe364939c0";
-import { createMatichico } from "./matichico3d.js?v=fe364939c0";
-import { CHARACTERS, getOutfit } from "./characters.js?v=fe364939c0";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=fe364939c0";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=fe364939c0";
-import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=fe364939c0";
-import { recordRun } from "./progression.js?v=fe364939c0";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=fe364939c0";
-import * as audio from "./audio.js?v=fe364939c0";
-import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=fe364939c0";
-import { Binoculars } from "./binoculars.js?v=fe364939c0";
-import { Interiors, VISITS } from "./interiors.js?v=fe364939c0";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=cfffb722e8";
+import { createMatichico } from "./matichico3d.js?v=cfffb722e8";
+import { CHARACTERS, getOutfit } from "./characters.js?v=cfffb722e8";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=cfffb722e8";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=cfffb722e8";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=cfffb722e8";
+import { recordRun } from "./progression.js?v=cfffb722e8";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=cfffb722e8";
+import * as audio from "./audio.js?v=cfffb722e8";
+import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=cfffb722e8";
+import { Binoculars } from "./binoculars.js?v=cfffb722e8";
+import { Interiors, VISITS } from "./interiors.js?v=cfffb722e8";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60
@@ -1233,6 +1233,7 @@ export class CiudadGame extends Game3D {
     this.vel.x += clamp(dx * top - this.vel.x, -acc, acc);
     this.vel.z += clamp(dz * top - this.vel.z, -acc, acc);
     if (inp.mag > 0.1) this.heroYaw = Math.atan2(dx, dz);
+    const prev = { x: this.pos.x, z: this.pos.z };
     this.pos.x += this.vel.x * dt;
     this.pos.z += this.vel.z * dt;
     if (inRoom) { this.visits.clamp(this.pos); return; }
@@ -1240,7 +1241,10 @@ export class CiudadGame extends Game3D {
     // el auto es un obstáculo para quien va a pie
     for (const c of this._carCircles(this.car)) this._pushCircle(this.pos, HERO_R, c.x, c.z, c.r);
     for (const t of this.traffic) this._pushCircle(this.pos, HERO_R, t.x, t.z, 1.6);
+    // el muelle: se camina encima y no se cae por los costados
+    const deck = this.barrios ? this.barrios.pier(this.pos, prev) : null;
     this._limit(this.pos, 1);
+    this.pos.y = deck != null ? Math.max(Y0, deck) : Y0;
   }
 
   /** No salirse de la ciudad: el centro (un círculo) y los barrios nuevos (rectángulos; el mar no, salvo el muelle). */

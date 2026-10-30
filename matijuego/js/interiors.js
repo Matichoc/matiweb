@@ -4,10 +4,10 @@
 // Hay varios tipos de pieza (LAYOUTS): casa, kiosco, panadería, fábrica y sala de clases, cada una con sus muebles,
 // escondites y cosas para mirar. La pieza se arma lejos del mundo solo mientras dura la visita y se desarma al salir.
 // Cada juego entrega sus "ganchos": hablar (say), crear al vecino (makeHost), mostrar un aviso (popup) y su suelo (y0).
-import { THREE, roundedBox, canvasTexture, emojiSprite, makeLogo } from "./three-kit.js?v=fe364939c0";
-import * as audio from "./audio.js?v=fe364939c0";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=fe364939c0";
-import { addStars } from "./adventure.js?v=fe364939c0";
+import { THREE, roundedBox, canvasTexture, emojiSprite, makeLogo } from "./three-kit.js?v=cfffb722e8";
+import * as audio from "./audio.js?v=cfffb722e8";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=cfffb722e8";
+import { addStars } from "./adventure.js?v=cfffb722e8";
 
 const O = { x: 0, z: -900 }; // dónde se arma la pieza (lejos de todo)
 const REWARD = 40; // Matipuntos por la misión del día (y una ⭐), salvo que el lugar diga otra cosa
@@ -62,6 +62,65 @@ export const LAYOUTS = {
       box(1.8, 0.12, 2.0, def.accent, 4.8, 0.6, 2.9, 0.9);
       box(1.2, 0.2, 0.5, 0xfff6e6, 4.8, 0.65, 1.6, 0.9);
       k.plants([[-5.3, -3.9], [-5.3, 3.6]]);
+    },
+  },
+
+  // la casita del árbol del bosque (Pueblo): chiquita, de madera, con ventana redonda entre las hojas
+  treehouse: {
+    W: 9, D: 7, floor: "wood",
+    host: { x: 2.4, z: -1.8 },
+    bench: { x: -2.9, z: -2.2, yaw: 0, seat: 0.5 },
+    solids: [
+      { x: -2.9, z: -2.4, hw: 0.9, hd: 0.55 }, // cojines
+      { x: 0.2, z: -2.6, hw: 0.8, hd: 0.45 }, // mesita con el mapa
+      { x: 3.6, z: 1.6, hw: 0.6, hd: 0.45 }, // baúl
+      { x: -3.7, z: 1.2, hw: 0.35, hd: 0.35 }, // catalejo
+    ],
+    hide: [[-3.6, -0.4], [3.8, -2.7], [-1.6, 2.4], [1.6, 0.6], [-0.8, -1.2], [3.4, 0.2], [-2.6, 1.9], [0.6, 2.6]],
+    looks: [
+      { x: -3.7, z: 0.5, text: "🔭 Por el catalejo se ve todo el Pueblo… ¡y la fuente de chocolate brillando en la plaza!" },
+      { x: 0.2, z: -1.8, text: "🗺️ Un mapa del bosque con una X dibujada: «aquí escondí mis bellotas». ¡Qué ardilla!" },
+      { x: 3.6, z: 0.8, text: "📦 Un baúl lleno de piñas, plumas y piedritas brillantes. Tesoros del bosque." },
+      { x: 0, z: -2.8, text: "🪟 Por la ventana redonda se mueven las hojas del árbol grande." },
+    ],
+    build(k, def) {
+      const { box, g, mat, cyl } = k;
+      // ventana redonda con hojas
+      const win = new THREE.Mesh(new THREE.CircleGeometry(0.9, 24), new THREE.MeshBasicMaterial({ color: 0x8fd18a }));
+      win.position.set(0, 2.3, -this.D / 2 + 0.17);
+      g.add(win);
+      const frame = new THREE.Mesh(new THREE.TorusGeometry(0.92, 0.1, 8, 24), mat(0x7a4a22, 0.7));
+      frame.position.copy(win.position);
+      g.add(frame);
+      // una rama que entra por la pared
+      const branch = cyl(0.18, 3.4, 0x7a4a22, -3.2, 3.2, -2.6);
+      branch.rotation.z = 1.2;
+      for (const [x, y] of [[-4.1, 3.6], [-2.4, 2.8]]) {
+        const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 0), mat(0x3fae4a, 0.8));
+        leaf.position.set(x, y, -2.6);
+        g.add(leaf);
+      }
+      // cojines para sentarse
+      box(1.8, 0.4, 1.1, def.accent, -2.9, 0.2, -2.4, 0.9);
+      box(1.8, 0.6, 0.3, 0xffd34d, -2.9, 0.5, -2.95, 0.9);
+      // mesita con el mapa
+      box(1.6, 0.1, 0.9, 0x8a5a2a, 0.2, 0.7, -2.6, 0.6);
+      for (const [x, z] of [[-0.45, -2.95], [0.85, -2.95], [-0.45, -2.25], [0.85, -2.25]]) box(0.1, 0.65, 0.1, 0x6b3a1e, x, 0.33, z, 0.6);
+      box(1.1, 0.02, 0.7, 0xf3dcb0, 0.2, 0.77, -2.6, 0.9);
+      // baúl
+      box(1.2, 0.7, 0.9, 0x8a4a22, 3.6, 0.35, 1.6, 0.7);
+      box(1.24, 0.12, 0.94, 0xffc800, 3.6, 0.72, 1.6, 0.4);
+      // catalejo en su trípode
+      for (const r of [0, 2.1, 4.2]) { const leg = cyl(0.04, 1.3, 0x6b3a1e, -3.7 + Math.sin(r) * 0.25, 0.6, 1.2 + Math.cos(r) * 0.25); leg.rotation.set(Math.cos(r) * 0.25, 0, -Math.sin(r) * 0.25); }
+      const tube = cyl(0.12, 1.1, 0xc9a24a, -3.7, 1.35, 1.2, 0.3, { metalness: 0.6 });
+      tube.rotation.x = 1.2;
+      // guirnalda de lucecitas
+      const cols = [0xffe14a, 0xff6fb0, 0x6fd8ff, 0xb9ff6a];
+      for (let i = 0; i < 10; i++) {
+        const b = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshBasicMaterial({ color: cols[i % 4] }));
+        b.position.set(-4 + i * 0.9, 3.5 - Math.sin((i / 9) * Math.PI) * 0.35, -this.D / 2 + 0.25);
+        g.add(b);
+      }
     },
   },
 
@@ -298,6 +357,14 @@ export const VISITS = {
     ask: "Se me cayeron 3 cuchuflís y rodaron por toda la casa. ¿Me ayudas?",
     done: ["¡Justo los que faltaban! Quedaron perfectos 😋", "Toma tu premio, ayudante 🍫"],
     after: ["¡Gracias! Mañana hago más, pasa a verme 😊"],
+  },
+  casita: {
+    layout: "treehouse", place: "Casita del árbol", host: "Ardilla Nuez", reward: 30, wall: 0xd9a066, accent: 0x3fae4a,
+    item: { emoji: "🌰", one: "bellota", many: "bellotas" },
+    hello: ["¡Hola! ¿Subiste hasta aquí arriba? 🐿️", "Esta es mi casita en el árbol grande. Desde aquí cuido todo el bosque."],
+    ask: "Escondí 3 bellotas para el invierno… y ahora no me acuerdo dónde 😅 ¿Me ayudas a buscarlas?",
+    done: ["¡Mis bellotas! Ya tengo para todo el invierno 🌰", "Toma, por tu ayuda. ¡Vuelve cuando quieras!"],
+    after: ["¡Gracias por subir a visitarme! Mañana escondo otras, ya verás 🐿️"],
   },
   // ----- Ciudad: vecinos con misión -----
   rosa: {

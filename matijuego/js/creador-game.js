@@ -3,19 +3,19 @@
 // maridajes, guarda las creaciones en el perfil y permite pedir algo parecido
 // por WhatsApp (solo un mensaje, sin precios ni promesas).
 
-import { THREE, Game3D, canvasTexture, makeBunting } from "./three-kit.js?v=fe364939c0";
-import { createMatichico } from "./matichico3d.js?v=fe364939c0";
-import { saveProgress, earnCoins, reportScore, addToLeaderboard, saveCreation, deleteCreation, todayKey } from "./storage.js?v=fe364939c0";
-import { recordRun } from "./progression.js?v=fe364939c0";
-import * as audio from "./audio.js?v=fe364939c0";
+import { THREE, Game3D, canvasTexture, makeBunting } from "./three-kit.js?v=cfffb722e8";
+import { createMatichico } from "./matichico3d.js?v=cfffb722e8";
+import { saveProgress, earnCoins, reportScore, addToLeaderboard, saveCreation, deleteCreation, todayKey } from "./storage.js?v=cfffb722e8";
+import { recordRun } from "./progression.js?v=cfffb722e8";
+import * as audio from "./audio.js?v=cfffb722e8";
 import {
   PRODUCTS, CHOCOLATES, FLAVORS, TOPPINGS, WRAPS, WRAP_COLORS, MOTIFS, STEPS,
   defaultCreation, sanitize, scoreCreation, comboKey, dailyChallenge, matchesChallenge,
   describeChallenge, describeCreation, whatsappUrl, drawLabel, getProduct, getFlavor,
   chefLevel, isUnlocked, unlockedAt, starsFor,
-} from "./creador-data.js?v=fe364939c0";
-import { buildCreation } from "./creador-3d.js?v=fe364939c0";
-import { Kitchen } from "./creador-cocina.js?v=fe364939c0";
+} from "./creador-data.js?v=cfffb722e8";
+import { buildCreation } from "./creador-3d.js?v=cfffb722e8";
+import { Kitchen } from "./creador-cocina.js?v=cfffb722e8";
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);

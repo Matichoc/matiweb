@@ -6,23 +6,23 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=fe364939c0";
-import { createMatichico } from "./matichico3d.js?v=fe364939c0";
-import { Binoculars } from "./binoculars.js?v=fe364939c0";
-import { getOutfit } from "./characters.js?v=fe364939c0";
-import { GAMES_CATALOG } from "./games-catalog.js?v=fe364939c0";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=fe364939c0";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=fe364939c0";
-import { levelInfo } from "./progression.js?v=fe364939c0";
-import { bindStick } from "./stick.js?v=fe364939c0";
-import * as audio from "./audio.js?v=fe364939c0";
-import { TownFun } from "./town-fun.js?v=fe364939c0";
-import { TownFestival, PLACES } from "./town-festival.js?v=fe364939c0";
-import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=fe364939c0";
-import { talkTo, gossip, starsOf } from "./adventure.js?v=fe364939c0";
-import { TownZones } from "./town-zones.js?v=fe364939c0";
-import { Interiors } from "./interiors.js?v=fe364939c0";
-import { PetBuddy, renderPetCard } from "./pet-buddy.js?v=fe364939c0";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=cfffb722e8";
+import { createMatichico } from "./matichico3d.js?v=cfffb722e8";
+import { Binoculars } from "./binoculars.js?v=cfffb722e8";
+import { getOutfit } from "./characters.js?v=cfffb722e8";
+import { GAMES_CATALOG } from "./games-catalog.js?v=cfffb722e8";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=cfffb722e8";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=cfffb722e8";
+import { levelInfo } from "./progression.js?v=cfffb722e8";
+import { bindStick } from "./stick.js?v=cfffb722e8";
+import * as audio from "./audio.js?v=cfffb722e8";
+import { TownFun } from "./town-fun.js?v=cfffb722e8";
+import { TownFestival, PLACES } from "./town-festival.js?v=cfffb722e8";
+import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=cfffb722e8";
+import { talkTo, gossip, starsOf } from "./adventure.js?v=cfffb722e8";
+import { TownZones } from "./town-zones.js?v=cfffb722e8";
+import { Interiors } from "./interiors.js?v=cfffb722e8";
+import { PetBuddy, renderPetCard } from "./pet-buddy.js?v=cfffb722e8";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -59,6 +59,32 @@ const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
   return { x: Math.sin(a) * r, z: -Math.cos(a) * r };
 };
+
+/** La ardilla Nuez, dueña de la casita del árbol (piezas simples; mueve la cola). */
+function squirrel() {
+  const g = new THREE.Group();
+  const fur = new THREE.MeshStandardMaterial({ color: 0xb8682f, roughness: 0.8 });
+  const cream = new THREE.MeshStandardMaterial({ color: 0xffe9c4, roughness: 0.8 });
+  const dark = new THREE.MeshBasicMaterial({ color: 0x2b1a10 });
+  const add = (geo, mat, x, y, z, sx = 1, sy = 1, sz = 1) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true; g.add(m); return m; };
+  add(new THREE.SphereGeometry(0.42, 14, 10), fur, 0, 0.55, 0, 1, 1.15, 0.9);
+  add(new THREE.SphereGeometry(0.28, 12, 8), cream, 0, 0.55, 0.22, 1, 1.2, 0.6);
+  add(new THREE.SphereGeometry(0.3, 14, 10), fur, 0, 1.18, 0.05);
+  for (const sx of [-1, 1]) {
+    add(new THREE.ConeGeometry(0.09, 0.22, 6), fur, sx * 0.17, 1.47, 0.02);
+    add(new THREE.SphereGeometry(0.045, 8, 6), dark, sx * 0.11, 1.24, 0.3);
+    add(new THREE.SphereGeometry(0.1, 8, 6), fur, sx * 0.2, 0.12, 0.12, 1, 0.6, 1.4); // patitas
+  }
+  add(new THREE.SphereGeometry(0.05, 8, 6), dark, 0, 1.14, 0.34);
+  const nut = add(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshStandardMaterial({ color: 0x8a5a2a }), 0, 0.82, 0.38, 1, 1.2, 1);
+  void nut;
+  const tail = new THREE.Group();
+  for (let i = 0; i < 5; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.22 + i * 0.03, 10, 8), fur); m.position.set(0, 0.35 + i * 0.28, -0.42 - Math.sin(i * 0.7) * 0.25); m.castShadow = true; tail.add(m); }
+  g.add(tail);
+  g.scale.setScalar(1.1);
+  g.userData.anim = (t) => { tail.rotation.x = Math.sin(t * 3) * 0.12; g.position.y = Math.abs(Math.sin(t * 2)) * 0.04; };
+  return g;
+}
 
 export class TownGame extends Game3D {
   constructor(character, progress, els) {
@@ -625,8 +651,13 @@ export class TownGame extends Game3D {
       addBench: (b) => this.addBench(b),
       removeBench: (b) => this.removeBench(b),
       onReward: () => this._updateHud(true),
-      onLeave: () => { this._closeDialog(); this.camYaw = this.heroYaw + 0.6; }, // de frente y en diagonal, con la casa al fondo (detrás quedaría dentro de la pared)
+      onLeave: () => {
+        this._closeDialog();
+        this.camYaw = this.heroYaw + 0.6; // de frente y en diagonal, con la casa al fondo (detrás quedaría dentro de la pared)
+        if (this._fromPorch) { this.pos.y = this._fromPorch; this._fromPorch = 0; } // se vuelve a la terraza de la casita
+      },
       makeHost: (key) => {
+        if (key === "casita") return squirrel();
         const name = { bombi: "Bombi", capi: "Capi Menta", cuchufli: "Don Cuchufli" }[key];
         const i = Math.max(0, NEIGHBORS.findIndex((n) => n.name === name));
         const { char, look } = looks[i];
@@ -641,8 +672,65 @@ export class TownGame extends Game3D {
 
   /** Entra a la casa de un vecino; al salir vuelve frente a la puerta mirando hacia la plaza. */
   _enterVisit(it) {
-    this.visits.enter(it.visit, { x: it.x, z: it.z, yaw: Math.atan2(-it.x, -it.z) });
+    this.visits.enter(it.visit, { x: it.x, z: it.z, yaw: it.yaw ?? Math.atan2(-it.x, -it.z) });
     this.camYaw = 0; // adentro la cámara mira la pieza de frente
+  }
+
+  // ---------- la casita del árbol (bosque) ----------
+
+  /** Qué ofrece la casita según dónde estás: subir (al pie de la escalera), entrar o bajar (en la terraza). */
+  _treeTarget(P) {
+    const T = this.zones && this.zones.treehouse;
+    if (!T || this.climbing) return null;
+    const d = (p) => Math.hypot(P.x - p.x, P.z - p.z);
+    if (P.y < 0.8 && d(T.foot) < 1.9) return { kind: "fn", label: "🪜 Subir a la casita", fn: () => this._climb(true), d: d(T.foot) };
+    if (P.y > T.porchTop - 0.3) {
+      // la puerta o la escalera: la que esté más cerca
+      const door = d(T.door) < 1.3 ? { kind: "fn", label: "🚪 Entrar a la casita", fn: () => this._enterTree(), d: d(T.door) } : null;
+      const down = d(T.top) < 1.4 ? { kind: "fn", label: "🪜 Bajar", fn: () => this._climb(false), d: d(T.top) } : null;
+      if (door && down) return door.d <= down.d ? door : down;
+      return door || down;
+    }
+    return null;
+  }
+
+  /** Trepa (o baja) la escalera: se acerca, sube peldaño a peldaño con la animación de escalar y pasa a la terraza. */
+  _climb(up) {
+    const T = this.zones.treehouse;
+    if (!T) return;
+    this.vel.set(0, 0, 0);
+    const start = { x: this.pos.x, y: this.pos.y, z: this.pos.z };
+    const legs = up
+      ? [[start, { ...T.face, y: 0 }, 0.3], [{ ...T.face, y: 0 }, { ...T.face, y: T.porchTop }, 1.6], [{ ...T.face, y: T.porchTop }, { ...T.top, y: T.porchTop }, 0.35]]
+      : [[start, { ...T.face, y: T.porchTop }, 0.35], [{ ...T.face, y: T.porchTop }, { ...T.face, y: 0 }, 1.3], [{ ...T.face, y: 0 }, { ...T.foot, y: 0 }, 0.3]];
+    this.climbing = { legs, i: 0, t: 0, up, yaw: T.yaw };
+    this.heroYaw = T.yaw;
+    audio.playJump?.();
+  }
+
+  _climbStep(dt) {
+    const c = this.climbing;
+    const [a, b, dur] = c.legs[c.i];
+    c.t += dt;
+    const k = Math.min(1, c.t / dur);
+    this.pos.set(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k, a.z + (b.z - a.z) * k);
+    this.heroYaw = c.i === 1 || !c.up ? c.yaw : Math.atan2(b.x - a.x, b.z - a.z) || c.yaw;
+    if (k >= 1) {
+      c.i++;
+      c.t = 0;
+      if (c.i >= c.legs.length) {
+        this.climbing = null;
+        if (this.fun) this.fun.vy = 0;
+        if (c.up) this.popups.add(new THREE.Vector3(this.pos.x, this.pos.y + 3.2, this.pos.z), "🌳 ¡La casita del árbol!", "combo");
+      }
+    }
+  }
+
+  _enterTree() {
+    const T = this.zones.treehouse;
+    this._fromPorch = T.porchTop;
+    this._enterVisit({ visit: "casita", x: T.door.x, z: T.door.z, yaw: T.yaw + Math.PI });
+    this.pos.y = 0; // la pieza se arma a ras de suelo
   }
 
   // ---------- evento de temporada ----------
@@ -874,6 +962,7 @@ export class TownGame extends Game3D {
   }
 
   _move(dt) {
+    if (this.climbing) { this.vel.set(0, 0, 0); this._climbStep(dt); return; }
     if (this.binoc && this.binoc.on) { this.vel.set(0, 0, 0); return; } // mirando por los binoculares no se camina
     const inp = this._input();
     if (this.sitting) {
@@ -896,6 +985,7 @@ export class TownGame extends Game3D {
     this.pos.z += this.vel.z * dt;
     if (inRoom) { this.visits.clamp(this.pos); return; }
     this._collide(this.pos, HERO_R);
+    this.zones.clampPorch(this.pos); // en la terraza de la casita, la baranda no deja caer
     // el pueblo, los caminos de entrada y los barrios nuevos (si te sales, te deslizas por el borde)
     if (!this.zones.inside(this.pos.x, this.pos.z, WORLD_R)) {
       if (this.zones.inside(prevX, this.pos.z, WORLD_R)) this.pos.x = prevX;
@@ -1158,6 +1248,8 @@ export class TownGame extends Game3D {
       }
     }
     const outside = !(this.visits && this.visits.active);
+    const tree = outside ? this._treeTarget(P) : null;
+    if (tree && tree.d < bestD + 0.5) { best = tree; bestD = tree.d - 0.5; } // la escalera y la puerta ganan a lo que haya cerca
     for (const it of outside ? this.interact : []) {
       const d = Math.hypot(it.x - P.x, it.z - P.z);
       if (d < it.radius && d < bestD) { best = it; bestD = d; }
@@ -1434,7 +1526,8 @@ export class TownGame extends Game3D {
     const riding = mv.id === "skates" || mv.id === "board";
     let mode = sp > 0.8 ? (riding ? "jump" : "run") : "idle";
     let spd = riding ? 0.7 : clamp(sp / SPEED, 0.4, 1.4);
-    if (this.fun && this.fun.airborne) { mode = "jump"; spd = 1; }
+    if (this.climbing) { mode = this.climbing.i === 1 ? "climb" : "run"; spd = 1; }
+    else if (this.fun && this.fun.airborne) { mode = "jump"; spd = 1; }
     else if (this.fun && this.fun.heroMode) { mode = this.fun.heroMode; spd = 1; }
     this.hero.animate(this.time, mode, spd);
     this._syncRide(dt);

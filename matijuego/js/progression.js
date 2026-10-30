@@ -6,11 +6,11 @@
 // Todo se guarda por perfil dentro de `progress` (xp, packs, album, daily) y se paga solo
 // con Matipuntos, sin compras reales.
 
-import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=fe364939c0";
-import { addEnergy } from "./energy.js?v=fe364939c0";
-import { getItem } from "./wardrobe-data.js?v=fe364939c0";
-import { activeEvent, addEventTokens } from "./events.js?v=fe364939c0";
-import { isUnlocked } from "./unlocks.js?v=fe364939c0";
+import { earnCoins, saveProgress, todayKey, getBestScore } from "./storage.js?v=cfffb722e8";
+import { addEnergy } from "./energy.js?v=cfffb722e8";
+import { getItem } from "./wardrobe-data.js?v=cfffb722e8";
+import { activeEvent, addEventTokens } from "./events.js?v=cfffb722e8";
+import { isUnlocked } from "./unlocks.js?v=cfffb722e8";
 
 // ---------- partidas ----------
 
@@ -33,8 +33,8 @@ export const GAME_NAMES = {
 
 // ---------- niveles ----------
 
-import { MAX_LEVEL, xpForLevel, levelInfo } from "./xp.js?v=fe364939c0";
-import { onGamePlayed, seasonalOnPlay } from "./adventure.js?v=fe364939c0";
+import { MAX_LEVEL, xpForLevel, levelInfo } from "./xp.js?v=cfffb722e8";
+import { onGamePlayed, seasonalOnPlay } from "./adventure.js?v=cfffb722e8";
 export { MAX_LEVEL, xpForLevel, levelInfo };
 
 /** Regalos de nivel: objetos del guardarropa que se desbloquean gratis. */
@@ -199,7 +199,7 @@ export function hasPending(progress) {
 
 // ---------- álbum ----------
 // Las figuritas, los sobres y las repetidas viven en js/album.js (aquí se re-exportan para el resto de la app).
-export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL, SEASON_PAGES, SEASON_STICKERS, activeSeasonPage, obtainable, buySticker, buyCost } from "./album.js?v=fe364939c0";
+export { STICKERS, PAGES, TOTAL as ALBUM_TOTAL, albumCount, pageStatus, ALBUM_MILESTONES, openPack, spareCount, sparePoints, sellValue, sellSpares, tradeFor, tradeCost, spareOf, SELL_NORMAL, SELL_FOIL, TRADE_NORMAL, TRADE_FOIL, SEASON_PAGES, SEASON_STICKERS, activeSeasonPage, obtainable, buySticker, buyCost } from "./album.js?v=cfffb722e8";
 
 // ---------- el gancho que se llama al terminar una partida ----------
 

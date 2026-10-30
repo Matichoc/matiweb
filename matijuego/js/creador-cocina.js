@@ -8,9 +8,9 @@
 //   6. Decorar: se toca el molde para espolvorear los toppings.
 // Los ingredientes se consiguen jugando: nunca se pagan con Matipuntos. Lo bien que se cocina suma puntos a la creación.
 
-import { THREE, canvasTexture, roundedBox, clamp } from "./three-kit.js?v=fe364939c0";
-import * as audio from "./audio.js?v=fe364939c0";
-import { getChocolate, getFlavor, getTopping, FLAVOR_ICON } from "./creador-data.js?v=fe364939c0";
+import { THREE, canvasTexture, roundedBox, clamp } from "./three-kit.js?v=cfffb722e8";
+import * as audio from "./audio.js?v=cfffb722e8";
+import { getChocolate, getFlavor, getTopping, FLAVOR_ICON } from "./creador-data.js?v=cfffb722e8";
 
 export const PHASES = [
   { id: "juntar", label: "Juntar", icon: "🧺" },

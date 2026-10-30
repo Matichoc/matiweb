@@ -6,11 +6,11 @@
 //
 // Controles: ← → / A D para moverte, ESPACIO / ↑ / W para saltar. En el celular: ◀ ▶ y ⤴.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeLogo, goldCoinTexture, disposeGeometries } from "./three-kit.js?v=fe364939c0";
-import { createMatichico } from "./matichico3d.js?v=fe364939c0";
-import { saveProgress } from "./storage.js?v=fe364939c0";
-import * as audio from "./audio.js?v=fe364939c0";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=fe364939c0";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeLogo, goldCoinTexture, disposeGeometries } from "./three-kit.js?v=cfffb722e8";
+import { createMatichico } from "./matichico3d.js?v=cfffb722e8";
+import { saveProgress } from "./storage.js?v=cfffb722e8";
+import * as audio from "./audio.js?v=cfffb722e8";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=cfffb722e8";
 
 const GAME_ID = "aventura";
 const H = 18; // alto del mapa en casillas
