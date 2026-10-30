@@ -6,23 +6,23 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=4754985988";
-import { createMatichico } from "./matichico3d.js?v=4754985988";
-import { Binoculars } from "./binoculars.js?v=4754985988";
-import { getOutfit } from "./characters.js?v=4754985988";
-import { GAMES_CATALOG } from "./games-catalog.js?v=4754985988";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=4754985988";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=4754985988";
-import { levelInfo } from "./progression.js?v=4754985988";
-import { bindStick } from "./stick.js?v=4754985988";
-import * as audio from "./audio.js?v=4754985988";
-import { TownFun } from "./town-fun.js?v=4754985988";
-import { TownFestival, PLACES } from "./town-festival.js?v=4754985988";
-import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=4754985988";
-import { talkTo, gossip, starsOf } from "./adventure.js?v=4754985988";
-import { TownZones } from "./town-zones.js?v=4754985988";
-import { Interiors } from "./interiors.js?v=4754985988";
-import { PetBuddy, renderPetCard } from "./pet-buddy.js?v=4754985988";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=630e2f1eb3";
+import { createMatichico } from "./matichico3d.js?v=630e2f1eb3";
+import { Binoculars } from "./binoculars.js?v=630e2f1eb3";
+import { getOutfit } from "./characters.js?v=630e2f1eb3";
+import { GAMES_CATALOG } from "./games-catalog.js?v=630e2f1eb3";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=630e2f1eb3";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=630e2f1eb3";
+import { levelInfo } from "./progression.js?v=630e2f1eb3";
+import { bindStick } from "./stick.js?v=630e2f1eb3";
+import * as audio from "./audio.js?v=630e2f1eb3";
+import { TownFun } from "./town-fun.js?v=630e2f1eb3";
+import { TownFestival, PLACES } from "./town-festival.js?v=630e2f1eb3";
+import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=630e2f1eb3";
+import { talkTo, gossip, starsOf } from "./adventure.js?v=630e2f1eb3";
+import { TownZones } from "./town-zones.js?v=630e2f1eb3";
+import { Interiors } from "./interiors.js?v=630e2f1eb3";
+import { PetBuddy, renderPetCard } from "./pet-buddy.js?v=630e2f1eb3";
 
 const GAME_ID = "town";
 const SPEED = 6.4;

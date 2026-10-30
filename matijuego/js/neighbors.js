@@ -1,8 +1,8 @@
 // Los vecinos del Pueblo: nombre, lo que dicen y cómo se visten. Lo usan el Pueblo (js/town-game.js) y el menú
 // (caras de la aventura), así se ven iguales en los dos lados.
 
-import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=4754985988";
-import { ITEMS, OUTFITS, customizeOutfit } from "./wardrobe-data.js?v=4754985988";
+import { CHARACTERS, getOutfit, renderCharacterThumb } from "./characters.js?v=630e2f1eb3";
+import { ITEMS, OUTFITS, customizeOutfit } from "./wardrobe-data.js?v=630e2f1eb3";
 
 export const NEIGHBORS = [
   { name: "Mati Cacao", say: ["¡Hola! Bienvenida al Pueblo Matichoc 🍫", "En la Boutique hay peinados, capas y alas. ¡Pruébate todo antes de comprar!", "Los alfajores dorados que flotan por el pueblo dan Matipuntos ✨"] },
@@ -62,5 +62,5 @@ export function paintNeighbor(canvas, name) {
   };
   renderCharacterThumb(tmp, n.char, customizeOutfit(getOutfit(n.look.outfit), n.look));
   copy();
-  import("./thumb3d.js?v=4754985988").then((m) => { m.renderHeroThumb(tmp, n.char, n.look); copy(); }).catch(() => { /* sin WebGL: queda el 2D */ });
+  import("./thumb3d.js?v=630e2f1eb3").then((m) => { m.renderHeroThumb(tmp, n.char, n.look); copy(); }).catch(() => { /* sin WebGL: queda el 2D */ });
 }

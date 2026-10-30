@@ -4,14 +4,14 @@
 // checkpoints y llega a la cumbre. Al avanzar, tu Matichico desbloquea accesorios
 // (capa, gafas brillantes y corona) además del atuendo que compraste en la tienda.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars, makeLogo } from "./three-kit.js?v=4754985988";
-import { createMatichico } from "./matichico3d.js?v=4754985988";
-import { earnCoins, saveProgress } from "./storage.js?v=4754985988";
-import { bindStick } from "./stick.js?v=4754985988";
-import { trailColors } from "./wardrobe-data.js?v=4754985988";
-import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=4754985988";
-import * as audio from "./audio.js?v=4754985988";
-import { campaign, renderLevelPicker } from "./campaign.js?v=4754985988";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, loadTexture, roundedBox, makeStars, makeLogo } from "./three-kit.js?v=630e2f1eb3";
+import { createMatichico } from "./matichico3d.js?v=630e2f1eb3";
+import { earnCoins, saveProgress } from "./storage.js?v=630e2f1eb3";
+import { bindStick } from "./stick.js?v=630e2f1eb3";
+import { trailColors } from "./wardrobe-data.js?v=630e2f1eb3";
+import { installInfinite, MAX_LIVES, POWERS, ZONE_LEN } from "./parkour-infinite.js?v=630e2f1eb3";
+import * as audio from "./audio.js?v=630e2f1eb3";
+import { campaign, renderLevelPicker } from "./campaign.js?v=630e2f1eb3";
 
 const GAME_ID = "parkour";
 const R = 0.34; // radio del héroe
@@ -465,6 +465,11 @@ export class ParkourGame extends Game3D {
     return p;
   }
 
+  /** Algo sólido arriba de la plataforma `p` (centro y medias medidas): se choca por el lado y se puede pisar. */
+  _extraSolid(p, cx, cy, cz, hx, hy, hz) {
+    (p.extras ||= []).push({ active: true, type: "prop", dx: 0, dz: 0, box: { minX: cx - hx, maxX: cx + hx, minY: cy - hy, maxY: cy + hy, minZ: cz - hz, maxZ: cz + hz } });
+  }
+
   _updateBox(p) {
     const b = p.box;
     b.minX = p.c.x - p.h.x; b.maxX = p.c.x + p.h.x;
@@ -636,6 +641,10 @@ export class ParkourGame extends Game3D {
     g.position.set(p.base.x, top, p.base.z + 2.5);
     this.course.add(g);
     this.finishGroup = g;
+    // los pilares del arco y la barra de chocolate no se atraviesan (por el medio del arco sí se pasa)
+    const at = (lx, lz, hx, hy, hz) => this._extraSolid(p, p.base.x + lx, top + hy, p.base.z + 2.5 + lz, hx, hy, hz);
+    for (const sx of [-1, 1]) at(sx * 4.2, 0, 0.45, 3.5, 0.45);
+    at(0, -4.4, 2.5, 1.9, 0.75);
   }
 
   _buildDecor() {
@@ -970,7 +979,10 @@ export class ParkourGame extends Game3D {
 
     let landed = null;
     let climbN = null;
-    for (const p of this.platforms) {
+    // las plataformas y lo sólido que llevan encima (los pilares de la meta, la chimenea de las azoteas…)
+    const solids = [];
+    for (const p of this.platforms) { solids.push(p); if (p.extras) for (const e of p.extras) solids.push(e); }
+    for (const p of solids) {
       if (!p.active) continue;
       const b = p.box;
       const cx = clamp(P.x, b.minX, b.maxX);
@@ -1030,7 +1042,7 @@ export class ParkourGame extends Game3D {
       const wasAir = !this.grounded;
       this.grounded = true;
       this.ground = landed;
-      this.camPlat = landed;
+      if (landed.type !== "prop") this.camPlat = landed; // encima de un adorno la cámara sigue mirando como en su plataforma
       this.doubleAvail = true;
       this._onLand(landed, wasAir, impact);
     } else {

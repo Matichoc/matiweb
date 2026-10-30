@@ -7,8 +7,8 @@
 // Se agrega como "mixin" a ParkourGame (ver el final de parkour-game.js) y usa sus
 // métodos de siempre (_makePlatform, _makeItem, _makeFlag, _makeSpinner...).
 
-import { THREE, clamp, lerp } from "./three-kit.js?v=4754985988";
-import * as audio from "./audio.js?v=4754985988";
+import { THREE, clamp, lerp } from "./three-kit.js?v=630e2f1eb3";
+import * as audio from "./audio.js?v=630e2f1eb3";
 
 export const ZONE_LEN = 140; // metros por mundo
 export const MAX_LIVES = 5;
@@ -302,6 +302,7 @@ export function installInfinite(Cls, STAGES) {
     };
     // chimenea y antena de la azotea, atrás para no tapar el camino
     add(G.box, 0xa8482a, -side * 1.8, top + 0.9, roof.h.z - 1.4, 1.1, 1.8, 1.1);
+    this._extraSolid(roof, roof.c.x - side * 1.8, roof.c.y + top + 0.9, roof.c.z + roof.h.z - 1.4, 0.55, 0.9, 0.55); // la chimenea choca
     add(G.box, 0x5a2a18, -side * 1.8, top + 1.9, roof.h.z - 1.4, 1.4, 0.25, 1.4);
     // ventanas en las paredes (se ven desde afuera): hacia el camino (-side) a distintas alturas
     const faceX = -side * (roof.h.x + 0.04);
