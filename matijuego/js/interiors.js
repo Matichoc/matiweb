@@ -4,10 +4,10 @@
 // Hay varios tipos de pieza (LAYOUTS): casa, kiosco, panadería, fábrica y sala de clases, cada una con sus muebles,
 // escondites y cosas para mirar. La pieza se arma lejos del mundo solo mientras dura la visita y se desarma al salir.
 // Cada juego entrega sus "ganchos": hablar (say), crear al vecino (makeHost), mostrar un aviso (popup) y su suelo (y0).
-import { THREE, roundedBox, canvasTexture, emojiSprite, makeLogo } from "./three-kit.js?v=2926c82843";
-import * as audio from "./audio.js?v=2926c82843";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=2926c82843";
-import { addStars } from "./adventure.js?v=2926c82843";
+import { THREE, roundedBox, canvasTexture, emojiSprite, makeLogo } from "./three-kit.js?v=630e2f1eb3";
+import * as audio from "./audio.js?v=630e2f1eb3";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=630e2f1eb3";
+import { addStars } from "./adventure.js?v=630e2f1eb3";
 
 const O = { x: 0, z: -900 }; // dónde se arma la pieza (lejos de todo)
 const REWARD = 40; // Matipuntos por la misión del día (y una ⭐), salvo que el lugar diga otra cosa
@@ -522,9 +522,11 @@ export class Interiors {
     const mat = (c, r = 0.7, extra = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: r, ...extra });
     const box = (w, h, d, c, x, y, z, r) => { const m = new THREE.Mesh(roundedBox(w, h, d, Math.min(0.06, w / 4, h / 4, d / 4)), mat(c, r)); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
     const cyl = (r, h, c, x, y, z, rough = 0.6, extra = {}) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 18), mat(c, rough, extra)); m.position.set(x, y, z); m.castShadow = true; g.add(m); return m; };
+    g.userData.solids = []; // lo que se arma con la pieza y tampoco se atraviesa (los maceteros)
     const plants = (spots) => {
       for (const [x, z] of spots) {
         box(0.6, 0.6, 0.6, 0xc4572b, x, 0.3, z, 0.8);
+        g.userData.solids.push({ x, z, hw: 0.3, hd: 0.3 });
         const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 0), mat(0x3fae4a, 0.8));
         leaf.position.set(x, 1, z);
         g.add(leaf);
@@ -566,7 +568,7 @@ export class Interiors {
     const L = a ? a.L : LAYOUTS.home;
     let x = THREE.MathUtils.clamp(p.x - O.x, -L.W / 2 + 0.6, L.W / 2 - 0.6);
     let z = THREE.MathUtils.clamp(p.z - O.z, -L.D / 2 + 0.6, L.D / 2 - 0.3);
-    for (const s of [...L.solids, { x: L.host.x, z: L.host.z, hw: 0.45, hd: 0.45 }]) {
+    for (const s of [...L.solids, ...((a && a.room && a.room.userData.solids) || []), { x: L.host.x, z: L.host.z, hw: 0.45, hd: 0.45 }]) {
       const r = 0.4;
       const dx = x - s.x, dz = z - s.z;
       const ox = s.hw + r - Math.abs(dx), oz = s.hd + r - Math.abs(dz);

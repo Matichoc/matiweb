@@ -3,12 +3,12 @@
 // más allá de la cerca están en js/town-zones.js). También: el "❗" sobre el vecino que te espera, la flecha que guía a la
 // zona, el globo de arriba con lo que sigue y la decoración del festival (con los colores del evento de temporada).
 
-import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=2926c82843";
-import { activeEvent } from "./events.js?v=2926c82843";
-import { ZONES, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentTask, taskDone, objective, starsOf } from "./adventure.js?v=2926c82843";
-import { paintNeighbor } from "./neighbors.js?v=2926c82843";
-import { zonePlaces } from "./town-zones.js?v=2926c82843";
-import { GAMES_CATALOG } from "./games-catalog.js?v=2926c82843";
+import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=630e2f1eb3";
+import { activeEvent } from "./events.js?v=630e2f1eb3";
+import { ZONES, choiceOf, choiceOption, placeOpen, npcWaiting, stepPlace, takeTownDest, currentTask, taskDone, objective, starsOf } from "./adventure.js?v=630e2f1eb3";
+import { paintNeighbor } from "./neighbors.js?v=630e2f1eb3";
+import { zonePlaces } from "./town-zones.js?v=630e2f1eb3";
+import { GAMES_CATALOG } from "./games-catalog.js?v=630e2f1eb3";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -397,6 +397,7 @@ export class TownFestival {
     const key = `${JSON.stringify(f)}:${ev ? ev.id : "-"}`;
     const old = this.groups.festival;
     if (old && old.userData.key === key) return;
+    this._stageBlocks(f.stage);
     if (!f.bunting && !f.stage && !f.balloons && !f.open) { this._swap("festival", null); return; }
     const grp = new THREE.Group();
     grp.userData.key = key;
@@ -415,6 +416,7 @@ export class TownFestival {
       st.rotation.y = Math.atan2(-at.x, -at.z); // mirando a la fuente
       this._mesh(st, roundedBox(6, 0.8, 3.4, 0.08), std(0x7a3f22, 0.6), 0, 0.4, 0);
       this._mesh(st, roundedBox(6, 0.12, 3.4, 0.05), std(0xd4216c, 0.6), 0, 0.86, 0);
+      this._mesh(st, roundedBox(2.6, 0.46, 1, 0.06), std(0xffc800, 0.5), 0, 0.23, 2.2); // escalón para subir por delante
       for (const sx of [-2.8, 2.8]) this._mesh(st, new THREE.CylinderGeometry(0.12, 0.14, 3.6, 8), std(0xffc800, 0.3, { metalness: 0.5 }), sx, 2.6, -1.5);
       this._mesh(st, roundedBox(6, 0.5, 0.3, 0.05), std(0xffc800, 0.3, { metalness: 0.5 }), 0, 4.4, -1.5);
       for (const sx of [-1.8, 1.8]) this._mesh(st, roundedBox(0.9, 1.3, 0.7, 0.1), std(0x2a1810), sx, 1.5, -1.1);
@@ -443,6 +445,32 @@ export class TownFestival {
     }
     this._swap("festival", grp);
     if (old) this._pop(grp);
+  }
+
+  /** El escenario es sólido: se sube por el escalón de adelante y arriba chocan los parlantes y las columnas. */
+  _stageBlocks(on) {
+    const fun = this.g.fun;
+    for (const b of this.stage || []) { const i = fun.blocks.indexOf(b); if (i >= 0) fun.blocks.splice(i, 1); }
+    this.stage = null;
+    if (!on) return;
+    const at = pol(-72, 11.5);
+    const yaw = Math.atan2(-at.x, -at.z);
+    const sin = Math.sin(yaw), cos = Math.cos(yaw);
+    const block = (lx, lz, hw, hd, top) => ({ x: at.x + lx * cos + lz * sin, z: at.z - lx * sin + lz * cos, yaw, hw, hd, top });
+    this.stage = [
+      block(0, 0, 3, 1.7, 0.92), // la tarima
+      block(0, 2.2, 1.3, 0.5, 0.46), // el escalón
+      ...[-1.8, 1.8].map((lx) => block(lx, -1.1, 0.45, 0.35, 2.2)), // parlantes
+      ...[-2.8, 2.8].map((lx) => block(lx, -1.5, 0.2, 0.2, 4.4)), // columnas del arco
+    ];
+    fun.blocks.push(...this.stage);
+  }
+
+  /** Arriba del escenario: «🎤 Dar un show». */
+  stageTarget(P) {
+    const top = this.stage && this.stage[0];
+    if (!top || P.y < top.top - 0.1 || !this.g.fun._inBlock(top, P.x, P.z, 0)) return null;
+    return { kind: "fn", label: "🎤 Dar un show", fn: () => this.g.fun.startShow(), d: 0.4 };
   }
 
   // ---------- uso de los lugares ----------

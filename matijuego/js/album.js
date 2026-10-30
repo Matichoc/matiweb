@@ -5,8 +5,8 @@
 // Temporadas: durante cada evento (js/events.js) aparece su página de 12 figuritas + 2 brillantes, que solo salen en los
 // sobres mientras dura el evento (y vuelven el año siguiente). Completarla da Matipuntos y fichas del evento.
 // Kiosco: una figurita que falte se puede comprar con Matipuntos a precio alto (las de temporada, solo durante su evento).
-import { earnCoins, spendCoins, saveProgress } from "./storage.js?v=2926c82843";
-import { activeEvent, addEventTokens } from "./events.js?v=2926c82843";
+import { earnCoins, spendCoins, saveProgress } from "./storage.js?v=630e2f1eb3";
+import { activeEvent, addEventTokens } from "./events.js?v=630e2f1eb3";
 
 const P = (id, name, emoji, color) => ({ id, name, emoji, color });
 const PRODUCT_PAGE = [
