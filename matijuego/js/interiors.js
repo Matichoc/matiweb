@@ -4,10 +4,10 @@
 // Hay varios tipos de pieza (LAYOUTS): casa, kiosco, panadería, fábrica y sala de clases, cada una con sus muebles,
 // escondites y cosas para mirar. La pieza se arma lejos del mundo solo mientras dura la visita y se desarma al salir.
 // Cada juego entrega sus "ganchos": hablar (say), crear al vecino (makeHost), mostrar un aviso (popup) y su suelo (y0).
-import { THREE, roundedBox, canvasTexture, emojiSprite, makeLogo } from "./three-kit.js?v=cfffb722e8";
-import * as audio from "./audio.js?v=cfffb722e8";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=cfffb722e8";
-import { addStars } from "./adventure.js?v=cfffb722e8";
+import { THREE, roundedBox, canvasTexture, emojiSprite, makeLogo } from "./three-kit.js?v=2926c82843";
+import * as audio from "./audio.js?v=2926c82843";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=2926c82843";
+import { addStars } from "./adventure.js?v=2926c82843";
 
 const O = { x: 0, z: -900 }; // dónde se arma la pieza (lejos de todo)
 const REWARD = 40; // Matipuntos por la misión del día (y una ⭐), salvo que el lugar diga otra cosa
@@ -68,7 +68,7 @@ export const LAYOUTS = {
   // la casita del árbol del bosque (Pueblo): chiquita, de madera, con ventana redonda entre las hojas
   treehouse: {
     W: 9, D: 7, floor: "wood",
-    host: { x: 2.4, z: -1.8 },
+    host: { x: 2.6, z: -2.3 }, // al fondo a la derecha: deja libre mirar el mapa y el baúl
     bench: { x: -2.9, z: -2.2, yaw: 0, seat: 0.5 },
     solids: [
       { x: -2.9, z: -2.4, hw: 0.9, hd: 0.55 }, // cojines

@@ -8,16 +8,16 @@ import {
   ZONES, CHOICES, adventureOf, currentTask, zoneDone, zoneProgress, objective, doTask, choose, choiceOf, choiceOption,
   placeOpen, returnSummary, seasonalChallenge, setTownDest, stepPlace, startAdventure, adventureComplete,
   markIntroSeen, starsOf, taskDone,
-} from "./adventure.js?v=cfffb722e8";
-import { paintNeighbor } from "./neighbors.js?v=cfffb722e8";
-import { sportOf, cupRival, DIFF_NAMES } from "./sports-progress.js?v=cfffb722e8";
-import { weeklyState, claimWeekly, openWeeklyChest, GOAL_REWARD, CHEST_REWARD } from "./weekly.js?v=cfffb722e8";
-import { activeEvent } from "./events.js?v=cfffb722e8";
-import { GAMES_CATALOG } from "./games-catalog.js?v=cfffb722e8";
-import { isUnlocked } from "./unlocks.js?v=cfffb722e8";
-import { earnCoins, saveProgress } from "./storage.js?v=cfffb722e8";
-import { addXp, onProgressEvent } from "./progression.js?v=cfffb722e8";
-import * as audio from "./audio.js?v=cfffb722e8";
+} from "./adventure.js?v=2926c82843";
+import { paintNeighbor } from "./neighbors.js?v=2926c82843";
+import { sportOf, cupRival, DIFF_NAMES } from "./sports-progress.js?v=2926c82843";
+import { weeklyState, claimWeekly, openWeeklyChest, GOAL_REWARD, CHEST_REWARD } from "./weekly.js?v=2926c82843";
+import { activeEvent } from "./events.js?v=2926c82843";
+import { GAMES_CATALOG } from "./games-catalog.js?v=2926c82843";
+import { isUnlocked } from "./unlocks.js?v=2926c82843";
+import { earnCoins, saveProgress } from "./storage.js?v=2926c82843";
+import { addXp, onProgressEvent } from "./progression.js?v=2926c82843";
+import * as audio from "./audio.js?v=2926c82843";
 
 const $ = (id) => document.getElementById(id);
 const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

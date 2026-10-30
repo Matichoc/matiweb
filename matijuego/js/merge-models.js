@@ -3,8 +3,8 @@
 // por vértice: así cada producto del tablero se dibuja en 1 paso (2 si lleva partes doradas), aunque tenga muchas piezas.
 // Las geometrías se arman una vez por producto y se comparten entre todas las piezas iguales.
 
-import { THREE, roundedBox } from "./three-kit.js?v=cfffb722e8";
-import { itemInfo } from "./merge-data.js?v=cfffb722e8";
+import { THREE, roundedBox } from "./three-kit.js?v=2926c82843";
+import { itemInfo } from "./merge-data.js?v=2926c82843";
 
 const C = {
   choc: 0x5a2c14, chocDark: 0x3e1c0c, milk: 0x8a5230, cookie: 0xd9a05a, cream: 0xfff3dc, white: 0xffffff,
