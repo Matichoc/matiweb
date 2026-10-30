@@ -4,12 +4,12 @@
 //  · "Actividades del día": 5 desafíos con guía; al completarlos hay premio (Matipuntos, sobre de figuritas y energía).
 // El estado del día vive en progress.town.fun (se reinicia solo cada día, igual que el resto del pueblo).
 
-import { THREE, canvasTexture } from "./three-kit.js?v=abd0c6da60";
-import { earnCoins, saveProgress } from "./storage.js?v=abd0c6da60";
-import { addEnergy } from "./energy.js?v=abd0c6da60";
-import * as audio from "./audio.js?v=abd0c6da60";
-import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=abd0c6da60";
-import { VISITS } from "./interiors.js?v=abd0c6da60";
+import { THREE, canvasTexture } from "./three-kit.js?v=2926c82843";
+import { earnCoins, saveProgress } from "./storage.js?v=2926c82843";
+import { addEnergy } from "./energy.js?v=2926c82843";
+import * as audio from "./audio.js?v=2926c82843";
+import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=2926c82843";
+import { VISITS } from "./interiors.js?v=2926c82843";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -550,6 +550,7 @@ export class TownFun {
   /** Gravedad: el Matichico cae al piso o a la plataforma que tenga abajo (las plataformas se atraviesan al subir). */
   _physics(dt) {
     const P = this.g.pos;
+    if (this.g.climbing) { this.vy = 0; this.groundY = P.y; return; } // trepando la escalera de la casita: sin gravedad
     for (const c of this.pillars) {
       if (P.y >= c.top - 0.2) continue;
       const dx = P.x - c.x, dz = P.z - c.z, d = Math.hypot(dx, dz), min = c.r + 0.45;

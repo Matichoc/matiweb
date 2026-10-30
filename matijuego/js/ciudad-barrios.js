@@ -4,9 +4,9 @@
 // Rendimiento (teléfonos de gama media-baja): cada barrio se dibuja solo cuando estás cerca, los árboles y adornos van
 // agrupados (InstancedMesh) y no hay sombras reales nuevas.
 
-import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=abd0c6da60";
-import * as audio from "./audio.js?v=abd0c6da60";
-import { binocularStand } from "./binoculars.js?v=abd0c6da60";
+import { THREE, canvasTexture, roundedBox } from "./three-kit.js?v=2926c82843";
+import * as audio from "./audio.js?v=2926c82843";
+import { binocularStand } from "./binoculars.js?v=2926c82843";
 
 const RW = 11; // ancho de las calles (igual que en ciudad-game.js)
 const SEE = 100; // a esta distancia (o menos) del centro del barrio, se dibuja
@@ -27,6 +27,9 @@ const SEA_X = 128; // desde aquí hacia el este es mar (menos el muelle)
 // suelo de los barrios: sobre el pasto (0) y bajo las calles (tope 0.03). Dos pisos a la misma altura se ven como rayas que parpadean en el celular
 const GROUND_Y = 0.015;
 const PIER = { x0: 122, x1: 146, z0: 8, z1: 13 };
+const PIER_TOP = 0.65; // la tabla del muelle (caja de 0,3 centrada en 0,5)
+const PIER_EDGE = 0.45; // distancia a la orilla de las tablas (no se puede caer al costado)
+const RAMP = 1.5; // largo de la rampita de la orilla
 
 /** Vecinos de los barrios (se agregan a los de ciudad-game.js). */
 export const BARRIO_GIVERS = {
@@ -88,6 +91,26 @@ export class CiudadBarrios {
       if (x < 150 && z > -48 && z < 48) return false;
     }
     return AREAS.some((a) => x >= a.x0 && x <= a.x1 && z >= a.z0 && z <= a.z1);
+  }
+
+  /**
+   * El muelle (prueba en el celular, 30-oct): se camina por encima y no se cae por los costados. Se sube y se baja solo
+   * por la punta de la orilla (la rampita); arriba, los bordes funcionan como baranda. `prev` es la posición del cuadro
+   * anterior. Devuelve la altura del piso bajo los pies (la tabla, o null si no está en el muelle).
+   */
+  pier(p, prev) {
+    const wasOn = prev.x > PIER.x0 - RAMP && prev.z > PIER.z0 && prev.z < PIER.z1;
+    if (wasOn) {
+      // arriba: entre las barandas y hasta la punta
+      p.z = Math.min(PIER.z1 - PIER_EDGE, Math.max(PIER.z0 + PIER_EDGE, p.z));
+      p.x = Math.min(PIER.x1 - PIER_EDGE, p.x);
+    } else if (p.x > PIER.x0 - RAMP && p.z > PIER.z0 - 0.5 && p.z < PIER.z1 + 0.5 && prev.x > PIER.x0 - RAMP) {
+      // desde la arena por el costado: es un escalón alto, se choca con él
+      p.z = prev.z < PIER.z0 ? PIER.z0 - 0.5 : PIER.z1 + 0.5;
+    }
+    const on = p.x > PIER.x0 - RAMP && p.z > PIER.z0 && p.z < PIER.z1;
+    if (!on) return null;
+    return PIER_TOP * Math.min(1, Math.max(0, (p.x - (PIER.x0 - RAMP)) / RAMP)); // la rampita del comienzo
   }
 
   /** El punto permitido más cercano dentro de los barrios (para no salirse). */
@@ -232,8 +255,11 @@ export class CiudadBarrios {
     const foam = this._mesh(g, new THREE.PlaneGeometry(2, 260), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 }), SEA_X + 0.6, 0.05, 0);
     foam.rotation.x = -Math.PI / 2;
     this.foam = foam;
-    // el muelle
-    this._mesh(g, roundedBox(PIER.x1 - PIER.x0, 0.3, PIER.z1 - PIER.z0, 0.06), std(0xa8743a, 0.7), (PIER.x0 + PIER.x1) / 2, 0.5, (PIER.z0 + PIER.z1) / 2);
+    // el muelle (con una rampita para subir desde la arena)
+    const wood = std(0xa8743a, 0.7);
+    this._mesh(g, roundedBox(PIER.x1 - PIER.x0, 0.3, PIER.z1 - PIER.z0, 0.06), wood, (PIER.x0 + PIER.x1) / 2, 0.5, (PIER.z0 + PIER.z1) / 2);
+    const ramp = this._mesh(g, new THREE.BoxGeometry(Math.hypot(RAMP, PIER_TOP), 0.1, PIER.z1 - PIER.z0 - 0.2), wood, PIER.x0 - RAMP / 2, PIER_TOP / 2 - 0.03, (PIER.z0 + PIER.z1) / 2);
+    ramp.rotation.z = Math.atan2(PIER_TOP, RAMP);
     // binoculares en la punta del muelle: miran mar adentro
     const bz = (PIER.z0 + PIER.z1) / 2;
     const stand = binocularStand();

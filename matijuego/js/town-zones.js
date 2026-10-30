@@ -5,11 +5,11 @@
 // Rendimiento (teléfonos de gama media-baja): cada barrio se dibuja solo cuando estás cerca, los árboles y cercas van
 // agrupados (InstancedMesh) y no hay sombras reales nuevas.
 
-import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=abd0c6da60";
-import { taskDone, addStars } from "./adventure.js?v=abd0c6da60";
-import { earnCoins, saveProgress } from "./storage.js?v=abd0c6da60";
-import * as audio from "./audio.js?v=abd0c6da60";
-import { binocularStand } from "./binoculars.js?v=abd0c6da60";
+import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=2926c82843";
+import { taskDone, addStars } from "./adventure.js?v=2926c82843";
+import { earnCoins, saveProgress } from "./storage.js?v=2926c82843";
+import * as audio from "./audio.js?v=2926c82843";
+import { binocularStand } from "./binoculars.js?v=2926c82843";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -49,6 +49,9 @@ const DOCK_END = DOCK.z - DOCK.len / 2 + 0.4; // la punta del muelle (más allá
 const CREEK = { z: 2, half: 1.75 }; // el arroyo del bosque (coordenadas del barrio): de lado a lado
 const BRIDGE_HALF = 1.5; // el arroyo solo se cruza por el puente (o, antes de arreglarlo, por los tablones del mismo lugar)
 const DECK_TOP = 0.48; // sobre el puente y el muelle se camina por encima (bajo 0,5: se sube sin saltar)
+// La casita del árbol del bosque (prueba en el celular, 30-oct: "no puedo subir, no puedo interactuar"): una terraza
+// arriba, con baranda, a la que se sube por la escalera. Coordenadas del barrio: la casa mira hacia +z.
+export const TREE = { porchTop: 4.7, porchZ: -9.1, porchHalfX: 1.7, wallZ: -10, frontZ: -8.2, ladderZ: -8.05, footZ: -7.2 };
 const HOME = { x: 3, z: 17 }; // dónde espera el vecino de cada barrio (a la entrada, junto al camino)
 
 /** Centro de un barrio en el mundo. */
@@ -324,6 +327,33 @@ export class TownZones {
     return Object.values(this._decks || {}).flat();
   }
 
+  /** La casita del árbol (si ya se construyó): puntos en el mundo para la escalera y la puerta. Si no, null. */
+  get treehouse() {
+    if (!this._treeOn) return null;
+    const w = (x, z) => toWorld("bosque", x, z);
+    const T = TREE;
+    return {
+      foot: w(0, T.footZ), // al pie de la escalera
+      face: w(0, T.ladderZ + 0.35), // pegado a la escalera
+      top: w(0, T.frontZ - 0.55), // arriba, en la terraza junto a la escalera
+      door: w(0, T.wallZ + 0.45), // frente a la puerta
+      porchTop: T.porchTop,
+      yaw: Math.atan2(w(0, -1).x - w(0, 0).x, w(0, -1).z - w(0, 0).z), // mirando hacia la casa
+    };
+  }
+
+  /** Arriba en la terraza no se cae: la baranda la rodea (se baja por la escalera). */
+  clampPorch(p) {
+    if (!this._treeOn || p.y < TREE.porchTop - 0.6) return;
+    const l = toLocal("bosque", p.x, p.z);
+    if (Math.abs(l.x) > 3.5 || l.z < TREE.wallZ - 1.5 || l.z > TREE.frontZ + 1.5) return;
+    const x = Math.min(TREE.porchHalfX - 0.35, Math.max(-(TREE.porchHalfX - 0.35), l.x));
+    const z = Math.min(TREE.frontZ - 0.3, Math.max(TREE.wallZ + 0.3, l.z));
+    const w = toWorld("bosque", x, z);
+    p.x = w.x;
+    p.z = w.z;
+  }
+
   /** Lugares con binoculares: { x, z, eye: { x, y, z, yaw } } en coordenadas del mundo. */
   get binocSpots() {
     return Object.values(this._binoc || {}).flat();
@@ -344,7 +374,7 @@ export class TownZones {
 
   _setDecks(id, list) {
     this._decks = this._decks || {};
-    this._decks[id] = list.map(([lx, lz, r]) => ({ ...toWorld(id, lx, lz), top: DECK_TOP, r }));
+    this._decks[id] = list.map(([lx, lz, r, top]) => ({ ...toWorld(id, lx, lz), top: top ?? DECK_TOP, r }));
   }
 
   _flags(id) {
@@ -374,7 +404,12 @@ export class TownZones {
     else if (id === "granja") this._granja(grp, f, mark, col);
     else this._lago(grp, f, mark, col);
     // se camina por encima del puente y del muelle (círculos que cubren la tabla)
-    if (id === "bosque") this._setDecks(id, f.puente ? [0.4, 1.47, 2.53, 3.6].map((z) => [0, z, 1.2]) : []);
+    if (id === "bosque") {
+      const decks = f.puente ? [0.4, 1.47, 2.53, 3.6].map((z) => [0, z, 1.2]) : [];
+      if (f.casita) for (const [x, z] of [[-0.9, -9.1], [0.9, -9.1], [0, -8.75], [0, -9.45]]) decks.push([x, z, 0.95, TREE.porchTop]); // la terraza de la casita (cubierta entera)
+      this._setDecks(id, decks);
+      this._treeOn = !!f.casita;
+    }
     if (id === "lago") this._setDecks(id, f.muelle ? [-2.8, -1.6, -0.4, 0.8, 2, 3.2, 4.4].map((z) => [0, z, 1.25]) : []);
     // binoculares: en la punta del muelle (mirando el lago) y desde arriba del mirador
     if (id === "lago") this._setBinoc(id, [
@@ -423,8 +458,19 @@ export class TownZones {
       roof.rotation.y = Math.PI / 4;
       this._mesh(h, new THREE.BoxGeometry(1.1, 1.6, 0.1), std(0x5a2e14), 0, 5.6, -9.95);
       this._mesh(h, new THREE.BoxGeometry(0.9, 0.9, 0.1), std(0xbfe6ff, 0.2), 1.4, 6.6, -9.95);
-      for (let i = 0; i < 7; i++) this._mesh(h, new THREE.BoxGeometry(1.2, 0.1, 0.1), std(0x7a4a22), 0, 0.6 + i * 0.7, -9.3);
-      for (const sx of [-0.6, 0.6]) this._mesh(h, new THREE.BoxGeometry(0.1, 5, 0.1), std(0x7a4a22), sx, 2.6, -9.3);
+      // la terraza (se camina encima) con su baranda, y la escalera para subir
+      const T = TREE;
+      const wood = std(0xa8743a, 0.7);
+      const dark = std(0x7a4a22);
+      this._mesh(h, roundedBox(T.porchHalfX * 2, 0.2, T.frontZ - T.wallZ, 0.05), wood, 0, T.porchTop - 0.1, T.porchZ);
+      for (const sx of [-1, 1]) {
+        this._mesh(h, new THREE.BoxGeometry(0.1, 0.1, T.frontZ - T.wallZ), dark, sx * (T.porchHalfX - 0.05), T.porchTop + 0.8, T.porchZ);
+        this._mesh(h, new THREE.BoxGeometry(0.1, 0.1, 1.15), dark, sx * 1.15, T.porchTop + 0.8, T.frontZ + 0.02);
+        for (const z of [T.wallZ + 0.1, T.frontZ]) this._mesh(h, new THREE.CylinderGeometry(0.06, 0.06, 0.8, 6), dark, sx * (T.porchHalfX - 0.05), T.porchTop + 0.4, z);
+        this._mesh(h, new THREE.CylinderGeometry(0.06, 0.06, 0.8, 6), dark, sx * 0.6, T.porchTop + 0.4, T.frontZ);
+      }
+      for (let i = 0; i < 9; i++) this._mesh(h, new THREE.BoxGeometry(1, 0.1, 0.1), dark, 0, 0.45 + i * 0.52, T.ladderZ);
+      for (const sx of [-0.5, 0.5]) this._mesh(h, new THREE.BoxGeometry(0.1, T.porchTop + 0.9, 0.1), dark, sx, (T.porchTop + 0.9) / 2, T.ladderZ);
       grp.add(h);
       mark(h, "casita");
     }

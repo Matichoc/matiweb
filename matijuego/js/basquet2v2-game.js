@@ -5,13 +5,13 @@
 // Controles: mover con el joystick o WASD/flechas · Pase (Espacio/J); sin la pelota: Robar · Tiro (K): mantén y suelta
 // cuando la barra está en verde; sin la pelota: Saltar (tapar o rebote) · Cambiar (Q/E/Tab) · Pausa (P/Esc).
 
-import { THREE, clamp, canvasTexture, makeBunting } from "./three-kit.js?v=abd0c6da60";
-import { createMatichico } from "./matichico3d.js?v=abd0c6da60";
-import { CHARACTERS, getOutfit } from "./characters.js?v=abd0c6da60";
-import { choiceOf, choiceOption } from "./adventure.js?v=abd0c6da60";
-import { MatchGame } from "./match-game.js?v=abd0c6da60";
-import { createMatch, stepMatch, COURT } from "./basquet2v2-sim.js?v=abd0c6da60";
-import * as audio from "./audio.js?v=abd0c6da60";
+import { THREE, clamp, canvasTexture, makeBunting } from "./three-kit.js?v=2926c82843";
+import { createMatichico } from "./matichico3d.js?v=2926c82843";
+import { CHARACTERS, getOutfit } from "./characters.js?v=2926c82843";
+import { choiceOf, choiceOption } from "./adventure.js?v=2926c82843";
+import { MatchGame } from "./match-game.js?v=2926c82843";
+import { createMatch, stepMatch, COURT } from "./basquet2v2-sim.js?v=2926c82843";
+import * as audio from "./audio.js?v=2926c82843";
 
 const GAME_ID = "basquet2v2";
 const HX = COURT.W / 2;

@@ -8,17 +8,22 @@
 // Para cuidar los celulares de gama media-baja, las compañeras del equipo se dibujan con piezas agrupadas
 // (InstancedMesh: una sola llamada de dibujo por pieza para todo el equipo) y solo la Matichica es un personaje completo.
 
-import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=abd0c6da60";
-import { createMatichico } from "./matichico3d.js?v=abd0c6da60";
-import { saveProgress, earnCoins } from "./storage.js?v=abd0c6da60";
-import * as audio from "./audio.js?v=abd0c6da60";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=abd0c6da60";
+import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=2926c82843";
+import { createMatichico } from "./matichico3d.js?v=2926c82843";
+import { saveProgress, earnCoins } from "./storage.js?v=2926c82843";
+import * as audio from "./audio.js?v=2926c82843";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=2926c82843";
 
 const GAME_ID = "porristas";
 const HEARTS = 3;
 const PERFECT = 0.085; // segundos de diferencia con el tiempo justo
 const GOOD = 0.19;
 const EARLY = 0.4; // tocar antes de esto cuenta como "muy pronto" (así no sirve tocar sin parar)
+// Ajuste del ritmo a cada celular (prueba en el celular, 29-oct: "los tiempos medio desfasados"). Lo que suena se programa
+// con el reloj del audio y se adelanta lo que tarda el parlante en sonar (AUDIO_LAG), así se oye justo cuando el aro se
+// cierra. Además, el juego aprende con los toques cuánto se atrasa (o adelanta) la persona y lo descuenta (offset).
+const MAX_LAG = 0.25;
+const OFFSET_RANGE = [-0.08, 0.3];
 const SQ = 1.15; // tamaño de las compañeras
 const SHOULDER = (0.75 + 0.55) * SQ; // altura de los hombros (≈1.5)
 const ARM = 0.55 * SQ;
@@ -360,6 +365,8 @@ export class Porristas3DGame extends Game3D {
     this.hits = { perfect: 0, good: 0, miss: 0 };
     this.rt = 0; // tiempo de la rutina (segundos)
     this._rtAt = 0;
+    this.audioLag = clamp(audio.latency(), 0, MAX_LAG);
+    this.offset = clamp(Number(this.progress.porristasOffset) || 0, OFFSET_RANGE[0], OFFSET_RANGE[1]);
     this.parts = [];
     this.lastFig = null;
     this.endT = 0;
@@ -448,13 +455,13 @@ export class Porristas3DGame extends Game3D {
     if (!part.started) this._startPart(part);
     const u = (this.rt - part.t0) / part.spb;
     const beat = Math.floor(u);
+    this._scheduleBeats();
     if (beat !== part.lastBeat && beat >= 0 && beat < part.beats) {
       part.lastBeat = beat;
-      audio.playCheerBeat(beat, part.hits.some((h) => h.beat === beat));
       if (part.kind === "count") this.popups.add(new THREE.Vector3(0, EXT_Y + 2.6, 0.5), String(beat + 5), "combo");
       this._renderStrip();
     }
-    for (const h of part.hits) if (!h.res && this.rt > h.t + GOOD) this._judge(h, null);
+    for (const h of part.hits) if (!h.res && this.rt > h.t + this.offset + GOOD) this._judge(h, null);
     // el tramo que sigue se arma un poco antes, para que su primer toque ya se vea venir
     const end = part.t0 + part.beats * part.spb;
     if (part === this.parts[this.parts.length - 1] && this.rt > end - part.spb * 1.5) {
@@ -470,6 +477,25 @@ export class Porristas3DGame extends Game3D {
     if (part.last && this.rt >= end - 0.05 && !this.fail) this.endT = 0.9;
   }
 
+  /**
+   * Programa los tiempos de la música un poco antes de que toquen, con el reloj del audio (no depende de cuándo se dibuja
+   * el cuadro) y adelantados lo que tarda el parlante, para que se oigan justo a tiempo.
+   */
+  _scheduleBeats() {
+    const lead = this.audioLag + 0.12;
+    for (const p of this.parts) {
+      if (!p.sched) p.sched = [];
+      for (let b = 0; b < p.beats; b++) {
+        if (p.sched[b]) continue;
+        const ahead = p.t0 + b * p.spb - this.rt;
+        if (ahead > lead) break;
+        p.sched[b] = true;
+        if (ahead < -0.06) continue; // ya pasó (por ejemplo, al volver de una pausa)
+        audio.playCheerBeat(b, p.hits.some((h) => h.beat === b), Math.max(0, ahead - this.audioLag));
+      }
+    }
+  }
+
   _startPart(part) {
     part.started = true;
     part.flyFrom = { ...this.fly };
@@ -481,7 +507,9 @@ export class Porristas3DGame extends Game3D {
   tap() {
     if (this.state !== "playing" || this.endT > 0) return;
     this.taps++;
-    const t = this.rt + clamp((performance.now() - this._rtAt) / 1000, 0, 0.05);
+    // el toque se mide descontando lo que esta persona (y su celular) suele atrasarse
+    const raw = this.rt + clamp((performance.now() - this._rtAt) / 1000, 0, 0.05);
+    const t = raw - this.offset;
     let best = null;
     for (const p of this.parts) for (const h of p.hits) {
       if (h.res || h.t - t > EARLY) continue;
@@ -489,8 +517,15 @@ export class Porristas3DGame extends Game3D {
     }
     if (!best) return;
     const d = Math.abs(best.t - t);
+    if (d <= GOOD + 0.08) this._learn(raw - best.t);
     if (d <= GOOD) this._judge(best, d <= PERFECT ? "perfect" : "good");
     else if (best.t > t) this._judge(best, null, "¡Muy pronto!");
+  }
+
+  /** Aprende de a poco cuánto se atrasa la persona al tocar (sonido del celular + pantalla + reflejos). */
+  _learn(delta) {
+    this.offset = clamp(this.offset + (delta - this.offset) * 0.3, OFFSET_RANGE[0], OFFSET_RANGE[1]);
+    this.progress.porristasOffset = Math.round(this.offset * 1000) / 1000;
   }
 
   _judge(h, res, why) {
@@ -558,6 +593,7 @@ export class Porristas3DGame extends Game3D {
   }
 
   _levelDone() {
+    saveProgress(this.progress); // guarda el ajuste del ritmo aprendido
     if (!this.level) return;
     const ratio = this._accuracy();
     const stars = ratio >= 0.8 ? 3 : ratio >= 0.55 ? 2 : 1;
@@ -575,6 +611,7 @@ export class Porristas3DGame extends Game3D {
   }
 
   _onFail() {
+    saveProgress(this.progress);
     this.cheer = 0;
     const t = this.els.q("gameover-title");
     if (t) t.textContent = "¡Se cayó!";
@@ -809,6 +846,7 @@ export class Porristas3DGame extends Game3D {
 
   beginPlaying() {
     super.beginPlaying();
+    this.audioLag = clamp(audio.latency(), 0, MAX_LAG); // recién aquí existe el audio (después de tocar «¡Vamos!»)
     this._showStrip(this.state === "playing");
     this._renderStrip();
   }
