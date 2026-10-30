@@ -5,13 +5,13 @@
 // Controles: mover con el joystick o WASD/flechas · Pase (Espacio/J): pasa; sin la pelota quita o la pide · Tiro (K/L) ·
 // Cambiar (Q/E/Tab): pasa al otro jugador de campo · Pausa (P/Esc).
 
-import { THREE, clamp, canvasTexture, makeBunting, makeLogo } from "./three-kit.js?v=6d55b24c3a";
-import { createMatichico } from "./matichico3d.js?v=6d55b24c3a";
-import { CHARACTERS, getOutfit } from "./characters.js?v=6d55b24c3a";
-import { choiceOf, choiceOption } from "./adventure.js?v=6d55b24c3a";
-import { MatchGame } from "./match-game.js?v=6d55b24c3a";
-import { createMatch, stepMatch, PITCH } from "./pichanga-sim.js?v=6d55b24c3a";
-import * as audio from "./audio.js?v=6d55b24c3a";
+import { THREE, clamp, canvasTexture, makeBunting, makeLogo } from "./three-kit.js?v=4754985988";
+import { createMatichico } from "./matichico3d.js?v=4754985988";
+import { CHARACTERS, getOutfit } from "./characters.js?v=4754985988";
+import { choiceOf, choiceOption } from "./adventure.js?v=4754985988";
+import { MatchGame } from "./match-game.js?v=4754985988";
+import { createMatch, stepMatch, PITCH } from "./pichanga-sim.js?v=4754985988";
+import * as audio from "./audio.js?v=4754985988";
 
 const GAME_ID = "pichanga";
 const L = PITCH.L;

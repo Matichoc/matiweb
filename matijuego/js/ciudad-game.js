@@ -9,18 +9,18 @@
 // Controles: joystick o WASD/flechas. En auto, el joystick gira (←→) y acelera/frena (↑↓). Botón de acción (E o Enter):
 // hablar, subir/bajar del auto, regar. H = bocina. Arrastra para mover la cámara cuando vas a pie.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=6d55b24c3a";
-import { createMatichico } from "./matichico3d.js?v=6d55b24c3a";
-import { CHARACTERS, getOutfit } from "./characters.js?v=6d55b24c3a";
-import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=6d55b24c3a";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6d55b24c3a";
-import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=6d55b24c3a";
-import { recordRun } from "./progression.js?v=6d55b24c3a";
-import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=6d55b24c3a";
-import * as audio from "./audio.js?v=6d55b24c3a";
-import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=6d55b24c3a";
-import { Binoculars } from "./binoculars.js?v=6d55b24c3a";
-import { Interiors, VISITS } from "./interiors.js?v=6d55b24c3a";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, roundedBox, makeLogo, goldCoinTexture, eatGhostClick } from "./three-kit.js?v=4754985988";
+import { createMatichico } from "./matichico3d.js?v=4754985988";
+import { CHARACTERS, getOutfit } from "./characters.js?v=4754985988";
+import { ITEMS, OUTFITS } from "./wardrobe-data.js?v=4754985988";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=4754985988";
+import { spendEnergy, ENERGY_MISSION } from "./energy.js?v=4754985988";
+import { recordRun } from "./progression.js?v=4754985988";
+import { IS_DEMO, DEMO_LIMITS, showDemoWall } from "./demo.js?v=4754985988";
+import * as audio from "./audio.js?v=4754985988";
+import { CiudadBarrios, BARRIO_MISSIONS, BARRIO_GIVERS, BARRIO_SAY, EXTRA_ROADS, AREAS } from "./ciudad-barrios.js?v=4754985988";
+import { Binoculars } from "./binoculars.js?v=4754985988";
+import { Interiors, VISITS } from "./interiors.js?v=4754985988";
 
 const GAME_ID = "ciudad";
 const HALF = 60; // el anillo de calles va de -60 a 60
@@ -512,6 +512,9 @@ export class CiudadGame extends Game3D {
     m.position.set(x, Y0 + 0.6, z);
     m.rotation.y = yaw;
     this.scene.add(m);
+    // la reja no se atraviesa (los choques de la Ciudad son cajas derechas: a lo largo de x o de z)
+    const largoX = Math.abs(Math.cos(yaw)) > 0.5;
+    this.colliders.push({ type: "b", x, z, hw: largoX ? 1.2 : 0.12, hd: largoX ? 0.12 : 1.2 });
     if (paintable) this.panels.push({ g: m, mat, x, z, paint: 0, done: false });
     return m;
   }
@@ -673,7 +676,8 @@ export class CiudadGame extends Game3D {
     this._house(-30, 50, 9, 5, 4, 0xffe0c0, 0x2c6fb7, "n");
     this._sign("HUERTO ROSA", -30, 5.3, 47.4, 4.6, 1.15, "#2fa86a", 52);
     this.deliverySpots.push({ x: -30, z: 46.8, name: "la Granja de Doña Rosa" });
-    for (let x = -49; x <= -11; x += 2.4) this._fencePanel(x, 15.6, 0, false);
+    // la reja del huerto, con una entrada al medio (frente al cartel): ahora la reja choca
+    for (let x = -49; x <= -11; x += 2.4) if (Math.abs(x + 29.8) > 0.5) this._fencePanel(x, 15.6, 0, false);
     this._tree(-52, 18, 1.1); this._tree(-10, 18, 1.1); this._tree(-52, 48, 1.2); this._tree(-10, 48, 1.2);
   }
 
@@ -785,7 +789,7 @@ export class CiudadGame extends Game3D {
       const dx = Math.cos(a);
       const dz = Math.sin(a);
       const d = Math.min(125, (76 + rnd() * 18) / Math.max(Math.abs(dx), Math.abs(dz)));
-      this._tree(dx * d, dz * d, 0.9 + rnd() * 0.9, false);
+      this._tree(dx * d, dz * d, 0.9 + rnd() * 0.9); // también chocan: al borde (hasta 90) se llega caminando
     }
     const n = this.treeSpots.length;
     const trunkGeo = new THREE.CylinderGeometry(0.18, 0.26, 1.8, 6);

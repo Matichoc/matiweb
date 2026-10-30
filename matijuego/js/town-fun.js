@@ -4,12 +4,12 @@
 //  · "Actividades del día": 5 desafíos con guía; al completarlos hay premio (Matipuntos, sobre de figuritas y energía).
 // El estado del día vive en progress.town.fun (se reinicia solo cada día, igual que el resto del pueblo).
 
-import { THREE, canvasTexture } from "./three-kit.js?v=6d55b24c3a";
-import { earnCoins, saveProgress } from "./storage.js?v=6d55b24c3a";
-import { addEnergy } from "./energy.js?v=6d55b24c3a";
-import * as audio from "./audio.js?v=6d55b24c3a";
-import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=6d55b24c3a";
-import { VISITS } from "./interiors.js?v=6d55b24c3a";
+import { THREE, canvasTexture } from "./three-kit.js?v=4754985988";
+import { earnCoins, saveProgress } from "./storage.js?v=4754985988";
+import { addEnergy } from "./energy.js?v=4754985988";
+import * as audio from "./audio.js?v=4754985988";
+import { openPuzzle, PUZZLES } from "./town-puzzles.js?v=4754985988";
+import { VISITS } from "./interiors.js?v=4754985988";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;
@@ -239,6 +239,12 @@ export class TownFun {
       cone.position.set(sx * 5.6, 1.3, -0.99);
       grp.add(sp, cone);
       (this.speakers ||= []).push(cone);
+    }
+    // los parlantes no se atraviesan
+    grp.updateMatrixWorld(true);
+    for (const sx of [-1, 1]) {
+      const w = grp.localToWorld(new THREE.Vector3(sx * 5.6, 0, -1.5));
+      g.colliders.push({ type: "b", x: w.x, z: w.z, yaw: grp.rotation.y, hw: 0.6, hd: 0.5 });
     }
     g.scene.add(grp);
     this.danceGrp = grp;

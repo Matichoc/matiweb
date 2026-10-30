@@ -4,8 +4,8 @@
 //
 // Objeto: { id, spot, name, icon, rarity, price, params }   (price 0 = viene con la casa)
 
-import { spendCoins, saveProgress } from "./storage.js?v=6d55b24c3a";
-import { eventItemAvailable, eventTokens } from "./events.js?v=6d55b24c3a";
+import { spendCoins, saveProgress } from "./storage.js?v=4754985988";
+import { eventItemAvailable, eventTokens } from "./events.js?v=4754985988";
 
 export const HOUSE_SPOTS = [
   { id: "floor", name: "Piso", icon: "🟫" },

@@ -6,23 +6,23 @@
 // ahí. Cada vez que algo se puede "usar" aparece un botón; el menú escucha el evento
 // "town-action" y abre lo que corresponda.
 
-import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=6d55b24c3a";
-import { createMatichico } from "./matichico3d.js?v=6d55b24c3a";
-import { Binoculars } from "./binoculars.js?v=6d55b24c3a";
-import { getOutfit } from "./characters.js?v=6d55b24c3a";
-import { GAMES_CATALOG } from "./games-catalog.js?v=6d55b24c3a";
-import { earnCoins, saveProgress, todayKey } from "./storage.js?v=6d55b24c3a";
-import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=6d55b24c3a";
-import { levelInfo } from "./progression.js?v=6d55b24c3a";
-import { bindStick } from "./stick.js?v=6d55b24c3a";
-import * as audio from "./audio.js?v=6d55b24c3a";
-import { TownFun } from "./town-fun.js?v=6d55b24c3a";
-import { TownFestival, PLACES } from "./town-festival.js?v=6d55b24c3a";
-import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=6d55b24c3a";
-import { talkTo, gossip, starsOf } from "./adventure.js?v=6d55b24c3a";
-import { TownZones } from "./town-zones.js?v=6d55b24c3a";
-import { Interiors } from "./interiors.js?v=6d55b24c3a";
-import { PetBuddy, renderPetCard } from "./pet-buddy.js?v=6d55b24c3a";
+import { THREE, Game3D, clamp, lerp, canvasTexture, loadTexture, roundedBox, makeStars, eatGhostClick } from "./three-kit.js?v=4754985988";
+import { createMatichico } from "./matichico3d.js?v=4754985988";
+import { Binoculars } from "./binoculars.js?v=4754985988";
+import { getOutfit } from "./characters.js?v=4754985988";
+import { GAMES_CATALOG } from "./games-catalog.js?v=4754985988";
+import { earnCoins, saveProgress, todayKey } from "./storage.js?v=4754985988";
+import { activeEvent, addEventTokens, eventTokens } from "./events.js?v=4754985988";
+import { levelInfo } from "./progression.js?v=4754985988";
+import { bindStick } from "./stick.js?v=4754985988";
+import * as audio from "./audio.js?v=4754985988";
+import { TownFun } from "./town-fun.js?v=4754985988";
+import { TownFestival, PLACES } from "./town-festival.js?v=4754985988";
+import { NEIGHBORS, neighborLooks } from "./neighbors.js?v=4754985988";
+import { talkTo, gossip, starsOf } from "./adventure.js?v=4754985988";
+import { TownZones } from "./town-zones.js?v=4754985988";
+import { Interiors } from "./interiors.js?v=4754985988";
+import { PetBuddy, renderPetCard } from "./pet-buddy.js?v=4754985988";
 
 const GAME_ID = "town";
 const SPEED = 6.4;
@@ -328,7 +328,7 @@ export class TownGame extends Game3D {
     // bancas alrededor de la fuente, mirándola (para sentarse)
     const wood = new THREE.MeshStandardMaterial({ color: 0x7a3f22, roughness: 0.6 });
     const leg = new THREE.MeshStandardMaterial({ color: 0x4b2e1e, roughness: 0.7 });
-    for (const deg of [70, 250, 290]) {
+    for (const deg of [70, 222, 318]) { // las de 222° y 318° dejan libre el frente del escenario del festival (288°)
       const p = pol(deg, 7.6);
       const yaw = Math.atan2(-p.x, -p.z); // mira hacia la fuente
       const b = new THREE.Group();
@@ -343,6 +343,7 @@ export class TownGame extends Game3D {
       b.traverse((o) => { if (o.isMesh) o.castShadow = true; });
       this.scene.add(b);
       this.addBench({ x: p.x, z: p.z, yaw, seat: 0.57 });
+      this.colliders.push({ type: "b", x: p.x, z: p.z, yaw, hw: 0.95, hd: 0.32 }); // la banca no se atraviesa
     }
   }
 
@@ -476,6 +477,9 @@ export class TownGame extends Game3D {
         pillar.position.set(sx * 2.2, 2.5, 0);
         pillar.castShadow = true;
         g.add(pillar);
+        // los pilares chocan; se puede pasar por el medio del portal
+        const yaw = Math.atan2(-p.x, -p.z);
+        this.colliders.push({ type: "c", x: p.x + Math.cos(yaw) * sx * 2.2, z: p.z - Math.sin(yaw) * sx * 2.2, r: 0.55 });
       }
       const beam = new THREE.Mesh(roundedBox(5.6, 1, 0.9, 0.3, 0.06), m);
       beam.position.set(0, 5.2, 0);
@@ -509,6 +513,7 @@ export class TownGame extends Game3D {
       const bulb = new THREE.Mesh(bulbGeo, this.m.lamp);
       bulb.position.set(p.x, 4.1, p.z);
       s.add(pole, bulb);
+      this.colliders.push({ type: "c", x: p.x, z: p.z, r: 0.2 });
     }
     // árboles (instanciados, livianos) en el borde y entre las zonas
     let seed = 7;
@@ -536,6 +541,7 @@ export class TownGame extends Game3D {
     good.forEach(([x, z, sc], i) => {
       mat.makeScale(sc, sc, sc).setPosition(x, 1.2 * sc, z);
       trunks.setMatrixAt(i, mat);
+      this.colliders.push({ type: "c", x, z, r: 0.4 * sc }); // el tronco
       mat.makeScale(sc, sc * 0.9, sc).setPosition(x, 3.4 * sc, z);
       crowns.setMatrixAt(i, mat);
       crowns.setColorAt(i, col.setHex(palette[Math.floor(rnd() * (i % 9 === 0 ? 5 : 3))]));
