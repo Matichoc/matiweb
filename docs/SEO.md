@@ -12,12 +12,16 @@ Lo que está hecho, lo que falta y cómo se mide. Actualizar este archivo cuando
 - Datos estructurados: tienda local + sitio web (portada) y lista de productos con precio (la Tienda los arma desde `js/catalogo.js`).
 - `js/analitica.js`: contador de visitas sin cookies (GoatCounter, cuenta `matichoc`), **encendido**; la política de privacidad ya lo menciona. Panel: https://matichoc.goatcounter.com
 
+- **Direcciones del sitio antiguo** (`www.matichoc.cl/tienda`, `/la-maestra`, `/productos-de-temporada/...`, etc.): Google las seguía
+  mostrando y daban error. Cada una tiene una carpeta con un `index.html` que redirige (meta refresh + canónica) a la página nueva.
+  Si Search Console muestra otra dirección antigua con error, se agrega igual.
+- **Search Console** verificado (propiedad de dominio `matichoc.cl`, vía Cloudflare) y `sitemap.xml` enviado.
+
 ## Pendiente (depende del dueño)
-1. **Google Search Console** (https://search.google.com/search-console): agregar la propiedad `matichoc.cl` (tipo "Dominio"), verificar con el
-   registro TXT en el DNS y enviar `https://matichoc.cl/sitemap.xml`. Revisar una vez al mes: consultas, clics, páginas indexadas.
+1. ~~Google Search Console~~: hecho. Revisar una vez al mes: consultas, clics, páginas indexadas (https://search.google.com/search-console).
 2. **Perfil de Empresa de Google** (ficha en Maps): nombre, categoría "Chocolatería", teléfono, horario, fotos, enlace a matichoc.cl, y pedir reseñas.
 3. ~~Contador de visitas~~: hecho (cuenta `matichoc`). Confirmar en GoatCounter → Settings que la recolección de IP esté apagada.
-4. Fotos de productos: hoy viven en imgur (23 imágenes). Conviene tenerlas en el sitio (`assets/productos/`), en JPG/WebP de ~800 px y menos de 150 KB, con el nombre del producto en el archivo.
+4. ~~Fotos de productos en imgur~~: hecho, la Tienda usa `assets/productos/*.webp`.
 5. Datos que solo el dueño puede confirmar para publicarlos (no se inventan): horario del stand, dirección en la ficha de Google, precios en la tienda.
 6. Menciones y enlaces hacia matichoc.cl desde Instagram, Facebook, clubes y negocios que ya aparecen en el sitio.
 
