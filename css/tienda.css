@@ -243,6 +243,48 @@
 .t-card--consulta { background: linear-gradient(135deg, #fff0f6, #fff); border: 2px dashed #d4216c; }
 .t-card--consulta .t-card-cuerpo { padding: 20px 18px; }
 .t-card--consulta .t-emoji { font-size: 2.4rem; line-height: 1; }
+
+/* Galería de personalizados (js/catalogo.js → PERSONALIZADOS): fila deslizable, fotos sin recortar. */
+.t-galeria { margin-top: 22px; }
+.t-galeria h3 { margin: 0 0 4px; color: #4b2e2e; font-size: 1.25rem; }
+.t-galeria p { margin: 0 0 12px; color: #6b4a3a; }
+.t-galeria-fila {
+  list-style: none;
+  margin: 0;
+  padding: 4px 2px 12px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.t-galeria-fila li { flex: 0 0 auto; scroll-snap-align: start; }
+.t-galeria-fila a {
+  display: block;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid #ffc800;
+  background: #ead9c4;
+  box-shadow: 0 6px 16px rgba(75, 46, 46, 0.12);
+}
+.t-galeria-fila img { display: block; height: 280px; width: auto; max-width: none; }
+.t-galeria-fila span {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  background: rgba(75, 46, 46, 0.9);
+  color: #ffc800;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.t-galeria-fila a:focus-visible { outline: 3px solid #d4216c; outline-offset: 2px; }
+@media (max-width: 720px) {
+  .t-galeria-fila img { height: 220px; }
+}
 .t-wsp {
   display: inline-flex;
   align-items: center;
