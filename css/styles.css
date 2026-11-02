@@ -1185,6 +1185,10 @@ section {
   opacity: 1;
   transform: none;
 }
+a.pv-lugar {
+  color: #fff;
+  text-decoration: underline;
+}
 .pv-red {
   color: #ffc800;
   font-weight: 700;

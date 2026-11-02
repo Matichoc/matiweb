@@ -4,16 +4,17 @@
 // - `lugar`: se muestra al pasar el mouse o al tocar la tarjeta.
 // - `foto`: ruta desde la raíz del sitio (ej. 'assets/puntos-venta/angelito.webp',
 //   cuadrada); sin foto se usa la genérica del stand con el logo.
+// - `mapa`: enlace de Google Maps; el lugar se vuelve un enlace para abrirlo.
 // - `redes`: [{ nombre: 'Instagram', url: 'https://...' }], aparecen junto al lugar.
 // - `proximamente: true`: etiqueta "Próximamente" hasta que empiece a vender.
 const PUNTOS_VENTA = [
-  { nombre: 'Almacén Pablito' },
-  { nombre: 'Almacén Aramir' },
-  { nombre: 'Almacén Angelito', lugar: 'Las Salinas de Pullally' },
-  { nombre: 'Almacén Emma', lugar: 'Población San Expedito' },
-  { nombre: 'Almacén Abish', lugar: 'Longotoma con Zapallar, parte alta de La Ligua' },
-  { nombre: 'Local La Pingüinita', lugar: 'Los Molles' },
-  { nombre: 'Roots Salinas', lugar: 'Las Salinas de Pullally', proximamente: true },
+  { nombre: 'Almacén El Pablito', lugar: 'Villa Futuro, La Ligua', foto: 'assets/puntos-venta/el-pablito.webp' },
+  { nombre: 'Almacén Aramir', lugar: 'Departamentos de Rayado, La Ligua', foto: 'assets/puntos-venta/aramir.webp' },
+  { nombre: 'Almacén Angelito', lugar: 'Las Salinas de Pullally, Papudo', foto: 'assets/puntos-venta/angelito.webp' },
+  { nombre: 'Almacén Emma', lugar: 'Población San Expedito, La Ligua', mapa: 'https://maps.app.goo.gl/CQrCt49YVmGC1uU9A' },
+  { nombre: 'Almacén Abish', lugar: 'Población Jorge Tellier, La Ligua' },
+  { nombre: 'La Pingüinita', lugar: 'Los Molles', mapa: 'https://maps.app.goo.gl/fJdgynnxsTja4dFf8' },
+  { nombre: 'Roots Salinas', lugar: 'Las Salinas de Pullally', mapa: 'https://maps.app.goo.gl/UbnrtSabfwbyCBqn8', proximamente: true },
 ];
 
 const PV_FOTO_GENERICA = 'assets/puntos-venta/generico.webp';
@@ -58,9 +59,16 @@ function crearTarjetaPV(p, copia) {
     const info = document.createElement('div');
     info.className = 'pv-info';
     if (p.lugar) {
-      const lugar = document.createElement('span');
+      const lugar = document.createElement(p.mapa ? 'a' : 'span');
       lugar.className = 'pv-lugar';
       lugar.textContent = `📍 ${p.lugar}`;
+      if (p.mapa) {
+        lugar.href = p.mapa;
+        lugar.target = '_blank';
+        lugar.rel = 'noopener noreferrer';
+        lugar.setAttribute('aria-label', `Ver ${p.nombre} en el mapa: ${p.lugar}`);
+        if (copia) lugar.tabIndex = -1;
+      }
       info.appendChild(lugar);
     }
     (p.redes || []).forEach((r) => {
