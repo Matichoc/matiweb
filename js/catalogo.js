@@ -80,7 +80,7 @@ const CATALOGO = [
     categoria: 'Matidubai',
     nombre: 'Mini Dubai',
     precio: 2000,
-    img: '/assets/productos/matidubai.webp'
+    img: '/assets/productos/mini_dubai.webp'
   },
   {
     id: 'bombas',
