@@ -105,6 +105,11 @@ body:has(dialog[open]) .mg-mascota, body:has(dialog[open]) .mg-panel, body:has(d
 @media (max-height: 560px) { .mg-sugeridas { max-height: 56px; } .mg-cab { padding: 6px 10px; } .mg-pie { padding: 6px 8px; } }
 /* Celular: los botones sugeridos van en una sola fila deslizable (más espacio para leer) y el botón de WhatsApp no tapa el chat */
 @media (max-width: 600px) {
+  /* Guía y saludo más chicos: a 150px de alto tapaban productos y textos */
+  .mg-mascota { height: 100px; }
+  .mg-burbuja { left: 58px; bottom: calc(var(--mg-base) + 70px); max-width: min(200px, calc(100vw - 76px)); padding: 8px 10px; font-size: 0.85rem; }
+  .mg-burbuja button { min-height: 34px; padding: 5px 10px; font-size: 0.82rem; }
+  .mg-panel { bottom: calc(var(--mg-base) + 108px); max-height: min(70vh, 520px); max-height: min(70dvh, 520px, calc(100dvh - var(--mg-base) - 108px - 12px)); }
   .mg-sugeridas { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; max-height: none; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
   .mg-sugeridas button { flex: 0 0 auto; white-space: nowrap; }
   body:has(.mg-panel:not([hidden])) .whatsapp-float { display: none; }
