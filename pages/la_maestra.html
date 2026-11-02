@@ -151,6 +151,13 @@
             color: #4b2e2e;
         }
         .m-insignias li::before { content: "🏅 "; }
+        .m-insignias small { display: block; font-weight: 500; font-size: 0.85rem; margin-top: 2px; }
+        .m-ensena { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 10px; }
+        .m-ensena li { border-left: 4px solid #ffc800; padding: 4px 0 4px 12px; color: #4b2e2e; line-height: 1.5; }
+        .m-ensena strong { display: block; color: #d4216c; }
+        ul.m-chips li { border-radius: 14px; }
+        .m-chips small { display: block; color: #fff8f0; font-weight: 400; font-size: 0.8rem; }
+        .m-datos li:last-child:nth-child(odd) { grid-column: 1 / -1; }
         .m-chips li {
             background: #4b2e2e;
             color: #ffc800;
@@ -261,7 +268,9 @@
                 <p class="m-rol">La Maestra Chocolatera</p>
                 <ul class="m-datos">
                     <li><strong>2011</strong>empezó con una libreta y un coche</li>
-                    <li><strong>+3</strong>apoyos y premios, entre ellos Sopraval, FOSIS y PRODEMU</li>
+                    <li><strong>6</strong>fondos y programas de apoyo: Gobernación, Sopraval, FOSIS y PRODEMU</li>
+                    <li><strong>2022</strong>profesora de chocolatería para adultos y niños</li>
+                    <li><strong>U. de Valparaíso</strong>diseño de proyectos e innovación social</li>
                 </ul>
             </div>
         </section>
@@ -281,12 +290,14 @@
 
             <div class="m-panel" role="tabpanel" id="panel-reconoc" aria-labelledby="tab-reconoc" tabindex="0" hidden>
                 <h2>Reconocimientos</h2>
-                <p>A lo largo de estos años, ha sido reconocida por su dedicación y talento a través de importantes premios y apoyos como los de:</p>
+                <p>A lo largo de estos años, ha sido reconocida por su dedicación y talento a través de importantes fondos y programas de apoyo:</p>
                 <ul class="m-insignias">
-                    <li>Sopraval</li>
-                    <li>FOSIS</li>
-                    <li>PRODEMU</li>
-                    <li>Otros fondos regionales</li>
+                    <li>Gobernación<small>Fondo ORASMI</small></li>
+                    <li>Sopraval<small>Programa Capital Emprendedor</small></li>
+                    <li>FOSIS<small>Emprendamos Avanzado Individual</small></li>
+                    <li>FOSIS<small>Emprendamos Grupal</small></li>
+                    <li>FOSIS<small>Emprendamos Feria (Expo Feria)</small></li>
+                    <li>PRODEMU<small>Aprendiendo a Emprender</small></li>
                 </ul>
             </div>
 
@@ -294,6 +305,9 @@
                 <h2>Siempre aprendiendo</h2>
                 <p>Su constante capacitación la ha llevado a profesionalizar cada aspecto de su trabajo:</p>
                 <ul class="m-chips">
+                    <li>Diseño de proyectos e innovación social<small>Universidad de Valparaíso, Escuela de Emprendedores Sociales</small></li>
+                    <li>Formación para el trabajo<small>Programa Jefas de Hogar</small></li>
+                    <li>Taller de coctelería<small>Programa Jefas de Hogar</small></li>
                     <li>Manipulación de alimentos</li>
                     <li>Contabilidad</li>
                     <li>Formalización</li>
@@ -304,6 +318,10 @@
             <div class="m-panel" role="tabpanel" id="panel-hoy" aria-labelledby="tab-hoy" tabindex="0" hidden>
                 <h2>Hoy</h2>
                 <p>Además de crear chocolates irresistibles, Inés también enseña su arte en centros de formación y actividades comunitarias, formando a nuevas emprendedoras y compartiendo su sabiduría con pasión.</p>
+                <ul class="m-ensena">
+                    <li><strong>2022 – 2024</strong>Profesora de chocolatería en el Centro de Capacitación Nahuen, con cursos para adultos y niños.</li>
+                    <li><strong>Desde 2025</strong>Capacitaciones particulares de chocolatería.</li>
+                </ul>
             </div>
         </section>
 
