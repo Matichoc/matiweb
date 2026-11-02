@@ -244,6 +244,9 @@
 .t-card--consulta .t-card-cuerpo { padding: 20px 18px; }
 .t-card--consulta .t-emoji { font-size: 2.4rem; line-height: 1; }
 
+/* Botón de consulta en una tarjeta normal (productos solo a pedido, A_PEDIDO). */
+.t-wsp--chico { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 8px 10px; font-size: 0.9rem; }
+
 /* Galería de personalizados (js/catalogo.js → PERSONALIZADOS): fila deslizable, fotos sin recortar. */
 .t-galeria { margin-top: 22px; }
 .t-galeria h3 { margin: 0 0 4px; color: #4b2e2e; font-size: 1.25rem; }
