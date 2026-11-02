@@ -63,7 +63,7 @@
       resp: 'Matichoc nació en 2011: Inés Saavedra empezó con una libreta y un coche, anotando los primeros pedidos para fechas importantes como el Día de la Madre. Hoy somos una chocolatería artesanal y familiar de La Ligua.',
       links: [{ texto: 'Recorrer la Historia', href: ruta('pages/historia.html') }] },
     { id: 'maestra', claves: ['ines', 'maestra', 'fundadora', 'saavedra', 'chocolatera'],
-      resp: 'Inés Saavedra es la fundadora de Matichoc y nuestra maestra chocolatera. Puedes conocerla en la página de La Maestra.',
+      resp: 'Inés Saavedra es la fundadora de Matichoc y nuestra maestra chocolatera. Se ha formado con FOSIS, PRODEMU, Sopraval, Jefas de Hogar y la Universidad de Valparaíso, y enseña chocolatería a adultos y niños. Puedes conocerla en la página de La Maestra.',
       links: [{ texto: 'Conocer a La Maestra', href: ruta('pages/la_maestra.html') }] },
     { id: 'personalizados', claves: ['personaliz', 'frase', 'dibujo', 'cumple', 'evento', 'a medida', 'especial'],
       resp: 'Los productos personalizados (frases, dibujos, formas, cajas con mensaje) se acuerdan por WhatsApp. Revisa bien el texto y los detalles antes de confirmar, porque se hacen especialmente para ti.',
