@@ -57,6 +57,9 @@
             overflow-x: auto;
             padding: 2px;
             scrollbar-width: none;
+            /* Se desvanece a la derecha para que se note que hay más fotos al deslizar. */
+            -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
+            mask-image: linear-gradient(90deg, #000 85%, transparent);
         }
         .m-miniaturas::-webkit-scrollbar { display: none; }
         .m-mini {
@@ -253,13 +256,23 @@
     <main class="maestra">
         <section class="m-hero" aria-labelledby="m-titulo">
             <div class="m-visor">
-                <img class="m-visor-foto" id="mFoto" src="https://i.imgur.com/82fxI1H.png" alt="Inés Saavedra, maestra chocolatera de Matichoc (foto 1 de 5)" />
-                <div class="m-miniaturas" role="group" aria-label="Fotos de Inés (toca una para verla grande)">
-                    <button type="button" class="m-mini" aria-current="true" data-foto="https://i.imgur.com/82fxI1H.png" aria-label="Ver foto 1"><img src="https://i.imgur.com/82fxI1H.png" alt="" loading="lazy" /></button>
-                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/rEex4wf.png" aria-label="Ver foto 2"><img src="https://i.imgur.com/rEex4wf.png" alt="" loading="lazy" /></button>
-                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/Ji3vvrP.png" aria-label="Ver foto 3"><img src="https://i.imgur.com/Ji3vvrP.png" alt="" loading="lazy" /></button>
-                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/HkiWYrG.png" aria-label="Ver foto 4"><img src="https://i.imgur.com/HkiWYrG.png" alt="" loading="lazy" /></button>
-                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/JpG4dmt.png" aria-label="Ver foto 5"><img src="https://i.imgur.com/JpG4dmt.png" alt="" loading="lazy" /></button>
+                <img class="m-visor-foto" id="mFoto" src="../assets/maestra/01-discurso.webp" alt="Inés Saavedra, maestra chocolatera de Matichoc, dando un discurso (foto 1 de 15)" fetchpriority="high" />
+                <div class="m-miniaturas" role="group" aria-label="Fotos de Inés (toca una para verla grande; desliza para ver más)">
+                    <button type="button" class="m-mini" aria-current="true" data-foto="../assets/maestra/01-discurso.webp" data-texto="dando un discurso" aria-label="Ver foto 1: dando un discurso"><img src="../assets/maestra/01-discurso-mini.webp" alt="" width="120" height="120" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="../assets/maestra/02-charla-escenario.webp" data-texto="dando una charla en un escenario" aria-label="Ver foto 2: dando una charla en un escenario"><img src="../assets/maestra/02-charla-escenario-mini.webp" alt="" width="120" height="120" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="../assets/maestra/03-charla-los-inicios.webp" data-texto="contando los inicios de Matichoc en un seminario" aria-label="Ver foto 3: contando los inicios de Matichoc en un seminario"><img src="../assets/maestra/03-charla-los-inicios-mini.webp" alt="" width="120" height="120" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="../assets/maestra/04-reconocimiento-municipal.webp" data-texto="recibiendo un reconocimiento de la Municipalidad de La Ligua" aria-label="Ver foto 4: recibiendo un reconocimiento de la Municipalidad de La Ligua"><img src="../assets/maestra/04-reconocimiento-municipal-mini.webp" alt="" width="120" height="120" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="../assets/maestra/05-diploma.webp" data-texto="con su diploma" aria-label="Ver foto 5: con su diploma"><img src="../assets/maestra/05-diploma-mini.webp" alt="" width="120" height="120" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="../assets/maestra/06-seminario-jefas-de-hogar.webp" data-texto="en el seminario del Programa Mujeres Jefas de Hogar" aria-label="Ver foto 6: en el seminario del Programa Mujeres Jefas de Hogar"><img src="../assets/maestra/06-seminario-jefas-de-hogar-mini.webp" alt="" width="120" height="120" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="../assets/maestra/07-inauguracion-jefas-de-hogar.webp" data-texto="en una inauguración del Programa Mujeres Jefas de Hogar" aria-label="Ver foto 7: en una inauguración del Programa Mujeres Jefas de Hogar"><img src="../assets/maestra/07-inauguracion-jefas-de-hogar-mini.webp" alt="" width="120" height="120" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="../assets/maestra/08-gobierno-en-terreno.webp" data-texto="en una actividad de Gobierno en Terreno" aria-label="Ver foto 8: en una actividad de Gobierno en Terreno"><img src="../assets/maestra/08-gobierno-en-terreno-mini.webp" alt="" width="120" height="120" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="../assets/maestra/09-stand-matichoc.webp" data-texto="en el stand de Matichoc" aria-label="Ver foto 9: en el stand de Matichoc"><img src="../assets/maestra/09-stand-matichoc-mini.webp" alt="" width="120" height="120" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="../assets/maestra/10-stand-feria.webp" data-texto="en el stand de Matichoc en la plaza" aria-label="Ver foto 10: en el stand de Matichoc en la plaza"><img src="../assets/maestra/10-stand-feria-mini.webp" alt="" width="120" height="120" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/82fxI1H.png" aria-label="Ver foto 11"><img src="https://i.imgur.com/82fxI1H.png" alt="" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/rEex4wf.png" aria-label="Ver foto 12"><img src="https://i.imgur.com/rEex4wf.png" alt="" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/Ji3vvrP.png" aria-label="Ver foto 13"><img src="https://i.imgur.com/Ji3vvrP.png" alt="" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/HkiWYrG.png" aria-label="Ver foto 14"><img src="https://i.imgur.com/HkiWYrG.png" alt="" loading="lazy" /></button>
+                    <button type="button" class="m-mini" data-foto="https://i.imgur.com/JpG4dmt.png" aria-label="Ver foto 15"><img src="https://i.imgur.com/JpG4dmt.png" alt="" loading="lazy" /></button>
                 </div>
             </div>
             <div>

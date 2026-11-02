@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const minis = [...document.querySelectorAll('.m-mini')];
     minis.forEach((m, i) => m.addEventListener('click', () => {
         foto.src = m.dataset.foto;
-        foto.alt = 'Inés Saavedra, maestra chocolatera de Matichoc (foto ' + (i + 1) + ' de ' + minis.length + ')';
+        foto.alt = 'Inés Saavedra, maestra chocolatera de Matichoc' + (m.dataset.texto ? ', ' + m.dataset.texto : '') + ' (foto ' + (i + 1) + ' de ' + minis.length + ')';
         minis.forEach(x => x.removeAttribute('aria-current'));
         m.setAttribute('aria-current', 'true');
     }));
