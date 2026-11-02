@@ -7,7 +7,8 @@
 // - No usa inteligencia artificial libre: es un guion cerrado (palabras clave -> respuestas fijas), por eso
 //   nunca inventa nada. Si no sabe, lo dice y ofrece WhatsApp.
 // - No envía ni guarda lo que se escribe (queda solo en la pantalla). Lo único que recuerda, mientras la
-//   pestaña está abierta, es si la persona lo despidió (sessionStorage), para no insistir.
+//   pestaña está abierta, es si la persona lo despidió y si ya saludó (sessionStorage), para no insistir:
+//   el globo "¿Te ayudo?" sale solo en la primera página de la visita.
 // - Accesible: habla (voz del navegador, SpeechSynthesis: lee sus respuestas, los pasos del recorrido y, si se lo piden, la página),
 //   tiene un enlace de salto al inicio de la página para lectores de pantalla y teclado, "Letra grande" y mensajes anunciados
 //   con aria-live. La voz solo lee texto del propio sitio (nada personal) y no se activa sola.
@@ -22,6 +23,8 @@
   const REDUCIR = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const WSP = '56975645591';
   const CLAVE = 'matichico-despedido';
+  const CLAVE_SALUDO = 'matichico-saludo';
+  const CELULAR = window.matchMedia && window.matchMedia('(max-width: 600px)').matches;
   const RETRASO = 6000; // llega saltando unos segundos después de entrar
 
   const guardado = (k, v) => { try { return v === undefined ? sessionStorage.getItem(k) : sessionStorage.setItem(k, v); } catch (e) { return null; } };
@@ -452,7 +455,9 @@
     if (mascota && document.body.contains(mascota)) return; // ya la abrieron con el enlace de salto
     if (document.querySelector('dialog[open]')) { setTimeout(llegar, 3000); return; }
     construir();
-    // un saludo corto; si no lo tocan, se esconde solo
+    // un saludo corto, solo en la primera página de la visita; si no lo tocan, se esconde solo
+    if (guardado(CLAVE_SALUDO)) return;
+    guardado(CLAVE_SALUDO, '1');
     setTimeout(() => {
       if (abierto || !burbuja) return;
       burbuja.replaceChildren(document.createTextNode('¡Hola! Soy ' + NOMBRE + ' 🍫 ¿Te ayudo a recorrer el sitio?'));
@@ -463,7 +468,8 @@
       burbuja.appendChild(si);
       burbuja.hidden = false;
       poner('bienvenida');
-      setTimeout(() => { if (burbuja) { burbuja.hidden = true; poner('hablando'); } }, 12000);
+      // en el celular tapa más pantalla, así que se va antes
+      setTimeout(() => { if (burbuja) { burbuja.hidden = true; poner('hablando'); } }, CELULAR ? 7000 : 12000);
     }, REDUCIR ? 300 : 1300);
   }
 
