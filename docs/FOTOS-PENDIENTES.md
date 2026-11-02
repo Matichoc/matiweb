@@ -7,10 +7,6 @@ mientras tanto el sitio muestra un reemplazo (no queda un hueco).
 |---|---|---|---|
 | Cono Manjar | Tienda → Conos | "Foto en camino" | `assets/productos/cono_manjar.webp` |
 | Cono Nutella | Tienda → Conos | "Foto en camino" | `assets/productos/cono_nutella.webp` |
-| Almacén Emma | Puntos de venta (inicio y Contacto) | foto genérica del stand | `assets/puntos-venta/emma.webp` |
-| Almacén Abish | Puntos de venta | foto genérica del stand | `assets/puntos-venta/abish.webp` |
-| La Pingüinita | Puntos de venta | foto genérica del stand | `assets/puntos-venta/la-pinguinita.webp` |
-| Roots Salinas | Puntos de venta | foto genérica del stand | `assets/puntos-venta/roots-salinas.webp` |
 
 También faltan (opcional): enlace de Google Maps de El Pablito, Aramir, Angelito y Abish; redes sociales de los locales.
 
