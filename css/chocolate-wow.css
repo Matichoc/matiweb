@@ -93,10 +93,14 @@
   background-color: rgba(75, 46, 46, 0.82);
 }
 
+/* Amarillo de marca sobre chocolate, como el título de #bienvenida: el rosa
+   con resplandor blanco se veía borroso y no llegaba al contraste mínimo. */
 #banner .banner-title {
+  font-family: var(--font-display);
   font-size: 3rem;
   margin-bottom: 18px;
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.55), 0 0 24px rgba(255, 255, 255, 0.35), 2px 2px 4px rgba(0, 0, 0, 0.5);
+  color: var(--color-yellow);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
 }
 
 #banner .banner-text {
@@ -162,9 +166,16 @@
     max-width: none;
   }
 
+  /* En el celular la ilustración va completa arriba (1536×1024 → alto = ancho/1.5)
+     y la tarjeta queda debajo, montada 40px sobre el borde: así no tapa las caras. */
   #banner .banner-background {
+    display: block;
     min-height: 0;
-    padding: 24px 12px 72px;
+    padding: calc(100vw / 1.5 - 40px) 12px 28px;
+    background-color: var(--color-brown-dark);
+    background-size: 100% auto;
+    background-position: top center;
+    background-repeat: no-repeat;
   }
 
   #banner .banner-content {
