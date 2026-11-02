@@ -155,3 +155,16 @@ const CATALOGO_CONSULTAR = {
   categoria: 'Productos de Temporada',
   descripcion: 'Sorpresas, figuras y ediciones especiales. Precio a consultar según lo que tengas en mente.'
 };
+
+// Galería de personalizados que ya hicimos (va bajo "Productos de Temporada" en la Tienda). No son productos con
+// precio: cada foto abre WhatsApp para pedir uno parecido. Fotos en assets/personalizados/, sin nombres de clientes.
+const PERSONALIZADOS = [
+  { ocasion: 'Cumpleaños', foto: 'cumpleanos-amor.webp', alt: 'Cuchuflís con la frase "Feliz cumpleaños, amor de mi vida"' },
+  { ocasion: 'Cumpleaños', foto: 'cumpleanos-bombones.webp', alt: 'Caja de bombones con letras que dicen "Feliz cumpleaños"' },
+  { ocasion: 'Día de la Madre', foto: 'dia-de-la-madre.webp', alt: 'Tabletas decoradas con flores y las frases "Eres la mejor" y "Te amo mamá"' },
+  { ocasion: 'Día del Padre', foto: 'dia-del-padre.webp', alt: 'Caja con alfajores y cuchuflís que dicen "Feliz día papito, eres el mejor papá del mundo"' },
+  { ocasion: 'Para los hijos', foto: 'para-los-hijos.webp', alt: 'Caja con cuchuflís que dicen "No importa cuánto crezcas, siempre serás mi bebé" y alfajores "Te amo mucho"' },
+  { ocasion: 'Día de la Enfermera', foto: 'dia-de-la-enfermera.webp', alt: 'Alfajores decorados que dicen "Feliz día, enfermera"' },
+  { ocasion: 'Aniversario', foto: 'aniversario-corazon.webp', alt: 'Caja con forma de corazón llena de bombones' },
+  { ocasion: 'Torre de cuchuflí', foto: 'torre-cuchufli.webp', alt: 'Torre de cuchuflís bañados con confites de colores' },
+];

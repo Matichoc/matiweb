@@ -53,6 +53,24 @@
     return `https://wa.me/${WSP}?text=${encodeURIComponent('Hola, me interesa consultar por: ' + categoria)}`;
   }
 
+  // Personalizados que ya hicimos: fila deslizable; cada foto abre WhatsApp para pedir uno parecido.
+  function galeriaHTML() {
+    if (typeof PERSONALIZADOS === 'undefined' || !PERSONALIZADOS.length) return '';
+    const msj = (o) => `https://wa.me/${WSP}?text=${encodeURIComponent(`Hola, quiero un personalizado para: ${o}. Vi uno parecido en la web.`)}`;
+    return `
+        <div class="t-galeria" role="group" aria-labelledby="t-galeria-t">
+          <h3 id="t-galeria-t">Personalizados que hemos hecho</h3>
+          <p>Con la frase, el nombre o los colores que quieras. Toca una foto para pedir uno parecido.</p>
+          <ul class="t-galeria-fila">
+            ${PERSONALIZADOS.map((g) => `
+            <li><a href="${msj(g.ocasion)}" target="_blank" rel="noopener noreferrer">
+              <img src="../assets/personalizados/${esc(g.foto)}" alt="${esc(g.alt)}" height="280" loading="lazy" decoding="async">
+              <span>${esc(g.ocasion)}</span>
+            </a></li>`).join('')}
+          </ul>
+        </div>`;
+  }
+
   function renderCatalogo() {
     const cont = $('tCatalogo');
     cont.innerHTML = categorias.map((cat) => `
@@ -75,6 +93,7 @@
             </div>
           </article>
         </div>
+        ${galeriaHTML()}
       </section>`;
 
     $('tChips').innerHTML = [TODO, ...categorias, CAT_TEMPORADA].map((c) =>
