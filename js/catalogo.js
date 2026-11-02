@@ -156,6 +156,17 @@ const CATALOGO_CONSULTAR = {
   descripcion: 'Sorpresas, figuras y ediciones especiales. Precio a consultar según lo que tengas en mente.'
 };
 
+// Productos que solo se hacen a pedido: sin precio ni carrito, la tarjeta lleva a consultar por WhatsApp.
+// Van en la sección "Productos de Temporada".
+const A_PEDIDO = [
+  {
+    id: 'frutillas',
+    nombre: 'Frutillas bañadas en chocolate',
+    descripcion: 'Solo a pedido. Consulta disponibilidad y precio por WhatsApp.',
+    img: '/assets/productos/frutillas.webp'
+  }
+];
+
 // Galería de personalizados que ya hicimos (va bajo "Productos de Temporada" en la Tienda). No son productos con
 // precio: cada foto abre WhatsApp para pedir uno parecido. Fotos en assets/personalizados/, sin nombres de clientes.
 const PERSONALIZADOS = [

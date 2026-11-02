@@ -53,6 +53,20 @@
     return `https://wa.me/${WSP}?text=${encodeURIComponent('Hola, me interesa consultar por: ' + categoria)}`;
   }
 
+  // Solo a pedido (A_PEDIDO en catalogo.js): foto y consulta por WhatsApp, sin precio ni carrito.
+  function pedidoHTML(p) {
+    return `
+          <article class="t-card" data-pedido="${p.id}" data-busqueda="${esc(norm(p.nombre + ' ' + p.descripcion + ' ' + CAT_TEMPORADA + ' a pedido'))}">
+            <span class="t-badge">A pedido</span>
+            <img src="${esc(p.img)}" alt="${esc(p.nombre)}" width="400" height="400" loading="lazy" decoding="async">
+            <div class="t-card-cuerpo">
+              <h3>${esc(p.nombre)}</h3>
+              <p class="t-desc abierto">${esc(p.descripcion)}</p>
+              <a class="t-wsp t-wsp--chico" href="${msjConsulta(p.nombre)}" target="_blank" rel="noopener noreferrer" aria-label="Consultar por WhatsApp: ${esc(p.nombre)}">📲 Consultar</a>
+            </div>
+          </article>`;
+  }
+
   // Personalizados que ya hicimos: fila deslizable; cada foto abre WhatsApp para pedir uno parecido.
   function galeriaHTML() {
     if (typeof PERSONALIZADOS === 'undefined' || !PERSONALIZADOS.length) return '';
@@ -84,6 +98,7 @@
       <section class="t-cat" id="${slug(CAT_TEMPORADA)}" data-cat="${esc(CAT_TEMPORADA)}" data-fija="1" aria-labelledby="${slug(CAT_TEMPORADA)}-t">
         <div class="t-cat-cab"><h2 id="${slug(CAT_TEMPORADA)}-t">${esc(CAT_TEMPORADA)}</h2></div>
         <div class="t-grid">
+          ${(typeof A_PEDIDO === 'undefined' ? [] : A_PEDIDO).map(pedidoHTML).join('')}
           <article class="t-card t-card--consulta" data-busqueda="${esc(norm(CAT_TEMPORADA + ' ' + CATALOGO_CONSULTAR.descripcion + ' sorpresa figura personalizado'))}">
             <div class="t-card-cuerpo">
               <span class="t-emoji" aria-hidden="true">🎁</span>
