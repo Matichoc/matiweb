@@ -42,6 +42,9 @@ Si tienes **más de una foto del mismo producto**, agrega `_2`, `_3`…: por eje
 1. En GitHub, entra a esta carpeta (`assets/productos`).
 2. **Add file → Upload files** y arrastra las fotos.
 3. Abajo, **Commit changes**.
-4. Avísame con "fotos subidas": reviso los nombres, las conecto a la tienda y dejo las de imgur solo como respaldo para los productos que aún no tengan foto propia.
+4. Avísame con "fotos subidas": reviso los nombres y las conecto a la tienda.
+
+Las fotos que la tienda usa hoy ya están aquí como `.webp` (las de imgur, recortadas cuadradas a 640 px). Si subes un
+`.jpg` nuevo con el nombre de la tabla, lo paso a `.webp` y reemplaza al actual.
 
 Subirlas aquí **no cambia nada del sitio** hasta que yo las conecte, así que no hay riesgo de que algo se rompa.
