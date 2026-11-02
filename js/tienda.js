@@ -366,7 +366,7 @@
           '@type': 'Product',
           name: p.nombre,
           description: p.descripcion || p.nombre + ' artesanal de Matichoc.',
-          image: p.img,
+          image: new URL(p.img, location.href).href,
           category: p.categoria,
           brand: { '@type': 'Brand', name: 'Matichoc' },
           offers: { '@type': 'Offer', price: p.precio, priceCurrency: 'CLP', url: 'https://matichoc.cl/pages/tienda.html#' + slug(p.categoria) }

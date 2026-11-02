@@ -1,6 +1,7 @@
 // Fuente única de verdad para el catálogo de Matichoc.
 // La tienda (pages/tienda.html + js/tienda.js) lee de aquí — no dupliques precios a mano.
 // Campo opcional `badge`: etiqueta destacada en la tarjeta.
+// `img`: foto cuadrada en assets/productos/ (ver el README de esa carpeta), ruta desde la raíz del sitio.
 const CATALOGO = [
   {
     id: 'alfajor',
@@ -8,7 +9,7 @@ const CATALOGO = [
     nombre: 'Alfajor',
     descripcion: 'Tradicional, frambuesa, tres leches, menta, naranja, trufa, nuez, pistacho, lúcuma, pie de limón, maracuyá, capuchino o café moka.',
     precio: 1000,
-    img: 'https://i.imgur.com/C01CAjn.jpg'
+    img: '/assets/productos/alfajor.webp'
   },
   {
     id: 'alfajor_personalizado',
@@ -16,14 +17,14 @@ const CATALOGO = [
     nombre: 'Alfajor personalizado',
     descripcion: 'Cualquiera de los sabores anteriores, con frase simple o dibujo simple.',
     precio: 1500,
-    img: 'https://i.imgur.com/WSv71hy.jpg'
+    img: '/assets/productos/alfajor_personalizado.webp'
   },
   {
     id: 'alfajor_oreo_bonbon',
     categoria: 'Alfajores',
     nombre: 'Alfajor Oreo o Bon o Bon',
     precio: 1500,
-    img: 'https://i.imgur.com/ncBRyei.jpg'
+    img: '/assets/productos/alfajor_oreo_bonbon.webp'
   },
   {
     id: 'cuchufli',
@@ -31,7 +32,7 @@ const CATALOGO = [
     nombre: 'Cuchuflí tradicional',
     descripcion: 'Bolsa de 3.',
     precio: 1000,
-    img: 'https://i.imgur.com/KvjlYTA.jpg'
+    img: '/assets/productos/cuchufli.webp'
   },
   {
     id: 'cuchufli_personalizado',
@@ -39,7 +40,7 @@ const CATALOGO = [
     nombre: 'Cuchuflí personalizado',
     descripcion: 'Bolsa de 3, con frase o formas.',
     precio: 2000,
-    img: 'https://i.imgur.com/4CAvQAT.jpg'
+    img: '/assets/productos/cuchufli_personalizado.webp'
   },
   {
     id: 'torta_cuchufli',
@@ -47,7 +48,7 @@ const CATALOGO = [
     nombre: 'Torta de cuchuflí',
     descripcion: '30 cuchuflí con toppings.',
     precio: 14000,
-    img: 'https://i.imgur.com/Mgd5CIN.jpg'
+    img: '/assets/productos/torta_cuchufli.webp'
   },
   {
     id: 'prestigios',
@@ -55,7 +56,7 @@ const CATALOGO = [
     nombre: 'Prestigios',
     descripcion: 'Bolsa de 2 unidades.',
     precio: 1500,
-    img: 'https://i.imgur.com/VvGQWV1.jpg'
+    img: '/assets/productos/prestigios.webp'
   },
   {
     id: 'bolitas_pie_limon',
@@ -63,7 +64,7 @@ const CATALOGO = [
     nombre: 'Bolitas Pie de Limón',
     descripcion: 'Bolsa de 2 unidades.',
     precio: 1500,
-    img: 'https://i.imgur.com/o5ofqlW.jpg'
+    img: '/assets/productos/bolitas_pie_limon.webp'
   },
   {
     id: 'matidubai',
@@ -72,14 +73,14 @@ const CATALOGO = [
     descripcion: 'Chocolate de Dubai 100% artesanal, con pistacho natural y fideo kataifi crocante.',
     precio: 13000,
     badge: 'Más pedido',
-    img: 'https://i.imgur.com/FcrTH9K.jpg'
+    img: '/assets/productos/matidubai.webp'
   },
   {
     id: 'mini_dubai',
     categoria: 'Matidubai',
     nombre: 'Mini Dubai',
     precio: 2000,
-    img: 'https://i.imgur.com/FcrTH9K.jpg'
+    img: '/assets/productos/matidubai.webp'
   },
   {
     id: 'bombas',
@@ -87,35 +88,35 @@ const CATALOGO = [
     nombre: 'Bombas de Chocolate',
     descripcion: 'Ideales para la leche, de café o Milo. Incluyen marshmallow.',
     precio: 1500,
-    img: 'https://i.imgur.com/dkkIZCU.jpg'
+    img: '/assets/productos/bombas.webp'
   },
   {
     id: 'barra_nikolo',
     categoria: 'Barras de Chocolate',
     nombre: 'Barra Nikolo',
     precio: 1000,
-    img: 'https://i.imgur.com/0IzB6cW.jpg'
+    img: '/assets/productos/barra_nikolo.webp'
   },
   {
     id: 'barra_blanca',
     categoria: 'Barras de Chocolate',
     nombre: 'Barra pequeña blanca',
     precio: 1000,
-    img: 'https://i.imgur.com/eO1gzDB.jpg'
+    img: '/assets/productos/barra_blanca.webp'
   },
   {
     id: 'barra_dark',
     categoria: 'Barras de Chocolate',
     nombre: 'Barra Dark',
     precio: 1000,
-    img: 'https://i.imgur.com/0L0iFSV.jpg'
+    img: '/assets/productos/barra_dark.webp'
   },
   {
     id: 'barra_wonka',
     categoria: 'Barras de Chocolate',
     nombre: 'Barra Wonka',
     precio: 4000,
-    img: 'https://i.imgur.com/GboR5zb.jpg'
+    img: '/assets/productos/barra_wonka.webp'
   },
   {
     id: 'barra_colores',
@@ -123,7 +124,7 @@ const CATALOGO = [
     nombre: 'Barra de colores',
     descripcion: 'Verde, azul, rosada, roja o blanca.',
     precio: 4000,
-    img: 'https://i.imgur.com/HFT67A3.jpg'
+    img: '/assets/productos/barra_colores.webp'
   },
   {
     id: 'cono_manjar',
@@ -131,21 +132,21 @@ const CATALOGO = [
     nombre: 'Cono Manjar',
     descripcion: 'Solo o con salsa de frambuesa.',
     precio: 1000,
-    img: 'https://i.imgur.com/x7xTgWJ.jpg'
+    img: '/assets/productos/cono_manjar.webp'
   },
   {
     id: 'cono_nutella',
     categoria: 'Conos',
     nombre: 'Cono Nutella',
     precio: 1500,
-    img: 'https://i.imgur.com/VrVpwh8.jpg'
+    img: '/assets/productos/cono_nutella.webp'
   },
   {
     id: 'paletas',
     categoria: 'Paletas',
     nombre: 'Paletas de colores',
     precio: 500,
-    img: 'https://i.imgur.com/wDYCiyP.jpg'
+    img: '/assets/productos/paletas.webp'
   }
 ];
 
