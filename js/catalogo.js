@@ -132,14 +132,14 @@ const CATALOGO = [
     nombre: 'Cono Manjar',
     descripcion: 'Solo o con salsa de frambuesa.',
     precio: 1000,
-    img: '/assets/productos/cono_manjar.webp'
+    img: '/assets/productos/foto-pendiente.webp' // FOTO PENDIENTE: reemplazar por /assets/productos/cono_manjar.webp
   },
   {
     id: 'cono_nutella',
     categoria: 'Conos',
     nombre: 'Cono Nutella',
     precio: 1500,
-    img: '/assets/productos/cono_nutella.webp'
+    img: '/assets/productos/foto-pendiente.webp' // FOTO PENDIENTE: reemplazar por /assets/productos/cono_nutella.webp
   },
   {
     id: 'paletas',

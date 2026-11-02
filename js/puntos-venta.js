@@ -11,6 +11,7 @@ const PUNTOS_VENTA = [
   { nombre: 'Almacén El Pablito', lugar: 'Villa Futuro, La Ligua', foto: 'assets/puntos-venta/el-pablito.webp' },
   { nombre: 'Almacén Aramir', lugar: 'Departamentos de Rayado, La Ligua', foto: 'assets/puntos-venta/aramir.webp' },
   { nombre: 'Almacén Angelito', lugar: 'Las Salinas de Pullally, Papudo', foto: 'assets/puntos-venta/angelito.webp' },
+  // FOTO PENDIENTE (Emma, Abish, La Pingüinita, Roots Salinas): agregar foto: 'assets/puntos-venta/<nombre>.webp'.
   { nombre: 'Almacén Emma', lugar: 'Población San Expedito, La Ligua', mapa: 'https://maps.app.goo.gl/CQrCt49YVmGC1uU9A' },
   { nombre: 'Almacén Abish', lugar: 'Población Jorge Tellier, La Ligua' },
   { nombre: 'La Pingüinita', lugar: 'Los Molles', mapa: 'https://maps.app.goo.gl/fJdgynnxsTja4dFf8' },
