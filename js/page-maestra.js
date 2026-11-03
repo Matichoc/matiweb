@@ -15,6 +15,16 @@ document.addEventListener('DOMContentLoaded', () => {
         minis.forEach(x => x.removeAttribute('aria-current'));
         m.setAttribute('aria-current', 'true');
     }));
+    // Las miniaturas de Reconocimientos muestran su foto en el visor.
+    const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelectorAll('.m-insignia-foto').forEach(b => b.addEventListener('click', () => {
+        const m = minis.find(x => x.dataset.foto === b.dataset.ver);
+        if (!m) return;
+        m.click();
+        m.scrollIntoView({ block: 'nearest', inline: 'center' });
+        foto.scrollIntoView({ behavior: reducir ? 'auto' : 'smooth', block: 'center' });
+        m.focus({ preventScroll: true });
+    }));
 })();
 
 // Pestañas accesibles (flechas, Inicio y Fin). Sin JS se ven todos los paneles.
