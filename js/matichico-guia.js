@@ -51,8 +51,11 @@
       resp: 'Puedes pagar en efectivo o por transferencia (lo coordinamos por WhatsApp) o con tarjeta online en Tuu, con el botón "Pagar online con Tuu". Si ya pagaste, envíanos tu comprobante (una captura o foto) por WhatsApp: tu pedido se confirma cuando lo recibimos y verificamos el pago.',
       links: [{ texto: 'Términos y condiciones', href: ruta('pages/terminos.html') }] },
     { id: 'entregas', claves: ['entrega', 'entregan', 'despacho', 'envio', 'envian', 'enviar', 'retiro', 'retirar', 'donde', 'region', 'blue', 'stand', 'plaza', 'domicilio', 'courier', 'santiago'],
-      resp: 'Las entregas son los martes y jueves en nuestro stand de la plaza de La Ligua. Otro día lo coordinamos por WhatsApp y entregamos en nuestro domicilio. También enviamos por pagar: a regiones por Blue Express, y el costo del envío lo pagas tú al recibir.',
+      resp: 'Las entregas son los martes y jueves en nuestro stand de la plaza de La Ligua, de 8:30 a 17:00. Otro día lo coordinamos por WhatsApp y entregamos en nuestro domicilio. También enviamos por pagar: a regiones por Blue Express, y el costo del envío lo pagas tú al recibir.',
       links: [{ texto: 'Dónde encontrarnos', href: ruta('pages/contacto.html') }] },
+    { id: 'ferias', claves: ['feria', 'ferias', 'eventos', 'aniversario', 'expo', 'fiesta', 'costumbrista', 'horario', 'abren', 'atienden', 'martes', 'jueves'],
+      resp: 'Estamos todos los martes y jueves en la plaza de La Ligua, de 8:30 a 17:00. También vamos a los eventos de la provincia: aniversarios de La Ligua, Cabildo y Petorca, Expo Vive Papudo, Expo La Ligua, fiestas costumbristas y ferias de verano e invierno.',
+      links: [{ texto: 'Ver ferias y eventos', href: ruta('pages/la_maestra.html#ferias') }] },
     { id: 'programa', claves: ['racha', 'cupon', 'premio', 'descuento', 'matilover', 'programa', 'puntos', 'gratis'],
       resp: 'Los Matilovers pueden guardar su racha: 7 días seguidos dan un cupón de 10% de descuento, y 10 pedidos entregados dan 1 cuchuflí o alfajor gratis. Cada cupón dura 30 días, es de un solo uso y no se acumula con otros. Las cuentas son desde los 14 años.',
       links: [{ texto: 'Ver las bases del programa', href: ruta('pages/bases-matilover.html') }] },
@@ -80,7 +83,7 @@
     { id: 'juego', claves: ['juego', 'jugar', 'matijuego', 'arcade'],
       resp: 'El Matijuego es nuestro arcade 🎮 Puedes jugar sin cuenta; si tienes cuenta Matilover (desde los 14 años), después se podrá guardar tu progreso.',
       links: [{ texto: 'Ir al Matijuego', href: ruta('matijuego/') }] },
-    { id: 'contacto', claves: ['contacto', 'contactar', 'telefono', 'whatsapp', 'numero', 'correo', 'mail', 'hablar', 'persona', 'humano', 'llamar', 'escribir', 'atienden', 'horario'],
+    { id: 'contacto', claves: ['contacto', 'contactar', 'telefono', 'whatsapp', 'numero', 'correo', 'mail', 'hablar', 'persona', 'humano', 'llamar', 'escribir'],
       resp: 'Puedes hablar con una persona por WhatsApp al +56 9 7564 5591 o escribir a i.saavedra.nu@gmail.com.',
       links: [WA, { texto: 'Página de Contacto', href: ruta('pages/contacto.html') }] }
   ];
@@ -92,7 +95,8 @@
     'index.html': [
       ['#bienvenida', 'Aquí te contamos quiénes somos: una chocolatería artesanal y familiar de La Ligua, desde 2011.'],
       ['#racha-widget', 'Aquí ves tu racha de visitas. Con una cuenta Matilover (desde los 14 años) se guarda y puedes juntar cupones.'],
-      ['#puntos-venta', 'Y aquí están los lugares donde puedes encontrarnos.']
+      ['#plaza', 'Los martes y jueves estamos en la plaza de La Ligua, de 8:30 a 17:00.'],
+      ['#puntos-venta', 'Y aquí están los almacenes donde también puedes encontrarnos.']
     ],
     'tienda.html': [
       ['.t-aviso', 'Lee esto antes de pedir: avisos importantes sobre ingredientes y entregas.'],
@@ -106,7 +110,8 @@
     ],
     'la_maestra.html': [
       ['.m-hero', 'Ella es Inés Saavedra, la fundadora y maestra chocolatera.'],
-      ['#mTabs', 'Cambia de pestaña para conocer cómo empezó, sus reconocimientos y lo que hace hoy.']
+      ['#mTabs', 'Cambia de pestaña para conocer cómo empezó, sus reconocimientos y lo que hace hoy.'],
+      ['#ferias', 'Y aquí están las ferias y eventos de la provincia donde nos encuentras.']
     ],
     'contacto.html': [
       ['#contacto-form', 'Escríbenos desde aquí: el mensaje se arma y tú decides si lo envías por WhatsApp.'],

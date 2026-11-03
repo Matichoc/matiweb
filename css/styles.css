@@ -1235,6 +1235,33 @@ a.pv-lugar {
   color: #fff;
 }
 
+/* Portada: stand en la plaza (horario) y ferias. */
+.plaza {
+  background: #fff8f0;
+  border: 3px solid #ffc800;
+  border-radius: 18px;
+  padding: 22px 18px;
+  max-width: 768px;
+}
+.plaza-horario {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0 14px;
+}
+.plaza-horario span {
+  background: #4b2e2e;
+  color: #ffc800;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+@media (max-width: 832px) {
+  .plaza { margin-left: 16px; margin-right: 16px; }
+}
+
 /* Carrito en mobile: la fila de cada producto se apila para no desbordar. */
 @media (max-width: 520px) {
   .cart-item { min-width: 0; }

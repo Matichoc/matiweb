@@ -71,7 +71,8 @@ actualizar su `lastmod` en `sitemap.xml`. Imagen para compartir: `assets/brand/o
 
 Chocolatería Matichoc Inés Saavedra EIRL · RUT 77.877.372-4 · Guayacán 1409, La Ligua · i.saavedra.nu@gmail.com ·
 resolución sanitaria N° 2505129791. Aparecen en `pages/terminos.html`, `pages/privacidad.html` y el pie de página
-(`components/footer.html`, sin domicilio). Entregas: martes y jueves en el stand de la plaza de La Ligua, otro día a
+(`components/footer.html`, sin domicilio). Stand en la plaza de La Ligua: martes y jueves, de 8:30 a 17:00 (portada `#plaza`,
+Contacto y guía); las ferias y eventos de la provincia están en `pages/la_maestra.html#ferias`. Entregas: martes y jueves en el stand de la plaza de La Ligua, otro día a
 coordinar en el domicilio, o envío por pagar (a regiones, Blue Express). No cambiar estos textos sin confirmar con el dueño.
 
 ## Pendientes que el dueño pidió NO recordar
