@@ -4,6 +4,9 @@ Chocolatería artesanal familiar (La Ligua, Chile, desde 2011). Identidad: elabo
 artesanal, cercanía familiar, personajes Matichico y Chocolatina, la maestra
 chocolatera Inés Saavedra, la comunidad de clientes "Matilovers".
 
+Documentación para personas: `README.md` (uso y visión general) y `docs/` (`ARQUITECTURA.md`, `COMO-ACTUALIZAR.md`,
+`PUBLICAR.md`, `SEO.md`, `FOTOS-PENDIENTES.md`). Si un cambio altera algo que esos documentos describen, actualizarlos en el mismo PR.
+
 ## Arquitectura real (no asumir otra)
 
 Sitio estático: HTML/CSS/JS plano, **sin build, sin framework, sin backend**.

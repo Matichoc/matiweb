@@ -22,7 +22,9 @@ Lo que está hecho, lo que falta y cómo se mide. Actualizar este archivo cuando
 2. **Perfil de Empresa de Google** (ficha en Maps): nombre, categoría "Chocolatería", teléfono, horario, fotos, enlace a matichoc.cl, y pedir reseñas.
 3. ~~Contador de visitas~~: hecho (cuenta `matichoc`). Confirmar en GoatCounter → Settings que la recolección de IP esté apagada.
 4. ~~Fotos de productos en imgur~~: hecho, la Tienda usa `assets/productos/*.webp`.
-5. Datos que solo el dueño puede confirmar para publicarlos (no se inventan): horario del stand, dirección en la ficha de Google, precios en la tienda.
+5. Datos que solo el dueño puede confirmar para publicarlos (no se inventan): dirección en la ficha de Google, precios en la tienda.
+   El horario del stand ya está confirmado y publicado (plaza de La Ligua, martes y jueves, 8:30 a 17:00); falta que la ficha de
+   Google diga lo mismo (hoy muestra 8:00 a 20:00 todos los días).
 6. Menciones y enlaces hacia matichoc.cl desde Instagram, Facebook, clubes y negocios que ya aparecen en el sitio.
 
 ## Cómo medir
