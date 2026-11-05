@@ -2,8 +2,8 @@
 // Cada lunes salen 3 metas nuevas, sacadas de una lista larga. Cada una mide cuánto subió un contador acumulado desde el
 // lunes (partidas, Matipuntos ganados, ⭐, visitas, golosinas a la mascota, sobres...), así no hay que tocar cada juego.
 // Cada meta da Matipuntos y una ⭐; las 3 cumplidas abren el cofre de la semana (más Matipuntos y un sobre de figuritas).
-import { earnCoins, saveProgress } from "./storage.js?v=2926c82843";
-import { adventureOf, addStars } from "./adventure.js?v=2926c82843";
+import { earnCoins, saveProgress } from "./storage.js?v=630e2f1eb3";
+import { adventureOf, addStars } from "./adventure.js?v=630e2f1eb3";
 
 export const GOAL_REWARD = { coins: 80, stars: 1 };
 export const CHEST_REWARD = { coins: 150, packs: 1 };
