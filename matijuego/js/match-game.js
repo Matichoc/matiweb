@@ -2,11 +2,11 @@
 // controles (joystick o teclado + botones grandes), pausa, y el cierre del partido (avance guardado, premio de la copa una
 // sola vez y la tarjeta final). Cada deporte pone su escena, su simulación y su cámara.
 
-import { THREE, Game3D } from "./three-kit.js?v=2926c82843";
-import { saveProgress, earnCoins } from "./storage.js?v=2926c82843";
-import { addMedal } from "./adventure.js?v=2926c82843";
-import { sportOf, setDifficulty, recordMatch, cupRival, DIFFS, DIFF_NAMES, CUP_ROUNDS, ROUND_NAMES } from "./sports-progress.js?v=2926c82843";
-import * as audio from "./audio.js?v=2926c82843";
+import { THREE, Game3D } from "./three-kit.js?v=be30194ea6";
+import { saveProgress, earnCoins } from "./storage.js?v=be30194ea6";
+import { addMedal } from "./adventure.js?v=be30194ea6";
+import { sportOf, setDifficulty, recordMatch, cupRival, DIFFS, DIFF_NAMES, CUP_ROUNDS, ROUND_NAMES } from "./sports-progress.js?v=be30194ea6";
+import * as audio from "./audio.js?v=be30194ea6";
 
 const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
