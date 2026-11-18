@@ -11,7 +11,7 @@
 //   bought    veces que compró energía con Matipuntos hoy
 //   sleepUntil mientras el Matichico duerme en su cama la recarga es más rápida
 
-import { saveProgress, earnCoins, spendCoins, dayKey } from "./storage.js?v=ab8f1e1e13";
+import { saveProgress, earnCoins, spendCoins, dayKey } from "./storage.js?v=a068c80010";
 
 export const ENERGY_VERSION = 2; // al subirla, la energía de todos los perfiles se reinicia (llena) una sola vez
 export const ENERGY_MAX = 200; // lo que se llena solo (por día y con el tiempo)

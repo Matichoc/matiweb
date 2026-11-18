@@ -9,8 +9,8 @@
 // Los pedidos son de los vecinos del Pueblo para su día a día; cada día (`day`) los que no entregaste se cambian por otros.
 // código de una pieza = familia * 10 + nivel   (0 = casillero vacío)
 
-import { saveProgress, earnCoins, todayKey } from "./storage.js?v=ab8f1e1e13";
-import { addXp } from "./progression.js?v=ab8f1e1e13";
+import { saveProgress, earnCoins, todayKey } from "./storage.js?v=a068c80010";
+import { addXp } from "./progression.js?v=a068c80010";
 
 export const COLS = 6;
 export const ROWS = 8;

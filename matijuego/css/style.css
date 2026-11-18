@@ -927,6 +927,23 @@ h1, h2, h3 {
 .g3d-tbtn:active { background: rgba(212,33,108,0.95); }
 .g3d-stars { font-size: 2.4rem; letter-spacing: 6px; color: var(--dorado); text-shadow: 0 0 12px rgba(255,200,0,0.6), 2px 2px 0 var(--marron-osc); margin-bottom: 8px; }
 .g3d-stars .off { color: rgba(255,255,255,0.22); text-shadow: none; }
+/* estrellas que aparecen una a una al ganar un nivel (ver levelWin en js/three-kit.js) */
+.g3d-stars span { display: inline-block; animation: star-pop 0.5s cubic-bezier(0.3, 1.7, 0.5, 1) both; }
+.g3d-stars span:nth-child(1) { animation-delay: 0.15s; }
+.g3d-stars span:nth-child(2) { animation-delay: 0.4s; }
+.g3d-stars span:nth-child(3) { animation-delay: 0.65s; }
+@keyframes star-pop { from { transform: scale(0) rotate(-40deg); opacity: 0; } to { transform: none; opacity: 1; } }
+/* confeti de celebración (js/celebrate.js): solo transform y opacidad, liviano en celulares baratos */
+.confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 9999; }
+.confetti .cf { position: absolute; top: -6vh; width: 10px; height: 14px; border-radius: 3px; opacity: 0; animation: cf-fall 2s cubic-bezier(0.25, 0.6, 0.5, 1) forwards; will-change: transform, opacity; }
+.confetti .cf-emoji { width: auto; height: auto; font-size: 1.6rem; line-height: 1; }
+@keyframes cf-fall {
+  0% { opacity: 0; transform: translate3d(0, 0, 0) rotate(0); }
+  10% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(var(--dx, 0), 108vh, 0) rotate(var(--rot, 360deg)); }
+}
+@media (prefers-reduced-motion: reduce) { .g3d-stars span { animation: none; } .confetti { display: none; } }
 @media (pointer: coarse) and (orientation: portrait) {
   .g3d-wrap { aspect-ratio: 3 / 4; }
 }
