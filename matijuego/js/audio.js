@@ -338,7 +338,7 @@ function stopSchedulers() {
 // <audio> no se puede cambiar).
 
 const SONG_OF = { menu: "menu", chill: "pueblo", cave: "aventura", castle: "aventura", cozy: "cocina", puzzle: "cocina", sport: "deportes", adventure: "aventura", race: "aventura", arcade: "aventura" };
-const SONG_FILES = new Set([]); // canciones que ya están en assets/music/<nombre>.m4a
+const SONG_FILES = new Set(["menu", "pueblo", "deportes", "aventura", "cocina"]); // canciones que ya están en assets/music/<nombre>.m4a
 const SONG_VOLUME = 0.5; // las canciones vienen a −18 LUFS: así quedan debajo de los efectos
 const FADE = 0.6; // segundos de fundido al entrar y al salir
 

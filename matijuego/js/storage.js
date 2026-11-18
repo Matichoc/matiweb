@@ -4,11 +4,11 @@
 // Todo el progreso vive dentro de un "perfil" (ver js/profiles.js), para que
 // varias personas puedan jugar desde el mismo navegador sin mezclar su avance.
 
-import { getItem, EMPTY_LOOK, lockReason, isHexColor, CUSTOM_EMBLEMS } from "./wardrobe-data.js?v=c76843e6d2";
-import { queueSync } from "./online.js?v=c76843e6d2";
-import { addEnergy } from "./energy.js?v=c76843e6d2";
-import { normalizeAdventure } from "./adventure.js?v=c76843e6d2";
-import { normalizeSports } from "./sports-progress.js?v=c76843e6d2";
+import { getItem, EMPTY_LOOK, lockReason, isHexColor, CUSTOM_EMBLEMS } from "./wardrobe-data.js?v=a068c80010";
+import { queueSync } from "./online.js?v=a068c80010";
+import { addEnergy } from "./energy.js?v=a068c80010";
+import { normalizeAdventure } from "./adventure.js?v=a068c80010";
+import { normalizeSports } from "./sports-progress.js?v=a068c80010";
 
 const SAVE_PREFIX = "matichoc_save_v3_profile_";
 const DEFAULT_OUTFIT = "polera";
