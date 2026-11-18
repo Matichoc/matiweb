@@ -3,15 +3,15 @@
 // ¡Mati Dubai! Los 4 generadores sacan productos nuevos (1 ⚡ cada uno) y los clientes piden productos para entregar.
 // El tablero se guarda en tu perfil.
 
-import { THREE, Game3D, lerp, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=ab8f1e1e13";
-import * as audio from "./audio.js?v=ab8f1e1e13";
-import { recordRun } from "./progression.js?v=ab8f1e1e13";
-import { saveProgress } from "./storage.js?v=ab8f1e1e13";
-import { addStars } from "./adventure.js?v=ab8f1e1e13";
-import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, orderHave, emptyCells } from "./merge-data.js?v=ab8f1e1e13";
-import { drawItem } from "./merge-art.js?v=ab8f1e1e13";
-import { makeItemMesh } from "./merge-models.js?v=ab8f1e1e13";
-import { paintNeighbor } from "./neighbors.js?v=ab8f1e1e13";
+import { THREE, Game3D, lerp, roundedBox, makeBunting, makeLogo } from "./three-kit.js?v=c76843e6d2";
+import * as audio from "./audio.js?v=c76843e6d2";
+import { recordRun } from "./progression.js?v=c76843e6d2";
+import { saveProgress } from "./storage.js?v=c76843e6d2";
+import { addStars } from "./adventure.js?v=c76843e6d2";
+import { COLS, ROWS, CELLS, CHAINS, TOTAL_ITEMS, DUBAI, itemInfo, chainIdx, tierIdx, codeOf, maxTier, foundCount, mergeOf, spawnPiece, dropPiece, deliverOrder, canDeliver, orderHave, emptyCells } from "./merge-data.js?v=c76843e6d2";
+import { drawItem } from "./merge-art.js?v=c76843e6d2";
+import { makeItemMesh } from "./merge-models.js?v=c76843e6d2";
+import { paintNeighbor } from "./neighbors.js?v=c76843e6d2";
 
 const GAME_ID = "merge";
 const CELL = 1.1;
@@ -26,7 +26,7 @@ export class MergeGame extends Game3D {
     super(GAME_ID, character, progress, els, coarse ? { fov: 40, bloom: false } : { fov: 40 });
     this.kawaii = true;
     this.ambientOpts = { petals: 18, hearts: 7, stars: 10, radius: 9, height: 9 };
-    this.musicTheme = "chill";
+    this.musicTheme = "cozy";
     this.q = els.q;
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
@@ -109,7 +109,7 @@ export class MergeGame extends Game3D {
     this.sel.rotation.x = Math.PI / 2;
     this.sel.visible = false;
     s.add(this.sel);
-    try { this._thumb = (await import("./thumb3d.js?v=ab8f1e1e13")).renderObjectThumb; } catch (e) { /* quedan los dibujos 2D */ }
+    try { this._thumb = (await import("./thumb3d.js?v=c76843e6d2")).renderObjectThumb; } catch (e) { /* quedan los dibujos 2D */ }
   }
 
   /**

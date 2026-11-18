@@ -5,11 +5,11 @@
 // Rendimiento (teléfonos de gama media-baja): cada barrio se dibuja solo cuando estás cerca, los árboles y cercas van
 // agrupados (InstancedMesh) y no hay sombras reales nuevas.
 
-import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=ab8f1e1e13";
-import { taskDone, addStars } from "./adventure.js?v=ab8f1e1e13";
-import { earnCoins, saveProgress } from "./storage.js?v=ab8f1e1e13";
-import * as audio from "./audio.js?v=ab8f1e1e13";
-import { binocularStand } from "./binoculars.js?v=ab8f1e1e13";
+import { THREE, canvasTexture, roundedBox, makeBunting, toonify, disposeTree } from "./three-kit.js?v=c76843e6d2";
+import { taskDone, addStars } from "./adventure.js?v=c76843e6d2";
+import { earnCoins, saveProgress } from "./storage.js?v=c76843e6d2";
+import * as audio from "./audio.js?v=c76843e6d2";
+import { binocularStand } from "./binoculars.js?v=c76843e6d2";
 
 const pol = (deg, r) => {
   const a = (deg * Math.PI) / 180;

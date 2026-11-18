@@ -6,10 +6,10 @@
 //   · Cada 5 niveles aparece un JEFE: lo derrotas juntando piezas (le duele más su color débil) y él te lanza coberturas.
 // 20 niveles con estrellas por movimientos que te sobran.
 
-import { THREE, Game3D, lerp, rand, loadTexture, roundedBox, makeBunting, makeLogo, disposeGeometries } from "./three-kit.js?v=ab8f1e1e13";
-import { saveProgress } from "./storage.js?v=ab8f1e1e13";
-import * as audio from "./audio.js?v=ab8f1e1e13";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=ab8f1e1e13";
+import { THREE, Game3D, lerp, rand, loadTexture, roundedBox, makeBunting, makeLogo, disposeGeometries } from "./three-kit.js?v=c76843e6d2";
+import { saveProgress } from "./storage.js?v=c76843e6d2";
+import * as audio from "./audio.js?v=c76843e6d2";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=c76843e6d2";
 
 const GAME_ID = "dulces";
 const COLS = 7;
@@ -60,7 +60,7 @@ export class DulcesGame extends Game3D {
     super(GAME_ID, character, progress, els, { fov: 42 });
     this.kawaii = true; // ambiente kawaii: pastel, sombreado por tonos, pétalos y estrellitas
     this.ambientOpts = { petals: 18, hearts: 5, stars: 13, radius: 9, height: 9 };
-    this.musicTheme = "chill";
+    this.musicTheme = "cozy";
     this.q = els.q;
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();

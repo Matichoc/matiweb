@@ -52,7 +52,7 @@ function tone(freq, duration, type = "sine", startGain = 0.18, delay = 0) {
 
 export function setMuted(value) {
   muted = value;
-  if (muted) stopSchedulers();
+  if (muted) { stopSchedulers(); pauseSong(); }
   else if (currentTheme) startMusic(currentTheme);
 }
 
@@ -244,6 +244,9 @@ const THEMES = {
   chill: { bpm: 96, root: 60, scale: [0, 2, 4, 7, 9], prog: [0, 5, 3, 4], wave: "triangle", lead: 0.8, seed: 53 },
   adventure: { bpm: 136, root: 55, scale: [0, 2, 4, 7, 9], prog: [0, 4, 5, 3], wave: "square", lead: 0.65, seed: 67 },
 };
+THEMES.cozy = THEMES.chill; // cocina y puzzles: suena igual que "chill" hasta que esté su canción (cocina)
+THEMES.cave = THEMES.chill; // mundos tranquilos de Aventura Choco (con canción: la de aventura)
+THEMES.castle = THEMES.sport; // Castillo Dulce de Aventura Choco (con canción: la de aventura)
 const CHORD_ROOTS = [0, 2, 4, 5, 7, 9, 11];
 
 let currentTheme = null;
@@ -328,11 +331,122 @@ function stopSchedulers() {
   if (musicGain) { try { musicGain.disconnect(); } catch (e) { /* nada */ } musicGain = null; }
 }
 
+// ---------- canciones (archivos en assets/music/, hechas con Suno: ver docs/MUSICA-SUNO.md) ----------
+// Cada tema de música usa una canción. Si la canción todavía no está en SONG_FILES, suena la música generada de arriba
+// (y el menú queda en silencio, como antes). Las canciones suenan con un elemento <audio> (no se decodifican enteras
+// en memoria: importa en celulares baratos) que pasa por un volumen propio de Web Audio (en iPhone el volumen del
+// <audio> no se puede cambiar).
+
+const SONG_OF = { menu: "menu", chill: "pueblo", cave: "aventura", castle: "aventura", cozy: "cocina", puzzle: "cocina", sport: "deportes", adventure: "aventura", race: "aventura", arcade: "aventura" };
+const SONG_FILES = new Set([]); // canciones que ya están en assets/music/<nombre>.m4a
+const SONG_VOLUME = 0.5; // las canciones vienen a −18 LUFS: así quedan debajo de los efectos
+const FADE = 0.6; // segundos de fundido al entrar y al salir
+
+let songEl = null;
+let songGain = null;
+let songName = null; // la canción cargada en el elemento
+let wantedSong = null; // la que debería estar sonando (se retoma al volver a la app o al primer toque)
+const songTime = {}; // dónde iba cada canción, para retomarla en vez de empezar de cero
+
+function songFor(theme) {
+  const s = SONG_OF[theme];
+  return s && SONG_FILES.has(s) ? s : null;
+}
+
+/** ¿Ya hubo un toque? Antes de eso el navegador no deja sonar nada (ni crear el audio sin un aviso en la consola). */
+function touched() {
+  const ua = typeof navigator !== "undefined" && navigator.userActivation;
+  return !ua || ua.hasBeenActive;
+}
+
+function ensureSongEl() {
+  if (songEl) return songEl;
+  songEl = new Audio();
+  songEl.loop = true;
+  songEl.preload = "auto";
+  songEl.setAttribute("playsinline", "");
+  try {
+    const audio = getCtx();
+    songGain = audio.createGain();
+    songGain.gain.value = 0;
+    audio.createMediaElementSource(songEl).connect(songGain);
+    songGain.connect(audio.destination); // directo a la salida: el filtro de agudos de los efectos apagaría la canción
+  } catch (e) {
+    songGain = null; // sin Web Audio: se usa el volumen del propio elemento
+    songEl.volume = SONG_VOLUME;
+  }
+  return songEl;
+}
+
+function fadeSong(to) {
+  if (!songGain) return;
+  const t = getCtx().currentTime;
+  songGain.gain.cancelScheduledValues(t);
+  songGain.gain.setValueAtTime(songGain.gain.value, t);
+  songGain.gain.linearRampToValueAtTime(to, t + FADE);
+}
+
+function playSong(name) {
+  wantedSong = name;
+  if (muted || !touched() || (typeof document !== "undefined" && document.visibilityState === "hidden")) return; // parte después
+  const el = ensureSongEl();
+  if (songName !== name) {
+    if (songName) songTime[songName] = el.currentTime || 0;
+    songName = name;
+    el.src = `assets/music/${name}.m4a`;
+    const at = songTime[name] || 0;
+    if (at) el.addEventListener("loadedmetadata", () => { try { el.currentTime = at; } catch (e) { /* nada */ } }, { once: true });
+  }
+  const audio = getCtx();
+  if (audio.state === "suspended") audio.resume();
+  if (el.paused && songGain) songGain.gain.value = 0;
+  const p = el.play();
+  if (p && p.catch) p.catch(() => { /* se reintenta con el próximo toque (ver abajo) */ });
+  fadeSong(SONG_VOLUME);
+}
+
+function pauseSong() {
+  if (!songEl || songEl.paused) return;
+  if (songName) songTime[songName] = songEl.currentTime || 0;
+  if (!songGain) { songEl.pause(); return; }
+  fadeSong(0);
+  const el = songEl;
+  setTimeout(() => { if (wantedSong !== songName || muted) el.pause(); }, FADE * 1000 + 50);
+}
+
+if (typeof document !== "undefined") {
+  // App en segundo plano (llamada, cambio de app): la canción se calla y vuelve al regresar
+  document.addEventListener("visibilitychange", () => {
+    if (!wantedSong) return;
+    if (document.visibilityState === "hidden") { if (songEl) { songTime[songName] = songEl.currentTime || 0; songEl.pause(); } }
+    else playSong(wantedSong);
+  });
+  // Antes del primer toque no suena nada: la canción del menú que quedó esperando parte ahí
+  document.addEventListener("pointerdown", () => {
+    if (wantedSong && (!songEl || songEl.paused)) playSong(wantedSong);
+  }, true);
+}
+
 /** Empieza (o cambia) la música de fondo. Se llama desde un gesto del usuario (el botón de jugar). */
 export function startMusic(name) {
-  if (!THEMES[name]) return;
+  const song = songFor(name);
+  if (!song && !THEMES[name]) {
+    // tema sin canción ni música generada (el menú, mientras no esté su canción): silencio
+    currentTheme = null;
+    stopSchedulers();
+    wantedSong = null;
+    pauseSong();
+    return;
+  }
   currentTheme = name;
   if (muted) return;
+  if (song) {
+    stopSchedulers();
+    playSong(song);
+    return;
+  }
+  wantedSong = null;
+  pauseSong();
   stopSchedulers();
   const audio = getCtx();
   if (audio.state === "suspended") audio.resume();
@@ -349,4 +463,6 @@ export function startMusic(name) {
 export function stopMusic() {
   currentTheme = null;
   stopSchedulers();
+  wantedSong = null;
+  pauseSong();
 }

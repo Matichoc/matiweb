@@ -6,11 +6,11 @@
 //
 // Controles: ← → / A D para moverte, ESPACIO / ↑ / W para saltar. En el celular: ◀ ▶ y ⤴.
 
-import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeLogo, goldCoinTexture, disposeGeometries } from "./three-kit.js?v=ab8f1e1e13";
-import { createMatichico } from "./matichico3d.js?v=ab8f1e1e13";
-import { saveProgress } from "./storage.js?v=ab8f1e1e13";
-import * as audio from "./audio.js?v=ab8f1e1e13";
-import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=ab8f1e1e13";
+import { THREE, Game3D, clamp, lerp, rand, canvasTexture, makeLogo, goldCoinTexture, disposeGeometries } from "./three-kit.js?v=c76843e6d2";
+import { createMatichico } from "./matichico3d.js?v=c76843e6d2";
+import { saveProgress } from "./storage.js?v=c76843e6d2";
+import * as audio from "./audio.js?v=c76843e6d2";
+import { campaign, campaignWin, renderLevelPicker, LEVELS_PER_GAME } from "./campaign.js?v=c76843e6d2";
 
 const GAME_ID = "aventura";
 const H = 18; // alto del mapa en casillas
@@ -29,9 +29,9 @@ const BIG_V = 6; // rebote al pisar
 const WORLDS = [
   { name: "Pradera Cacao", sky: 0x7ec8f0, fog: 0xbfe3f7, dirt: 0x8a5a36, grass: 0x6fc24a, brick: 0xc86a3a, hill: 0x8cd05a, hill2: 0x6fb24a, music: "adventure", tree: 0x3f9a3a, trunk: 0x7a4a2a },
   { name: "Desierto de Azúcar", sky: 0xffd9a0, fog: 0xffe8c4, dirt: 0xe0b878, grass: 0xf6e0a0, brick: 0xd4916a, hill: 0xf2c878, hill2: 0xe0aa5a, music: "adventure", tree: 0x8cbf4a, trunk: 0xc98a4b },
-  { name: "Cueva de Chocolate", sky: 0x3a2318, fog: 0x4a2c1e, dirt: 0x5a3320, grass: 0x8a5a36, brick: 0x7a4a2a, hill: 0x4e2c1c, hill2: 0x3e2216, music: "chill", tree: 0x7a4a2a, trunk: 0x4a2a18, spikes: true },
-  { name: "Cielo de Algodón", sky: 0xffc2dc, fog: 0xffdcea, dirt: 0xf7e6f0, grass: 0xffffff, brick: 0xd4216c, hill: 0xffe0ee, hill2: 0xffc8de, music: "chill", tree: 0xffb3d1, trunk: 0xffffff, puffs: true },
-  { name: "Castillo Dulce", sky: 0x5a3a8a, fog: 0x7a5aa6, dirt: 0x6a4a8a, grass: 0x9a7ac0, brick: 0xd4216c, hill: 0x4a2a6a, hill2: 0x3a1f5a, music: "sport", tree: 0x9a7ac0, trunk: 0x4a2a6a },
+  { name: "Cueva de Chocolate", sky: 0x3a2318, fog: 0x4a2c1e, dirt: 0x5a3320, grass: 0x8a5a36, brick: 0x7a4a2a, hill: 0x4e2c1c, hill2: 0x3e2216, music: "cave", tree: 0x7a4a2a, trunk: 0x4a2a18, spikes: true },
+  { name: "Cielo de Algodón", sky: 0xffc2dc, fog: 0xffdcea, dirt: 0xf7e6f0, grass: 0xffffff, brick: 0xd4216c, hill: 0xffe0ee, hill2: 0xffc8de, music: "cave", tree: 0xffb3d1, trunk: 0xffffff, puffs: true },
+  { name: "Castillo Dulce", sky: 0x5a3a8a, fog: 0x7a5aa6, dirt: 0x6a4a8a, grass: 0x9a7ac0, brick: 0xd4216c, hill: 0x4a2a6a, hill2: 0x3a1f5a, music: "castle", tree: 0x9a7ac0, trunk: 0x4a2a6a },
 ];
 
 const SOLID = new Set(["#", "B", "?", "U", "P"]);
