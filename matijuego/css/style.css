@@ -1958,6 +1958,7 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
 
 /* aviso de la versión de prueba de la web */
 .demo-banner { margin: 6px 10px 0; padding: 7px 12px; border-radius: 12px; background: rgba(255, 200, 0, 0.3); border: 2px dashed var(--dorado-osc, #c99900); color: var(--marron-osc, #3d1f10); font-size: 0.82rem; text-align: center; line-height: 1.3; }
+.demo-banner a { color: var(--rosa, #d4216c); text-decoration: underline; }
 @media (max-height: 520px) { .demo-banner { font-size: 0.72rem; padding: 4px 8px; margin-top: 3px; } }
 
 /* prendas "a tu gusto": color y figura del centro */
