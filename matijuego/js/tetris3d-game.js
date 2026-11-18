@@ -1,17 +1,17 @@
 // Bloques de Productos 3D: el mismo juego de siempre (js/tetris-pieces.js) pero las
 // golosinas son cubos de chocolate brillantes dentro de una vitrina de cristal con
-// marco dorado. Las líneas explotan en confeti, la pieza cae con sombra "fantasma"
-// y tu Matichico celebra cada línea desde un costado.
+// marco dorado. Las líneas explotan en confeti, la pieza cae con sombra "fantasma" (que cada jugador puede apagar:
+// a algunos niños les ayuda y a otros les molesta; parte encendida) y tu Matichico celebra cada línea desde un costado.
 //
 // Versión "Gran Vitrina": guardar una pieza (C / Shift), combos y back-to-back, cubos de poder
 // (bomba que limpia 3x3 y rayo que limpia la fila), subida de nivel con cambio de ambiente y música.
 
-import { THREE, Game3D, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=a068c80010";
-import { createMatichico } from "./matichico3d.js?v=a068c80010";
-import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=a068c80010";
-import { saveProgress, earnCoins } from "./storage.js?v=a068c80010";
-import * as audio from "./audio.js?v=a068c80010";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=a068c80010";
+import { THREE, Game3D, lerp, rand, canvasTexture, loadTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=66cb70720d";
+import { createMatichico } from "./matichico3d.js?v=66cb70720d";
+import { SHAPES, PIECE_STYLE, createBag, spawnPiece, pieceCells } from "./tetris-pieces.js?v=66cb70720d";
+import { saveProgress, earnCoins } from "./storage.js?v=66cb70720d";
+import * as audio from "./audio.js?v=66cb70720d";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=66cb70720d";
 
 const COLS = 8;
 const ROWS = 14;
@@ -483,6 +483,36 @@ export class Tetris3DGame extends Game3D {
   /** En la tarjeta de inicio se elige entre "Infinito" y los 20 niveles. */
   onIntro() {
     renderModePicker(this.els.q("lvlpick"), { id: "tetris", progress: this.progress, onChange: () => this.reset() });
+    this._bindGhost();
+  }
+
+  /** ¿Se ve la sombra de la pieza? Es un gusto de cada jugador (se guarda en su perfil); parte encendida. */
+  get showGhost() {
+    return !(this.progress.prefs && this.progress.prefs.tetrisGhost === false);
+  }
+
+  /** Los dos botones de la sombra (en la tarjeta de inicio y arriba mientras se juega). */
+  _bindGhost() {
+    const btns = [this.els.q("btn-ghost-intro"), this.els.q("btn-ghost")].filter(Boolean);
+    const paint = () => {
+      const on = this.showGhost;
+      for (const b of btns) {
+        b.setAttribute("aria-pressed", String(on));
+        if (b.id.endsWith("intro")) b.textContent = on ? "👁️ Sombra de la pieza: sí" : "🙈 Sombra de la pieza: no";
+        else { b.textContent = on ? "👁️" : "🙈"; b.title = on ? "Apagar la sombra de la pieza" : "Encender la sombra de la pieza"; }
+      }
+    };
+    if (!this._ghostBound) {
+      this._ghostBound = true;
+      for (const b of btns) b.addEventListener("click", () => {
+        this.progress.prefs = this.progress.prefs && typeof this.progress.prefs === "object" ? this.progress.prefs : {};
+        this.progress.prefs.tetrisGhost = !this.showGhost;
+        saveProgress(this.progress);
+        paint();
+        if (this.state === "playing") this.banner(this.showGhost ? "👁️ Sombra encendida" : "🙈 Sombra apagada");
+      });
+    }
+    paint();
   }
 
   nextLevel() {
@@ -838,7 +868,7 @@ export class Tetris3DGame extends Game3D {
         else { m.position.x = lerp(m.position.x, tx, k); m.position.y = lerp(m.position.y, ty, k); }
         const gh = this.ghostMeshes[i];
         gh.position.set(tx, cy(this.current.y + oy + gy), 0);
-        gh.visible = gy > 0 && this.current.y + oy + gy >= 0;
+        gh.visible = this.showGhost && gy > 0 && this.current.y + oy + gy >= 0;
       });
       if (this.current.special) {
         this.specialMat.emissiveIntensity = 0.5 + Math.sin(this.time * 6) * 0.2;

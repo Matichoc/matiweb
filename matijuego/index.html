@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=a068c80010"><style>
+<link rel="stylesheet" href="css/style.css?v=66cb70720d"><style>
 /* Enlaces del juego hacia matichoc.cl (solo en la web; la app no los lleva ni este estilo): discretos. Texto chico, sin íconos ni colores de marca,
    para que el juego no empuje hacia la tienda. Siguen siendo legibles (color de texto de cada pantalla) y accesibles. */
 .site-links { gap: 2px 14px; margin: 18px 0 6px; }
@@ -554,6 +554,7 @@
         <div class="hud-chip">🔥 Nvl <span id="tetris-hud-level">1</span></div>
         <div class="hud-chip">⚡ <span id="tetris-hud-combo">x1</span></div>
         <div class="hud-chip">🍫✨ <span id="tetris-hud-coins">0</span></div>
+        <button id="tetris-btn-ghost" class="btn-icon" title="Apagar la sombra de la pieza" aria-pressed="true">👁️</button>
         <button id="tetris-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
       </div>
     </div>
@@ -574,6 +575,7 @@
             Las piezas doradas son Chocolate Dubai: ¡dan Matipuntos extra! Guarda una pieza con C o Shift (📥 en el celular). ¡Cuidado, hay cubos de poder: 💣 la bomba limpia un cuadro de 3x3 y ⚡ el rayo limpia toda su fila! Los combos de líneas seguidas dan puntos extra.</p>
           </details>
           <div id="tetris-lvlpick" class="lvl-pick"></div>
+          <button class="btn-secondary ghost-toggle" id="tetris-btn-ghost-intro" type="button" aria-pressed="true">👁️ Sombra de la pieza: sí</button>
           <button class="btn-primary" id="tetris-btn-start">¡Vamos!</button>
         </div>
       </div>
@@ -1672,6 +1674,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=a068c80010"></script>
+<script type="module" src="js/main.js?v=66cb70720d"></script>
 </body>
 </html>

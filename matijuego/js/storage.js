@@ -4,11 +4,11 @@
 // Todo el progreso vive dentro de un "perfil" (ver js/profiles.js), para que
 // varias personas puedan jugar desde el mismo navegador sin mezclar su avance.
 
-import { getItem, EMPTY_LOOK, lockReason, isHexColor, CUSTOM_EMBLEMS } from "./wardrobe-data.js?v=a068c80010";
-import { queueSync } from "./online.js?v=a068c80010";
-import { addEnergy } from "./energy.js?v=a068c80010";
-import { normalizeAdventure } from "./adventure.js?v=a068c80010";
-import { normalizeSports } from "./sports-progress.js?v=a068c80010";
+import { getItem, EMPTY_LOOK, lockReason, isHexColor, CUSTOM_EMBLEMS } from "./wardrobe-data.js?v=66cb70720d";
+import { queueSync } from "./online.js?v=66cb70720d";
+import { addEnergy } from "./energy.js?v=66cb70720d";
+import { normalizeAdventure } from "./adventure.js?v=66cb70720d";
+import { normalizeSports } from "./sports-progress.js?v=66cb70720d";
 
 const SAVE_PREFIX = "matichoc_save_v3_profile_";
 const DEFAULT_OUTFIT = "polera";
@@ -47,6 +47,7 @@ function defaultProgress() {
     creatorChallengeDate: null, // "YYYY-MM-DD" del último reto del día cumplido
     adventure: normalizeAdventure(null), // aventura del festival (js/adventure.js): NO se reinicia cada día
     sports: normalizeSports(null), // Pichanga 3 contra 3 y Básquet 2 contra 2 (js/sports-progress.js)
+    prefs: {}, // gustos de cada jugador dentro de los juegos (p. ej. tetrisGhost: la sombra de la pieza en Bloques)
   };
 }
 
@@ -59,7 +60,7 @@ function sanitizeNumbers(p) {
     p[k] = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
   }
   for (const k of ["unlockedGames", "claimedAchievements", "albumClaimed"]) if (!Array.isArray(p[k])) p[k] = [];
-  for (const k of ["bestScores", "leaderboards", "album", "eventTokens", "campaign", "missionsDone"]) {
+  for (const k of ["bestScores", "leaderboards", "album", "eventTokens", "campaign", "missionsDone", "prefs"]) {
     if (!p[k] || typeof p[k] !== "object" || Array.isArray(p[k])) p[k] = {};
   }
   for (const [id, c] of Object.entries(p.album)) { const v = Math.floor(Number(c)); if (!(v > 0)) delete p.album[id]; else p.album[id] = v; }

@@ -2,10 +2,10 @@
 // cuando está feliz, salta y suelta corazones al acariciarla, y va a buscar la pelota que le tiras y te la trae.
 // La lógica (hambre, ánimo, golosinas, premios) está en js/pet-care.js; aquí solo lo que se ve.
 // También arma la tarjeta "Mi mascota" con sus barras y botones (renderPetCard), igual en los dos lugares.
-import { THREE, emojiSprite } from "./three-kit.js?v=a068c80010";
-import * as audio from "./audio.js?v=a068c80010";
-import { getItem } from "./wardrobe-data.js?v=a068c80010";
-import { TREATS, petState, feedPet, patPet, playedWithPet } from "./pet-care.js?v=a068c80010";
+import { THREE, emojiSprite } from "./three-kit.js?v=66cb70720d";
+import * as audio from "./audio.js?v=66cb70720d";
+import { getItem } from "./wardrobe-data.js?v=66cb70720d";
+import { TREATS, petState, feedPet, patPet, playedWithPet } from "./pet-care.js?v=66cb70720d";
 
 const GRAV = 14;
 const v1 = new THREE.Vector3();
