@@ -1,8 +1,27 @@
-// Efectos de sonido generados con Web Audio API (sin archivos externos).
+// Efectos de sonido generados con Web Audio API, música (canciones de assets/music o generada) y el volumen de cada una.
 
 let ctx = null;
 let master = null;
-let muted = false;
+let musicBus = null; // salida de la música generada (separada de los efectos, para su propio volumen)
+
+// ---------- volumen (lo elige cada familia en "🔊 Sonido": se guarda en el celular, no en el perfil) ----------
+// Música y efectos van de 0 a 100. El oído percibe el volumen al cuadrado: así la mitad de la barra suena a "la mitad".
+// Parten más bajos que antes (la dueña: "suena fuerte el juego").
+const VOL_KEY = "matichoc_sonido";
+const VOL_DEFAULT = { music: 60, sfx: 70, muted: false };
+const vol = (() => {
+  try {
+    const v = JSON.parse(localStorage.getItem(VOL_KEY) || "null") || {};
+    const n = (x, d) => (Number.isFinite(+x) ? Math.max(0, Math.min(100, Math.round(+x))) : d);
+    return { music: n(v.music, VOL_DEFAULT.music), sfx: n(v.sfx, VOL_DEFAULT.sfx), muted: v.muted === true };
+  } catch (e) { return { ...VOL_DEFAULT }; }
+})();
+const curve = (v) => (v / 100) ** 2;
+const MASTER = 0.8; // volumen de siempre de los efectos (y de la música generada) con la barra al 100
+let muted = vol.muted;
+function saveVol() {
+  try { localStorage.setItem(VOL_KEY, JSON.stringify({ music: vol.music, sfx: vol.sfx, muted })); } catch (e) { /* sin almacenamiento */ }
+}
 
 function getCtx() {
   if (!ctx) {
@@ -19,8 +38,11 @@ function getCtx() {
     limiter.knee.value = 12;
     limiter.ratio.value = 6;
     master = ctx.createGain();
-    master.gain.value = 0.8;
+    master.gain.value = MASTER * curve(vol.sfx);
     master.connect(soft);
+    musicBus = ctx.createGain();
+    musicBus.gain.value = MASTER * curve(vol.music);
+    musicBus.connect(soft);
     soft.connect(limiter);
     limiter.connect(ctx.destination);
   }
@@ -51,9 +73,31 @@ function tone(freq, duration, type = "sine", startGain = 0.18, delay = 0) {
 }
 
 export function setMuted(value) {
-  muted = value;
+  muted = !!value;
+  saveVol();
   if (muted) { stopSchedulers(); pauseSong(); }
   else if (currentTheme) startMusic(currentTheme);
+}
+
+/** Volumen de la música y de los efectos (0 a 100). */
+export function getVolume() {
+  return { music: vol.music, sfx: vol.sfx };
+}
+
+/** Cambia el volumen de "music" o "sfx" (0 a 100), se escucha al tiro y queda guardado en el celular. */
+export function setVolume(kind, value) {
+  if (kind !== "music" && kind !== "sfx") return;
+  vol[kind] = Math.max(0, Math.min(100, Math.round(+value || 0)));
+  saveVol();
+  if (!ctx) return; // todavía no suena nada: se aplica al crear el audio
+  const t = ctx.currentTime;
+  const ramp = (g, to) => { g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(to, t + 0.08); };
+  if (kind === "sfx") ramp(master, MASTER * curve(vol.sfx));
+  else {
+    ramp(musicBus, MASTER * curve(vol.music));
+    if (songGain && songEl && !songEl.paused) ramp(songGain, songTarget());
+    else if (songEl && !songGain) songEl.volume = songTarget();
+  }
 }
 
 export function isMuted() {
@@ -339,7 +383,8 @@ function stopSchedulers() {
 
 const SONG_OF = { menu: "menu", chill: "pueblo", cave: "aventura", castle: "aventura", cozy: "cocina", puzzle: "cocina", sport: "deportes", adventure: "aventura", race: "aventura", arcade: "aventura" };
 const SONG_FILES = new Set(["menu", "pueblo", "deportes", "aventura", "cocina"]); // canciones que ya están en assets/music/<nombre>.m4a
-const SONG_VOLUME = 0.5; // las canciones vienen a −18 LUFS: así quedan debajo de los efectos
+const SONG_VOLUME = 0.5; // con la barra de música al 100 (las canciones vienen a −18 LUFS: así quedan debajo de los efectos)
+const songTarget = () => SONG_VOLUME * curve(vol.music);
 const FADE = 0.6; // segundos de fundido al entrar y al salir
 
 let songEl = null;
@@ -373,7 +418,7 @@ function ensureSongEl() {
     songGain.connect(audio.destination); // directo a la salida: el filtro de agudos de los efectos apagaría la canción
   } catch (e) {
     songGain = null; // sin Web Audio: se usa el volumen del propio elemento
-    songEl.volume = SONG_VOLUME;
+    songEl.volume = songTarget();
   }
   return songEl;
 }
@@ -402,7 +447,7 @@ function playSong(name) {
   if (el.paused && songGain) songGain.gain.value = 0;
   const p = el.play();
   if (p && p.catch) p.catch(() => { /* se reintenta con el próximo toque (ver abajo) */ });
-  fadeSong(SONG_VOLUME);
+  fadeSong(songTarget());
 }
 
 function pauseSong() {
@@ -451,8 +496,8 @@ export function startMusic(name) {
   const audio = getCtx();
   if (audio.state === "suspended") audio.resume();
   musicGain = audio.createGain();
-  musicGain.gain.value = 0.06;
-  musicGain.connect(out());
+  musicGain.gain.value = 0.06 / MASTER;
+  musicGain.connect(musicBus); // (musicBus ya lleva el volumen de la música: con la barra al 100 suena como siempre)
   tracks = { lead: composeTrack(THEMES[name]) };
   step = 0;
   nextT = audio.currentTime + 0.1;

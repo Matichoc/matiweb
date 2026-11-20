@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=66cb70720d"><style>
+<link rel="stylesheet" href="css/style.css?v=d61a610b7b"><style>
 /* Enlaces del juego hacia matichoc.cl (solo en la web; la app no los lleva ni este estilo): discretos. Texto chico, sin íconos ni colores de marca,
    para que el juego no empuje hacia la tienda. Siguen siendo legibles (color de texto de cada pantalla) y accesibles. */
 .site-links { gap: 2px 14px; margin: 18px 0 6px; }
@@ -166,8 +166,21 @@
     <button id="pause-resume" data-back class="btn-primary pause-big" type="button">▶ Seguir jugando</button>
     <div class="pause-row">
       <button id="pause-sound" class="btn-secondary" type="button">🔊 Sonido</button>
+      <button id="pause-volume" class="btn-secondary" type="button">🎚️ Volumen</button>
       <button id="pause-exit" class="btn-secondary" type="button">🏠 Salir al menú</button>
     </div>
+  </div>
+</div>
+<!-- Sonido: volumen de la música y de los efectos (se guarda en el celular). Se abre desde el menú y desde la pausa -->
+<div id="sound-dialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="sound-title">
+  <div class="modal-card joy-card sound-card">
+    <h2 id="sound-title">🔊 Sonido</h2>
+    <label class="vol-row" for="vol-music"><span class="vol-name">🎵 Música</span>
+      <input id="vol-music" type="range" min="0" max="100" step="5"><b id="vol-music-n" class="vol-n">60%</b></label>
+    <label class="vol-row" for="vol-sfx"><span class="vol-name">🔔 Efectos</span>
+      <input id="vol-sfx" type="range" min="0" max="100" step="5"><b id="vol-sfx-n" class="vol-n">70%</b></label>
+    <button id="sound-mute" class="btn-secondary" type="button">🔇 Silenciar todo</button>
+    <button id="sound-close" data-back class="btn-primary" type="button">Listo</button>
   </div>
 </div>
 <!-- Cartel de la demo de la web: para seguir hay que bajar la app -->
@@ -239,6 +252,7 @@
           <button id="btn-open-leaderboard" class="stat-chip stat-chip-btn">🏆 Puntajes</button>
           <button id="btn-world-ranking" class="stat-chip stat-chip-btn hidden">🌎 Ranking</button>
           <button id="btn-joystick" class="stat-chip stat-chip-btn coarse-only" title="Cómo funciona el joystick en los juegos">🕹️ Joystick: <b>flotante</b></button>
+          <button id="btn-sound" class="stat-chip stat-chip-btn" title="Volumen de la música y de los efectos">🔊 Sonido</button>
         </div>
         <div class="profile-chip lb-profile">
           <img id="hub-profile-avatar" class="hub-profile-avatar" alt="">
@@ -306,6 +320,7 @@
         <button type="button" data-click="btn-open-achievements"><span>🏅</span>Logros</button>
         <button type="button" data-click="btn-open-leaderboard"><span>🏆</span>Puntajes</button>
         <button type="button" data-click="btn-joystick"><span>🕹️</span>Joystick</button>
+        <button type="button" data-click="btn-sound"><span>🔊</span>Sonido</button>
       </div>
       <!-- celular: barra de abajo (rediseño, maqueta 4) -->
       <nav id="lb-tabs" class="lb-tabs" aria-label="Secciones del menú">
@@ -1674,6 +1689,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=66cb70720d"></script>
+<script type="module" src="js/main.js?v=d61a610b7b"></script>
 </body>
 </html>
