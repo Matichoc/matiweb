@@ -4,16 +4,16 @@
 // Game3D y solo implementan build / reset / update.
 
 import * as THREE from "../vendor/three.module.min.js";
-import { getOutfit } from "./characters.js?v=d61a610b7b";
-import { IS_DEMO, demoAllows } from "./demo.js?v=d61a610b7b";
-import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=d61a610b7b";
-import * as audio from "./audio.js?v=d61a610b7b";
-import { recordRun, runBonus } from "./progression.js?v=d61a610b7b";
-import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=d61a610b7b";
-import { missionFor } from "./missions.js?v=d61a610b7b";
-import { costOf, spendEnergy, energyOf } from "./energy.js?v=d61a610b7b";
-import { vibrate } from "./native.js?v=d61a610b7b";
-import { celebrate } from "./celebrate.js?v=d61a610b7b";
+import { getOutfit } from "./characters.js?v=5545779b2a";
+import { IS_DEMO, demoAllows } from "./demo.js?v=5545779b2a";
+import { addToLeaderboard, earnCoins, equippedOutfitId, getLook, reportScore, saveProgress } from "./storage.js?v=5545779b2a";
+import * as audio from "./audio.js?v=5545779b2a";
+import { recordRun, runBonus } from "./progression.js?v=5545779b2a";
+import { campaignWin, campaignMode, campaignLevel, campaign, campaignComplete, campaignStartOver, lapReward, LEVELS_PER_GAME } from "./campaign.js?v=5545779b2a";
+import { missionFor } from "./missions.js?v=5545779b2a";
+import { costOf, spendEnergy, energyOf } from "./energy.js?v=5545779b2a";
+import { vibrate } from "./native.js?v=5545779b2a";
+import { celebrate } from "./celebrate.js?v=5545779b2a";
 
 export { THREE };
 

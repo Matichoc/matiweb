@@ -154,6 +154,51 @@ const ALL_GAMES = [
     status: "available",
     tag: "3D",
   },
+  {
+    id: "torre",
+    orient: "any", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
+    name: "Torre de Alfajores",
+    icon: "🥞",
+    tagline: "Suelta cada alfajor justo encima y arma la torre más alta de la playa. ¡Al centro es ¡Perfecto!",
+    status: "available",
+    tag: "Nuevo ☀️ Verano",
+  },
+  {
+    id: "avioneta",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
+    name: "Avioneta Choco",
+    icon: "✈️",
+    tagline: "Vuela sobre el mar de la playa: pasa por los aros dorados, junta alfajores y esquiva globos y gaviotas.",
+    status: "available",
+    tag: "Nuevo ☀️ Verano",
+  },
+  {
+    id: "lanchas",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
+    name: "Lanchas en el Lago",
+    icon: "🚤",
+    tagline: "Maneja tu lancha por el lago: esquiva boyas y rocas de chocolate, salta las olas y junta alfajores.",
+    status: "available",
+    tag: "Nuevo ☀️ Verano",
+  },
+  {
+    id: "minigolf",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
+    name: "Minigolf en la Playa",
+    icon: "⛳",
+    tagline: "9 hoyos en la playa con castillos de arena, palmeras y cangrejos. ¡Juega de a 2 por turnos en el mismo celular!",
+    status: "available",
+    tag: "Nuevo ☀️ Verano",
+  },
+  {
+    id: "billar",
+    orient: "landscape", // "landscape" = hay que jugarlo con el celular acostado; "any" = sirve en vertical y horizontal
+    name: "Billar de Bombones",
+    icon: "🎱",
+    tagline: "Golpea el bombón blanco y mete los 7 bombones en las cajas. ¡Juega de a 2 por turnos en el mismo celular!",
+    status: "available",
+    tag: "Nuevo ☀️ Verano",
+  },
 ];
 
 export const GAMES_CATALOG = ALL_GAMES.filter((g) => !(IN_APP && g.appHidden));

@@ -4,8 +4,8 @@
 // Precio: ~1 semana de juego (se ganan unos 250–350 Matipuntos al día; ver docs/ECONOMIA.md).
 // Para probar rápido se puede bajar a 300 (una sola línea: UNLOCK_PRICE).
 
-import { spendCoins, saveProgress } from "./storage.js?v=d61a610b7b";
-import { IS_DEMO } from "./demo.js?v=d61a610b7b";
+import { spendCoins, saveProgress } from "./storage.js?v=5545779b2a";
+import { IS_DEMO } from "./demo.js?v=5545779b2a";
 
 const UNLOCK_PRICE = 2000; // ≈ una semana de juego
 
@@ -14,6 +14,11 @@ export const UNLOCK_COST = {
   dulces: UNLOCK_PRICE,
   aventura: UNLOCK_PRICE,
   ciudad: UNLOCK_PRICE,
+  billar: UNLOCK_PRICE, // juego de verano (v1.2)
+  minigolf: UNLOCK_PRICE, // juego de verano (v1.2)
+  lanchas: UNLOCK_PRICE, // juego de verano (v1.2)
+  avioneta: UNLOCK_PRICE, // juego de verano (v1.2)
+  torre: UNLOCK_PRICE, // juego de verano (v1.2)
 };
 
 export const needsUnlock = (gameId) => gameId in UNLOCK_COST;

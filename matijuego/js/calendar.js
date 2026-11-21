@@ -3,9 +3,9 @@
 // para todos los jugadores ese mes (se genera con el mes como semilla), y los premios crecen un poco con tu nivel.
 // Solo se puede cobrar el de hoy: los días que pasaron sin entrar se pierden (así da gusto volver todos los días).
 
-import { saveProgress, earnCoins } from "./storage.js?v=d61a610b7b";
-import { addEnergy, energyOf } from "./energy.js?v=d61a610b7b";
-import { levelInfo, addXp } from "./progression.js?v=d61a610b7b";
+import { saveProgress, earnCoins } from "./storage.js?v=5545779b2a";
+import { addEnergy, energyOf } from "./energy.js?v=5545779b2a";
+import { levelInfo, addXp } from "./progression.js?v=5545779b2a";
 
 const rngOf = (str) => {
   let h = 2166136261;

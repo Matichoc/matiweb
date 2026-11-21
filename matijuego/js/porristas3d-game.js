@@ -8,11 +8,11 @@
 // Para cuidar los celulares de gama media-baja, las compañeras del equipo se dibujan con piezas agrupadas
 // (InstancedMesh: una sola llamada de dibujo por pieza para todo el equipo) y solo la Matichica es un personaje completo.
 
-import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=d61a610b7b";
-import { createMatichico } from "./matichico3d.js?v=d61a610b7b";
-import { saveProgress, earnCoins } from "./storage.js?v=d61a610b7b";
-import * as audio from "./audio.js?v=d61a610b7b";
-import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=d61a610b7b";
+import { THREE, Game3D, clamp, rand, canvasTexture, roundedBox, makeBunting, makeStars, makeLogo } from "./three-kit.js?v=5545779b2a";
+import { createMatichico } from "./matichico3d.js?v=5545779b2a";
+import { saveProgress, earnCoins } from "./storage.js?v=5545779b2a";
+import * as audio from "./audio.js?v=5545779b2a";
+import { campaignWin, campaign, campaignMode, campaignLevel, renderModePicker, LEVELS_PER_GAME } from "./campaign.js?v=5545779b2a";
 
 const GAME_ID = "porristas";
 const HEARTS = 3;
