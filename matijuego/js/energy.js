@@ -11,7 +11,7 @@
 //   bought    veces que compró energía con Matipuntos hoy
 //   sleepUntil mientras el Matichico duerme en su cama la recarga es más rápida
 
-import { saveProgress, earnCoins, spendCoins, dayKey } from "./storage.js?v=66cb70720d";
+import { saveProgress, earnCoins, spendCoins, dayKey } from "./storage.js?v=5545779b2a";
 
 export const ENERGY_VERSION = 2; // al subirla, la energía de todos los perfiles se reinicia (llena) una sola vez
 export const ENERGY_MAX = 200; // lo que se llena solo (por día y con el tiempo)
@@ -31,12 +31,22 @@ export const ENERGY_COST = {
   pichanga: 4, basquet2v2: 4, // partidos de los deportes nuevos: solo la entrada (sin gasto por acción)
   ciudad: 0, // explorar es gratis; cada misión cuesta ENERGY_MISSION
   town: 0, creador: 0,
+  billar: 4,
+  minigolf: 4,
+  lanchas: 6,
+  avioneta: 6,
+  torre: 4,
 };
 /** Lo que se gasta mientras se juega (para mostrarlo en las tarjetas). */
 export const ENERGY_RULE = {
   basquet_tiros: "1 por tiro", futbol: "1 por tiro", tetris: "1 cada 4 piezas", dulces: "1 por movimiento",
   memoria: "1 cada 2 intentos", autos: "1 cada 250 m", parkour: "1 cada 60 m", salto: "1 cada 15 m alto",
   porristas: "1 cada 2 figuras", recolecta: "1 cada 12 s", aventura: "1 cada 20 s", merge: "1 por producto nuevo",
+  billar: "1 cada 3 tiros",
+  minigolf: "1 cada 3 golpes",
+  lanchas: "1 cada 250 m",
+  avioneta: "1 cada 150 m",
+  torre: "1 cada 8 pisos",
 };
 export const ENERGY_MISSION = 2; // misión de Ciudad Choco
 export const costOf = (gameId) => (gameId in ENERGY_COST ? ENERGY_COST[gameId] : 5);

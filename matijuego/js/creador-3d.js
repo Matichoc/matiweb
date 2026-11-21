@@ -1,8 +1,8 @@
 // Construye en 3D la creación del usuario ("Crea tu Chocolate"): el producto,
 // sus toppings, el envoltorio y la etiqueta como sticker. Solo primitivas.
 
-import { THREE, roundedBox, canvasTexture } from "./three-kit.js?v=66cb70720d";
-import { getChocolate, getFlavor, getTopping, getWrapColor, comboKey } from "./creador-data.js?v=66cb70720d";
+import { THREE, roundedBox, canvasTexture } from "./three-kit.js?v=5545779b2a";
+import { getChocolate, getFlavor, getTopping, getWrapColor, comboKey } from "./creador-data.js?v=5545779b2a";
 
 function mulberry(seed) {
   let a = seed >>> 0;

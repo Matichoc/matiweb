@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/baby-chipmunk.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/adorable-mother-script.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=66cb70720d"><style>
+<link rel="stylesheet" href="css/style.css?v=5545779b2a"><style>
 /* Enlaces del juego hacia matichoc.cl (solo en la web; la app no los lleva ni este estilo): discretos. Texto chico, sin íconos ni colores de marca,
    para que el juego no empuje hacia la tienda. Siguen siendo legibles (color de texto de cada pantalla) y accesibles. */
 .site-links { gap: 2px 14px; margin: 18px 0 6px; }
@@ -166,8 +166,21 @@
     <button id="pause-resume" data-back class="btn-primary pause-big" type="button">▶ Seguir jugando</button>
     <div class="pause-row">
       <button id="pause-sound" class="btn-secondary" type="button">🔊 Sonido</button>
+      <button id="pause-volume" class="btn-secondary" type="button">🎚️ Volumen</button>
       <button id="pause-exit" class="btn-secondary" type="button">🏠 Salir al menú</button>
     </div>
+  </div>
+</div>
+<!-- Sonido: volumen de la música y de los efectos (se guarda en el celular). Se abre desde el menú y desde la pausa -->
+<div id="sound-dialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="sound-title">
+  <div class="modal-card joy-card sound-card">
+    <h2 id="sound-title">🔊 Sonido</h2>
+    <label class="vol-row" for="vol-music"><span class="vol-name">🎵 Música</span>
+      <input id="vol-music" type="range" min="0" max="100" step="5"><b id="vol-music-n" class="vol-n">60%</b></label>
+    <label class="vol-row" for="vol-sfx"><span class="vol-name">🔔 Efectos</span>
+      <input id="vol-sfx" type="range" min="0" max="100" step="5"><b id="vol-sfx-n" class="vol-n">70%</b></label>
+    <button id="sound-mute" class="btn-secondary" type="button">🔇 Silenciar todo</button>
+    <button id="sound-close" data-back class="btn-primary" type="button">Listo</button>
   </div>
 </div>
 <!-- Cartel de la demo de la web: para seguir hay que bajar la app -->
@@ -239,6 +252,7 @@
           <button id="btn-open-leaderboard" class="stat-chip stat-chip-btn">🏆 Puntajes</button>
           <button id="btn-world-ranking" class="stat-chip stat-chip-btn hidden">🌎 Ranking</button>
           <button id="btn-joystick" class="stat-chip stat-chip-btn coarse-only" title="Cómo funciona el joystick en los juegos">🕹️ Joystick: <b>flotante</b></button>
+          <button id="btn-sound" class="stat-chip stat-chip-btn" title="Volumen de la música y de los efectos">🔊 Sonido</button>
         </div>
         <div class="profile-chip lb-profile">
           <img id="hub-profile-avatar" class="hub-profile-avatar" alt="">
@@ -306,6 +320,7 @@
         <button type="button" data-click="btn-open-achievements"><span>🏅</span>Logros</button>
         <button type="button" data-click="btn-open-leaderboard"><span>🏆</span>Puntajes</button>
         <button type="button" data-click="btn-joystick"><span>🕹️</span>Joystick</button>
+        <button type="button" data-click="btn-sound"><span>🔊</span>Sonido</button>
       </div>
       <!-- celular: barra de abajo (rediseño, maqueta 4) -->
       <nav id="lb-tabs" class="lb-tabs" aria-label="Secciones del menú">
@@ -967,6 +982,246 @@
   </section>
 
   <!-- PANTALLA DE JUEGO 3D: SALTO CHOCO 3D -->
+  <section id="screen-torre" class="screen game-screen hidden">
+    <div id="torre-hud" class="hud">
+      <div class="hud-left">
+        <button id="torre-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="torre-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level" id="torre-hud-title">Torre de Alfajores</div>
+          <div class="hud-mission" id="torre-hud-sub">Suelta los alfajores y apílalos bien alto</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">⭐ <span id="torre-hud-score">0</span></div>
+        <div class="hud-chip">🥞 <span id="torre-hud-floors">0</span></div>
+        <div class="hud-chip">❤ <span id="torre-hud-hearts">❤❤❤</span></div>
+        <div class="hud-chip">🔥 <span id="torre-hud-combo">x1</span></div>
+        <div class="hud-chip">🍫✨ <span id="torre-hud-coins">0</span></div>
+        <button id="torre-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="torre-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="torre-canvas"></canvas>
+      <div id="torre-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="torre-popups" class="fps-popups" aria-hidden="true"></div>
+
+      <div id="torre-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Torre de Alfajores</h2>
+          <p class="fps-tag">Nuevo ☀️ Verano</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
+          <p>Un alfajor va y viene sobre la torre: toca la pantalla (o ESPACIO) para soltarlo. Si cae justo al centro es ¡Perfecto! y sumas combo. Si cae muy corrido se resbala y pierdes un ❤ (tienes 3). Ojo: si la torre queda muy cargada hacia un lado, ¡se derrumba! Cada 15 pisos cae un alfajor dorado Mati Dubai que da 10 Matipuntos.</p>
+          </details>
+
+          <button class="btn-primary" id="torre-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="torre-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="torre-gameover-title">¡Se acabó la torre!</h2>
+          <p id="torre-gameover-text"></p>
+          <button class="btn-primary" id="torre-btn-retry">Jugar de nuevo</button>
+          <button class="btn-secondary overlay-secondary-btn" id="torre-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-avioneta" class="screen game-screen hidden">
+    <div id="avioneta-hud" class="hud">
+      <div class="hud-left">
+        <button id="avioneta-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="avioneta-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level" id="avioneta-hud-title">Avioneta Choco</div>
+          <div class="hud-mission" id="avioneta-hud-sub">Mantén apretado para subir y pasa por los aros</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">⭐ <span id="avioneta-hud-score">0</span></div>
+        <div class="hud-chip">✈️ <span id="avioneta-hud-dist">0 m</span></div>
+        <div class="hud-chip">❤ <span id="avioneta-hud-hearts">❤❤❤</span></div>
+        <div class="hud-chip">🔥 <span id="avioneta-hud-combo">x1</span></div>
+        <div class="hud-chip">🍫✨ <span id="avioneta-hud-coins">0</span></div>
+        <button id="avioneta-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="avioneta-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="avioneta-canvas"></canvas>
+      <div id="avioneta-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="avioneta-popups" class="fps-popups" aria-hidden="true"></div>
+
+      <div id="avioneta-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Avioneta Choco</h2>
+          <p class="fps-tag">Nuevo ☀️ Verano</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
+          <p>Mantén apretada la pantalla (o ESPACIO / ↑) para subir y suelta para bajar. Pasa por los aros dorados: cada aro seguido suma combo. Junta los alfajores y esquiva los globos y las gaviotas. Si tocas el agua o chocas pierdes un ❤ (tienes 3). La avioneta va cada vez más rápido: ¿hasta cuántos metros llegas?</p>
+          </details>
+
+          <button class="btn-primary" id="avioneta-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="avioneta-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="avioneta-gameover-title">¡Aterrizaje forzoso!</h2>
+          <p id="avioneta-gameover-text"></p>
+          <button class="btn-primary" id="avioneta-btn-retry">Jugar de nuevo</button>
+          <button class="btn-secondary overlay-secondary-btn" id="avioneta-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-lanchas" class="screen game-screen hidden">
+    <div id="lanchas-hud" class="hud">
+      <div class="hud-left">
+        <button id="lanchas-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="lanchas-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level" id="lanchas-hud-title">Lanchas en el Lago</div>
+          <div class="hud-mission" id="lanchas-hud-sub">Esquiva las boyas y salta las olas</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">⭐ <span id="lanchas-hud-score">0</span></div>
+        <div class="hud-chip">🚤 <span id="lanchas-hud-dist">0 m</span></div>
+        <div class="hud-chip">💨 <span id="lanchas-hud-speed">43 km/h</span></div>
+        <div class="hud-chip">❤ <span id="lanchas-hud-hearts">❤❤❤</span></div>
+        <div class="hud-chip">🍫✨ <span id="lanchas-hud-coins">0</span></div>
+        <button id="lanchas-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="lanchas-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="lanchas-canvas"></canvas>
+      <div id="lanchas-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="lanchas-popups" class="fps-popups" aria-hidden="true"></div>
+      <div class="g3d-touch" id="lanchas-touch">
+        <button class="g3d-tbtn" id="lanchas-btn-left" aria-label="Izquierda">◀</button>
+        <button class="g3d-tbtn" id="lanchas-btn-right" aria-label="Derecha">▶</button>
+      </div>
+
+      <div id="lanchas-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Lanchas en el Lago</h2>
+          <p class="fps-tag">Nuevo ☀️ Verano</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
+          <p>La lancha avanza sola: muévela a los lados con ◀ ▶, las flechas o arrastrando el dedo sobre el agua. Esquiva las boyas y las rocas de chocolate, pasa por las olas celestes para saltar y junta los alfajores (también los que están en el aire). Cada choque quita un ❤ (tienes 3) y la lancha va cada vez más rápido. ¿Hasta cuántos metros llegas?</p>
+          </details>
+          <button class="btn-primary" id="lanchas-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="lanchas-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="lanchas-gameover-title">¡La lancha quedó en pana!</h2>
+          <p id="lanchas-gameover-text"></p>
+          <button class="btn-primary" id="lanchas-btn-retry">Jugar de nuevo</button>
+          <button class="btn-secondary overlay-secondary-btn" id="lanchas-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-minigolf" class="screen game-screen hidden">
+    <div id="minigolf-hud" class="hud">
+      <div class="hud-left">
+        <button id="minigolf-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="minigolf-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level" id="minigolf-hud-title">Minigolf en la Playa</div>
+          <div class="hud-mission" id="minigolf-hud-sub">Arrastra hacia atrás y suelta para golpear</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">⛳ <span id="minigolf-hud-hole">1/9</span></div>
+        <div class="hud-chip">🏌️ <span id="minigolf-hud-strokes">0</span></div>
+        <div class="hud-chip">Σ <span id="minigolf-hud-total">0</span></div>
+        <div class="hud-chip">⭐ <span id="minigolf-hud-score">0</span></div>
+        <button id="minigolf-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="minigolf-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="minigolf-canvas"></canvas>
+      <div id="minigolf-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="minigolf-popups" class="fps-popups" aria-hidden="true"></div>
+
+      <div id="minigolf-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Minigolf en la Playa</h2>
+          <p class="fps-tag">Nuevo ☀️ Verano</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
+          <p>Arrastra el dedo (o el mouse) hacia atrás, como una honda: la flecha muestra hacia dónde va la pelota y su color, la fuerza. Suelta para golpear. Mete la pelota en el hoyo con la menor cantidad de golpes: la arena la frena, los bordes y los castillos la hacen rebotar y los cangrejos se mueven. Son 9 hoyos. Con «2 jugadores» juegan por turnos en el mismo celular y gana el que hace menos golpes. ¡Un hoyo en uno vale 150 puntos extra!</p>
+          </details>
+          <button class="btn-secondary ghost-toggle" id="minigolf-btn-players" type="button" aria-pressed="false">👤 1 jugador</button>
+          <button class="btn-primary" id="minigolf-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="minigolf-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="minigolf-gameover-title">¡Terminaste los 9 hoyos!</h2>
+          <p id="minigolf-gameover-text"></p>
+          <button class="btn-primary" id="minigolf-btn-retry">Jugar de nuevo</button>
+          <button class="btn-secondary overlay-secondary-btn" id="minigolf-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-billar" class="screen game-screen hidden">
+    <div id="billar-hud" class="hud">
+      <div class="hud-left">
+        <button id="billar-btn-menu" class="btn-icon" title="Volver al menú">🏠</button>
+        <img id="billar-hud-avatar" class="hud-avatar" alt="">
+        <div>
+          <div class="hud-level" id="billar-hud-title">Billar de Bombones</div>
+          <div class="hud-mission" id="billar-hud-sub">Arrastra hacia atrás y suelta para golpear</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">🍫 <span id="billar-hud-balls">0/7</span></div>
+        <div class="hud-chip">🎱 <span id="billar-hud-shots">0/25</span></div>
+        <div class="hud-chip">⭐ <span id="billar-hud-score">0</span></div>
+        <button id="billar-btn-mute" class="btn-icon" title="Silenciar sonido">🔊</button>
+      </div>
+    </div>
+
+    <div id="billar-canvas-wrap" class="canvas-wrap g3d-wrap">
+      <canvas id="billar-canvas"></canvas>
+      <div id="billar-banner" class="fps-banner" aria-live="polite"></div>
+      <div id="billar-popups" class="fps-popups" aria-hidden="true"></div>
+
+      <div id="billar-overlay-intro" class="overlay hidden">
+        <div class="overlay-card">
+          <h2>Billar de Bombones</h2>
+          <p class="fps-tag">Nuevo ☀️ Verano</p>
+          <details class="how"><summary>📖 Cómo se juega</summary>
+          <p>Arrastra el dedo (o el mouse) hacia atrás, como una honda: la flecha muestra hacia dónde sale el bombón blanco y su color, la fuerza. Suelta para golpear. Mete los 7 bombones de colores en las 6 cajas doradas. Meter dos en un tiro da puntos extra. Si cae el bombón blanco, vuelve a su lugar y pierdes 50 puntos. De a 1 tienes 25 tiros. Con «2 jugadores» juegan por turnos en el mismo celular: si metes uno sigues tú y, si no, le toca al otro. Gana el que mete más.</p>
+          </details>
+          <button class="btn-secondary ghost-toggle" id="billar-btn-players" type="button" aria-pressed="false">👤 1 jugador</button>
+          <button class="btn-primary" id="billar-btn-start">¡Vamos!</button>
+        </div>
+      </div>
+
+      <div id="billar-overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="billar-gameover-title">¡Mesa limpia!</h2>
+          <p id="billar-gameover-text"></p>
+          <button class="btn-primary" id="billar-btn-retry">Jugar de nuevo</button>
+          <button class="btn-secondary overlay-secondary-btn" id="billar-btn-gameover-menu">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="screen-salto" class="screen game-screen hidden">
     <div id="salto-hud" class="hud">
       <div class="hud-left">
@@ -1674,6 +1929,6 @@
   </div>
 </div>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
-<script type="module" src="js/main.js?v=66cb70720d"></script>
+<script type="module" src="js/main.js?v=5545779b2a"></script>
 </body>
 </html>

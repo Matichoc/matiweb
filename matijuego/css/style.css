@@ -927,6 +927,21 @@ h1, h2, h3 {
 .g3d-tbtn:active { background: rgba(212,33,108,0.95); }
 .g3d-stars { font-size: 2.4rem; letter-spacing: 6px; color: var(--dorado); text-shadow: 0 0 12px rgba(255,200,0,0.6), 2px 2px 0 var(--marron-osc); margin-bottom: 8px; }
 .g3d-stars .off { color: rgba(255,255,255,0.22); text-shadow: none; }
+/* Regalo de fundador (js/founder.js) */
+.founder-card { max-width: 560px; text-align: center; }
+.founder-card p { margin: 6px 0 12px; line-height: 1.35; }
+.founder-games { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.founder-game { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; border-radius: 16px; border: 3px solid var(--dorado, #ffc800); background: #fff6e6; color: var(--marron-osc, #3d1f10); font: inherit; font-weight: 800; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.15); }
+.founder-game span { font-size: 2rem; line-height: 1; }
+.founder-game b { font-size: 0.85rem; line-height: 1.15; }
+.founder-game:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.15); }
+/* Sonido: volumen de la música y de los efectos (#sound-dialog) */
+.sound-card { max-width: 420px; display: flex; flex-direction: column; gap: 12px; }
+.vol-row { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.vol-row .vol-name { flex: none; width: 6.2em; text-align: left; }
+.vol-row input[type="range"] { flex: 1; min-width: 0; height: 32px; accent-color: var(--rosa, #d4216c); }
+.vol-row .vol-n { flex: none; width: 3.2em; text-align: right; }
+#sound-dialog.is-muted .vol-row { opacity: 0.45; }
 /* botón de la sombra de la pieza en Bloques (tarjeta de inicio) */
 .ghost-toggle { display: block; margin: 4px auto 10px; font-size: 0.95rem; }
 .ghost-toggle[aria-pressed="false"] { opacity: 0.85; }
@@ -2432,8 +2447,8 @@ body:has(#screen-merge:not(.hidden)) .game-energy { top: auto; bottom: 168px; }
 .pause-card { max-width: 340px; text-align: center; display: flex; flex-direction: column; gap: 12px; padding: 20px 20px 18px; }
 .pause-card h2 { margin: 0; font-size: 1.6rem; }
 .pause-card .pause-big { font-size: 1.25rem; min-height: 56px; }
-.pause-row { display: flex; gap: 10px; }
-.pause-row .btn-secondary { flex: 1; min-height: 46px; font-size: 0.95rem; }
+.pause-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.pause-row .btn-secondary { flex: 1 1 7.5em; min-height: 46px; font-size: 0.95rem; }
 @media (pointer: coarse) {
   .game-screen:not(.cr-screen) { --hud-top: calc(max(8px, env(safe-area-inset-top)) + 54px); }
   /* ⏸: dos barras dibujadas (el carácter ⏸ se ve finito o como "॥" según el teléfono) */
