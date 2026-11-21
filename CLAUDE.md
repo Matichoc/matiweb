@@ -31,6 +31,9 @@ Deploy directo a GitHub Pages (`.nojekyll`).
 - `js/brillos.js` + `.brillos`/`.choco-fondo` (css/chocolate-wow.css): chocolates y destellos que suben
   detrás de los recuadros. Para sumar un recuadro nuevo, agrega su selector a `SELECTOR` en el script.
   La barra café con gotas (`.choco-drip`) se quitó de los banners por pedido del dueño: no volver a ponerla.
+- `js/temporadas.js`: el sitio se decora solo por fecha de Chile (Navidad, Enamorados, Pascua, Madre, Padre, Niño, Patrias,
+  Halloween): guirnalda sobre el banner, emojis de `brillos.js` y cinta a Productos de Temporada. Va **antes** de `brillos.js`.
+  Fechas y textos en `TEMPORADAS`; probar con `?temporada=<id>` o `?fecha=AAAA-MM-DD`. Las cintas no prometen fechas ni precios.
 - Matijuego (el arcade) se sirve desde este sitio, en `matijuego/` (`https://matichoc.cl/matijuego/`), con su propia política de
   seguridad en su `index.html` (el `importmap` va con hash: si se cambia, recalcular el sha256). **`matijuego/` es una copia GENERADA**:
   el código vive en `Matichoc/MAtigame_v0` (`app/index.template.html` con bloques `<!--WEB-->`/`<!--APP-->`, `css/`, `js/`) y se

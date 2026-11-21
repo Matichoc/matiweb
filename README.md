@@ -64,6 +64,7 @@ Guía paso a paso, con ejemplos: **[docs/COMO-ACTUALIZAR.md](docs/COMO-ACTUALIZA
 | Opiniones de clientes | `pages/opiniones.html` |
 | Historia y clubes auspiciados | `pages/historia.html` + logos en `assets/community/` |
 | Horario del stand, entregas, datos legales | Portada (`#plaza`), Contacto, Términos, Tienda y el guía (`js/matichico-guia.js`). Ver §8. |
+| Decoración por temporada (Navidad, Enamorados…) | `js/temporadas.js` → lista `TEMPORADAS` (se activa sola por fecha) |
 | Respuestas del guía | `js/matichico-guia.js` → lista `SABE` |
 | Menú del sitio | `components/header.html` **y** el respaldo `.seo-fallback` de cada página |
 
@@ -129,6 +130,7 @@ js/
   supabase-config.js    Dirección y clave pública de Supabase
   racha.js              Racha de visitas y contador de pedidos
   analitica.js          Contador de visitas sin cookies (GoatCounter)
+  temporadas.js         Decoración automática por fecha (Navidad, Enamorados, Pascua…)
   brillos.js, revelar.js  Efectos visuales (respetan "reducir movimiento")
   vendor/supabase.js    Librería oficial de Supabase (copiada, licencia MIT)
 assets/
