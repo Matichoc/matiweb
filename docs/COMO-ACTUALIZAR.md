@@ -147,6 +147,42 @@ Si cambian, actualiza **todos** estos lugares:
 
 Revisa también el **Perfil de Empresa de Google** para que el horario coincida.
 
+## Temporadas (Navidad, Enamorados, Pascua…) — `js/temporadas.js`
+
+El sitio se decora solo según la fecha de Chile y vuelve a la normalidad cuando la temporada termina. Cada año
+se repite sin hacer nada. En temporada:
+
+- cuelga una **guirnalda** de adornos sobre el banner de Inicio, Tienda, Historia, La Maestra, Contacto y Opiniones;
+- los destellos de los recuadros y del banner pasan a ser los de la fecha (🎄❄️, ❤️💕, 🐰🥚…);
+- aparece una **cinta** de color bajo el banner que lleva a "Productos de Temporada" en la Tienda.
+
+Calendario actual:
+
+| Temporada | Desde | Hasta |
+|---|---|---|
+| Día de los Enamorados | 1 de febrero | 14 de febrero |
+| Pascua | 10 días antes del Domingo de Pascua | Domingo de Pascua (se calcula cada año) |
+| Día de la Madre | 1 de mayo | 2.º domingo de mayo |
+| Día del Padre | 10 días antes | 3.er domingo de junio |
+| Día del Niño | 10 días antes | 2.º domingo de agosto |
+| Fiestas Patrias | 1 de septiembre | 20 de septiembre |
+| Halloween | 20 de octubre | 31 de octubre |
+| Navidad | 20 de noviembre | 25 de diciembre |
+
+**Cambiar fechas, textos o adornos:** en la lista `TEMPORADAS`, cada temporada tiene `desde` y `hasta`
+(`[mes, día]`), `emojis` y `cinta` (el texto de la franja). Para sumar una, copia un bloque, ponle otro `id` y
+agrega su color en `css/chocolate-wow.css` (`.temporada-<id> .temporada-cinta`).
+
+**Foto de portada de temporada (opcional):** guarda la foto en `assets/temporadas/` (por ejemplo `navidad.webp`,
+horizontal, ~1600 px de ancho) y agrega `imagen: 'assets/temporadas/navidad.webp'` a esa temporada.
+
+**Probar sin esperar la fecha:** agrega a la dirección `?temporada=navidad` (o `enamorados`, `pascua`, `madre`,
+`padre`, `nino`, `patrias`, `halloween`), `?temporada=ninguna` para ver el sitio sin decoración, o
+`?fecha=2027-02-10` para simular un día.
+
+Los textos de la cinta no prometen fechas de entrega ni precios. Si se quiere anunciar algo así ("pedidos de
+Navidad hasta el 22"), primero se confirma con el dueño.
+
 ## El guía — `js/matichico-guia.js`
 
 - **Respuestas:** lista `SABE`. Cada tema tiene `claves` (palabras sin tildes, en minúscula), `resp` (texto fijo) y

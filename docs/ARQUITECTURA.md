@@ -20,12 +20,12 @@ Cada página carga solo lo que usa. El orden importa: `base.js` primero, y `supa
 
 | Página | Scripts (en orden) |
 |---|---|
-| `index.html` | base, analitica, supabase-config, cuenta, brillos, matichico-guia, racha, puntos-venta, page-index |
-| `pages/tienda.html` | base, analitica, supabase-config, cuenta, brillos, matichico-guia, catalogo, racha, tienda, page-tienda |
-| `pages/historia.html` | revelar, base, analitica, supabase-config, cuenta, brillos, matichico-guia, page-historia |
-| `pages/la_maestra.html` | revelar, base, analitica, supabase-config, cuenta, brillos, matichico-guia, page-maestra |
-| `pages/contacto.html` | base, analitica, supabase-config, cuenta, brillos, matichico-guia, puntos-venta, page-contacto |
-| `pages/opiniones.html` | base, analitica, supabase-config, cuenta, brillos, page-opiniones |
+| `index.html` | base, analitica, supabase-config, cuenta, temporadas, brillos, matichico-guia, racha, puntos-venta, page-index |
+| `pages/tienda.html` | base, analitica, supabase-config, cuenta, temporadas, brillos, matichico-guia, catalogo, racha, tienda, page-tienda |
+| `pages/historia.html` | revelar, base, analitica, supabase-config, cuenta, temporadas, brillos, matichico-guia, page-historia |
+| `pages/la_maestra.html` | revelar, base, analitica, supabase-config, cuenta, temporadas, brillos, matichico-guia, page-maestra |
+| `pages/contacto.html` | base, analitica, supabase-config, cuenta, temporadas, brillos, matichico-guia, puntos-venta, page-contacto |
+| `pages/opiniones.html` | base, analitica, supabase-config, cuenta, temporadas, brillos, page-opiniones |
 | `pages/terminos.html`, `privacidad.html`, `bases-matilover.html` | base, analitica, supabase-config, cuenta, brillos, page-* |
 | `pages/cuenta.html` | base, supabase-config, cuenta, page-cuenta *(sin analítica)* |
 | `pages/admin.html` | base, supabase-config, cuenta, page-admin *(sin analítica, `noindex`)* |
@@ -164,6 +164,9 @@ Forma de un producto en `CATALOGO`:
   están en `assets/fonts/`. Antes de cambios visuales, revisa la skill `matichoc-marca`.
 - `js/brillos.js` + `css/chocolate-wow.css`: chocolates y destellos que suben detrás de los recuadros. Para sumar un
   recuadro, agrega su selector a `SELECTOR`. La barra con gotas (`.choco-drip`) se quitó por pedido del dueño.
+- `js/temporadas.js`: decoración automática por fecha de Chile (guirnalda sobre el banner, emojis de los destellos y
+  cinta a Productos de Temporada). Se carga **antes** de `brillos.js`, que lee `window.MATICHOC_TEMPORADA`. Escucha
+  `matichoc:componente` para decorar `#banner`/`#page-banner`. Prueba: `?temporada=<id>|ninguna`, `?fecha=AAAA-MM-DD`.
 - `js/revelar.js`: aparición suave de `[data-reveal]` al hacer scroll. Sin JS o con movimiento reducido, todo se ve
   de entrada.
 - Carruseles (almacenes, fotos): CSS con `@keyframes`; con movimiento reducido pasan a desplazamiento manual.

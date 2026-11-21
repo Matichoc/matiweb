@@ -16,7 +16,9 @@
   ].join(',');
 
   // Tres brillitos por recuadro, con posición y ritmo distintos según el orden.
-  const EMOJIS = ['🍫', '✨', '✨'];
+  // En temporada (js/temporadas.js, cargado antes) los destellos pasan a ser los de la fecha.
+  const T = window.MATICHOC_TEMPORADA;
+  const EMOJIS = T ? ['🍫', T.emojis[0], T.emojis[1]] : ['🍫', '✨', '✨'];
   const XS = [8, 44, 78, 22, 60, 90, 34, 70];
   let contador = 0;
 

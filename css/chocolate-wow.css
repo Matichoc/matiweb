@@ -559,3 +559,67 @@ html { scroll-padding-top: calc(var(--header-h) + 8px); }
 #racha-widget .racha-cta { margin: 12px auto 0; max-width: 560px; font-size: 0.95rem; line-height: 1.5; color: #fff8f0; text-align: center; }
 #racha-widget .racha-cta a { color: #ffc800; font-weight: 800; text-decoration: underline; }
 #racha-widget .racha-btn { display: inline-block; margin-top: 8px; }
+
+/* Temporadas (js/temporadas.js): cinta bajo el banner que lleva a los productos de temporada.
+   Cada temporada pone su color; el resto del sitio mantiene la paleta de la marca. */
+.temporada-cinta {
+  --t-fondo: #4b2e2e;
+  --t-texto: #ffc800;
+  display: block;
+  margin: 0;
+  padding: 10px 16px;
+  background: var(--t-fondo);
+  color: var(--t-texto);
+  font-weight: 800;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+.temporada-cinta:hover,
+.temporada-cinta:focus-visible { text-decoration: underline; color: var(--t-texto); }
+.temporada-cinta:focus-visible { outline: 3px solid #ffc800; outline-offset: -3px; }
+.temporada-navidad .temporada-cinta { --t-fondo: #1f6b3a; --t-texto: #fff8f0; border-bottom: 4px solid #c62828; }
+.temporada-enamorados .temporada-cinta { --t-fondo: #c2185b; --t-texto: #fff8f0; }
+.temporada-pascua .temporada-cinta { --t-fondo: #7e57c2; --t-texto: #fff8f0; }
+.temporada-madre .temporada-cinta { --t-fondo: #d4216c; --t-texto: #fff8f0; }
+.temporada-padre .temporada-cinta { --t-fondo: #1e4f8c; --t-texto: #fff8f0; }
+.temporada-nino .temporada-cinta { --t-fondo: #ffc800; --t-texto: #4b2e2e; }
+.temporada-patrias .temporada-cinta { --t-fondo: #0039a6; --t-texto: #fff; border-bottom: 4px solid #d52b1e; }
+.temporada-halloween .temporada-cinta { --t-fondo: #3d1f4f; --t-texto: #ff9800; }
+
+/* Guirnalda de temporada: cuelga sobre el borde superior del banner, encima de la foto. */
+.temporada-guirnalda {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: space-around;
+  pointer-events: none;
+  padding: 0 4px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.28), transparent);
+}
+.temporada-guirnalda span {
+  display: block;
+  font-size: 1.7rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+  transform-origin: 50% 0;
+}
+/* zigzag: uno arriba y el siguiente más abajo, como guirnalda colgando */
+.temporada-guirnalda span:nth-child(even) { margin-top: 18px; }
+.temporada-guirnalda span:nth-child(odd) { margin-top: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .temporada-guirnalda span { animation: temporada-mecer 3.2s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -0.4s); }
+}
+@keyframes temporada-mecer {
+  from { transform: rotate(-8deg); }
+  to { transform: rotate(8deg); }
+}
+@media (max-width: 600px) {
+  .temporada-guirnalda span { font-size: 1.25rem; }
+  .temporada-guirnalda span:nth-child(n+11) { display: none; }
+}
